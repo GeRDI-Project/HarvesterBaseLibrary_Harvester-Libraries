@@ -1,7 +1,6 @@
 package de.gerdiproject.harvest.development;
 
 
-import java.sql.Date;
 import java.util.Base64;
 
 import de.gerdiproject.harvest.MainContext;

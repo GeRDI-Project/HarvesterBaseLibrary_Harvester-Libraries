@@ -43,19 +43,6 @@ public abstract class AbstractJsonArrayHarvester extends AbstractHarvester
     /**
      * Forwarding the superclass constructor.
      *
-     * @param harvestedDocuments a list to which harvested documents are added
-     * @param numberOfDocumentsPerEntry the number of documents that are
-     * expected to be harvested from each entry
-     */
-    public AbstractJsonArrayHarvester( IJsonArray harvestedDocuments, int numberOfDocumentsPerEntry )
-    {
-        super( harvestedDocuments );
-        this.numberOfDocumentsPerEntry = numberOfDocumentsPerEntry;
-    }
-    
-    /**
-     * Forwarding the superclass constructor.
-     *
      * @param numberOfDocumentsPerEntry the number of documents that are
      * expected to be harvested from each entry
      */

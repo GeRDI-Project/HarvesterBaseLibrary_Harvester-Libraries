@@ -18,12 +18,13 @@
  */
 package de.gerdiproject.harvest.harvester;
 
-import de.gerdiproject.json.IJsonArray;
 import de.gerdiproject.logger.ILogger;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
@@ -34,14 +35,20 @@ import java.util.concurrent.ExecutionException;
 public abstract class AbstractCompositeHarvester extends AbstractHarvester
 {
     // fields and members
-    protected final AbstractHarvester[] subHarvesters;
+    protected final Iterable<AbstractHarvester> subHarvesters;
 
 
-    public AbstractCompositeHarvester( IJsonArray harvestedDocuments, AbstractHarvester[] subHarvesters )
+    public AbstractCompositeHarvester( Iterable<AbstractHarvester> subHarvesters )
     {
-        super( harvestedDocuments );
+        super();
 
         this.subHarvesters = subHarvesters;
+        
+        // make sure the sub-harvesters deposit their documents in the same array
+        for (AbstractHarvester subHarvester : subHarvesters)
+        {
+            subHarvester.harvestedDocuments = harvestedDocuments;
+        }
     }
 
 
@@ -53,7 +60,6 @@ public abstract class AbstractCompositeHarvester extends AbstractHarvester
         {
             subHarvester.init( logger );
         }
-
         super.init( logger );
     }
 
@@ -104,25 +110,35 @@ public abstract class AbstractCompositeHarvester extends AbstractHarvester
 
 
 	@Override
-    @SuppressWarnings("rawtypes")
     protected boolean harvestInternal( int from, int to )
     {
-        CompletableFuture[] subProcesses = new CompletableFuture[subHarvesters.length];
-        
-        int i = 0;
+        List<CompletableFuture<?>> subProcesses = new LinkedList<>();
         
         // the range can be ignored at this point, because it was already set in
         // the subharvesters via the overriden setRange() method
         for (AbstractHarvester subHarvester : subHarvesters)
         {
             subHarvester.harvest();
-            subProcesses[i++] = subHarvester.currentHarvestingProcess;
+            
+            CompletableFuture<Boolean> subHarvestingProcess = subHarvester.currentHarvestingProcess;
+            
+            // add the process only if it was created successfully
+            if(subHarvestingProcess != null)
+            {
+            	subProcesses.add(subHarvestingProcess);
+            }
+        }
+        // convert list to array
+        CompletableFuture<?>[] futureArray = new CompletableFuture<?>[subProcesses.size()];
+        for(int i = 0, len = futureArray.length; i < len; i++)
+        {
+        	futureArray[i] = subProcesses.get( i );
         }
         
         // wait for all sub-harvesters to complete
         try
         {
-            CompletableFuture.allOf( subProcesses ).get();
+            CompletableFuture.allOf( futureArray ).get();
         }
         catch (InterruptedException | ExecutionException ex)
         {
