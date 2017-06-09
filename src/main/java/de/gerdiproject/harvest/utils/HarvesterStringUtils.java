@@ -458,16 +458,24 @@ public class HarvesterStringUtils
         }
     }
     
+    /**
+     * Creates a formatted string that represents the progress of a process.
+     * @param prefix this string will be prepended to the message
+     * @param currentValue the current progress value
+     * @param maxValue the maximum value the process can reach
+     * @return a formatted string
+     */
     public static final String formatProgress( String prefix, int currentValue, int maxValue )
     {
         int progressInPercent = Math.min( (int) Math.ceil( (100f * currentValue) / maxValue ), 100 );
 
-        String formattedMessage = String.format( PROGESS_TEXT, prefix, progressInPercent, currentValue, maxValue );
-
-        System.out.print( formattedMessage );
-        System.out.flush();
-
-        return formattedMessage;
+        return String.format( 
+        		PROGESS_TEXT, 
+        		prefix, 
+        		progressInPercent, 
+        		currentValue, 
+        		maxValue 
+		);
     }
 
 
