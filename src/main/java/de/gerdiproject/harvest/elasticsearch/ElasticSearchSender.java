@@ -19,7 +19,17 @@
 package de.gerdiproject.harvest.elasticsearch;
 
 
-import de.gerdiproject.harvest.MainContext;
+import java.io.StringReader;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.security.NoSuchAlgorithmException;
+import java.util.Base64;
+import java.util.LinkedList;
+import java.util.List;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import de.gerdiproject.harvest.utils.HttpRequester;
 import de.gerdiproject.harvest.utils.SearchIndexFactory;
 import de.gerdiproject.json.IJsonArray;
@@ -28,15 +38,6 @@ import de.gerdiproject.json.IJsonObject;
 import de.gerdiproject.json.IJsonReader;
 import de.gerdiproject.json.impl.JsonBuilder;
 import de.gerdiproject.json.utils.JsonHelper;
-import de.gerdiproject.logger.ILogger;
-
-import java.io.StringReader;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.security.NoSuchAlgorithmException;
-import java.util.Base64;
-import java.util.LinkedList;
-import java.util.List;
 
 
 /**
@@ -85,12 +86,13 @@ public class ElasticSearchSender
 	private final static String NULL_JSON = "null";
 
 	private final static int BULK_SUBMISSION_SIZE = 1024;
+	
+	private static final Logger LOGGER = LoggerFactory.getLogger( ElasticSearchSender.class );
 
 	private static ElasticSearchSender instance;
 
 	private final IJsonBuilder jsonBuilder;
 	private final HttpRequester httpRequester;
-	private final ILogger logger;
 	private final Base64.Encoder encoder;
 	private final Base64.Decoder decoder;
 
@@ -142,7 +144,6 @@ public class ElasticSearchSender
 	 */
 	private ElasticSearchSender()
 	{
-		logger = MainContext.getLogger();
 		httpRequester = new HttpRequester();
 
 		encoder = Base64.getEncoder();
@@ -193,7 +194,9 @@ public class ElasticSearchSender
 		}
 		catch (MalformedURLException mue)
 		{
-			return logger.logError( String.format( URL_SET_FAILED, baseUrl ) );
+			String string = String.format( URL_SET_FAILED, baseUrl );
+			LOGGER.error( string );
+			return string;
 		}
 	}
 
@@ -251,17 +254,19 @@ public class ElasticSearchSender
 		// check if a URL has been set up
 		if (baseUrl == null)
 		{
-			return logger.logWarning( NO_URL_ERROR );
+			LOGGER.warn( NO_URL_ERROR );
+			return NO_URL_ERROR;
 		}
 
 		// check if entries exist
 		if (documents == null || documents.isEmpty())
 		{
-			return logger.logWarning( EMPTY_INDEX_ERROR );
+			LOGGER.warn( EMPTY_INDEX_ERROR );
+			return EMPTY_INDEX_ERROR;
 		}
 
 		final String elasticSearchUrl = getBulkSubmissionUrl();
-		logger.log( String.format( SUBMISSION_START, elasticSearchUrl ) );
+		LOGGER.info( String.format( SUBMISSION_START, elasticSearchUrl ) );
 
 		// build a string for bulk-posting to Elastic search
 		StringBuilder bulkRequestBuilder = new StringBuilder();
@@ -307,11 +312,12 @@ public class ElasticSearchSender
 		}
 		catch (Exception e)
 		{
-			logger.logError( ERROR_PREFIX );
-			return logger.logException( e );
+			LOGGER.error( ERROR_PREFIX, e );
+			return e.toString();
 		}
 
-		return logger.log( SUBMISSION_DONE );
+		LOGGER.info( SUBMISSION_DONE );
+		return SUBMISSION_DONE;
 	}
 
 
@@ -398,7 +404,7 @@ public class ElasticSearchSender
 			}
 			catch (Exception e)
 			{
-				logger.logError( e.toString() );
+				LOGGER.error( e.toString() );
 				return;
 			}
 		}
@@ -406,7 +412,7 @@ public class ElasticSearchSender
 		// if the server response is not JSON, it's probably an error
 		if (responseArray == null)
 		{
-			logger.log( String.format( SUBMIT_PARTIAL_FAILED, from, to ) + response );
+			LOGGER.info( String.format( SUBMIT_PARTIAL_FAILED, from, to ) + response );
 			return;
 		}
 
@@ -414,7 +420,7 @@ public class ElasticSearchSender
 		// there are no errors
 		if (response.indexOf( SUBMIT_ERROR_INDICATOR ) == -1)
 		{
-			logger.log( String.format( SUBMIT_PARTIAL_OK, from, to ) );
+			LOGGER.info( String.format( SUBMIT_PARTIAL_OK, from, to ) );
 			return;
 		}
 
@@ -450,7 +456,7 @@ public class ElasticSearchSender
 		// log failed documents
 		if (hasErrors)
 		{
-			logger.logError( errorBuilder.toString() );
+			LOGGER.error( errorBuilder.toString() );
 		}
 
 		// try to submit the documents again
@@ -569,7 +575,7 @@ public class ElasticSearchSender
 		}
 
 		// log resubmission
-		logger.log( String.format( RESUBMISSION_START, documents.size() ) );
+		LOGGER.info( String.format( RESUBMISSION_START, documents.size() ) );
 
 		final String elasticSearchUrl = getBulkSubmissionUrl();
 		final StringBuilder bulkRequestBuilder = new StringBuilder();
@@ -591,7 +597,7 @@ public class ElasticSearchSender
 		//
 		if (resubmitResponse.indexOf( SUBMIT_ERROR_INDICATOR ) == -1)
 		{
-			logger.log( RESUBMISSION_OK );
+			LOGGER.info( RESUBMISSION_OK );
 		}
 		else
 		{
@@ -606,7 +612,7 @@ public class ElasticSearchSender
 			}
 			catch (Exception e)
 			{
-				logger.logError( e.toString() );
+				LOGGER.error( e.toString() );
 			}
 
 			// re-initialize the error string builder
@@ -645,7 +651,7 @@ public class ElasticSearchSender
 				}
 			}
 			// log re-submission errors
-			logger.logError( errorBuilder.toString() );
+			LOGGER.error( errorBuilder.toString() );
 		}
 	}
 

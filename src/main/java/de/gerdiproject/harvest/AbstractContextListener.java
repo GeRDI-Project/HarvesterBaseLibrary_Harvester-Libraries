@@ -20,7 +20,6 @@ package de.gerdiproject.harvest;
 
 import de.gerdiproject.harvest.config.Configuration;
 import de.gerdiproject.harvest.harvester.AbstractHarvester;
-import de.gerdiproject.logger.ILogger;
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
 
@@ -29,7 +28,6 @@ import javax.servlet.ServletContextListener;
  * subclass with the @WebListener annotation must be defined.
  *
  * @see javax.servlet.annotation.WebListener
- * @see de.gerdiproject.logger.ILogger
  * @see de.gerdiproject.harvest.harvester.AbstractHarvester
  *
  * @author row
@@ -43,13 +41,6 @@ public abstract class AbstractContextListener implements ServletContextListener
      */
     abstract protected String createServiceName();
     
-    /**
-     * Creates a logger for the MainContext.
-     *
-     * @return an instance of an ILogger implementation
-     */
-    abstract protected ILogger createLogger();
-
 
     /**
      * Creates a harvester for the MainContext.
@@ -74,10 +65,9 @@ public abstract class AbstractContextListener implements ServletContextListener
     	
         // create singleton logger and harvester
         AbstractHarvester harvester = createHarvester();
-        ILogger logger = createLogger();
 
         // init main context
-        MainContext.init( name, harvester, logger );
+        MainContext.init( name, harvester );
 
         // try to load configuration
         Configuration.loadFromDisk();

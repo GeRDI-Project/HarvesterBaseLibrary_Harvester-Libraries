@@ -18,7 +18,6 @@
  */
 package de.gerdiproject.harvest.harvester;
 
-import de.gerdiproject.logger.ILogger;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.security.MessageDigest;
@@ -53,14 +52,14 @@ public abstract class AbstractCompositeHarvester extends AbstractHarvester
 
 
     @Override
-    public void init( ILogger logger )
+    public void init()
     {
         // init sub-harvesters first, in order to properly calculate document hash and count
         for (AbstractHarvester subHarvester : subHarvesters)
         {
-            subHarvester.init( logger );
+            subHarvester.init();
         }
-        super.init( logger );
+        super.init();
     }
 
 
@@ -142,7 +141,7 @@ public abstract class AbstractCompositeHarvester extends AbstractHarvester
         }
         catch (InterruptedException | ExecutionException ex)
         {
-            logger.logWarning( "Interrupted Harvester!");
+            logger.warn( "Interrupted Harvester!");
             return false;
         }
 
@@ -192,7 +191,7 @@ public abstract class AbstractCompositeHarvester extends AbstractHarvester
         }
         catch (NoSuchAlgorithmException | NullPointerException e)
         {
-            logger.logError( HASH_CREATE_FAILED );
+            logger.error( HASH_CREATE_FAILED );
             return null;
         }
     }

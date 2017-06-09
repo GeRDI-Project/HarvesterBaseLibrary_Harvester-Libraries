@@ -18,9 +18,10 @@
  */
 package de.gerdiproject.harvest;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import de.gerdiproject.harvest.harvester.AbstractHarvester;
-import de.gerdiproject.logger.ILogger;
-import de.gerdiproject.logger.impl.LoggerQueue;
 
 /**
  * This class provides static methods for retrieving the application name, the
@@ -37,20 +38,18 @@ public class MainContext
     private static final String INIT_START = "Initializing %s...";
     private static final String DONE = "done!";
 
+	private static final Logger LOGGER = LoggerFactory.getLogger( MainContext.class );
+	
     private AbstractHarvester harvester;
-    private ILogger logger;
 
     private static MainContext instance;
 
 
     /**
-     * Singleton constructor. Initializes the logger with a queue. Once a
-     * different logger is set, everything stored within the queue will be
-     * logged.
+     * Singleton constructor.
      */
     private MainContext()
     {
-        logger = new LoggerQueue();
     }
 
 
@@ -90,58 +89,26 @@ public class MainContext
      *
      * @param moduleName name of this application
      * @param harvester an AbstractHarvester subclass
-     * @param newLogger an ILogger implementation
-     * @see de.gerdiproject.logger.ILogger
      * @see de.gerdiproject.harvest.harvester.AbstractHarvester
      */
-    public static void init( String moduleName, AbstractHarvester harvester, ILogger newLogger )
+    public static void init( String moduleName, AbstractHarvester harvester )
     {
         if (instance == null)
         {
             instance = new MainContext();
-        }
-        else
-        {
-            // potentially log queued messages
-            if (instance.logger instanceof LoggerQueue)
-            {
-                LoggerQueue oldLogger = (LoggerQueue) instance.logger;
-                oldLogger.logQueuedMessages( newLogger );
-            }
         }
 
         // set module name
         instance.moduleName = moduleName;
 
-        // set logger
-        newLogger.log( String.format( INIT_START, newLogger.getClass().getSimpleName() ) );
-        instance.logger = newLogger;
-        newLogger.log( DONE );
-
         // init harvester
-        newLogger.log( String.format( INIT_START, harvester.getClass().getSimpleName() ) );
-        harvester.init( newLogger );
+        LOGGER.info( String.format( INIT_START, harvester.getName() ) );
+        harvester.init();
 
         instance.harvester = harvester;
-        newLogger.log( DONE );
+        LOGGER.info( DONE );
 
         // log ready state
-        newLogger.log( String.format( INIT_FINISHED, instance.moduleName ) );
-    }
-
-
-    /**
-     * Returns the logger singleton instance of this application
-     *
-     * @return this application's logger implementation
-     * @see de.gerdiproject.logger.ILogger
-     */
-    public static ILogger getLogger()
-    {
-        if (instance == null)
-        {
-            instance = new MainContext();
-        }
-        return instance.logger;
+        LOGGER.info( String.format( INIT_FINISHED, instance.moduleName ) );
     }
 }

@@ -20,7 +20,6 @@ package de.gerdiproject.harvest.harvester;
 
 import de.gerdiproject.json.IJsonArray;
 import de.gerdiproject.json.IJsonObject;
-import de.gerdiproject.logger.ILogger;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.security.MessageDigest;
@@ -77,13 +76,13 @@ public abstract class AbstractJsonArrayHarvester extends AbstractHarvester
     {
         if(from == to)
         {
-            logger.log( name + LOG_OUT_OF_RANGE);
+            logger.warn( name + LOG_OUT_OF_RANGE);
             
             return true;
         }
         else if(entries == null || entries.isEmpty())
         {
-            logger.logError( name + ERROR_NO_ENTRIES);
+            logger.error( name + ERROR_NO_ENTRIES);
             
             return false;
         }
@@ -142,10 +141,10 @@ public abstract class AbstractJsonArrayHarvester extends AbstractHarvester
 
 
     @Override
-    public void init( ILogger logger )
+    public void init()
     {
         entries = getEntries();
-        super.init( logger );
+        super.init();
     }
 
 
@@ -178,7 +177,7 @@ public abstract class AbstractJsonArrayHarvester extends AbstractHarvester
         }
         catch (NoSuchAlgorithmException | NullPointerException e)
         {
-            logger.logError( HASH_CREATE_FAILED );
+            logger.error( HASH_CREATE_FAILED );
             return null;
         }
     }

@@ -34,6 +34,9 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * This static class deals with saving and loading all application flags and
  * options to/from disk.
@@ -70,6 +73,8 @@ public class Configuration
     private final static String INFO = " Configuration:\n%s\n\n To change these settings, please use the corresponding PUT requests.";
 
     private final static IJsonBuilder JSON_BUILDER = new JsonBuilder();
+
+	private static final Logger LOGGER = LoggerFactory.getLogger( Configuration.class );
     
     /**
      * The constructor is private, because this is a static class.
@@ -111,16 +116,22 @@ public class Configuration
                 // retrieve config from json
                 setConfigFromJson( configJson );
 
-                return MainContext.getLogger().log( String.format( LOAD_OK, path ) );
+                String okMsg = String.format( LOAD_OK, path );
+                LOGGER.info( okMsg );
+				return okMsg;
             }
             catch (Exception ex)
             {
-                return MainContext.getLogger().logError( String.format( LOAD_FAILED, path, ex.toString() ) );
+                String errMsg = String.format( LOAD_FAILED, path, ex.toString() );
+				LOGGER.error( errMsg, ex );
+				return errMsg;
             }
         }
         else
         {
-            return MainContext.getLogger().logError( String.format( LOAD_FAILED, path, NO_EXISTS ) );
+            String errMsg = String.format( LOAD_FAILED, path, NO_EXISTS );
+			LOGGER.error( errMsg );
+			return errMsg;
         }
     }
 
@@ -222,11 +233,14 @@ public class Configuration
             writer.write( toJson().toJsonString() );
             writer.close();
 
-            return MainContext.getLogger().log( String.format( SAVE_OK, path ) );
+            String okMsg = String.format( SAVE_OK, path );
+			LOGGER.info( okMsg );
+			return okMsg;
         }
         catch (IOException e)
         {
-            return MainContext.getLogger().logError( SAVE_FAILED + e );
+        	LOGGER.error(SAVE_FAILED , e);
+            return SAVE_FAILED + e;
         }
     }
 
