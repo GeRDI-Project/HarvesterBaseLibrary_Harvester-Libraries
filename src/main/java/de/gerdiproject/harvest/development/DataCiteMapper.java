@@ -3,15 +3,18 @@ package de.gerdiproject.harvest.development;
 
 import java.util.Base64;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import de.gerdiproject.harvest.MainContext;
 import de.gerdiproject.harvest.harvester.AbstractHarvester;
 import de.gerdiproject.harvest.utils.CancelableFuture;
+import de.gerdiproject.harvest.utils.HarvesterStringUtils;
 import de.gerdiproject.harvest.utils.SearchIndexFactory;
 import de.gerdiproject.json.IJsonArray;
 import de.gerdiproject.json.IJsonBuilder;
 import de.gerdiproject.json.IJsonObject;
 import de.gerdiproject.json.impl.JsonBuilder;
-import de.gerdiproject.logger.ILogger;
 
 
 public class DataCiteMapper
@@ -22,6 +25,8 @@ public class DataCiteMapper
 	private final static String CONVERSION_START_FAILED = "Could not start DataCite conversion. Finish harvesting first!";
 
 	private final static String STATUS_CONVERTING = "Converted %d / %d (%.2f%%)";
+
+	private static final Logger LOGGER = LoggerFactory.getLogger( DataCiteMapper.class );
 
 	private static DataCiteMapper instance;
 
@@ -64,7 +69,8 @@ public class DataCiteMapper
 		// check if the conversion is allowed to start
 		if (isConverting() || !harvester.isHarvestFinished() || originalDocs == null || originalDocs.isEmpty())
 		{
-			return MainContext.getLogger().log( CONVERSION_START_FAILED );
+			LOGGER.info( CONVERSION_START_FAILED );
+			return CONVERSION_START_FAILED;
 		}
 
 		// start asynchronous conversion process
@@ -80,15 +86,15 @@ public class DataCiteMapper
 			failConversion( throwable.getCause() );
 			return false;
 		} );
-
-		return MainContext.getLogger().log( CONVERSION_START );
+		LOGGER.info( CONVERSION_START );
+		return CONVERSION_START;
 	}
 
 
 	private void endConversion()
 	{
 		conversionProcess = null;
-		MainContext.getLogger().log( CONVERSION_SUCCESS );
+		LOGGER.info( CONVERSION_SUCCESS );
 	}
 
 
@@ -104,18 +110,17 @@ public class DataCiteMapper
 			{
 				errorBuilder.append( '\n' ).append( ele );
 			}
-			MainContext.getLogger().logError( errorBuilder.toString() );
+			LOGGER.error( errorBuilder.toString() );
 		}
 		conversionProcess = null;
 
-		MainContext.getLogger().logError( CONVERSION_FAILED );
+		LOGGER.error( CONVERSION_FAILED );
 	}
 
 
 	private boolean convertDocumentsToDataCite( IJsonArray documents )
 	{
 		IJsonBuilder builder = new JsonBuilder();
-		ILogger logger = MainContext.getLogger();
 		
 		synchronized (convertedDocuments)
 		{
@@ -131,7 +136,7 @@ public class DataCiteMapper
 			{
 				convertedDocuments.add( convertedDoc );
 			}
-			logger.logProgress( "DataCite Conversion", ++convertedCount, docCount );
+			LOGGER.info( HarvesterStringUtils.formatProgress( "DataCite Conversion", ++convertedCount, docCount ) );
 		}
 
 		return true;

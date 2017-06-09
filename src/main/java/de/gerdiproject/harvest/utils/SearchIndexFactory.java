@@ -18,7 +18,6 @@
  */
 package de.gerdiproject.harvest.utils;
 
-import de.gerdiproject.harvest.MainContext;
 import de.gerdiproject.harvest.development.DevelopmentTools;
 import de.gerdiproject.json.IJsonArray;
 import de.gerdiproject.json.IJsonBuilder;
@@ -26,6 +25,9 @@ import de.gerdiproject.json.IJsonObject;
 import de.gerdiproject.json.impl.JsonBuilder;
 
 import java.sql.Date;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 /**
@@ -54,6 +56,7 @@ public class SearchIndexFactory
 	public static final String DURATION_JSON = "durationInSeconds";
 	public static final String IS_FROM_DISK_JSON = "wasHarvestedFromDisk";
 
+	private static final Logger LOGGER = LoggerFactory.getLogger( SearchIndexFactory.class );
 	
 	private final GeoJsonCleaner geoCleaner;
 	private final IJsonBuilder jsonBuilder;
@@ -101,14 +104,14 @@ public class SearchIndexFactory
 		// label is required!
 		if (label == null || label.isEmpty())
 		{
-			MainContext.getLogger().logWarning( WARNING_NO_LABEL );
+			LOGGER.warn( WARNING_NO_LABEL );
 			return null;
 		}
 
 		// viewUrl is required for building a unique hash!
 		if (viewUrl == null || viewUrl.isEmpty())
 		{
-			MainContext.getLogger().logWarning( WARNING_NO_VIEW_URL );
+			LOGGER.warn( WARNING_NO_VIEW_URL );
 			return null;
 		}
 
@@ -116,8 +119,8 @@ public class SearchIndexFactory
 		IJsonObject document = jsonBuilder.createObject();
 
 		// add mandatory fields
-		document.put( LABEL_JSON, StringCleaner.cleanString( label ) );
-		document.put( VIEW_URL_JSON, StringCleaner.cleanString( viewUrl ) );
+		document.put( LABEL_JSON, HarvesterStringUtils.cleanString( label ) );
+		document.put( VIEW_URL_JSON, HarvesterStringUtils.cleanString( viewUrl ) );
 
 		// add optional fields
 		if (downloadUrls != null && !downloadUrls.isEmpty())
@@ -127,7 +130,7 @@ public class SearchIndexFactory
 
 		if (logoUrl != null && !logoUrl.isEmpty())
 		{
-			document.put( LOGO_URL_JSON, StringCleaner.cleanString( logoUrl ) );
+			document.put( LOGO_URL_JSON, HarvesterStringUtils.cleanString( logoUrl ) );
 		}
 
 		if (descriptions != null && !descriptions.isEmpty())

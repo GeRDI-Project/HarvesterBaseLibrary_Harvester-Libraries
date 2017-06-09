@@ -43,6 +43,10 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import javax.ws.rs.HttpMethod;
 import javax.ws.rs.core.MediaType;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import javax.ws.rs.core.HttpHeaders;
 
 /**
@@ -56,6 +60,7 @@ public class HttpRequester
 	private static final String ERROR_JSON = "Could not load and parse '%s': %s";
 	private static final String SAVE_FAILED = "Could not save response of '' to disk: %s";
 	private static final String FILE_PATH = "savedHttpResponses/%s/%sresponse.json";
+	private static final Logger LOGGER = LoggerFactory.getLogger( HttpRequester.class );
 
 	private final Charset httpCharset;
 	private final DevelopmentTools devTools;
@@ -196,7 +201,7 @@ public class HttpRequester
 		{
 			if (!suppressWarnings)
 			{
-				MainContext.getLogger().logWarning( String.format( ERROR_JSON, filePath, e.toString() ) );
+				LOGGER.warn( String.format( ERROR_JSON, filePath, e.toString() ) );
 			}
 		}
 
@@ -229,7 +234,7 @@ public class HttpRequester
 		{
 			if (!suppressWarnings)
 			{
-				MainContext.getLogger().logWarning( String.format( ERROR_JSON, url, e.toString() ) );
+				LOGGER.warn( String.format( ERROR_JSON, url, e.toString() ) );
 			}
 		}
 		return jsonResponse;
@@ -300,7 +305,7 @@ public class HttpRequester
 		}
 		catch (IOException e)
 		{
-			MainContext.getLogger().logError( SAVE_FAILED + e );
+			LOGGER.error( SAVE_FAILED + e );
 		}
 
 	}
@@ -431,7 +436,11 @@ public class HttpRequester
 		}
 		catch (Exception e)
 		{
-			return suppressWarnings ? e.getMessage() : MainContext.getLogger().logWarning( e.getMessage() );
+			if(!suppressWarnings)
+			{
+				LOGGER.warn( e.getMessage() );
+			}
+			return e.getMessage();
 		}
 	}
 }

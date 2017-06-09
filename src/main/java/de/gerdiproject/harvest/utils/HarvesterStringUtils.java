@@ -28,13 +28,16 @@ import java.util.HashMap;
  *
  * @author row
  */
-public class StringCleaner
+public class HarvesterStringUtils
 {
     private static final int MIN_ESCAPE = 2;
     private static final int MAX_ESCAPE = 6;
     private static final int DECIMAL_RADIX = 10;
     private static final int HEXADECIMAL_RADIX = 16;
     private static final int MAX_SINGLE_CHAR_VALUE = 0xFFFF;
+    
+    private static final String PROGESS_TEXT = "\r%s: %3d%% (%d / %d)";
+
 
     /**
      * HTML 3 escapes
@@ -454,6 +457,27 @@ public class StringCleaner
             ESCAPE_LOOKUP_TABLE.put( s[1], s[0] );
         }
     }
+    
+    /**
+     * Creates a formatted string that represents the progress of a process.
+     * @param prefix this string will be prepended to the message
+     * @param currentValue the current progress value
+     * @param maxValue the maximum value the process can reach
+     * @return a formatted string
+     */
+    public static final String formatProgress( String prefix, int currentValue, int maxValue )
+    {
+        int progressInPercent = Math.min( (int) Math.ceil( (100f * currentValue) / maxValue ), 100 );
+
+        return String.format( 
+        		PROGESS_TEXT, 
+        		prefix, 
+        		progressInPercent, 
+        		currentValue, 
+        		maxValue 
+		);
+    }
+
 
 
     /**

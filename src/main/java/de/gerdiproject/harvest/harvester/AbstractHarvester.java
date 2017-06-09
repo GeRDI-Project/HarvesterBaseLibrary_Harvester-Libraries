@@ -23,17 +23,20 @@ import de.gerdiproject.harvest.MainContext;
 import de.gerdiproject.harvest.development.DevelopmentTools;
 import de.gerdiproject.harvest.elasticsearch.ElasticSearchSender;
 import de.gerdiproject.harvest.utils.CancelableFuture;
+import de.gerdiproject.harvest.utils.HarvesterStringUtils;
 import de.gerdiproject.harvest.utils.HttpRequester;
 import de.gerdiproject.harvest.utils.SearchIndexFactory;
 import de.gerdiproject.json.IJsonArray;
 import de.gerdiproject.json.IJsonBuilder;
 import de.gerdiproject.json.IJsonObject;
 import de.gerdiproject.json.impl.JsonBuilder;
-import de.gerdiproject.logger.ILogger;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 /**
@@ -69,7 +72,7 @@ public abstract class AbstractHarvester
 
 	protected String name;
 	protected String hash;
-	protected ILogger logger;
+	protected Logger logger;
 	protected final HttpRequester httpRequester;
 	protected final SearchIndexFactory searchIndexFactory;
 	protected final IJsonBuilder jsonBuilder;
@@ -119,6 +122,7 @@ public abstract class AbstractHarvester
 	 */
 	public AbstractHarvester()
 	{
+		logger = LoggerFactory.getLogger( this.getClass() );
 		properties = new HashMap<>();
 		httpRequester = new HttpRequester();
 		searchIndexFactory = new SearchIndexFactory();
@@ -139,15 +143,9 @@ public abstract class AbstractHarvester
 
 	/**
 	 * Initializes the Harvester, setting up missing values and the logger.
-	 *
-	 * @param logger
-	 *            the logger that is to be used
 	 */
-	public void init( ILogger logger )
+	public void init()
 	{
-		// set logger
-		this.logger = logger;
-
 		// calculate hash
 		hash = calculateHashInternal();
 
@@ -273,10 +271,11 @@ public abstract class AbstractHarvester
 		final int from = harvestStartIndex.get();
 
 		// log progress
-		logger.logProgress(
+		logger.info( HarvesterStringUtils.formatProgress(
 				name,
 				from + harvestedDocs,
-				harvestEndIndex.get() );
+				harvestEndIndex.get() )
+		);
 	}
 
 
@@ -403,7 +402,7 @@ public abstract class AbstractHarvester
 	 */
 	public final void harvest()
 	{
-		logger.log( String.format( HARVESTER_START, name ) );
+		logger.info( String.format( HARVESTER_START, name ) );
 		synchronized (harvestedDocuments)
 		{
 			harvestedDocuments.clear();
@@ -433,7 +432,7 @@ public abstract class AbstractHarvester
 		currentHarvestingProcess = null;
 		harvestFinishedDate = new Date();
 
-		logger.log( String.format( HARVESTER_END, name ) );
+		logger.info( String.format( HARVESTER_END, name ) );
 
 		// do some things, only if this is the main harvester
 		if (MainContext.getHarvester() == this)
@@ -447,7 +446,7 @@ public abstract class AbstractHarvester
 			}
 
 			// log complete harvest end
-			logger.log( HARVEST_DONE );
+			logger.info( HARVEST_DONE );
 
 			// send to elastic search if auto-submission is enabled
 			if (devTools.isAutoSubmitting())
@@ -464,7 +463,7 @@ public abstract class AbstractHarvester
 	 */
 	private void failHarvest( Throwable reason )
 	{
-		logger.logException( reason );
+		logger.error( reason.getMessage(), reason );
 		currentHarvestingProcess = null;
 
 		// save to disk if auto-save is enabled
@@ -475,11 +474,11 @@ public abstract class AbstractHarvester
 		}
 
 		// log failure
-		logger.logWarning( String.format( HARVESTER_FAILED, name ) );
+		logger.warn( String.format( HARVESTER_FAILED, name ) );
 
 		if (MainContext.getHarvester() == this)
 		{
-			logger.logError( HARVEST_FAILED );
+			logger.error( HARVEST_FAILED );
 		}
 	}
 

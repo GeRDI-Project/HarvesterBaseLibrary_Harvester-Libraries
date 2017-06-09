@@ -6,9 +6,11 @@ import java.security.NoSuchAlgorithmException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.esri.core.geometry.ogc.OGCGeometry;
 
-import de.gerdiproject.harvest.MainContext;
 import de.gerdiproject.json.IJsonBuilder;
 import de.gerdiproject.json.IJsonObject;
 import de.gerdiproject.json.IJsonReader;
@@ -27,6 +29,7 @@ public class GeoJsonCleaner
 	public static final String TYPE_JSON = "type";
 	public static final String MULTI_POLYGON_TYPE = "MultiPolygon";
 	public static final String POLYGON_TYPE = "Polygon";
+	private static final Logger LOGGER = LoggerFactory.getLogger( GeoJsonCleaner.class );
 
 	private static final Map<String, IJsonObject> CACHED_GEO_MAP = new ConcurrentHashMap<>();
 	
@@ -43,7 +46,7 @@ public class GeoJsonCleaner
 		}
 		catch (NoSuchAlgorithmException e)
 		{
-			MainContext.getLogger().logError(e.toString());
+			LOGGER.error("Did not find algorithm", e );
 		}
 	}
 	
