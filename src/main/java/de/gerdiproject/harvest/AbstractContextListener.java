@@ -18,10 +18,12 @@
  */
 package de.gerdiproject.harvest;
 
+
 import de.gerdiproject.harvest.config.Configuration;
 import de.gerdiproject.harvest.harvester.AbstractHarvester;
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
+
 
 /**
  * This class registers a Logger and Harvester when the server is started. A
@@ -30,58 +32,60 @@ import javax.servlet.ServletContextListener;
  * @see javax.servlet.annotation.WebListener
  * @see de.gerdiproject.harvest.harvester.AbstractHarvester
  *
- * @author row
+ * @author Robin Weiss
  */
 public abstract class AbstractContextListener implements ServletContextListener
 {
-    /**
-     * Creates a name of this harvester service.
-     *
-     * @return the name of this harvester service
-     */
-    abstract protected String createServiceName();
-    
-
-    /**
-     * Creates a harvester for the MainContext.
-     *
-     * @return an instance of an AbstractHarvester sub-class
-     */
-    abstract protected AbstractHarvester createHarvester();
+	/**
+	 * Creates a name of this harvester service.
+	 *
+	 * @return the name of this harvester service
+	 */
+	abstract protected String createServiceName();
 
 
-    /**
-     * This method is called when the server is set up. Creates a logger and
-     * harvester and sets them in the MainContext.
-     *
-     * @param sce the servlet context event that was initialized
-     * @see de.gerdiproject.harvest.MainContext
-     */
-    @Override
-    public void contextInitialized( ServletContextEvent sce )
-    {
-    	// create service name
-    	String name = createServiceName();
-    	
-        // create singleton logger and harvester
-        AbstractHarvester harvester = createHarvester();
-
-        // init main context
-        MainContext.init( name, harvester );
-
-        // try to load configuration
-        Configuration.loadFromDisk();
-    }
+	/**
+	 * Creates a harvester for the MainContext.
+	 *
+	 * @return an instance of an AbstractHarvester sub-class
+	 */
+	abstract protected AbstractHarvester createHarvester();
 
 
-    /**
-     * This method is called when the server shuts down. Currently does nothing.
-     *
-     * @param sce the servlet context event that was destroyed
-     */
-    @Override
-    public void contextDestroyed( ServletContextEvent sce )
-    {
-    }
+	/**
+	 * This method is called when the server is set up. Creates a logger and
+	 * harvester and sets them in the MainContext.
+	 *
+	 * @param sce
+	 *            the servlet context event that was initialized
+	 * @see de.gerdiproject.harvest.MainContext
+	 */
+	@Override
+	public void contextInitialized( ServletContextEvent sce )
+	{
+		// create service name
+		String name = createServiceName();
+
+		// create singleton logger and harvester
+		AbstractHarvester harvester = createHarvester();
+
+		// init main context
+		MainContext.init( name, harvester );
+
+		// try to load configuration
+		Configuration.loadFromDisk();
+	}
+
+
+	/**
+	 * This method is called when the server shuts down. Currently does nothing.
+	 *
+	 * @param sce
+	 *            the servlet context event that was destroyed
+	 */
+	@Override
+	public void contextDestroyed( ServletContextEvent sce )
+	{
+	}
 
 }

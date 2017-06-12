@@ -18,6 +18,7 @@
  */
 package de.gerdiproject.harvest.utils;
 
+
 import de.gerdiproject.harvest.MainContext;
 import de.gerdiproject.harvest.development.DevelopmentTools;
 import de.gerdiproject.json.IJson;
@@ -49,10 +50,11 @@ import org.slf4j.LoggerFactory;
 
 import javax.ws.rs.core.HttpHeaders;
 
+
 /**
  * This class serves as a facade for RESTful HTTP requests.
  *
- * @author row
+ * @author Robin Weiss
  */
 public class HttpRequester
 {
@@ -71,6 +73,7 @@ public class HttpRequester
 	 */
 	public boolean suppressWarnings;
 
+
 	/**
 	 * Standard constructor. Sets charset to UTF-8 and does not suppress
 	 * warnings.
@@ -82,6 +85,7 @@ public class HttpRequester
 		devTools = DevelopmentTools.instance();
 		jsonBuilder = new JsonBuilder();
 	}
+
 
 	/**
 	 * Constructor that allows to change the charset.
@@ -99,6 +103,7 @@ public class HttpRequester
 		jsonBuilder = new JsonBuilder();
 	}
 
+
 	/**
 	 * Sends a GET request to a specified URL and tries to retrieve the 'data'
 	 * field of the JSON response as a List of JSON objects.
@@ -114,6 +119,7 @@ public class HttpRequester
 		return (entireObject != null) ? entireObject.getJsonArray( DATA_JSON ) : null;
 	}
 
+
 	/**
 	 * Sends a GET request to a specified URL and tries to retrieve the the
 	 * 'data' field of the JSON response as a JSON object.
@@ -128,6 +134,7 @@ public class HttpRequester
 
 		return (entireObject != null) ? entireObject.getJsonObject( DATA_JSON ) : null;
 	}
+
 
 	/**
 	 * Sends a GET request to a specified URL and tries to retrieve the JSON
@@ -171,6 +178,7 @@ public class HttpRequester
 		return jsonResponse;
 	}
 
+
 	/**
 	 * Opens a file at the specified path and tries to parse the content as a
 	 * JsonObject.
@@ -192,7 +200,8 @@ public class HttpRequester
 			if (file.exists())
 			{
 				// parse the json object
-				IJsonReader jsonReader = jsonBuilder.createReader( new InputStreamReader( new FileInputStream( file ), httpCharset ) );
+				IJsonReader jsonReader = jsonBuilder
+						.createReader( new InputStreamReader( new FileInputStream( file ), httpCharset ) );
 				jsonResponse = jsonReader.readObject();
 				jsonReader.close();
 			}
@@ -207,6 +216,7 @@ public class HttpRequester
 
 		return jsonResponse;
 	}
+
 
 	/**
 	 * Sends a GET request to a specified URL and tries to parse the response as
@@ -239,6 +249,7 @@ public class HttpRequester
 		}
 		return jsonResponse;
 	}
+
 
 	/**
 	 * Converts a web URL to a path on disk from which a file can be read
@@ -273,6 +284,7 @@ public class HttpRequester
 		// assemble the complete file name
 		return String.format( FILE_PATH, MainContext.getModuleName(), path );
 	}
+
 
 	/**
 	 * Saves a HTTP response to disk. This is used for debugging and development
@@ -310,6 +322,7 @@ public class HttpRequester
 
 	}
 
+
 	/**
 	 * Sends a PUT request to a specified URL.
 	 *
@@ -323,6 +336,7 @@ public class HttpRequester
 	{
 		return restRequest( HttpMethod.PUT, plainTextUrl, body, null );
 	}
+
 
 	/**
 	 * Sends a PUT request to a restricted URL.
@@ -340,6 +354,7 @@ public class HttpRequester
 		return restRequest( HttpMethod.PUT, plainTextUrl, body, authorization );
 	}
 
+
 	/**
 	 * Sends a POST request to a specified URL.
 	 *
@@ -353,6 +368,7 @@ public class HttpRequester
 	{
 		return restRequest( HttpMethod.POST, plainTextUrl, body, null );
 	}
+
 
 	/**
 	 * Sends a POST request to a restricted URL.
@@ -369,6 +385,7 @@ public class HttpRequester
 	{
 		return restRequest( HttpMethod.POST, plainTextUrl, body, authorization );
 	}
+
 
 	/**
 	 * Sends an HTTP request with a plain-text body.
@@ -436,7 +453,7 @@ public class HttpRequester
 		}
 		catch (Exception e)
 		{
-			if(!suppressWarnings)
+			if (!suppressWarnings)
 			{
 				LOGGER.warn( e.getMessage() );
 			}

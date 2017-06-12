@@ -18,6 +18,7 @@
  */
 package de.gerdiproject.harvest.development;
 
+
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -38,220 +39,228 @@ import de.gerdiproject.json.IJsonObject;
  * A class that stores development options and offers methods for writing json
  * reponses to disk.
  *
- * @author row
+ * @author Robin Weiss
  */
 public class DevelopmentTools
 {
-    private static final String FILE_NAME = "harvestedIndices/%s_result_%d.json";
-    private static final String FILE_NAME_PARTIAL = "harvestedIndices/%s_partialResult_%d-%d_%d.json";
-    private static final String SAVE_FAILED = "Could not save to disk: ";
-    private static final String SAVE_SUCCESS = "Saved search index to '%s'";
-    private static final String NO_HARVEST = "Nothing was harvested";
+	private static final String FILE_NAME = "harvestedIndices/%s_result_%d.json";
+	private static final String FILE_NAME_PARTIAL = "harvestedIndices/%s_partialResult_%d-%d_%d.json";
+	private static final String SAVE_FAILED = "Could not save to disk: ";
+	private static final String SAVE_SUCCESS = "Saved search index to '%s'";
+	private static final String NO_HARVEST = "Nothing was harvested";
 
 	private static final Logger LOGGER = LoggerFactory.getLogger( DevelopmentTools.class );
 
-    private static DevelopmentTools instance;
+	private static DevelopmentTools instance;
 
-    private boolean saveHttpRequestsToDisk;
-    private boolean readHttpRequestsFromDisk;
+	private boolean saveHttpRequestsToDisk;
+	private boolean readHttpRequestsFromDisk;
 
-    private boolean autoSaveHarvestResult;
-    private boolean autoSubmitHarvestResult;
-
-
-    /**
-     * Returns the Singleton instance of this class.
-     *
-     * @return a Singleton instance of this class
-     */
-    public static DevelopmentTools instance()
-    {
-        if (instance == null)
-        {
-            instance = new DevelopmentTools();
-        }
-        return instance;
-    }
+	private boolean autoSaveHarvestResult;
+	private boolean autoSubmitHarvestResult;
 
 
-    /**
-     * Private constructor, because this class describes a Singleton.
-     */
-    private DevelopmentTools()
-    {
-    }
+	/**
+	 * Returns the Singleton instance of this class.
+	 *
+	 * @return a Singleton instance of this class
+	 */
+	public static DevelopmentTools instance()
+	{
+		if (instance == null)
+		{
+			instance = new DevelopmentTools();
+		}
+		return instance;
+	}
 
 
-    /**
-     * Saves the harvested result to disk and logs if the operation was successful or not.
-     *
-     * @return A status message describing whether the save succeeded or not
-     */
-    public final String saveHarvestResultToDisk()
-    {
-        AbstractHarvester harvester = MainContext.getHarvester();
+	/**
+	 * Private constructor, because this class describes a Singleton.
+	 */
+	private DevelopmentTools()
+	{
+	}
 
-        IJsonObject result = harvester.getHarvestResult();
-        if (result != null)
-        {
-            String fileName;
-            int harvestCount = harvester.getNumberOfHarvestedDocuments();
-            long harvestStartTimestamp = harvester.getHarvestStartDate().getTime();
 
-            if (harvestCount < harvester.getTotalNumberOfDocuments())
-            {
-                int from = harvester.getHarvestStartIndex();
-                int to = from + harvestCount;
+	/**
+	 * Saves the harvested result to disk and logs if the operation was
+	 * successful or not.
+	 *
+	 * @return A status message describing whether the save succeeded or not
+	 */
+	public final String saveHarvestResultToDisk()
+	{
+		AbstractHarvester harvester = MainContext.getHarvester();
 
-                fileName = String.format(
-                        FILE_NAME_PARTIAL,
-                        MainContext.getModuleName(),
-                        from,
-                        to,
-                        harvestStartTimestamp
-                );
-            }
-            else
-            {
-                fileName = String.format(
-                        FILE_NAME,
-                        MainContext.getModuleName(),
-                        harvestStartTimestamp
-                );
-            }
+		IJsonObject result = harvester.getHarvestResult();
+		if (result != null)
+		{
+			String fileName;
+			int harvestCount = harvester.getNumberOfHarvestedDocuments();
+			long harvestStartTimestamp = harvester.getHarvestStartDate().getTime();
 
-            return saveJsonToDisk(result, fileName);
-        }
-        else
-        {
-        	LOGGER.warn( SAVE_FAILED + NO_HARVEST );
-            return SAVE_FAILED + NO_HARVEST;
-        }
-    }
-    
-    /**
-     * Saves a JSON object to disk and logs the status of the operation.
-     * @param json the json object that is to be saved
-     * @param filePath the output path and filename
-     * @return a message indicating the status of the save operation
-     */
-    public String saveJsonToDisk(IJson json, String filePath)
-    {
-    	try
-    	{
-	        File file = new File(filePath);
-	        
-	        // create directories
-	        file.getParentFile().mkdirs();
-	        
-	        // write to file
-	    	BufferedWriter writer = new BufferedWriter( new OutputStreamWriter( new FileOutputStream(file), StandardCharsets.UTF_8));
-	        writer.write( json.toJsonString() );
-	        writer.close();
-	
-	        String formattedString = String.format( SAVE_SUCCESS, filePath );
+			if (harvestCount < harvester.getTotalNumberOfDocuments())
+			{
+				int from = harvester.getHarvestStartIndex();
+				int to = from + harvestCount;
+
+				fileName = String.format(
+						FILE_NAME_PARTIAL,
+						MainContext.getModuleName(),
+						from,
+						to,
+						harvestStartTimestamp );
+			}
+			else
+			{
+				fileName = String.format(
+						FILE_NAME,
+						MainContext.getModuleName(),
+						harvestStartTimestamp );
+			}
+
+			return saveJsonToDisk( result, fileName );
+		}
+		else
+		{
+			LOGGER.warn( SAVE_FAILED + NO_HARVEST );
+			return SAVE_FAILED + NO_HARVEST;
+		}
+	}
+
+
+	/**
+	 * Saves a JSON object to disk and logs the status of the operation.
+	 * 
+	 * @param json
+	 *            the json object that is to be saved
+	 * @param filePath
+	 *            the output path and filename
+	 * @return a message indicating the status of the save operation
+	 */
+	public String saveJsonToDisk( IJson json, String filePath )
+	{
+		try
+		{
+			File file = new File( filePath );
+
+			// create directories
+			file.getParentFile().mkdirs();
+
+			// write to file
+			BufferedWriter writer = new BufferedWriter(
+					new OutputStreamWriter( new FileOutputStream( file ), StandardCharsets.UTF_8 ) );
+			writer.write( json.toJsonString() );
+			writer.close();
+
+			String formattedString = String.format( SAVE_SUCCESS, filePath );
 			LOGGER.info( formattedString );
 			return formattedString;
-	    }
-	    catch (IOException e)
-	    {
-	        String errorMsg = SAVE_FAILED + e;
-			LOGGER.error( SAVE_FAILED , e);
+		}
+		catch (IOException e)
+		{
+			String errorMsg = SAVE_FAILED + e;
+			LOGGER.error( SAVE_FAILED, e );
 			return errorMsg;
-	    }
-    }
+		}
+	}
 
 
-    /**
-     * Changes the automatic-saving-to-disk developer option.
-     *
-     * @param state if true, results are automatically written to disk after a
-     * successful harvest
-     */
-    public void setAutoSave( boolean state )
-    {
-        autoSaveHarvestResult = state;
-    }
+	/**
+	 * Changes the automatic-saving-to-disk developer option.
+	 *
+	 * @param state
+	 *            if true, results are automatically written to disk after a
+	 *            successful harvest
+	 */
+	public void setAutoSave( boolean state )
+	{
+		autoSaveHarvestResult = state;
+	}
 
 
-    /**
-     * Changes the automatic-submitting-to-elasticSearch developer option.
-     *
-     * @param state if true, results are automatically submitted to elastic
-     * search after a successful harvest
-     */
-    public void setAutoSubmit( boolean state )
-    {
-        autoSubmitHarvestResult = state;
-    }
+	/**
+	 * Changes the automatic-submitting-to-elasticSearch developer option.
+	 *
+	 * @param state
+	 *            if true, results are automatically submitted to elastic search
+	 *            after a successful harvest
+	 */
+	public void setAutoSubmit( boolean state )
+	{
+		autoSubmitHarvestResult = state;
+	}
 
 
-    /**
-     * Changes the read-cached-http-responses developer option.
-     *
-     * @param state if true, instead of sending HTTP requests, the local file
-     * system is browsed for cached responses, that have been saved via the
-     * 'writeToDisk' flag
-     */
-    public void setReadHttpFromDisk( boolean state )
-    {
-        readHttpRequestsFromDisk = state;
-    }
+	/**
+	 * Changes the read-cached-http-responses developer option.
+	 *
+	 * @param state
+	 *            if true, instead of sending HTTP requests, the local file
+	 *            system is browsed for cached responses, that have been saved
+	 *            via the 'writeToDisk' flag
+	 */
+	public void setReadHttpFromDisk( boolean state )
+	{
+		readHttpRequestsFromDisk = state;
+	}
 
 
-    /**
-     * Changes the cache-http-responses developer option.
-     *
-     * @param state if true, all HTTP responses are written to the local file
-     * system. Failed responses result in an empty object
-     */
-    public void setWriteHttpToDisk( boolean state )
-    {
-        saveHttpRequestsToDisk = state;
-    }
+	/**
+	 * Changes the cache-http-responses developer option.
+	 *
+	 * @param state
+	 *            if true, all HTTP responses are written to the local file
+	 *            system. Failed responses result in an empty object
+	 */
+	public void setWriteHttpToDisk( boolean state )
+	{
+		saveHttpRequestsToDisk = state;
+	}
 
 
-    /**
-     * Checks the state of the automatic-saving-to-disk developer option.
-     *
-     * @return true, if the option is enabled
-     */
-    public boolean isAutoSaving()
-    {
-        return autoSaveHarvestResult;
-    }
+	/**
+	 * Checks the state of the automatic-saving-to-disk developer option.
+	 *
+	 * @return true, if the option is enabled
+	 */
+	public boolean isAutoSaving()
+	{
+		return autoSaveHarvestResult;
+	}
 
 
-    /**
-     * Checks the state of the automatic-submitting-to-elasticSearch developer
-     * option.
-     *
-     * @return true, if the option is enabled
-     */
-    public boolean isAutoSubmitting()
-    {
-        return autoSubmitHarvestResult;
-    }
+	/**
+	 * Checks the state of the automatic-submitting-to-elasticSearch developer
+	 * option.
+	 *
+	 * @return true, if the option is enabled
+	 */
+	public boolean isAutoSubmitting()
+	{
+		return autoSubmitHarvestResult;
+	}
 
 
-    /**
-     * Checks the state of the read-cached-http-responses developer option.
-     *
-     * @return true, if the option is enabled
-     */
-    public boolean isReadingHttpFromDisk()
-    {
-        return readHttpRequestsFromDisk;
-    }
+	/**
+	 * Checks the state of the read-cached-http-responses developer option.
+	 *
+	 * @return true, if the option is enabled
+	 */
+	public boolean isReadingHttpFromDisk()
+	{
+		return readHttpRequestsFromDisk;
+	}
 
 
-    /**
-     * Checks the state of the cache-http-responses developer option.
-     *
-     * @return true, if the option is enabled
-     */
-    public boolean isWritingHttpToDisk()
-    {
-        return saveHttpRequestsToDisk;
-    }
+	/**
+	 * Checks the state of the cache-http-responses developer option.
+	 *
+	 * @return true, if the option is enabled
+	 */
+	public boolean isWritingHttpToDisk()
+	{
+		return saveHttpRequestsToDisk;
+	}
 }

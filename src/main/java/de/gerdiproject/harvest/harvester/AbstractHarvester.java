@@ -40,10 +40,11 @@ import org.slf4j.LoggerFactory;
 
 
 /**
- * Harvester classes provide methods for harvesting databases and returning a
- * search index as a JSON object.
+ * The most basic Harvester class. Subclasses must implement the complete
+ * harvesting behavior. A lot of functionality that provides info for the REST
+ * interface is already implemented.
  *
- * @author row
+ * @author Robin Weiss
  */
 public abstract class AbstractHarvester
 {
@@ -274,8 +275,7 @@ public abstract class AbstractHarvester
 		logger.info( HarvesterStringUtils.formatProgress(
 				name,
 				from + harvestedDocs,
-				harvestEndIndex.get() )
-		);
+				harvestEndIndex.get() ) );
 	}
 
 

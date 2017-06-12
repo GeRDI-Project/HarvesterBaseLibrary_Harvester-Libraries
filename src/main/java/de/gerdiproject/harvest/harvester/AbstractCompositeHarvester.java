@@ -18,6 +18,7 @@
  */
 package de.gerdiproject.harvest.harvester;
 
+
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.security.MessageDigest;
@@ -27,212 +28,223 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
+
 /**
- *
- * @author row
+ * This harvester manages a set of sub-harvesters. When the harvest is started,
+ * all sub-harvesters are started concurrently, but write to a single list of
+ * documents.
+ * 
+ * @author Robin Weiss
  */
 public abstract class AbstractCompositeHarvester extends AbstractHarvester
 {
-    // fields and members
-    protected final Iterable<AbstractHarvester> subHarvesters;
+	// fields and members
+	protected final Iterable<AbstractHarvester> subHarvesters;
 
 
-    public AbstractCompositeHarvester( Iterable<AbstractHarvester> subHarvesters )
-    {
-        super();
+	/**
+	 * Constructor that requires an Iterable of sub-harvesters.
+	 * 
+	 * @param subHarvesters
+	 *            the harvesters that are executed concurrently when the
+	 *            composite harvester is started
+	 */
+	public AbstractCompositeHarvester( Iterable<AbstractHarvester> subHarvesters )
+	{
+		super();
 
-        this.subHarvesters = subHarvesters;
-        
-        // make sure the sub-harvesters deposit their documents in the same array
-        for (AbstractHarvester subHarvester : subHarvesters)
-        {
-            subHarvester.harvestedDocuments = harvestedDocuments;
-        }
-    }
+		this.subHarvesters = subHarvesters;
 
-
-    @Override
-    public void init()
-    {
-        // init sub-harvesters first, in order to properly calculate document hash and count
-        for (AbstractHarvester subHarvester : subHarvesters)
-        {
-            subHarvester.init();
-        }
-        super.init();
-    }
-
-
-    @Override
-    public void setRange( int from, int to )
-    {
-        super.setRange( from, to );
-
-        boolean isBelowRange = true;
-        boolean isAboveRange = false;
-        int numberOfProcessedDocs = 0;
-
-        for (AbstractHarvester subHarvester : subHarvesters)
-        {
-            int numberOfSubDocs = subHarvester.getTotalNumberOfDocuments();
-            numberOfProcessedDocs += numberOfSubDocs;
-
-            if (isAboveRange)
-            {
-                // above range: this harvester will be skipped completely
-                subHarvester.setRange( 0, 0 );
-            }
-            else if (from < numberOfProcessedDocs)
-            {
-                int startIndex = (isBelowRange)
-                        ? from - (numberOfProcessedDocs - numberOfSubDocs)
-                        : 0;
-
-                boolean isLastEntry = (to < numberOfProcessedDocs);
-
-                int endIndex = (isLastEntry)
-                        ? numberOfSubDocs - (numberOfProcessedDocs - to)
-                        : numberOfSubDocs;
-
-                subHarvester.setRange( startIndex, endIndex );
-
-                isBelowRange = false;
-                isAboveRange = isLastEntry;
-            }
-            else
-            {
-                // below range: this harvester will be skipped completely
-                subHarvester.setRange( 0, 0 );
-            }
-        }
-    }
+		// make sure the sub-harvesters deposit their documents in the same
+		// array
+		for (AbstractHarvester subHarvester : subHarvesters)
+		{
+			subHarvester.harvestedDocuments = harvestedDocuments;
+		}
+	}
 
 
 	@Override
-    protected boolean harvestInternal( int from, int to )
-    {
-        List<CompletableFuture<?>> subProcesses = new LinkedList<>();
-        
-        // the range can be ignored at this point, because it was already set in
-        // the subharvesters via the overriden setRange() method
-        for (AbstractHarvester subHarvester : subHarvesters)
-        {
-            subHarvester.harvest();
-            
-            CompletableFuture<Boolean> subHarvestingProcess = subHarvester.currentHarvestingProcess;
-            
-            // add the process only if it was created successfully
-            if(subHarvestingProcess != null)
-            {
-            	subProcesses.add(subHarvestingProcess);
-            }
-        }
-        // convert list to array
-        CompletableFuture<?>[] futureArray = new CompletableFuture<?>[subProcesses.size()];
-        for(int i = 0, len = futureArray.length; i < len; i++)
-        {
-        	futureArray[i] = subProcesses.get( i );
-        }
-        
-        // wait for all sub-harvesters to complete
-        try
-        {
-            CompletableFuture.allOf( futureArray ).get();
-        }
-        catch (InterruptedException | ExecutionException ex)
-        {
-            logger.warn( "Interrupted Harvester!");
-            return false;
-        }
-
-        return true;
-    }
+	public void init()
+	{
+		// init sub-harvesters first, in order to properly calculate document
+		// hash and count
+		for (AbstractHarvester subHarvester : subHarvesters)
+		{
+			subHarvester.init();
+		}
+		super.init();
+	}
 
 
-    @Override
-    protected int calculateTotalNumberOfDocumentsInternal()
-    {
-        int total = 0;
-        for (AbstractHarvester subHarvester : subHarvesters)
-        {
-            total += subHarvester.getTotalNumberOfDocuments();
-        }
-        return total;
-    }
+	@Override
+	public void setRange( int from, int to )
+	{
+		super.setRange( from, to );
+
+		boolean isBelowRange = true;
+		boolean isAboveRange = false;
+		int numberOfProcessedDocs = 0;
+
+		for (AbstractHarvester subHarvester : subHarvesters)
+		{
+			int numberOfSubDocs = subHarvester.getTotalNumberOfDocuments();
+			numberOfProcessedDocs += numberOfSubDocs;
+
+			if (isAboveRange)
+			{
+				// above range: this harvester will be skipped completely
+				subHarvester.setRange( 0, 0 );
+			}
+			else if (from < numberOfProcessedDocs)
+			{
+				int startIndex = (isBelowRange)
+						? from - (numberOfProcessedDocs - numberOfSubDocs)
+						: 0;
+
+				boolean isLastEntry = (to < numberOfProcessedDocs);
+
+				int endIndex = (isLastEntry)
+						? numberOfSubDocs - (numberOfProcessedDocs - to)
+						: numberOfSubDocs;
+
+				subHarvester.setRange( startIndex, endIndex );
+
+				isBelowRange = false;
+				isAboveRange = isLastEntry;
+			}
+			else
+			{
+				// below range: this harvester will be skipped completely
+				subHarvester.setRange( 0, 0 );
+			}
+		}
+	}
 
 
-    @Override
-    protected String calculateHashInternal()
-    {
-        // for now, concatenate all hashes
-        final StringBuilder hashBuilder = new StringBuilder();
-        for (AbstractHarvester subHarvester : subHarvesters)
-        {
-            hashBuilder.append( subHarvester.getHash( false ) );
-        }
+	@Override
+	protected boolean harvestInternal( int from, int to )
+	{
+		List<CompletableFuture<?>> subProcesses = new LinkedList<>();
 
-        // generate hash of all concatenated hashes
-        try
-        {
-            final MessageDigest md = MessageDigest.getInstance( SHA_HASH_ALGORITHM );
-            md.update( hashBuilder.toString().getBytes() );
+		// the range can be ignored at this point, because it was already set in
+		// the subharvesters via the overriden setRange() method
+		for (AbstractHarvester subHarvester : subHarvesters)
+		{
+			subHarvester.harvest();
 
-            final byte[] digest = md.digest();
+			CompletableFuture<Boolean> subHarvestingProcess = subHarvester.currentHarvestingProcess;
 
-            final StringWriter buffer = new StringWriter( digest.length * 2 );
-            final PrintWriter pw = new PrintWriter( buffer );
+			// add the process only if it was created successfully
+			if (subHarvestingProcess != null)
+			{
+				subProcesses.add( subHarvestingProcess );
+			}
+		}
+		// convert list to array
+		CompletableFuture<?>[] futureArray = new CompletableFuture<?>[subProcesses.size()];
+		for (int i = 0, len = futureArray.length; i < len; i++)
+		{
+			futureArray[i] = subProcesses.get( i );
+		}
 
-            for (byte b : digest)
-            {
-                pw.printf( OCTAT_FORMAT, b );
-            }
+		// wait for all sub-harvesters to complete
+		try
+		{
+			CompletableFuture.allOf( futureArray ).get();
+		}
+		catch (InterruptedException | ExecutionException ex)
+		{
+			logger.warn( "Interrupted Harvester!" );
+			return false;
+		}
 
-            return buffer.toString();
-        }
-        catch (NoSuchAlgorithmException | NullPointerException e)
-        {
-            logger.error( HASH_CREATE_FAILED );
-            return null;
-        }
-    }
-
-
-    @Override
-    public int getNumberOfHarvestedDocuments()
-    {
-        int totalNumber = 0;
-        for (AbstractHarvester subHarvester : subHarvesters)
-        {
-            totalNumber += subHarvester.getNumberOfHarvestedDocuments();
-        }
-        return totalNumber;
-    }
+		return true;
+	}
 
 
-    @Override
-    public boolean isHarvestFinished()
-    {
-        for (AbstractHarvester subHarvester : subHarvesters)
-        {
-            if (!subHarvester.isHarvestFinished())
-            {
-                return false;
-            }
-        }
-        return true;
-    }
+	@Override
+	protected int calculateTotalNumberOfDocumentsInternal()
+	{
+		int total = 0;
+		for (AbstractHarvester subHarvester : subHarvesters)
+		{
+			total += subHarvester.getTotalNumberOfDocuments();
+		}
+		return total;
+	}
 
 
-    @Override
-    public void abortHarvest()
-    {
-        for (AbstractHarvester subHarvester : subHarvesters)
-        {
-            subHarvester.abortHarvest();
-        }
-        super.abortHarvest(); 
-    }
-    
-    
+	@Override
+	protected String calculateHashInternal()
+	{
+		// for now, concatenate all hashes
+		final StringBuilder hashBuilder = new StringBuilder();
+		for (AbstractHarvester subHarvester : subHarvesters)
+		{
+			hashBuilder.append( subHarvester.getHash( false ) );
+		}
+
+		// generate hash of all concatenated hashes
+		try
+		{
+			final MessageDigest md = MessageDigest.getInstance( SHA_HASH_ALGORITHM );
+			md.update( hashBuilder.toString().getBytes() );
+
+			final byte[] digest = md.digest();
+
+			final StringWriter buffer = new StringWriter( digest.length * 2 );
+			final PrintWriter pw = new PrintWriter( buffer );
+
+			for (byte b : digest)
+			{
+				pw.printf( OCTAT_FORMAT, b );
+			}
+
+			return buffer.toString();
+		}
+		catch (NoSuchAlgorithmException | NullPointerException e)
+		{
+			logger.error( HASH_CREATE_FAILED );
+			return null;
+		}
+	}
+
+
+	@Override
+	public int getNumberOfHarvestedDocuments()
+	{
+		int totalNumber = 0;
+		for (AbstractHarvester subHarvester : subHarvesters)
+		{
+			totalNumber += subHarvester.getNumberOfHarvestedDocuments();
+		}
+		return totalNumber;
+	}
+
+
+	@Override
+	public boolean isHarvestFinished()
+	{
+		for (AbstractHarvester subHarvester : subHarvesters)
+		{
+			if (!subHarvester.isHarvestFinished())
+			{
+				return false;
+			}
+		}
+		return true;
+	}
+
+
+	@Override
+	public void abortHarvest()
+	{
+		for (AbstractHarvester subHarvester : subHarvesters)
+		{
+			subHarvester.abortHarvest();
+		}
+		super.abortHarvest();
+	}
 
 }

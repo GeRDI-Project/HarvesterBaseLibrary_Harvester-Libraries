@@ -45,7 +45,7 @@ import de.gerdiproject.json.utils.JsonHelper;
  * URL and optionally a username and password must be set up first. Afterwards,
  * the harvested database can be uploaded.
  *
- * @author row
+ * @author Robin Weiss
  */
 public class ElasticSearchSender
 {
@@ -86,7 +86,7 @@ public class ElasticSearchSender
 	private final static String NULL_JSON = "null";
 
 	private final static int BULK_SUBMISSION_SIZE = 1024;
-	
+
 	private static final Logger LOGGER = LoggerFactory.getLogger( ElasticSearchSender.class );
 
 	private static ElasticSearchSender instance;
@@ -500,7 +500,8 @@ public class ElasticSearchSender
 	 * 
 	 * @param elasticSearchResponse
 	 *            the response from elastic search for one submitted document
-	 * @param documents the documents that are to be submitted           
+	 * @param documents
+	 *            the documents that are to be submitted
 	 */
 	private IJsonObject fixErroneousDocument( IJsonObject elasticSearchResponse, IJsonArray documents )
 	{
@@ -547,8 +548,7 @@ public class ElasticSearchSender
 
 				// remove erroneous field from document
 				failedObj.remove( failedObjPath[failedObjPath.length - 1] );
-				
-				
+
 				// TODO: mark the corrected document as being changed
 
 				return failedDocument;

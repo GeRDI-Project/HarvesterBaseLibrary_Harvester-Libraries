@@ -18,6 +18,7 @@
  */
 package de.gerdiproject.harvest.elasticsearch.rest;
 
+
 import de.gerdiproject.harvest.harvester.AbstractHarvester;
 import de.gerdiproject.json.IJsonArray;
 import de.gerdiproject.harvest.MainContext;
@@ -31,186 +32,189 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
+
 /**
  * A facade for ElasticSearchSender that serves as a RESTful interface. It
  * provides REST requests that manipulate the ElasticSearchSender in order to
  * prepare and send search indices to Elastic Search.
  *
  * @see de.gerdiproject.harvest.elasticsearch.ElasticSearchSender
- * @author row
+ * @author Robin Weiss
  */
-@Path("elasticsearch")
+@Path ("elasticsearch")
 public class ElasticSearchSenderFacade
 {
-    private static final String NO_CHANGES = "Nothing was changed! Valid Form Parameters: url, index, type, username, password\n";
-    private static final String MISSING_PARAM_URL = "Missing www-form-urlencoded parameter 'url'. This must be a Elastic Search base URL";
-    private static final String MISSING_PARAM_INDEX = "Missing www-form-urlencoded parameter 'index'. This must be the targeted search index on the Elastic Search node";
-    private static final String MISSING_PARAM_TYPE = "Missing www-form-urlencoded parameter 'type'. This must be the targeted type on the Elastic Search node";
-    private static final String AUTHORIZATION_OK = "Set Elastic Search user to '%s'";
-    private static final String MISSING_PARAM_PASSWORD = "Could not set user to '%s'. Password is missing";
-    private static final String URL_MISSING = "No URL has been set up";
-    private static final String INFO = "- %s ElasticSearch Interface -\n\nUrl:\t%s/%s/%s";
-    private static final String INFO_USER = "\nUser:\t";
-    private static final String INFO_REST = "\n\nPOST\tSends the harvested search index to Elastic Search\n"
-            + "PUT\tSets up the Elastic Search URL and optionally authorization. Form Parameters: url, index, type, username, password\n";
+	private static final String NO_CHANGES = "Nothing was changed! Valid Form Parameters: url, index, type, username, password\n";
+	private static final String MISSING_PARAM_URL = "Missing www-form-urlencoded parameter 'url'. This must be a Elastic Search base URL";
+	private static final String MISSING_PARAM_INDEX = "Missing www-form-urlencoded parameter 'index'. This must be the targeted search index on the Elastic Search node";
+	private static final String MISSING_PARAM_TYPE = "Missing www-form-urlencoded parameter 'type'. This must be the targeted type on the Elastic Search node";
+	private static final String AUTHORIZATION_OK = "Set Elastic Search user to '%s'";
+	private static final String MISSING_PARAM_PASSWORD = "Could not set user to '%s'. Password is missing";
+	private static final String URL_MISSING = "No URL has been set up";
+	private static final String INFO = "- %s ElasticSearch Interface -\n\nUrl:\t%s/%s/%s";
+	private static final String INFO_USER = "\nUser:\t";
+	private static final String INFO_REST = "\n\nPOST\tSends the harvested search index to Elastic Search\n"
+			+ "PUT\tSets up the Elastic Search URL and optionally authorization. Form Parameters: url, index, type, username, password\n";
 
 
-    /**
-     * GET: Displays info about the ElasticSearchSender and form navigation.
-     *
-     * @return the Elastic Search URL and possible HTTP requests.
-     */
-    @GET
-    @Produces(
-            {
-                MediaType.TEXT_PLAIN
-            })
-    public String getInfo()
-    {
-        // get URL or default text
-        String url = ElasticSearchSender.instance().getBaseUrl();
-        url = (url == null) ? URL_MISSING : url;
-        
-        String index = ElasticSearchSender.instance().getIndex();
-        String type = ElasticSearchSender.instance().getType();
+	/**
+	 * GET: Displays info about the ElasticSearchSender and form navigation.
+	 *
+	 * @return the Elastic Search URL and possible HTTP requests.
+	 */
+	@GET
+	@Produces ({
+			MediaType.TEXT_PLAIN
+	})
+	public String getInfo()
+	{
+		// get URL or default text
+		String url = ElasticSearchSender.instance().getBaseUrl();
+		url = (url == null) ? URL_MISSING : url;
 
-        // get user name
-        String userName = ElasticSearchSender.instance().getUserName();
-        
-        // add title and URL
-        StringBuilder sb = new StringBuilder();
-        sb.append(String.format( INFO, MainContext.getModuleName(), url, index, type ));
+		String index = ElasticSearchSender.instance().getIndex();
+		String type = ElasticSearchSender.instance().getType();
 
-        // add user name if it exists
-        if (userName != null)
-        {
-            sb.append( INFO_USER ).append( userName);
-        }
-        
-        // add REST method info
-        sb.append( INFO_REST);
-        
-        return sb.toString();
-    }
+		// get user name
+		String userName = ElasticSearchSender.instance().getUserName();
 
+		// add title and URL
+		StringBuilder sb = new StringBuilder();
+		sb.append( String.format( INFO, MainContext.getModuleName(), url, index, type ) );
 
-    /**
-     * POST: Submits a search index to Elastic Search. If the search index has
-     * not been harvested yet, it will be harvested automatically before being
-     * sent.
-     *
-     * @return the Elastic Search HTTP response, or an error code if the
-     * operation does not succeed
-     */
-    @POST
-    @Produces(
-            {
-                MediaType.TEXT_PLAIN
-            })
-    public String submitSearchIndex()
-    {
-        AbstractHarvester harvester = MainContext.getHarvester();
+		// add user name if it exists
+		if (userName != null)
+		{
+			sb.append( INFO_USER ).append( userName );
+		}
 
-        // harvest the data, if it has not been done yet
-        if (harvester.getHarvestResult() == null)
-        {
-            harvester.harvest();
-        }
+		// add REST method info
+		sb.append( INFO_REST );
 
-        // retrieve harvested search index
-        IJsonArray harvestedDocuments = harvester.getHarvestedDocuments();
-
-        // send search index to Elastic Search
-        String status = ElasticSearchSender.instance().sendToElasticSearch( harvestedDocuments );
-        return status;
-    }
+		return sb.toString();
+	}
 
 
-    /**
-     * Sets properties of the ElasticSearchSender that are required for
-     * uploading search indices.
-     *
-     * @param url the main Elastic Search URL without index or type
-     * @param index the Elastic Search index that will be updated/created
-     * @param type the Elastic Search type within the index that will be
-     * updated/created
-     * @param username (optional) the user name, if access is restricted
-     * @param password (optional) the password, if access is restricted
-     *
-     * @return confirmation or error messages concerning the property changes
-     */
-    @PUT
-    @Produces(
-            {
-                MediaType.TEXT_PLAIN
-            })
-    @Consumes(
-            {
-                MediaType.APPLICATION_FORM_URLENCODED
-            })
-    public String setProperties(
-            @FormParam("url") String url,
-            @FormParam("index") String index,
-            @FormParam("type") String type,
-            @FormParam("username") String username,
-            @FormParam("password") String password )
-    {
-        StringBuilder sb = new StringBuilder();
+	/**
+	 * POST: Submits a search index to Elastic Search. If the search index has
+	 * not been harvested yet, it will be harvested automatically before being
+	 * sent.
+	 *
+	 * @return the Elastic Search HTTP response, or an error code if the
+	 *         operation does not succeed
+	 */
+	@POST
+	@Produces ({
+			MediaType.TEXT_PLAIN
+	})
+	public String submitSearchIndex()
+	{
+		AbstractHarvester harvester = MainContext.getHarvester();
 
-        // check if form parameters are valid
-        boolean hasUrl = (url != null && !url.isEmpty());
-        boolean hasIndex = (index != null && !index.isEmpty());
-        boolean hasType = (type != null && !type.isEmpty());
+		// harvest the data, if it has not been done yet
+		if (harvester.getHarvestResult() == null)
+		{
+			harvester.harvest();
+		}
 
-        // ignore "index" and "type" if "url" is not among the form parameters
-        if (hasUrl || hasIndex || hasType)
-        {
-            // verify that "url" was submitted
-            if (!hasUrl)
-            {
-                sb.append( MISSING_PARAM_URL ).append( '\n' );
-            }
+		// retrieve harvested search index
+		IJsonArray harvestedDocuments = harvester.getHarvestedDocuments();
 
-            // verify that "index" was submitted
-            if (!hasIndex)
-            {
-                sb.append( MISSING_PARAM_INDEX ).append( '\n' );
-            }
+		// send search index to Elastic Search
+		String status = ElasticSearchSender.instance().sendToElasticSearch( harvestedDocuments );
+		return status;
+	}
 
-            // verify that "type" was submitted
-            if (!hasType)
-            {
-                sb.append( MISSING_PARAM_TYPE ).append( '\n' );
-            }
 
-            // set up Elastic Search URL if all required parameters are there
-            if (hasUrl && hasIndex && hasType)
-            {
-                String status = ElasticSearchSender.instance().setUrl( url, index, type );
-                sb.append( status ).append( '\n' );
-            }
-        }
+	/**
+	 * Sets properties of the ElasticSearchSender that are required for
+	 * uploading search indices.
+	 *
+	 * @param url
+	 *            the main Elastic Search URL without index or type
+	 * @param index
+	 *            the Elastic Search index that will be updated/created
+	 * @param type
+	 *            the Elastic Search type within the index that will be
+	 *            updated/created
+	 * @param username
+	 *            (optional) the user name, if access is restricted
+	 * @param password
+	 *            (optional) the password, if access is restricted
+	 *
+	 * @return confirmation or error messages concerning the property changes
+	 */
+	@PUT
+	@Produces ({
+			MediaType.TEXT_PLAIN
+	})
+	@Consumes ({
+			MediaType.APPLICATION_FORM_URLENCODED
+	})
+	public String setProperties(
+			@FormParam ("url") String url,
+			@FormParam ("index") String index,
+			@FormParam ("type") String type,
+			@FormParam ("username") String username,
+			@FormParam ("password") String password )
+	{
+		StringBuilder sb = new StringBuilder();
 
-        // set up credentials if both "username" and "password" are form parameters
-        if (username != null)
-        {
-            if (!username.isEmpty() && (password == null || password.isEmpty()))
-            {
-                sb.append( String.format( MISSING_PARAM_PASSWORD, username ) ).append( '\n' );
-            }
-            else
-            {
-                ElasticSearchSender.instance().setCredentials( username, password );
-                sb.append( String.format( AUTHORIZATION_OK, username ) ).append( '\n' );
-            }
-        }
+		// check if form parameters are valid
+		boolean hasUrl = (url != null && !url.isEmpty());
+		boolean hasIndex = (index != null && !index.isEmpty());
+		boolean hasType = (type != null && !type.isEmpty());
 
-        // if nothing was attempted to be changed, inform the user
-        if (sb.length() == 0)
-        {
-            sb.append( NO_CHANGES );
-        }
+		// ignore "index" and "type" if "url" is not among the form parameters
+		if (hasUrl || hasIndex || hasType)
+		{
+			// verify that "url" was submitted
+			if (!hasUrl)
+			{
+				sb.append( MISSING_PARAM_URL ).append( '\n' );
+			}
 
-        return sb.toString();
-    }
+			// verify that "index" was submitted
+			if (!hasIndex)
+			{
+				sb.append( MISSING_PARAM_INDEX ).append( '\n' );
+			}
+
+			// verify that "type" was submitted
+			if (!hasType)
+			{
+				sb.append( MISSING_PARAM_TYPE ).append( '\n' );
+			}
+
+			// set up Elastic Search URL if all required parameters are there
+			if (hasUrl && hasIndex && hasType)
+			{
+				String status = ElasticSearchSender.instance().setUrl( url, index, type );
+				sb.append( status ).append( '\n' );
+			}
+		}
+
+		// set up credentials if both "username" and "password" are form
+		// parameters
+		if (username != null)
+		{
+			if (!username.isEmpty() && (password == null || password.isEmpty()))
+			{
+				sb.append( String.format( MISSING_PARAM_PASSWORD, username ) ).append( '\n' );
+			}
+			else
+			{
+				ElasticSearchSender.instance().setCredentials( username, password );
+				sb.append( String.format( AUTHORIZATION_OK, username ) ).append( '\n' );
+			}
+		}
+
+		// if nothing was attempted to be changed, inform the user
+		if (sb.length() == 0)
+		{
+			sb.append( NO_CHANGES );
+		}
+
+		return sb.toString();
+	}
 }
