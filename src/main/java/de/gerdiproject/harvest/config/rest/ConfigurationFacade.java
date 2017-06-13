@@ -18,6 +18,7 @@
  */
 package de.gerdiproject.harvest.config.rest;
 
+
 import de.gerdiproject.harvest.config.Configuration;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -25,43 +26,42 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
+
 /**
  * Provides the option to save all configuration of the harvester service to
  * disk.
  *
- * @author row
+ * @author Robin Weiss
  */
-@Path("config")
+@Path ("config")
 public class ConfigurationFacade
 {
-    /**
-     * Displays an info string that summerizes the current configuration.
-     *
-     * @return an info string
-     */
-    @GET
-    @Produces(
-            {
-                MediaType.TEXT_PLAIN
-            })
-    public String getInfo()
-    {
-        return Configuration.getInfoString();
-    }
+	/**
+	 * Displays an info string that summerizes the current configuration.
+	 *
+	 * @return an info string
+	 */
+	@GET
+	@Produces ({
+			MediaType.TEXT_PLAIN
+	})
+	public String getInfo()
+	{
+		return Configuration.getInfoString();
+	}
 
 
-    /**
-     * Saves the configuration to disk.
-     *
-     * @return an info message that describes the status of the operation
-     */
-    @POST
-    @Produces(
-            {
-                MediaType.TEXT_PLAIN
-            })
-    public String saveToDisk()
-    {
-        return Configuration.saveToDisk();
-    }
+	/**
+	 * Saves the configuration to disk.
+	 *
+	 * @return an info message that describes the status of the operation
+	 */
+	@POST
+	@Produces ({
+			MediaType.TEXT_PLAIN
+	})
+	public String saveToDisk()
+	{
+		return Configuration.saveToDisk();
+	}
 }

@@ -18,6 +18,7 @@
  */
 package de.gerdiproject.harvest.utils;
 
+
 import de.gerdiproject.harvest.development.DevelopmentTools;
 import de.gerdiproject.json.IJsonArray;
 import de.gerdiproject.json.IJsonBuilder;
@@ -33,7 +34,7 @@ import org.slf4j.LoggerFactory;
 /**
  * This factory creates JSON objects which can be submitted as a search index.
  *
- * @author row
+ * @author Robin Weiss
  */
 public class SearchIndexFactory
 {
@@ -57,10 +58,11 @@ public class SearchIndexFactory
 	public static final String IS_FROM_DISK_JSON = "wasHarvestedFromDisk";
 
 	private static final Logger LOGGER = LoggerFactory.getLogger( SearchIndexFactory.class );
-	
+
 	private final GeoJsonCleaner geoCleaner;
 	private final IJsonBuilder jsonBuilder;
-	
+
+
 	/**
 	 * Initializes a geo object json cleaner.
 	 */
@@ -69,6 +71,7 @@ public class SearchIndexFactory
 		geoCleaner = new GeoJsonCleaner();
 		jsonBuilder = new JsonBuilder();
 	}
+
 
 	/**
 	 * Creates a JSON object that represents a searchable document within a
@@ -82,8 +85,7 @@ public class SearchIndexFactory
 	 *            a URL that points to the official website that hosts the
 	 *            document
 	 * @param downloadUrls
-	 *            URLs that point to downloads of the (whole) document as 
-	 *            files
+	 *            URLs that point to downloads of the (whole) document as files
 	 * @param logoUrl
 	 *            a URL that points to a logo of the document
 	 * @param descriptions
@@ -98,7 +100,8 @@ public class SearchIndexFactory
 	 * @return a JSON object that describes the searchable document
 	 */
 	public IJsonObject createSearchableDocument( String label, Date lastUpdate, String viewUrl,
-			IJsonArray downloadUrls, String logoUrl, IJsonArray descriptions, IJsonArray geoCoordinates, IJsonArray years,
+			IJsonArray downloadUrls, String logoUrl, IJsonArray descriptions, IJsonArray geoCoordinates,
+			IJsonArray years,
 			IJsonArray searchTags )
 	{
 		// label is required!
@@ -148,13 +151,13 @@ public class SearchIndexFactory
 		{
 			// correct possibly erroneous polygons
 			IJsonArray cleanedGeo = jsonBuilder.createArray();
-			
+
 			for (Object val : geoCoordinates)
 			{
 				cleanedGeo.add( geoCleaner.cleanGeoData( (IJsonObject) val ) );
 			}
-			
-			document.put( GEO_JSON, cleanedGeo);
+
+			document.put( GEO_JSON, cleanedGeo );
 		}
 
 		if (years != null && !years.isEmpty())
@@ -170,7 +173,8 @@ public class SearchIndexFactory
 		// build and return json object
 		return document;
 	}
-	
+
+
 	/**
 	 * Creates a search index out of a list of searchable documents. The search
 	 * index also contains a date of the harvest.
@@ -194,7 +198,7 @@ public class SearchIndexFactory
 		searchIndex.put( HASH_JSON, hash );
 		searchIndex.put( DURATION_JSON, duration );
 		searchIndex.put( IS_FROM_DISK_JSON, DevelopmentTools.instance().isReadingHttpFromDisk() );
-		
+
 		return searchIndex;
 	}
 }
