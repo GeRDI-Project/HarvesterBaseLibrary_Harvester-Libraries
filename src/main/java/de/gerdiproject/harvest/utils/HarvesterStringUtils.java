@@ -22,6 +22,8 @@ package de.gerdiproject.harvest.utils;
 import java.io.StringWriter;
 import java.util.HashMap;
 
+import org.jsoup.Jsoup;
+
 
 /**
  * This class provides methods for cleaning (harvested) Strings. The ESCAPES
@@ -492,9 +494,22 @@ public class HarvesterStringUtils
 	 *            the String which is to be cleaned
 	 * @return a cleaned String
 	 */
-	public static final String cleanString( final String input )
+	public static final String cleanString( String input )
 	{
-		return unescapeHtml( input ).trim();
+		// remove HTML tags from text if they exist
+		if(input.indexOf( '<' ) != -1)
+		{
+			input = Jsoup.parse( input ).text();
+		}
+				
+		// unescape characters
+		input = unescapeHtml( input);
+		
+		// merge whitespaces
+		input = input.replaceAll( "[\\u00A0\\s]{2,}", " " );
+
+		// remove whitespaces at the beginning and end
+		return input.trim();
 	}
 
 
