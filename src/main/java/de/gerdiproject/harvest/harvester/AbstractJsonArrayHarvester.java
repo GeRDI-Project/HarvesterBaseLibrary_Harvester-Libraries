@@ -38,13 +38,28 @@ public abstract class AbstractJsonArrayHarvester extends AbstractListHarvester<O
 	/**
 	 * Forwarding the superclass constructor.
 	 *
+	 * @param harvesterName
+	 *            a unique name of the harvester
+	 * @param numberOfDocumentsPerEntry
+	 *            the number of documents that are expected to be harvested from
+	 *            each entry
+	 */
+	public AbstractJsonArrayHarvester( String harvesterName, int numberOfDocumentsPerEntry )
+	{
+		super( harvesterName, numberOfDocumentsPerEntry );
+	}
+
+	
+	/**
+	 * Forwarding the superclass constructor.
+	 *
 	 * @param numberOfDocumentsPerEntry
 	 *            the number of documents that are expected to be harvested from
 	 *            each entry
 	 */
 	public AbstractJsonArrayHarvester( int numberOfDocumentsPerEntry )
 	{
-		super( numberOfDocumentsPerEntry );
+		super( null, numberOfDocumentsPerEntry );
 	}
 
 

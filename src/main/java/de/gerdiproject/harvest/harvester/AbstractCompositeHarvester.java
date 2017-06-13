@@ -43,15 +43,18 @@ public abstract class AbstractCompositeHarvester extends AbstractHarvester
 
 
 	/**
-	 * Constructor that requires an Iterable of sub-harvesters.
+	 * Constructor that requires an Iterable of sub-harvesters and the harvester
+	 * name.
 	 * 
+	 * @param harvesterName
+	 *            a unique name of the harvester
 	 * @param subHarvesters
 	 *            the harvesters that are executed concurrently when the
 	 *            composite harvester is started
 	 */
-	public AbstractCompositeHarvester( Iterable<AbstractHarvester> subHarvesters )
+	public AbstractCompositeHarvester( String harvesterName, Iterable<AbstractHarvester> subHarvesters )
 	{
-		super();
+		super( harvesterName );
 
 		this.subHarvesters = subHarvesters;
 
@@ -61,6 +64,19 @@ public abstract class AbstractCompositeHarvester extends AbstractHarvester
 		{
 			subHarvester.harvestedDocuments = harvestedDocuments;
 		}
+	}
+
+
+	/**
+	 * Constructor that requires an Iterable of sub-harvesters.
+	 * 
+	 * @param subHarvesters
+	 *            the harvesters that are executed concurrently when the
+	 *            composite harvester is started
+	 */
+	public AbstractCompositeHarvester( Iterable<AbstractHarvester> subHarvesters )
+	{
+		this( null, subHarvesters );
 	}
 
 

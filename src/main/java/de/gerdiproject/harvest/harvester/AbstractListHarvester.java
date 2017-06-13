@@ -29,7 +29,9 @@ import java.util.List;
 
 
 /**
- * This harvester iterates through a {@link Collection} and creates a fixed number of documents out of each element of the collection.
+ * This harvester iterates through a {@link Collection} and creates a fixed
+ * number of documents out of each element of the collection.
+ * 
  * @author Robin Weiss
  */
 public abstract class AbstractListHarvester<T> extends AbstractHarvester
@@ -44,14 +46,29 @@ public abstract class AbstractListHarvester<T> extends AbstractHarvester
 	/**
 	 * Forwarding the superclass constructor.
 	 *
+	 * @param harvesterName
+	 *            a unique name of the harvester
+	 * @param numberOfDocumentsPerEntry
+	 *            the number of documents that are expected to be harvested from
+	 *            each entry
+	 */
+	public AbstractListHarvester( String harvesterName, int numberOfDocumentsPerEntry )
+	{
+		super( harvesterName );
+		this.numberOfDocumentsPerEntry = numberOfDocumentsPerEntry;
+	}
+
+
+	/**
+	 * Forwarding the superclass constructor.
+	 *
 	 * @param numberOfDocumentsPerEntry
 	 *            the number of documents that are expected to be harvested from
 	 *            each entry
 	 */
 	public AbstractListHarvester( int numberOfDocumentsPerEntry )
 	{
-		super();
-		this.numberOfDocumentsPerEntry = numberOfDocumentsPerEntry;
+		this( null, numberOfDocumentsPerEntry );
 	}
 
 

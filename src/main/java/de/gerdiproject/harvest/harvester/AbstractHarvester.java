@@ -22,6 +22,7 @@ package de.gerdiproject.harvest.harvester;
 import de.gerdiproject.harvest.MainContext;
 import de.gerdiproject.harvest.development.DevelopmentTools;
 import de.gerdiproject.harvest.elasticsearch.ElasticSearchSender;
+import de.gerdiproject.harvest.harvester.rest.HarvesterFacade;
 import de.gerdiproject.harvest.utils.CancelableFuture;
 import de.gerdiproject.harvest.utils.HarvesterStringUtils;
 import de.gerdiproject.harvest.utils.HttpRequester;
@@ -40,9 +41,12 @@ import org.slf4j.LoggerFactory;
 
 
 /**
- * The most basic Harvester class. Subclasses must implement the complete
- * harvesting behavior. A lot of functionality that provides info for the REST
- * interface is already implemented.
+ * AbstractHarvesters offer a skeleton for harvesting a data provider to
+ * retrieve all of its metadata. The metadata can subsequently be submitted to
+ * ElasticSearch via the {@link ElasticSearchSender}. This most basic Harvester
+ * class offers functions that can be controlled via REST requests from the
+ * {@link HarvesterFacade}, as well as some utility objects that are required by
+ * all harvests. Subclasses must implement the concrete harvesting process.
  *
  * @author Robin Weiss
  */
@@ -119,11 +123,24 @@ public abstract class AbstractHarvester
 
 
 	/**
-	 * Simple constructor that creates its own documents array.
+	 * Simple constructor that uses the class name as the harvester name.
 	 */
 	public AbstractHarvester()
 	{
-		logger = LoggerFactory.getLogger( this.getClass() );
+		this( null );
+	}
+
+
+	/**
+	 * Constructor that initializes helper classes and fields.
+	 */
+	public AbstractHarvester( String harvesterName )
+	{
+		name = (harvesterName != null)
+				? harvesterName
+				: getClass().getSimpleName();
+		logger = LoggerFactory.getLogger( name );
+
 		properties = new HashMap<>();
 		httpRequester = new HttpRequester();
 		searchIndexFactory = new SearchIndexFactory();
@@ -138,7 +155,6 @@ public abstract class AbstractHarvester
 		harvestEndIndex = new AtomicInteger( 0 );
 		jsonBuilder = new JsonBuilder();
 		this.harvestedDocuments = jsonBuilder.createArray();
-		name = getClass().getSimpleName();
 	}
 
 
