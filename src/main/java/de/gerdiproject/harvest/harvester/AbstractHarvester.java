@@ -34,6 +34,7 @@ import de.gerdiproject.json.impl.JsonBuilder;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.slf4j.Logger;
@@ -58,9 +59,12 @@ public abstract class AbstractHarvester
 
 	private final static String HARVESTER_START = "+++ Starting %s +++";
 	private final static String HARVESTER_END = "--- %s finished ---";
-	private final static String HARVESTER_FAILED = "!!! %s FAILED !!!";
+	private final static String HARVESTER_FAILED = "!!! %s failed !!!";
+	private final static String HARVESTER_ABORTED = "!!! %s aborted !!!";
 	private static final String HARVEST_DONE = "HARVEST FINISHED!";
 	private static final String HARVEST_FAILED = "HARVEST FAILED!";
+
+	protected static final String HARVEST_ABORTED = "HARVEST ABORTED!";
 
 	private final HashMap<String, String> properties;
 	protected IJsonArray harvestedDocuments;
@@ -91,10 +95,13 @@ public abstract class AbstractHarvester
 	 *            the index of the first document to be harvested
 	 * @param endIndex
 	 *            the index of the last document to be harvested
+	 * @throws Exception
+	 *             any kind of exception that can occur during the harvesting
+	 *             process
 	 * @return true, if everything was harvested
 	 * @see de.gerdiproject.harvest.utils.SearchIndexFactory
 	 */
-	abstract protected boolean harvestInternal( int startIndex, int endIndex );
+	abstract protected boolean harvestInternal( int startIndex, int endIndex ) throws Exception;
 
 
 	/**
@@ -120,6 +127,12 @@ public abstract class AbstractHarvester
 	 * @return a hash as a checksum of the data which is to be harvested
 	 */
 	abstract protected String calculateHashInternal();
+
+
+	/**
+	 * Aborts the harvesting process, allowing a new harvest to be started.
+	 */
+	public abstract void abortHarvest();
 
 
 	/**
@@ -429,21 +442,24 @@ public abstract class AbstractHarvester
 		// start asynchronous harvest
 		currentHarvestingProcess = new CancelableFuture<>(
 				() -> harvestInternal( harvestStartIndex.get(), harvestEndIndex.get() ) );
-		currentHarvestingProcess.thenApply( ( isSuccessful ) -> {
-			endHarvest();
-			return isSuccessful;
-		} ).exceptionally( throwable -> {
-			failHarvest( throwable.getCause() );
-			return false;
-		} );
 
+		// success handler
+		currentHarvestingProcess.thenApply( ( isSuccessful ) -> {
+			finishHarvestSuccessfully();
+			return isSuccessful;
+		} )
+				// exception handler
+				.exceptionally( throwable -> {
+					finishHarvestExceptionally( throwable.getCause() );
+					return false;
+				} );
 	}
 
 
 	/**
 	 * Finishes the harvesting process, allowing a new harvest to be started.
 	 */
-	private void endHarvest()
+	protected void finishHarvestSuccessfully()
 	{
 		currentHarvestingProcess = null;
 		harvestFinishedDate = new Date();
@@ -477,13 +493,36 @@ public abstract class AbstractHarvester
 	 * Cleans up a failed harvesting process, allowing a new harvest to be
 	 * started.
 	 */
-	private void failHarvest( Throwable reason )
+	protected void finishHarvestExceptionally( Throwable reason )
 	{
-		logger.error( reason.getMessage(), reason );
+		// clean up the harvesting process reference
 		currentHarvestingProcess = null;
+
+		// check if the harvest was aborted
+		if (reason instanceof CancellationException || reason.getCause() instanceof CancellationException)
+		{
+			onHarvestAborted();
+		}
+		else
+		{
+			onHarvestFailed( reason );
+		}
+	}
+
+
+	/**
+	 * 
+	 * Cleans up a failed harvesting process, allowing a new harvest to be
+	 * started.
+	 */
+	protected void onHarvestFailed( Throwable reason )
+	{
+		// log the error
+		logger.error( reason.getMessage(), reason );
 
 		// save to disk if auto-save is enabled
 		final DevelopmentTools devTools = DevelopmentTools.instance();
+
 		if (devTools.isAutoSaving() && MainContext.getHarvester() == this)
 		{
 			devTools.saveHarvestResultToDisk();
@@ -492,6 +531,7 @@ public abstract class AbstractHarvester
 		// log failure
 		logger.warn( String.format( HARVESTER_FAILED, name ) );
 
+		// log failure for main harvester
 		if (MainContext.getHarvester() == this)
 		{
 			logger.error( HARVEST_FAILED );
@@ -500,13 +540,17 @@ public abstract class AbstractHarvester
 
 
 	/**
-	 * Aborts the harvesting process, allowing a new harvest to be started.
+	 * This function is called after the harvesting process was stopped due to
+	 * being aborted;
 	 */
-	public void abortHarvest()
+	protected void onHarvestAborted()
 	{
-		if (currentHarvestingProcess != null)
+		logger.warn( String.format( HARVESTER_ABORTED, name ) );
+
+		// log abort for main harvester
+		if (MainContext.getHarvester() == this)
 		{
-			currentHarvestingProcess.cancel( true );
+			logger.error( HARVEST_ABORTED );
 		}
 	}
 

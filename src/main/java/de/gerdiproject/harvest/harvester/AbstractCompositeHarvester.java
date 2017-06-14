@@ -26,7 +26,6 @@ import java.security.NoSuchAlgorithmException;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 
 
 /**
@@ -40,6 +39,7 @@ public abstract class AbstractCompositeHarvester extends AbstractHarvester
 {
 	// fields and members
 	protected final Iterable<AbstractHarvester> subHarvesters;
+
 
 
 	/**
@@ -139,7 +139,7 @@ public abstract class AbstractCompositeHarvester extends AbstractHarvester
 
 
 	@Override
-	protected boolean harvestInternal( int from, int to )
+	protected boolean harvestInternal( int from, int to ) throws Exception
 	{
 		List<CompletableFuture<?>> subProcesses = new LinkedList<>();
 
@@ -157,6 +157,7 @@ public abstract class AbstractCompositeHarvester extends AbstractHarvester
 				subProcesses.add( subHarvestingProcess );
 			}
 		}
+		
 		// convert list to array
 		CompletableFuture<?>[] futureArray = new CompletableFuture<?>[subProcesses.size()];
 		for (int i = 0, len = futureArray.length; i < len; i++)
@@ -165,15 +166,7 @@ public abstract class AbstractCompositeHarvester extends AbstractHarvester
 		}
 
 		// wait for all sub-harvesters to complete
-		try
-		{
-			CompletableFuture.allOf( futureArray ).get();
-		}
-		catch (InterruptedException | ExecutionException ex)
-		{
-			logger.warn( "Interrupted Harvester!" );
-			return false;
-		}
+		CompletableFuture.allOf( futureArray ).get();
 
 		return true;
 	}
@@ -256,11 +249,12 @@ public abstract class AbstractCompositeHarvester extends AbstractHarvester
 	@Override
 	public void abortHarvest()
 	{
-		for (AbstractHarvester subHarvester : subHarvesters)
+		if (currentHarvestingProcess != null)
 		{
-			subHarvester.abortHarvest();
+			for (AbstractHarvester subHarvester : subHarvesters)
+			{
+				subHarvester.abortHarvest();
+			}
 		}
-		super.abortHarvest();
 	}
-
 }

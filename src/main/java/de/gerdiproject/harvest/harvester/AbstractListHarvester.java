@@ -41,6 +41,7 @@ public abstract class AbstractListHarvester<T> extends AbstractHarvester
 
 	protected Collection<T> entries;
 	protected final int numberOfDocumentsPerEntry;
+	protected boolean isAborting;
 
 
 	/**
@@ -93,7 +94,7 @@ public abstract class AbstractListHarvester<T> extends AbstractHarvester
 
 
 	@Override
-	protected boolean harvestInternal( int from, int to )
+	protected boolean harvestInternal( int from, int to ) throws Exception
 	{
 		if (from == to)
 		{
@@ -127,6 +128,13 @@ public abstract class AbstractListHarvester<T> extends AbstractHarvester
 
 		for (T e : entries)
 		{
+			// abort harvest, if it is flagged for cancellation
+			if (isAborting)
+			{
+				currentHarvestingProcess.cancel( false );
+				return false;
+			}
+
 			// skip entries that come before the firstEntryIndex
 			if (i >= firstEntryIndex)
 			{
@@ -197,4 +205,21 @@ public abstract class AbstractListHarvester<T> extends AbstractHarvester
 		}
 	}
 
+
+	@Override
+	public void abortHarvest()
+	{
+		if( currentHarvestingProcess != null)
+		{
+			isAborting = true;
+		}
+	}
+
+
+	@Override
+	protected void onHarvestAborted()
+	{
+		isAborting = false;
+		super.onHarvestAborted();
+	}
 }
