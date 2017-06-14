@@ -209,7 +209,7 @@ public abstract class AbstractListHarvester<T> extends AbstractHarvester
 	@Override
 	public void abortHarvest()
 	{
-		if( currentHarvestingProcess != null)
+		if (currentHarvestingProcess != null)
 		{
 			isAborting = true;
 		}

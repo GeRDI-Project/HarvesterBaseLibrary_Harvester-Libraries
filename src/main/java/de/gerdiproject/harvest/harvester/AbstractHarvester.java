@@ -146,6 +146,9 @@ public abstract class AbstractHarvester
 
 	/**
 	 * Constructor that initializes helper classes and fields.
+	 *
+	 * @param harvesterName
+	 *            a unique name that describes the harvester
 	 */
 	public AbstractHarvester( String harvesterName )
 	{
@@ -490,8 +493,12 @@ public abstract class AbstractHarvester
 
 
 	/**
+	 * This function is called when an exception occurs during the harvest.
 	 * Cleans up a failed harvesting process, allowing a new harvest to be
-	 * started.
+	 * started. Also calls a function depending on why the harvest failed.
+	 *
+	 * @param reason
+	 *            the exception that caused the harvest to fail
 	 */
 	protected void finishHarvestExceptionally( Throwable reason )
 	{
@@ -512,8 +519,11 @@ public abstract class AbstractHarvester
 
 	/**
 	 * 
-	 * Cleans up a failed harvesting process, allowing a new harvest to be
-	 * started.
+	 * This method is called after an ongoing harvest failed due to an
+	 * exception.
+	 * 
+	 * @param reason
+	 *            the exception that caused the harvest to fail
 	 */
 	protected void onHarvestFailed( Throwable reason )
 	{
@@ -541,7 +551,7 @@ public abstract class AbstractHarvester
 
 	/**
 	 * This function is called after the harvesting process was stopped due to
-	 * being aborted;
+	 * being aborted.
 	 */
 	protected void onHarvestAborted()
 	{

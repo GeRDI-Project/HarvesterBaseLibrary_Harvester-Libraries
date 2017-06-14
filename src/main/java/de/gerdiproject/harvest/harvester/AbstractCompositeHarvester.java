@@ -41,7 +41,6 @@ public abstract class AbstractCompositeHarvester extends AbstractHarvester
 	protected final Iterable<AbstractHarvester> subHarvesters;
 
 
-
 	/**
 	 * Constructor that requires an Iterable of sub-harvesters and the harvester
 	 * name.
@@ -157,7 +156,7 @@ public abstract class AbstractCompositeHarvester extends AbstractHarvester
 				subProcesses.add( subHarvestingProcess );
 			}
 		}
-		
+
 		// convert list to array
 		CompletableFuture<?>[] futureArray = new CompletableFuture<?>[subProcesses.size()];
 		for (int i = 0, len = futureArray.length; i < len; i++)
