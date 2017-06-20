@@ -138,6 +138,12 @@ public class SearchIndexFactory
 
 		if (descriptions != null && !descriptions.isEmpty())
 		{
+			// clean descriptions
+			for(int i = 0, len = descriptions.size(); i < len; i++ )
+			{
+				String cleanDesc = HarvesterStringUtils.cleanString( descriptions.getString( i ) );
+				descriptions.put( i, cleanDesc );
+			}
 			document.put( DESCRIPTION_JSON, descriptions );
 		}
 
@@ -150,14 +156,13 @@ public class SearchIndexFactory
 		if (geoCoordinates != null && !geoCoordinates.isEmpty())
 		{
 			// correct possibly erroneous polygons
-			IJsonArray cleanedGeo = jsonBuilder.createArray();
-
-			for (Object val : geoCoordinates)
+			for(int i = 0, len = geoCoordinates.size(); i < len; i++ )
 			{
-				cleanedGeo.add( geoCleaner.cleanGeoData( (IJsonObject) val ) );
+				IJsonObject cleanGeo =  geoCleaner.cleanGeoData( geoCoordinates.getJsonObject( i ) );
+				geoCoordinates.put( i, cleanGeo );
 			}
-
-			document.put( GEO_JSON, cleanedGeo );
+			
+			document.put( GEO_JSON, geoCoordinates );
 		}
 
 		if (years != null && !years.isEmpty())
