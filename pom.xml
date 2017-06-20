@@ -129,7 +129,7 @@
 	<dependencies>
 		<dependency>
 			<groupId>de.gerdiproject</groupId>
-			<artifactId>RobJSON</artifactId>
+			<artifactId>GSON</artifactId>
 			<version>1.0</version>
 		</dependency>
 		
