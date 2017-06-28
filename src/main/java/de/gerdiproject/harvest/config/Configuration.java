@@ -177,18 +177,15 @@ public class Configuration
 
 		// set ElasticSearch configuration
 		IJsonObject elasticSearchConfig = config.getJsonObject( ELASTIC_SEARCH_TITLE );
-		if (elasticSearchConfig != null)
+		if (elasticSearchConfig != null
+				&& !elasticSearchConfig.isNull( ELASTIC_SEARCH_URL )
+				&& !elasticSearchConfig.isNull( ELASTIC_SEARCH_INDEX )
+				&& !elasticSearchConfig.isNull( ELASTIC_SEARCH_TYPE ))
 		{
-			// set url
-			if (!elasticSearchConfig.isNull( ELASTIC_SEARCH_URL )
-					&& !elasticSearchConfig.isNull( ELASTIC_SEARCH_INDEX )
-					&& !elasticSearchConfig.isNull( ELASTIC_SEARCH_TYPE ))
-			{
-				ElasticSearchSender.instance().setUrl(
-						elasticSearchConfig.getString( ELASTIC_SEARCH_URL ),
-						elasticSearchConfig.getString( ELASTIC_SEARCH_INDEX ),
-						elasticSearchConfig.getString( ELASTIC_SEARCH_TYPE ) );
-			}
+			ElasticSearchSender.instance().setUrl(
+					elasticSearchConfig.getString( ELASTIC_SEARCH_URL ),
+					elasticSearchConfig.getString( ELASTIC_SEARCH_INDEX ),
+					elasticSearchConfig.getString( ELASTIC_SEARCH_TYPE ) );
 		}
 
 		// set harvester configuration
