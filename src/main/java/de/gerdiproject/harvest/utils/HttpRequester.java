@@ -363,20 +363,28 @@ public class HttpRequester
 		{
 			HttpURLConnection connection = sendRestRequest( method, url, body, authorization );
 
-			// read the HTTP response
+			// create a reader for the HTTP response
 			InputStream response = connection.getInputStream();
 			BufferedReader reader = new BufferedReader( new InputStreamReader( response, httpCharset ) );
 
-			StringBuilder responseBuilder = new StringBuilder();
-			String s;
-			do
+			// read the first line of the response
+			String s = reader.readLine();
+			StringBuilder responseBuilder = new StringBuilder( s );
+			
+			// read subsequent lines of the response
+			s = reader.readLine();
+			
+			while (s != null)
 			{
+				// add linebreak before appending the next line
+				responseBuilder.append('\n').append( s );
 				s = reader.readLine();
-				responseBuilder.append( s );
-			} while (s != null && s.length() != 0);
+			}
 
+			// close the response reader
 			reader.close();
 
+			// combine the read lines to a single string
 			return responseBuilder.toString();
 		}
 		catch (IOException e)
