@@ -21,6 +21,7 @@ package de.gerdiproject.harvest.utils;
 
 import de.gerdiproject.harvest.MainContext;
 import de.gerdiproject.harvest.development.DevelopmentTools;
+import de.gerdiproject.json.IJson;
 import de.gerdiproject.json.IJsonArray;
 import de.gerdiproject.json.IJsonBuilder;
 import de.gerdiproject.json.IJsonObject;
@@ -46,8 +47,6 @@ import java.util.Map;
 
 import javax.ws.rs.core.MediaType;
 
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -64,9 +63,7 @@ public class HttpRequester
 	private static final String DATA_JSON = "data";
 	private static final String ERROR_JSON = "Could not load and parse '%s': %s";
 	private static final String SAVE_FAILED = "Could not save response of '' to disk: %s";
-	private static final String FILE_PATH = "savedHttpResponses/%s/%sresponse.%s";
-	private static final String FILE_ENDING_JSON = "json";
-	private static final String FILE_ENDING_HTML = "html";
+	private static final String FILE_PATH = "savedHttpResponses/%s/%sresponse.json";
 	private static final Logger LOGGER = LoggerFactory.getLogger( HttpRequester.class );
 
 	private final Charset httpCharset;
@@ -158,7 +155,7 @@ public class HttpRequester
 		// read json file from disk, if the option is enabled
 		if (devTools.isReadingHttpFromDisk())
 		{
-			jsonResponse = readJsonFromDisk( urlToFilePath( url, FILE_ENDING_JSON ) );
+			jsonResponse = readJsonFromDisk( urlToFilePath( url ) );
 		}
 
 		// request json from web, if it has not been read from disk already
@@ -177,11 +174,7 @@ public class HttpRequester
 		// write whole response to disk, if the option is enabled
 		if (isResponseReadFromWeb && devTools.isWritingHttpToDisk())
 		{
-			// deliberately write an empty object to disk, if the response could
-			// not
-			// be retrieved
-			String responseText = (jsonResponse == null) ? "{}" : jsonResponse.toString();
-			saveResponseToDisk( url, responseText, FILE_ENDING_JSON );
+			saveResponseToDisk( url, jsonResponse );
 		}
 
 		return jsonResponse;
@@ -261,125 +254,13 @@ public class HttpRequester
 
 
 	/**
-	 * Sends a GET request to a specified URL and tries to retrieve the HTML
-	 * response. If the development option is enabled, the response will be read
-	 * from disk instead.
-	 *
-	 * @param url
-	 *            a URL that returns a JSON object
-	 * @return a JSON object
-	 */
-	public Document getHtmlFromUrl( String url )
-	{
-		Document htmlResponse = null;
-		boolean isResponseReadFromWeb = false;
-
-		// read json file from disk, if the option is enabled
-		if (devTools.isReadingHttpFromDisk())
-		{
-			htmlResponse = readHtmlFromDisk( urlToFilePath( url, FILE_ENDING_HTML ) );
-		}
-
-		// request json from web, if it has not been read from disk already
-		if (htmlResponse == null)
-		{
-			htmlResponse = readHtmlFromWeb( url );
-			isResponseReadFromWeb = true;
-		}
-
-		// write whole response to disk, if the option is enabled
-		if (isResponseReadFromWeb && devTools.isWritingHttpToDisk())
-		{
-			// deliberately write an empty object to disk, if the response could
-			// not
-			// be retrieved
-			String responseText = (htmlResponse == null) ? "" : htmlResponse.toString();
-			saveResponseToDisk( url, responseText, FILE_ENDING_HTML );
-		}
-
-		return htmlResponse;
-	}
-
-
-	/**
-	 * Opens a file at the specified path and tries to parse the content as a
-	 * HTML document.
-	 *
-	 * @param filePath
-	 *            the filepath to a HTML file
-	 * @return a HTML document, or null if the file could not be parsed
-	 */
-	private Document readHtmlFromDisk( String filePath )
-	{
-		Document htmlResponse = null;
-
-		try
-		{
-			// try to read from disk
-			File file = new File( filePath );
-
-			// check if file exists
-			if (file.exists())
-			{
-				// parse the html object
-				htmlResponse = Jsoup.parse( file, httpCharset.displayName(), filePath );
-			}
-		}
-		catch (Exception e)
-		{
-			if (!suppressWarnings)
-			{
-				LOGGER.warn( String.format( ERROR_JSON, filePath, e.toString() ) );
-			}
-		}
-
-		return htmlResponse;
-	}
-
-
-	/**
-	 * Sends a GET request to a specified URL and tries to parse the response as
-	 * a HTML document.
-	 *
-	 * @param url
-	 *            a URL pointing to HTML content
-	 * @return a HTML document, or null if the response could not be parsed
-	 */
-	private Document readHtmlFromWeb( String url )
-	{
-		Document htmlResponse = null;
-
-		try
-		{
-			// send web request
-			InputStream response = new URL( url ).openStream();
-
-			// parse the html object
-			htmlResponse = Jsoup.parse( response, httpCharset.displayName(), url );
-
-			response.close();
-		}
-		catch (Exception e)
-		{
-			if (!suppressWarnings)
-			{
-				LOGGER.warn( String.format( ERROR_JSON, url, e.toString() ) );
-			}
-		}
-		return htmlResponse;
-	}
-
-
-	/**
 	 * Converts a web URL to a path on disk from which a file can be read
 	 *
 	 * @param url
 	 *            the original webr equest url
-	 * @param fileEnding
-	 *            the file type
 	 * @return a file-path on disk
 	 */
-	private String urlToFilePath( String url, String fileEnding )
+	private String urlToFilePath( String url )
 	{
 		String path = url;
 
@@ -403,7 +284,7 @@ public class HttpRequester
 		}
 
 		// assemble the complete file name
-		return String.format( FILE_PATH, MainContext.getModuleName(), path, fileEnding );
+		return String.format( FILE_PATH, MainContext.getModuleName(), path );
 	}
 
 
@@ -414,15 +295,17 @@ public class HttpRequester
 	 *
 	 * @param url
 	 *            the original web request URL
-	 * @param fileEnding
-	 *            the extension of the file that is to be saved
 	 * @param response
 	 *            the server response to the webrequest
 	 */
-	private void saveResponseToDisk( String url, String response, String fileEnding )
+	private void saveResponseToDisk( String url, IJson response )
 	{
+		// deliberately write an empty object to disk, if the response could not
+		// be retrieved
+		String responseText = (response == null) ? "{}" : response.toString();
+
 		// create directories
-		final File file = new File( urlToFilePath( url, fileEnding ) );
+		final File file = new File( urlToFilePath( url ) );
 		file.getParentFile().mkdirs();
 
 		// write to disk
@@ -431,7 +314,7 @@ public class HttpRequester
 			BufferedWriter writer = new BufferedWriter(
 					new OutputStreamWriter( new FileOutputStream( file ), httpCharset ) );
 
-			writer.write( response );
+			writer.write( responseText );
 			writer.close();
 		}
 		catch (IOException e)
@@ -487,14 +370,14 @@ public class HttpRequester
 			// read the first line of the response
 			String s = reader.readLine();
 			StringBuilder responseBuilder = new StringBuilder( s );
-
+			
 			// read subsequent lines of the response
 			s = reader.readLine();
-
+			
 			while (s != null)
 			{
 				// add linebreak before appending the next line
-				responseBuilder.append( '\n' ).append( s );
+				responseBuilder.append('\n').append( s );
 				s = reader.readLine();
 			}
 
@@ -596,14 +479,14 @@ public class HttpRequester
 		{
 			connection.setRequestProperty( HttpHeaders.AUTHORIZATION, authorization );
 		}
-
+		
 		// only send date if it is specified
-		if (body != null)
+		if( body != null)
 		{
 			// convert body string to bytes
 			byte[] bodyBytes = body.getBytes( httpCharset );
 			connection.setRequestProperty( HttpHeaders.CONTENT_LENGTH, Integer.toString( bodyBytes.length ) );
-
+	
 			// try to send body
 			DataOutputStream wr = new DataOutputStream( connection.getOutputStream() );
 			wr.write( bodyBytes );
