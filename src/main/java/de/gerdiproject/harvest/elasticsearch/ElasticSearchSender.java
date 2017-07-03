@@ -296,8 +296,6 @@ public class ElasticSearchSender
 					// reset the string builder and free memory
 					bulkRequestBuilder = new StringBuilder();
 					from = i + 1;
-
-					System.gc();
 				}
 			}
 
