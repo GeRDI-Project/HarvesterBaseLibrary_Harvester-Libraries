@@ -42,7 +42,9 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import javax.ws.rs.HttpMethod;
+import java.util.List;
+import java.util.Map;
+
 import javax.ws.rs.core.MediaType;
 
 import org.slf4j.Logger;
@@ -324,140 +326,184 @@ public class HttpRequester
 
 
 	/**
-	 * Sends a PUT request to a specified URL.
-	 *
-	 * @param plainTextUrl
-	 *            the URL to which the request is being sent
-	 * @param body
-	 *            the plain-text body of the request
-	 * @return the response of the request
-	 */
-	public String putRequest( String plainTextUrl, String body )
-	{
-		return restRequest( HttpMethod.PUT, plainTextUrl, body, null );
-	}
-
-
-	/**
-	 * Sends a PUT request to a restricted URL.
-	 *
-	 * @param plainTextUrl
-	 *            the URL to which the request is being sent
-	 * @param body
-	 *            the plain-text body of the request
-	 * @param authorization
-	 *            the base-64-encoded username and password
-	 * @return the response of the request
-	 */
-	public String putRequest( String plainTextUrl, String body, String authorization )
-	{
-		return restRequest( HttpMethod.PUT, plainTextUrl, body, authorization );
-	}
-
-
-	/**
-	 * Sends a POST request to a specified URL.
-	 *
-	 * @param plainTextUrl
-	 *            the URL to which the request is being sent
-	 * @param body
-	 *            the plain-text body of the request
-	 * @return the response of the request
-	 */
-	public String postRequest( String plainTextUrl, String body )
-	{
-		return restRequest( HttpMethod.POST, plainTextUrl, body, null );
-	}
-
-
-	/**
-	 * Sends a POST request to a restricted URL.
-	 *
-	 * @param plainTextUrl
-	 *            the URL to which the request is being sent
-	 * @param body
-	 *            the plain-text body of the request
-	 * @param authorization
-	 *            the base-64-encoded username and password
-	 * @return the response of the request
-	 */
-	public String postRequest( String plainTextUrl, String body, String authorization )
-	{
-		return restRequest( HttpMethod.POST, plainTextUrl, body, authorization );
-	}
-
-
-	/**
-	 * Sends an HTTP request with a plain-text body.
+	 * Sends an REST request with a plain-text body.
 	 *
 	 * @param method
-	 *            the request method: PUT, POST, DELETE
-	 * @param plainTextUrl
+	 *            the request method that is being sent
+	 * @param url
+	 *            the URL to which the request is being sent
+	 * @param body
+	 *            the plain-text body of the request
+	 * @return the HTTP response
+	 */
+	public String getRestResponse( RestRequestType method, String url, String body )
+	{
+		return getRestResponse( method, url, body, null );
+	}
+
+
+	/**
+	 * Sends an authorized REST request with a plain-text body and returns the
+	 * response as a string.
+	 *
+	 * @param method
+	 *            the request method that is being sent
+	 * @param url
 	 *            the URL to which the request is being sent
 	 * @param body
 	 *            the plain-text body of the request
 	 * @param authorization
 	 *            the base-64-encoded username and password, or null if no
 	 *            authorization is required
-	 * @param suppressWarnings
-	 *            if true, no warnings are logged
 	 * @return the HTTP response
 	 */
-	private String restRequest( String method, String plainTextUrl, String body, String authorization )
+	public String getRestResponse( RestRequestType method, String url, String body, String authorization )
 	{
 		try
 		{
-			// generate a URL and open a connection
-			HttpURLConnection connection = (HttpURLConnection) new URL( plainTextUrl ).openConnection();
+			HttpURLConnection connection = sendRestRequest( method, url, body, authorization );
 
-			// set request properties
-			connection.setDoOutput( true );
-			connection.setInstanceFollowRedirects( false );
-			connection.setUseCaches( false );
-			connection.setRequestMethod( method );
-			connection.setRequestProperty( HttpHeaders.CONTENT_TYPE, MediaType.TEXT_PLAIN );
-			connection.setRequestProperty( "charset", httpCharset.displayName() );
+			// create a reader for the HTTP response
+			InputStream response = connection.getInputStream();
+			BufferedReader reader = new BufferedReader( new InputStreamReader( response, httpCharset ) );
 
+			// read the first line of the response
+			String s = reader.readLine();
+			StringBuilder responseBuilder = new StringBuilder( s );
+			
+			// read subsequent lines of the response
+			s = reader.readLine();
+			
+			while (s != null)
+			{
+				// add linebreak before appending the next line
+				responseBuilder.append('\n').append( s );
+				s = reader.readLine();
+			}
+
+			// close the response reader
+			reader.close();
+
+			// combine the read lines to a single string
+			return responseBuilder.toString();
+		}
+		catch (IOException e)
+		{
+			LOGGER.warn( e.getMessage() );
+			return e.getMessage();
+		}
+	}
+
+
+	/**
+	 * Sends a REST request with a plain-text body and returns the header
+	 * fields.
+	 *
+	 * @param method
+	 *            the request method that is being sent
+	 * @param url
+	 *            the URL to which the request is being sent
+	 * @param body
+	 *            the plain-text body of the request
+	 * @return the response header fields
+	 */
+	public Map<String, List<String>> getRestHeader( RestRequestType method, String url, String body )
+	{
+		return getRestHeader( method, url, body, null );
+	}
+
+
+	/**
+	 * Sends an authorized REST request with a plain-text body and returns the
+	 * header fields.
+	 *
+	 * @param method
+	 *            the request method that is being sent
+	 * @param url
+	 *            the URL to which the request is being sent
+	 * @param body
+	 *            the plain-text body of the request
+	 * @param authorization
+	 *            the base-64-encoded username and password, or null if no
+	 *            authorization is required
+	 * @return the response header fields
+	 */
+	public Map<String, List<String>> getRestHeader( RestRequestType method, String url, String body,
+			String authorization )
+	{
+		Map<String, List<String>> headerFields = null;
+		try
+		{
+			HttpURLConnection connection = sendRestRequest( method, url, body, authorization );
+			headerFields = connection.getHeaderFields();
+		}
+		catch (IOException e)
+		{
+			LOGGER.warn( e.getMessage() );
+		}
+
+		return headerFields;
+	}
+
+
+	/**
+	 * Sends a REST request with a plain-text body and returns the connection.
+	 *
+	 * @param method
+	 *            the request method that is being sent
+	 * @param url
+	 *            the URL to which the request is being sent
+	 * @param body
+	 *            the plain-text body of the request
+	 * @param authorization
+	 *            the base-64-encoded username and password, or null if no
+	 *            authorization is required
+	 * @return the connection to the host
+	 */
+	private HttpURLConnection sendRestRequest( RestRequestType method, String url, String body, String authorization )
+			throws IOException
+	{
+		// generate a URL and open a connection
+		HttpURLConnection connection = (HttpURLConnection) new URL( url ).openConnection();
+
+		// set request properties
+		connection.setDoOutput( true );
+		connection.setInstanceFollowRedirects( false );
+		connection.setUseCaches( false );
+		connection.setRequestMethod( method.toString() );
+		connection.setRequestProperty( HttpHeaders.CONTENT_TYPE, MediaType.TEXT_PLAIN );
+		connection.setRequestProperty( "charset", httpCharset.displayName() );
+
+		// set authentication
+		if (authorization != null)
+		{
+			connection.setRequestProperty( HttpHeaders.AUTHORIZATION, authorization );
+		}
+		
+		// only send date if it is specified
+		if( body != null)
+		{
 			// convert body string to bytes
 			byte[] bodyBytes = body.getBytes( httpCharset );
 			connection.setRequestProperty( HttpHeaders.CONTENT_LENGTH, Integer.toString( bodyBytes.length ) );
-
-			// set authentication
-			if (authorization != null)
-			{
-				connection.setRequestProperty( HttpHeaders.AUTHORIZATION, authorization );
-			}
-
+	
 			// try to send body
-			try (DataOutputStream wr = new DataOutputStream( connection.getOutputStream() ))
-			{
-				wr.write( bodyBytes );
-
-				// read the HTTP response
-				try (InputStream response = connection.getInputStream();
-						BufferedReader reader = new BufferedReader( new InputStreamReader( response, httpCharset ) ))
-				{
-					StringBuilder sb = new StringBuilder();
-					String s;
-					do
-					{
-						s = reader.readLine();
-						sb.append( s );
-					} while (s != null && s.length() != 0);
-
-					reader.close();
-
-					return sb.toString();
-				}
-			}
+			DataOutputStream wr = new DataOutputStream( connection.getOutputStream() );
+			wr.write( bodyBytes );
+			wr.close();
 		}
-		catch (Exception e)
-		{
-			if (!suppressWarnings)
-			{
-				LOGGER.warn( e.getMessage() );
-			}
-			return e.getMessage();
-		}
+
+		return connection;
+	}
+
+	/**
+	 * The type of REST requests that can be sent via the {@link HttpRequester}.
+	 * 
+	 * @author Robin Weiss
+	 *
+	 */
+	public enum RestRequestType
+	{
+		GET, POST, PUT, DELETE, HEAD, OPTIONS
 	}
 }
