@@ -21,7 +21,6 @@ package de.gerdiproject.harvest.utils;
 
 import de.gerdiproject.harvest.MainContext;
 import de.gerdiproject.harvest.development.DevelopmentTools;
-import de.gerdiproject.json.IJson;
 import de.gerdiproject.json.IJsonArray;
 import de.gerdiproject.json.IJsonBuilder;
 import de.gerdiproject.json.IJsonObject;
@@ -42,9 +41,13 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import javax.ws.rs.HttpMethod;
+import java.util.List;
+import java.util.Map;
+
 import javax.ws.rs.core.MediaType;
 
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -61,7 +64,9 @@ public class HttpRequester
 	private static final String DATA_JSON = "data";
 	private static final String ERROR_JSON = "Could not load and parse '%s': %s";
 	private static final String SAVE_FAILED = "Could not save response of '' to disk: %s";
-	private static final String FILE_PATH = "savedHttpResponses/%s/%sresponse.json";
+	private static final String FILE_PATH = "savedHttpResponses/%s/%sresponse.%s";
+	private static final String FILE_ENDING_JSON = "json";
+	private static final String FILE_ENDING_HTML = "html";
 	private static final Logger LOGGER = LoggerFactory.getLogger( HttpRequester.class );
 
 	private final Charset httpCharset;
@@ -153,7 +158,7 @@ public class HttpRequester
 		// read json file from disk, if the option is enabled
 		if (devTools.isReadingHttpFromDisk())
 		{
-			jsonResponse = readJsonFromDisk( urlToFilePath( url ) );
+			jsonResponse = readJsonFromDisk( urlToFilePath( url, FILE_ENDING_JSON ) );
 		}
 
 		// request json from web, if it has not been read from disk already
@@ -172,7 +177,11 @@ public class HttpRequester
 		// write whole response to disk, if the option is enabled
 		if (isResponseReadFromWeb && devTools.isWritingHttpToDisk())
 		{
-			saveResponseToDisk( url, jsonResponse );
+			// deliberately write an empty object to disk, if the response could
+			// not
+			// be retrieved
+			String responseText = (jsonResponse == null) ? "{}" : jsonResponse.toString();
+			saveResponseToDisk( url, responseText, FILE_ENDING_JSON );
 		}
 
 		return jsonResponse;
@@ -252,13 +261,125 @@ public class HttpRequester
 
 
 	/**
+	 * Sends a GET request to a specified URL and tries to retrieve the HTML
+	 * response. If the development option is enabled, the response will be read
+	 * from disk instead.
+	 *
+	 * @param url
+	 *            a URL that returns a JSON object
+	 * @return a JSON object
+	 */
+	public Document getHtmlFromUrl( String url )
+	{
+		Document htmlResponse = null;
+		boolean isResponseReadFromWeb = false;
+
+		// read json file from disk, if the option is enabled
+		if (devTools.isReadingHttpFromDisk())
+		{
+			htmlResponse = readHtmlFromDisk( urlToFilePath( url, FILE_ENDING_HTML ) );
+		}
+
+		// request json from web, if it has not been read from disk already
+		if (htmlResponse == null)
+		{
+			htmlResponse = readHtmlFromWeb( url );
+			isResponseReadFromWeb = true;
+		}
+
+		// write whole response to disk, if the option is enabled
+		if (isResponseReadFromWeb && devTools.isWritingHttpToDisk())
+		{
+			// deliberately write an empty object to disk, if the response could
+			// not
+			// be retrieved
+			String responseText = (htmlResponse == null) ? "" : htmlResponse.toString();
+			saveResponseToDisk( url, responseText, FILE_ENDING_HTML );
+		}
+
+		return htmlResponse;
+	}
+
+
+	/**
+	 * Opens a file at the specified path and tries to parse the content as a
+	 * HTML document.
+	 *
+	 * @param filePath
+	 *            the filepath to a HTML file
+	 * @return a HTML document, or null if the file could not be parsed
+	 */
+	private Document readHtmlFromDisk( String filePath )
+	{
+		Document htmlResponse = null;
+
+		try
+		{
+			// try to read from disk
+			File file = new File( filePath );
+
+			// check if file exists
+			if (file.exists())
+			{
+				// parse the html object
+				htmlResponse = Jsoup.parse( file, httpCharset.displayName(), filePath );
+			}
+		}
+		catch (Exception e)
+		{
+			if (!suppressWarnings)
+			{
+				LOGGER.warn( String.format( ERROR_JSON, filePath, e.toString() ) );
+			}
+		}
+
+		return htmlResponse;
+	}
+
+
+	/**
+	 * Sends a GET request to a specified URL and tries to parse the response as
+	 * a HTML document.
+	 *
+	 * @param url
+	 *            a URL pointing to HTML content
+	 * @return a HTML document, or null if the response could not be parsed
+	 */
+	private Document readHtmlFromWeb( String url )
+	{
+		Document htmlResponse = null;
+
+		try
+		{
+			// send web request
+			InputStream response = new URL( url ).openStream();
+
+			// parse the html object
+			htmlResponse = Jsoup.parse( response, httpCharset.displayName(), url );
+
+			response.close();
+		}
+		catch (Exception e)
+		{
+			if (!suppressWarnings)
+			{
+				LOGGER.warn( String.format( ERROR_JSON, url, e.toString() ) );
+			}
+		}
+		return htmlResponse;
+	}
+
+
+	/**
 	 * Converts a web URL to a path on disk from which a file can be read
 	 *
 	 * @param url
 	 *            the original webr equest url
+	 * @param fileEnding
+	 *            the file type
 	 * @return a file-path on disk
 	 */
-	private String urlToFilePath( String url )
+	private String urlToFilePath( String url, String fileEnding )
 	{
 		String path = url;
 
@@ -282,7 +403,7 @@ public class HttpRequester
 		}
 
 		// assemble the complete file name
-		return String.format( FILE_PATH, MainContext.getModuleName(), path );
+		return String.format( FILE_PATH, MainContext.getModuleName(), path, fileEnding );
 	}
 
 
@@ -293,17 +414,15 @@ public class HttpRequester
 	 *
 	 * @param url
 	 *            the original web request URL
+	 * @param fileEnding
+	 *            the extension of the file that is to be saved
 	 * @param response
 	 *            the server response to the webrequest
 	 */
-	private void saveResponseToDisk( String url, IJson response )
+	private void saveResponseToDisk( String url, String response, String fileEnding )
 	{
-		// deliberately write an empty object to disk, if the response could not
-		// be retrieved
-		String responseText = (response == null) ? "{}" : response.toString();
-
 		// create directories
-		final File file = new File( urlToFilePath( url ) );
+		final File file = new File( urlToFilePath( url, fileEnding ) );
 		file.getParentFile().mkdirs();
 
 		// write to disk
@@ -312,7 +431,7 @@ public class HttpRequester
 			BufferedWriter writer = new BufferedWriter(
 					new OutputStreamWriter( new FileOutputStream( file ), httpCharset ) );
 
-			writer.write( responseText );
+			writer.write( response );
 			writer.close();
 		}
 		catch (IOException e)
@@ -324,140 +443,184 @@ public class HttpRequester
 
 
 	/**
-	 * Sends a PUT request to a specified URL.
-	 *
-	 * @param plainTextUrl
-	 *            the URL to which the request is being sent
-	 * @param body
-	 *            the plain-text body of the request
-	 * @return the response of the request
-	 */
-	public String putRequest( String plainTextUrl, String body )
-	{
-		return restRequest( HttpMethod.PUT, plainTextUrl, body, null );
-	}
-
-
-	/**
-	 * Sends a PUT request to a restricted URL.
-	 *
-	 * @param plainTextUrl
-	 *            the URL to which the request is being sent
-	 * @param body
-	 *            the plain-text body of the request
-	 * @param authorization
-	 *            the base-64-encoded username and password
-	 * @return the response of the request
-	 */
-	public String putRequest( String plainTextUrl, String body, String authorization )
-	{
-		return restRequest( HttpMethod.PUT, plainTextUrl, body, authorization );
-	}
-
-
-	/**
-	 * Sends a POST request to a specified URL.
-	 *
-	 * @param plainTextUrl
-	 *            the URL to which the request is being sent
-	 * @param body
-	 *            the plain-text body of the request
-	 * @return the response of the request
-	 */
-	public String postRequest( String plainTextUrl, String body )
-	{
-		return restRequest( HttpMethod.POST, plainTextUrl, body, null );
-	}
-
-
-	/**
-	 * Sends a POST request to a restricted URL.
-	 *
-	 * @param plainTextUrl
-	 *            the URL to which the request is being sent
-	 * @param body
-	 *            the plain-text body of the request
-	 * @param authorization
-	 *            the base-64-encoded username and password
-	 * @return the response of the request
-	 */
-	public String postRequest( String plainTextUrl, String body, String authorization )
-	{
-		return restRequest( HttpMethod.POST, plainTextUrl, body, authorization );
-	}
-
-
-	/**
-	 * Sends an HTTP request with a plain-text body.
+	 * Sends an REST request with a plain-text body.
 	 *
 	 * @param method
-	 *            the request method: PUT, POST, DELETE
-	 * @param plainTextUrl
+	 *            the request method that is being sent
+	 * @param url
+	 *            the URL to which the request is being sent
+	 * @param body
+	 *            the plain-text body of the request
+	 * @return the HTTP response
+	 */
+	public String getRestResponse( RestRequestType method, String url, String body )
+	{
+		return getRestResponse( method, url, body, null );
+	}
+
+
+	/**
+	 * Sends an authorized REST request with a plain-text body and returns the
+	 * response as a string.
+	 *
+	 * @param method
+	 *            the request method that is being sent
+	 * @param url
 	 *            the URL to which the request is being sent
 	 * @param body
 	 *            the plain-text body of the request
 	 * @param authorization
 	 *            the base-64-encoded username and password, or null if no
 	 *            authorization is required
-	 * @param suppressWarnings
-	 *            if true, no warnings are logged
 	 * @return the HTTP response
 	 */
-	private String restRequest( String method, String plainTextUrl, String body, String authorization )
+	public String getRestResponse( RestRequestType method, String url, String body, String authorization )
 	{
 		try
 		{
-			// generate a URL and open a connection
-			HttpURLConnection connection = (HttpURLConnection) new URL( plainTextUrl ).openConnection();
+			HttpURLConnection connection = sendRestRequest( method, url, body, authorization );
 
-			// set request properties
-			connection.setDoOutput( true );
-			connection.setInstanceFollowRedirects( false );
-			connection.setUseCaches( false );
-			connection.setRequestMethod( method );
-			connection.setRequestProperty( HttpHeaders.CONTENT_TYPE, MediaType.TEXT_PLAIN );
-			connection.setRequestProperty( "charset", httpCharset.displayName() );
+			// create a reader for the HTTP response
+			InputStream response = connection.getInputStream();
+			BufferedReader reader = new BufferedReader( new InputStreamReader( response, httpCharset ) );
 
+			// read the first line of the response
+			String s = reader.readLine();
+			StringBuilder responseBuilder = new StringBuilder( s );
+
+			// read subsequent lines of the response
+			s = reader.readLine();
+
+			while (s != null)
+			{
+				// add linebreak before appending the next line
+				responseBuilder.append( '\n' ).append( s );
+				s = reader.readLine();
+			}
+
+			// close the response reader
+			reader.close();
+
+			// combine the read lines to a single string
+			return responseBuilder.toString();
+		}
+		catch (IOException e)
+		{
+			LOGGER.warn( e.getMessage() );
+			return e.getMessage();
+		}
+	}
+
+
+	/**
+	 * Sends a REST request with a plain-text body and returns the header
+	 * fields.
+	 *
+	 * @param method
+	 *            the request method that is being sent
+	 * @param url
+	 *            the URL to which the request is being sent
+	 * @param body
+	 *            the plain-text body of the request
+	 * @return the response header fields
+	 */
+	public Map<String, List<String>> getRestHeader( RestRequestType method, String url, String body )
+	{
+		return getRestHeader( method, url, body, null );
+	}
+
+
+	/**
+	 * Sends an authorized REST request with a plain-text body and returns the
+	 * header fields.
+	 *
+	 * @param method
+	 *            the request method that is being sent
+	 * @param url
+	 *            the URL to which the request is being sent
+	 * @param body
+	 *            the plain-text body of the request
+	 * @param authorization
+	 *            the base-64-encoded username and password, or null if no
+	 *            authorization is required
+	 * @return the response header fields
+	 */
+	public Map<String, List<String>> getRestHeader( RestRequestType method, String url, String body,
+			String authorization )
+	{
+		Map<String, List<String>> headerFields = null;
+		try
+		{
+			HttpURLConnection connection = sendRestRequest( method, url, body, authorization );
+			headerFields = connection.getHeaderFields();
+		}
+		catch (IOException e)
+		{
+			LOGGER.warn( e.getMessage() );
+		}
+
+		return headerFields;
+	}
+
+
+	/**
+	 * Sends a REST request with a plain-text body and returns the connection.
+	 *
+	 * @param method
+	 *            the request method that is being sent
+	 * @param url
+	 *            the URL to which the request is being sent
+	 * @param body
+	 *            the plain-text body of the request
+	 * @param authorization
+	 *            the base-64-encoded username and password, or null if no
+	 *            authorization is required
+	 * @return the connection to the host
+	 */
+	private HttpURLConnection sendRestRequest( RestRequestType method, String url, String body, String authorization )
+			throws IOException
+	{
+		// generate a URL and open a connection
+		HttpURLConnection connection = (HttpURLConnection) new URL( url ).openConnection();
+
+		// set request properties
+		connection.setDoOutput( true );
+		connection.setInstanceFollowRedirects( false );
+		connection.setUseCaches( false );
+		connection.setRequestMethod( method.toString() );
+		connection.setRequestProperty( HttpHeaders.CONTENT_TYPE, MediaType.TEXT_PLAIN );
+		connection.setRequestProperty( "charset", httpCharset.displayName() );
+
+		// set authentication
+		if (authorization != null)
+		{
+			connection.setRequestProperty( HttpHeaders.AUTHORIZATION, authorization );
+		}
+
+		// only send date if it is specified
+		if (body != null)
+		{
 			// convert body string to bytes
 			byte[] bodyBytes = body.getBytes( httpCharset );
 			connection.setRequestProperty( HttpHeaders.CONTENT_LENGTH, Integer.toString( bodyBytes.length ) );
 
-			// set authentication
-			if (authorization != null)
-			{
-				connection.setRequestProperty( HttpHeaders.AUTHORIZATION, authorization );
-			}
-
 			// try to send body
-			try (DataOutputStream wr = new DataOutputStream( connection.getOutputStream() ))
-			{
-				wr.write( bodyBytes );
-
-				// read the HTTP response
-				try (InputStream response = connection.getInputStream();
-						BufferedReader reader = new BufferedReader( new InputStreamReader( response, httpCharset ) ))
-				{
-					StringBuilder sb = new StringBuilder();
-					String s;
-					do
-					{
-						s = reader.readLine();
-						sb.append( s );
-					} while (s != null && s.length() != 0);
-
-					reader.close();
-
-					return sb.toString();
-				}
-			}
+			DataOutputStream wr = new DataOutputStream( connection.getOutputStream() );
+			wr.write( bodyBytes );
+			wr.close();
 		}
-		catch (Exception e)
-		{
-			if (!suppressWarnings)
-			{
-				LOGGER.warn( e.getMessage() );
-			}
-			return e.getMessage();
-		}
+
+		return connection;
+	}
+
+	/**
+	 * The type of REST requests that can be sent via the {@link HttpRequester}.
+	 * 
+	 * @author Robin Weiss
+	 *
+	 */
+	public enum RestRequestType
+	{
+		GET, POST, PUT, DELETE, HEAD, OPTIONS
 	}
 }

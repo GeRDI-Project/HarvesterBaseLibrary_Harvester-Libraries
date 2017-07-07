@@ -31,6 +31,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import de.gerdiproject.harvest.utils.HttpRequester;
+import de.gerdiproject.harvest.utils.HttpRequester.RestRequestType;
 import de.gerdiproject.harvest.utils.SearchIndexFactory;
 import de.gerdiproject.json.IJsonArray;
 import de.gerdiproject.json.IJsonBuilder;
@@ -287,7 +288,7 @@ public class ElasticSearchSender
 
 					// submit to elasticsearch
 					String response = httpRequester
-							.postRequest( elasticSearchUrl, bulkRequestBuilder.toString(), credentials );
+							.getRestResponse( RestRequestType.POST, elasticSearchUrl, bulkRequestBuilder.toString(), credentials );
 
 					// handle response
 					handleSubmissionResponse( response, from, i, documents );
@@ -295,8 +296,6 @@ public class ElasticSearchSender
 					// reset the string builder and free memory
 					bulkRequestBuilder = new StringBuilder();
 					from = i + 1;
-
-					System.gc();
 				}
 			}
 
@@ -304,7 +303,7 @@ public class ElasticSearchSender
 			if (bulkRequestBuilder.length() > 0)
 			{
 				String response = httpRequester
-						.postRequest( elasticSearchUrl, bulkRequestBuilder.toString(), credentials );
+						.getRestResponse( RestRequestType.POST, elasticSearchUrl, bulkRequestBuilder.toString(), credentials );
 
 				// log response
 				handleSubmissionResponse( response, from, documents.size() - 1, documents );
@@ -333,7 +332,7 @@ public class ElasticSearchSender
 		if (mappings == null)
 		{
 			// create mappings on ElasticSearch
-			httpRequester.putRequest( mappingsUrl, BASIC_MAPPING, credentials );
+			httpRequester.getRestResponse(RestRequestType.PUT, mappingsUrl, BASIC_MAPPING, credentials );
 		}
 	}
 
@@ -592,7 +591,7 @@ public class ElasticSearchSender
 
 		// re-submit fixed documents
 		String resubmitResponse = httpRequester
-				.postRequest( elasticSearchUrl, bulkRequestBuilder.toString(), credentials );
+				.getRestResponse(RestRequestType.POST, elasticSearchUrl, bulkRequestBuilder.toString(), credentials );
 
 		//
 		if (resubmitResponse.indexOf( SUBMIT_ERROR_INDICATOR ) == -1)

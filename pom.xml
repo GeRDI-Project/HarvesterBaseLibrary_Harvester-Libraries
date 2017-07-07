@@ -97,7 +97,9 @@
 					<filesets>
 						<fileset>
 							<directory>${basedir}</directory>
-							<includes>**/target/**</includes>
+							<includes>
+								<include>**/target/**</include>
+							</includes>
 							<excludes>
 								<exclude>**/*.jar</exclude>
 								<exclude>${reports.directory}</exclude>
