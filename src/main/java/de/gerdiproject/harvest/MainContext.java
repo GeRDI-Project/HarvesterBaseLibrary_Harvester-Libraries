@@ -34,85 +34,81 @@ import de.gerdiproject.harvest.harvester.AbstractHarvester;
  */
 public class MainContext
 {
-	private String moduleName;
+    private String moduleName;
 
-	private static final String INIT_FINISHED = "%s is now ready!";
-	private static final String INIT_START = "Initializing %s...";
-	private static final String DONE = "done!";
+    private static final String INIT_FINISHED = "%s is now ready!";
+    private static final String INIT_START = "Initializing %s...";
+    private static final String DONE = "done!";
 
-	private static final Logger LOGGER = LoggerFactory.getLogger( MainContext.class );
+    private static final Logger LOGGER = LoggerFactory.getLogger(MainContext.class);
 
-	private AbstractHarvester harvester;
+    private AbstractHarvester harvester;
 
-	private static MainContext instance;
-
-
-	/**
-	 * Singleton constructor.
-	 */
-	private MainContext()
-	{
-	}
+    private static MainContext instance;
 
 
-	/**
-	 * Returns the harvester singleton instance of this application
-	 *
-	 * @return this application's harvester class
-	 * @see de.gerdiproject.harvest.harvester.AbstractHarvester
-	 */
-	public static AbstractHarvester getHarvester()
-	{
-		if (instance == null)
-		{
-			instance = new MainContext();
-		}
-		return instance.harvester;
-	}
+    /**
+     * Singleton constructor.
+     */
+    private MainContext()
+    {
+    }
 
 
-	/**
-	 * Returns the name of the application.
-	 *
-	 * @return the module name
-	 */
-	public static String getModuleName()
-	{
-		if (instance == null)
-		{
-			instance = new MainContext();
-		}
-		return instance.moduleName;
-	}
+    /**
+     * Returns the harvester singleton instance of this application
+     *
+     * @return this application's harvester class
+     * @see de.gerdiproject.harvest.harvester.AbstractHarvester
+     */
+    public static AbstractHarvester getHarvester()
+    {
+        if (instance == null)
+            instance = new MainContext();
+
+        return instance.harvester;
+    }
 
 
-	/**
-	 * Sets the global harvester and logger instances.
-	 *
-	 * @param moduleName
-	 *            name of this application
-	 * @param harvester
-	 *            an AbstractHarvester subclass
-	 * @see de.gerdiproject.harvest.harvester.AbstractHarvester
-	 */
-	public static void init( String moduleName, AbstractHarvester harvester )
-	{
-		if (instance == null)
-		{
-			instance = new MainContext();
-		}
+    /**
+     * Returns the name of the application.
+     *
+     * @return the module name
+     */
+    public static String getModuleName()
+    {
+        if (instance == null)
+            instance = new MainContext();
 
-		// set module name
-		instance.moduleName = moduleName;
+        return instance.moduleName;
+    }
 
-		// init harvester
-		LOGGER.info( String.format( INIT_START, harvester.getName() ) );
-		harvester.init();
 
-		instance.harvester = harvester;
-		LOGGER.info( DONE );
+    /**
+     * Sets the global harvester and logger instances.
+     *
+     * @param moduleName
+     *            name of this application
+     * @param harvester
+     *            an AbstractHarvester subclass
+     * @see de.gerdiproject.harvest.harvester.AbstractHarvester
+     */
+    public static void init(String moduleName, AbstractHarvester harvester)
+    {
+        if (instance == null)
+            instance = new MainContext();
 
-		// log ready state
-		LOGGER.info( String.format( INIT_FINISHED, instance.moduleName ) );
-	}
+        // set module name
+        instance.moduleName = moduleName;
+
+        // init harvester
+        LOGGER.info(String.format(INIT_START, harvester.getName()));
+        harvester.init();
+
+        instance.harvester = harvester;
+        LOGGER.info(DONE);
+
+        // log ready state
+        LOGGER.info(String.format(INIT_FINISHED, instance.moduleName));
+    }
 }
