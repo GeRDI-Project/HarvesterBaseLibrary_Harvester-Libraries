@@ -199,4 +199,11 @@
 		  <version>1.2.3</version>
 		</dependency>
 	</dependencies>
+	
+	<repositories>
+		<repository>
+			<id>Sonatype</id>
+			<url>https://oss.sonatype.org/content/repositories/snapshots/</url>
+		</repository>
+	</repositories>
 </project>
