@@ -29,69 +29,69 @@ import de.gerdiproject.json.IJsonObject;
 /**
  * This abstract harvester class iterates a single {@link IJsonArray} and
  * harvests documents from it.
- * 
+ *
  * @author Robin Weiss
  *
  */
 public abstract class AbstractJsonArrayHarvester extends AbstractListHarvester<Object>
 {
-	/**
-	 * Forwarding the superclass constructor.
-	 *
-	 * @param harvesterName
-	 *            a unique name of the harvester
-	 * @param numberOfDocumentsPerEntry
-	 *            the number of documents that are expected to be harvested from
-	 *            each entry
-	 */
-	public AbstractJsonArrayHarvester( String harvesterName, int numberOfDocumentsPerEntry )
-	{
-		super( harvesterName, numberOfDocumentsPerEntry );
-	}
-
-	
-	/**
-	 * Forwarding the superclass constructor.
-	 *
-	 * @param numberOfDocumentsPerEntry
-	 *            the number of documents that are expected to be harvested from
-	 *            each entry
-	 */
-	public AbstractJsonArrayHarvester( int numberOfDocumentsPerEntry )
-	{
-		super( null, numberOfDocumentsPerEntry );
-	}
+    /**
+     * Forwarding the superclass constructor.
+     *
+     * @param harvesterName
+     *            a unique name of the harvester
+     * @param numberOfDocumentsPerEntry
+     *            the number of documents that are expected to be harvested from
+     *            each entry
+     */
+    public AbstractJsonArrayHarvester(String harvesterName, int numberOfDocumentsPerEntry)
+    {
+        super(harvesterName, numberOfDocumentsPerEntry);
+    }
 
 
-	/**
-	 * Reads a single element from the JsonArray and creates at least one
-	 * document.
-	 * 
-	 * @param entry
-	 *            an element from the JsonArray
-	 * @return a list of at least one document
-	 */
-	protected abstract List<IJsonObject> harvestJsonArrayEntry( IJsonObject entry );
+    /**
+     * Forwarding the superclass constructor.
+     *
+     * @param numberOfDocumentsPerEntry
+     *            the number of documents that are expected to be harvested from
+     *            each entry
+     */
+    public AbstractJsonArrayHarvester(int numberOfDocumentsPerEntry)
+    {
+        super(null, numberOfDocumentsPerEntry);
+    }
 
 
-	/**
-	 * Retrieves the JsonArray that is to be harvested.
-	 * 
-	 * @return the JsonArray that is to be harvested
-	 */
-	protected abstract IJsonArray getJsonArray();
+    /**
+     * Reads a single element from the JsonArray and creates at least one
+     * document.
+     *
+     * @param entry
+     *            an element from the JsonArray
+     * @return a list of at least one document
+     */
+    protected abstract List<IJsonObject> harvestJsonArrayEntry(IJsonObject entry);
 
 
-	@Override
-	final protected Collection<Object> getEntries()
-	{
-		return getJsonArray();
-	}
+    /**
+     * Retrieves the JsonArray that is to be harvested.
+     *
+     * @return the JsonArray that is to be harvested
+     */
+    protected abstract IJsonArray getJsonArray();
 
 
-	@Override
-	final protected List<IJsonObject> harvestEntry( Object entry )
-	{
-		return harvestJsonArrayEntry( (IJsonObject) entry );
-	}
+    @Override
+    final protected Collection<Object> getEntries()
+    {
+        return getJsonArray();
+    }
+
+
+    @Override
+    final protected List<IJsonObject> harvestEntry(Object entry)
+    {
+        return harvestJsonArrayEntry((IJsonObject) entry);
+    }
 }

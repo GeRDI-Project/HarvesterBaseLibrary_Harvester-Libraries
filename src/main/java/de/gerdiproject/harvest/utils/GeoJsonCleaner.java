@@ -41,107 +41,99 @@ import de.gerdiproject.json.impl.JsonBuilder;
  * 19107:2003 standard. It's possible that polygons are valid GeoJson objects,
  * but cannot be processed by ElasticSearch. For these cases, polygons must be
  * cleaned first.
- * 
+ *
  * @author Robin Weiss
  *
  */
 public class GeoJsonCleaner
 {
-	public static final String COORDINATES_JSON = "coordinates";
-	public static final String TYPE_JSON = "type";
-	public static final String MULTI_POLYGON_TYPE = "MultiPolygon";
-	public static final String POLYGON_TYPE = "Polygon";
-	private static final Logger LOGGER = LoggerFactory.getLogger( GeoJsonCleaner.class );
+    public static final String COORDINATES_JSON = "coordinates";
+    public static final String TYPE_JSON = "type";
+    public static final String MULTI_POLYGON_TYPE = "MultiPolygon";
+    public static final String POLYGON_TYPE = "Polygon";
+    private static final Logger LOGGER = LoggerFactory.getLogger(GeoJsonCleaner.class);
 
-	private static final Map<String, IJsonObject> CACHED_GEO_MAP = new ConcurrentHashMap<>();
+    private static final Map<String, IJsonObject> CACHED_GEO_MAP = new ConcurrentHashMap<>();
 
-	private final IJsonBuilder jsonBuilder;
-	private MessageDigest hashGenerator;
-
-
-	public GeoJsonCleaner()
-	{
-		jsonBuilder = new JsonBuilder();
-
-		try
-		{
-			hashGenerator = MessageDigest.getInstance( "SHA" );
-		}
-		catch (NoSuchAlgorithmException e)
-		{
-			LOGGER.error( "Did not find algorithm", e );
-		}
-	}
+    private final IJsonBuilder jsonBuilder;
+    private MessageDigest hashGenerator;
 
 
-	private String getGeoHash( IJsonObject geoJson )
-	{
-		hashGenerator.update( geoJson.toJsonString().getBytes() );
-		return new String( hashGenerator.digest() );
-	}
+    public GeoJsonCleaner()
+    {
+        jsonBuilder = new JsonBuilder();
+
+        try {
+            hashGenerator = MessageDigest.getInstance("SHA");
+        } catch (NoSuchAlgorithmException e) {
+            LOGGER.error("Did not find algorithm", e);
+        }
+    }
 
 
-	/**
-	 * Clears all stored geo objects from the cache.
-	 */
-	public static void clearCache()
-	{
-		CACHED_GEO_MAP.clear();
-	}
+    private String getGeoHash(IJsonObject geoJson)
+    {
+        hashGenerator.update(geoJson.toJsonString().getBytes());
+        return new String(hashGenerator.digest());
+    }
 
 
-	/**
-	 * Attempts to detect and remove errors in a geoJson object, such as
-	 * self-intersecting polygons.
-	 * 
-	 * @param geoJson
-	 *            the original, possibly erroneous geo json object
-	 * 
-	 * @return a geo json object that is accepted by Elasticsearch
-	 */
-	public IJsonObject cleanGeoData( IJsonObject geoJson )
-	{
-		IJsonObject cleanedGeo = geoJson;
+    /**
+     * Clears all stored geo objects from the cache.
+     */
+    public static void clearCache()
+    {
+        CACHED_GEO_MAP.clear();
+    }
 
-		// check if this object has been processed in the past
-		String geoJsonHash = getGeoHash( geoJson );
-		IJsonObject cachedGeoObject = CACHED_GEO_MAP.getOrDefault( geoJsonHash, null );
-		if (cachedGeoObject != null)
-		{
-			cleanedGeo = cachedGeoObject;
-		}
-		else
-		{
-			String type = geoJson.getString( TYPE_JSON, null );
 
-			switch (type)
-			{
-				case POLYGON_TYPE:
-				case MULTI_POLYGON_TYPE:
+    /**
+     * Attempts to detect and remove errors in a geoJson object, such as
+     * self-intersecting polygons.
+     *
+     * @param geoJson
+     *            the original, possibly erroneous geo json object
+     *
+     * @return a geo json object that is accepted by Elasticsearch
+     */
+    public IJsonObject cleanGeoData(IJsonObject geoJson)
+    {
+        IJsonObject cleanedGeo = geoJson;
 
-					try
-					{
-						OGCGeometry polygon = OGCGeometry.fromGeoJson( geoJson.toString() );
-						if (!polygon.isSimple())
-						{
-							IJsonReader reader = jsonBuilder
-									.createReader( new StringReader( polygon.makeSimple().asGeoJson() ) );
-							cleanedGeo = reader.readObject();
+        // check if this object has been processed in the past
+        String geoJsonHash = getGeoHash(geoJson);
+        IJsonObject cachedGeoObject = CACHED_GEO_MAP.getOrDefault(geoJsonHash, null);
 
-							reader.close();
-						}
-					}
-					catch (Exception e)
-					{
-						cleanedGeo = geoJson;
-					}
-			}
-		}
+        if (cachedGeoObject != null)
+            cleanedGeo = cachedGeoObject;
 
-		// cache the result
-		CACHED_GEO_MAP.put( geoJsonHash, cleanedGeo );
+        else {
+            String type = geoJson.getString(TYPE_JSON, null);
 
-		return cleanedGeo;
+            switch (type) {
+                case POLYGON_TYPE:
+                case MULTI_POLYGON_TYPE:
 
-	}
+                    try {
+                        OGCGeometry polygon = OGCGeometry.fromGeoJson(geoJson.toString());
+
+                        if (!polygon.isSimple()) {
+                            IJsonReader reader = jsonBuilder
+                                                 .createReader(new StringReader(polygon.makeSimple().asGeoJson()));
+                            cleanedGeo = reader.readObject();
+
+                            reader.close();
+                        }
+                    } catch (Exception e) {
+                        cleanedGeo = geoJson;
+                    }
+            }
+        }
+
+        // cache the result
+        CACHED_GEO_MAP.put(geoJsonHash, cleanedGeo);
+
+        return cleanedGeo;
+
+    }
 }
