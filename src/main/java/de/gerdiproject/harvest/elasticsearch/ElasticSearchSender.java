@@ -374,6 +374,7 @@ public class ElasticSearchSender
         IJsonArray responseArray = null;
         {
             IJsonReader reader = jsonBuilder.createReader(new StringReader(response));
+
             try {
                 IJsonObject responseObj = reader.readObject();
                 reader.close();
@@ -411,6 +412,7 @@ public class ElasticSearchSender
             // if document was transmitted successfully, check the next one
             if (singleDocResponse.getJsonObject(ERROR_JSON) == null)
                 continue;
+
             hasErrors = true;
 
             // log the error message
@@ -419,9 +421,11 @@ public class ElasticSearchSender
 
             // attempt to fix the document
             IJsonObject fixedDoc = fixErroneousDocument(singleDocResponse, documents);
+
             if (fixedDoc != null)
                 fixedDocuments.add(fixedDoc);
         }
+
         // log failed documents
         if (hasErrors)
             LOGGER.error(errorBuilder.toString());
@@ -602,6 +606,7 @@ public class ElasticSearchSender
                             exceptionReason));
                 }
             }
+
             // log re-submission errors
             LOGGER.error(errorBuilder.toString());
         }

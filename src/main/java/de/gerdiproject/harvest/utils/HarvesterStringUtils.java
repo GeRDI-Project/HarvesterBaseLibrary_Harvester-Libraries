@@ -456,6 +456,7 @@ public class HarvesterStringUtils
     static
     {
         ESCAPE_LOOKUP_TABLE = new HashMap<>();
+
         for (final String[] s : ESCAPES)
             ESCAPE_LOOKUP_TABLE.put(s[1], s[0]);
     }
@@ -521,9 +522,11 @@ public class HarvesterStringUtils
         StringWriter writer = null;
         int st = 0;
         int startIndex = 0;
+
         while (true) {
             // look for '&'
             startIndex = input.indexOf('&', startIndex) + 1;
+
             if (startIndex == 0)
                 break;
 
@@ -531,6 +534,7 @@ public class HarvesterStringUtils
 
             // found '&', look for ';'
             int len = endIndex - startIndex;
+
             if (endIndex == -1 || len < MIN_ESCAPE || len > MAX_ESCAPE) {
                 startIndex++;
                 continue;
@@ -544,6 +548,7 @@ public class HarvesterStringUtils
 
                 // check if the number is hexadecimal
                 final char firstChar = input.charAt(numberStartIndex);
+
                 if (firstChar == 'x' || firstChar == 'X') {
                     numberStartIndex++;
                     radix = HEXADECIMAL_RADIX;
@@ -554,6 +559,7 @@ public class HarvesterStringUtils
 
                     if (writer == null)
                         writer = new StringWriter(input.length());
+
                     writer.append(input.substring(st, startIndex - 1));
 
                     if (entityValue > MAX_SINGLE_CHAR_VALUE) {
@@ -570,6 +576,7 @@ public class HarvesterStringUtils
             } else {
                 // named escape
                 CharSequence value = ESCAPE_LOOKUP_TABLE.get(input.substring(startIndex, endIndex));
+
                 if (value == null) {
                     startIndex++;
                     continue;
@@ -577,6 +584,7 @@ public class HarvesterStringUtils
 
                 if (writer == null)
                     writer = new StringWriter(input.length());
+
                 writer.append(input.substring(st, startIndex - 1));
 
                 writer.append(value);
@@ -586,6 +594,7 @@ public class HarvesterStringUtils
             st = endIndex + 1;
             startIndex = st;
         }
+
         return (writer == null)
                ? input
                : writer.append(input.substring(st)).toString();

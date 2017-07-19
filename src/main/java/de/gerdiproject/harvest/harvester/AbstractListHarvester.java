@@ -143,6 +143,7 @@ public abstract class AbstractListHarvester<T> extends AbstractHarvester
                 if (i == lastEntryIndex)
                     break;
             }
+
             i++;
         }
 

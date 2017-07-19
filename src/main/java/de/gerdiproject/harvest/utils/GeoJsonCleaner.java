@@ -116,6 +116,7 @@ public class GeoJsonCleaner
 
                     try {
                         OGCGeometry polygon = OGCGeometry.fromGeoJson(geoJson.toString());
+
                         if (!polygon.isSimple()) {
                             IJsonReader reader = jsonBuilder
                                                  .createReader(new StringReader(polygon.makeSimple().asGeoJson()));

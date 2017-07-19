@@ -147,6 +147,7 @@ public class Configuration
     {
         // set development tools configuration
         Object devToolsConfig = config.get(DEV_TITLE);
+
         if (devToolsConfig != null) {
             DevelopmentTools devTools = DevelopmentTools.instance();
 
@@ -172,6 +173,7 @@ public class Configuration
 
         // set ElasticSearch configuration
         IJsonObject elasticSearchConfig = config.getJsonObject(ELASTIC_SEARCH_TITLE);
+
         if (elasticSearchConfig != null) {
             // set url
             if (!elasticSearchConfig.isNull(ELASTIC_SEARCH_URL)

@@ -136,6 +136,7 @@ public class SearchIndexFactory
                 String cleanDesc = HarvesterStringUtils.cleanString(descriptions.getString(i));
                 descriptions.put(i, cleanDesc);
             }
+
             document.put(DESCRIPTION_JSON, descriptions);
         }
 

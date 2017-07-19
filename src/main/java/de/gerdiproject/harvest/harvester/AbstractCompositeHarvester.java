@@ -149,6 +149,7 @@ public abstract class AbstractCompositeHarvester extends AbstractHarvester
 
         // convert list to array
         CompletableFuture<?>[] futureArray = new CompletableFuture<?>[subProcesses.size()];
+
         for (int i = 0, len = futureArray.length; i < len; i++)
             futureArray[i] = subProcesses.get(i);
 
@@ -163,8 +164,10 @@ public abstract class AbstractCompositeHarvester extends AbstractHarvester
     protected int calculateTotalNumberOfDocumentsInternal()
     {
         int total = 0;
+
         for (AbstractHarvester subHarvester : subHarvesters)
             total += subHarvester.getTotalNumberOfDocuments();
+
         return total;
     }
 
@@ -174,6 +177,7 @@ public abstract class AbstractCompositeHarvester extends AbstractHarvester
     {
         // for now, concatenate all hashes
         final StringBuilder hashBuilder = new StringBuilder();
+
         for (AbstractHarvester subHarvester : subHarvesters)
             hashBuilder.append(subHarvester.getHash(false));
 
@@ -203,8 +207,10 @@ public abstract class AbstractCompositeHarvester extends AbstractHarvester
     public int getNumberOfHarvestedDocuments()
     {
         int totalNumber = 0;
+
         for (AbstractHarvester subHarvester : subHarvesters)
             totalNumber += subHarvester.getNumberOfHarvestedDocuments();
+
         return totalNumber;
     }
 
@@ -216,6 +222,7 @@ public abstract class AbstractCompositeHarvester extends AbstractHarvester
             if (!subHarvester.isHarvestFinished())
                 return false;
         }
+
         return true;
     }
 

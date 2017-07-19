@@ -238,6 +238,7 @@ public class HttpRequester
             if (!suppressWarnings)
                 LOGGER.warn(String.format(ERROR_JSON, url, e.toString()));
         }
+
         return jsonResponse;
     }
 
@@ -333,6 +334,7 @@ public class HttpRequester
             if (!suppressWarnings)
                 LOGGER.warn(String.format(ERROR_JSON, url, e.toString()));
         }
+
         return htmlResponse;
     }
 
@@ -508,6 +510,7 @@ public class HttpRequester
                                                    String authorization)
     {
         Map<String, List<String>> headerFields = null;
+
         try {
             HttpURLConnection connection = sendRestRequest(method, url, body, authorization);
             headerFields = connection.getHeaderFields();

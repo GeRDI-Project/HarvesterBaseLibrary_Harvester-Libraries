@@ -152,6 +152,7 @@ public class HarvesterFacade
                            maxRange);
             }
         }
+
         return String.format(RANGE_SET_FAILED_PARAMS, maxRange);
     }
 
@@ -293,6 +294,7 @@ public class HarvesterFacade
     private String getDurationText(long durationInSeconds)
     {
         String durationText;
+
         if (durationInSeconds < 0)
             durationText = CANNOT_ESTIMATE;
 

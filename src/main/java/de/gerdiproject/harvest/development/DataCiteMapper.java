@@ -81,6 +81,7 @@ public class DataCiteMapper
     {
         if (instance == null)
             instance = new DataCiteMapper();
+
         return instance;
     }
 
@@ -131,8 +132,10 @@ public class DataCiteMapper
 
             for (StackTraceElement ele : stackTrace)
                 errorBuilder.append('\n').append(ele);
+
             LOGGER.error(errorBuilder.toString());
         }
+
         conversionProcess = null;
 
         LOGGER.error(CONVERSION_FAILED);
@@ -149,11 +152,14 @@ public class DataCiteMapper
 
         final int docCount = documents.size();
         int convertedCount = 0;
+
         for (Object o : documents) {
             IJsonObject convertedDoc = convertSingleDocument(o, builder);
+
             synchronized (convertedDocuments) {
                 convertedDocuments.add(convertedDoc);
             }
+
             LOGGER.info(HarvesterStringUtils.formatProgress("DataCite Conversion", ++convertedCount, docCount));
         }
 
@@ -245,6 +251,7 @@ public class DataCiteMapper
             if (years != null) {
                 int minYear = Integer.MAX_VALUE;
                 int maxYear = Integer.MIN_VALUE;
+
                 for (Object year : years) {
                     int y = (Integer) year;
                     minYear = (y < minYear) ? y : minYear;
@@ -259,6 +266,7 @@ public class DataCiteMapper
                 dateInfo.put("date", date);
                 dates.add(dateInfo);
             }
+
             if (lastUpdated != null) {
                 IJsonObject date = jsonBuilder.createObject();
                 date.put("exact", lastUpdated);
@@ -267,6 +275,7 @@ public class DataCiteMapper
                 dateInfo.put("date", date);
                 dates.add(dateInfo);
             }
+
             result.put("dates", dates);
         }
 
@@ -322,6 +331,7 @@ public class DataCiteMapper
 
                 files.add(file);
             }
+
             result.put("files", files);
         }
 
@@ -332,6 +342,7 @@ public class DataCiteMapper
     public String getProgressString()
     {
         int conversionCount;
+
         synchronized (convertedDocuments) {
             conversionCount = convertedDocuments.size();
         }

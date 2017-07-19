@@ -417,6 +417,7 @@ public abstract class AbstractHarvester
 
             return (milliSecondsTotal - milliSecondsUntilNow) / 1000l;
         }
+
         return -1;
     }
 
@@ -428,9 +429,11 @@ public abstract class AbstractHarvester
     public final void harvest()
     {
         logger.info(String.format(HARVESTER_START, name));
+
         synchronized (harvestedDocuments) {
             harvestedDocuments.clear();
         }
+
         numberOfHarvestedDocuments.set(0);
         harvestStartedDate = new Date();
 
@@ -553,6 +556,7 @@ public abstract class AbstractHarvester
     {
         if (recalculate)
             hash = calculateHashInternal();
+
         return hash;
     }
 
