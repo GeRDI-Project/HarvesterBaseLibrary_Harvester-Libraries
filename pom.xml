@@ -171,7 +171,6 @@
 						<ruleset>rulesets/java/basic.xml</ruleset>
 						<ruleset>rulesets/java/sunsecure.xml</ruleset>
 						<ruleset>rulesets/java/imports.xml</ruleset>
-						<ruleset>rulesets/java/braces.xml</ruleset>
 					</rulesets>
 				</configuration>
 				<executions>
@@ -179,8 +178,8 @@
 						<phase>test</phase>
 						<goals>
 							<!-- fail the build if PMD or CPD finds violations -->
-							<!--<goal>check</goal>
-							<goal>cpd-check</goal>-->
+							<goal>check</goal>
+							<goal>cpd-check</goal>
 							
 							<!-- generate reports for PMD and CPD -->
 							<goal>pmd</goal>
