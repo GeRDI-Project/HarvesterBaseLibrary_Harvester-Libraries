@@ -39,112 +39,106 @@ import javax.ws.rs.core.MediaType;
  * @see DataCiteMapper
  * @author Robin Weiss
  */
-@Path ("datacite")
+@Path("datacite")
 public class DataCiteMapperFacade
 {
-	private final static String STATUS_NO_HARVEST = "Needs to finish harvesting first";
-	private final static String STATUS_NOT_CONVERTED = "Ready for conversion";
-	private final static String STATUS_DONE = "Documents converted";
+    private final static String STATUS_NO_HARVEST = "Needs to finish harvesting first";
+    private final static String STATUS_NOT_CONVERTED = "Ready for conversion";
+    private final static String STATUS_DONE = "Documents converted";
 
-	private final static String SAVE_FAILED = "Documents must be converted prior to saving them. Use a POST request to start the conversion.";
-	private final static String SUBMIT_FAILED = "Documents must be converted prior to submitting them. Use a POST request to start the conversion.";
-	private final static String FILE_PATH = "harvestedIndices/dataCite/%s_datacite_%d.json";
+    private final static String SAVE_FAILED = "Documents must be converted prior to saving them. Use a POST request to start the conversion.";
+    private final static String SUBMIT_FAILED = "Documents must be converted prior to submitting them. Use a POST request to start the conversion.";
+    private final static String FILE_PATH = "harvestedIndices/dataCite/%s_datacite_%d.json";
 
-	private final static String INFO = "- %s DataCite Mapper -\n\n"
-			+ "Status:\t\t%s\n"
-			+ "POST/save\tSaves the converted documents to disk\n"
-			+ "POST/submit\tSubmits the converted documents to ElasticSearch";
+    private final static String INFO = "- %s DataCite Mapper -\n\n"
+                                       + "Status:\t\t%s\n"
+                                       + "POST/save\tSaves the converted documents to disk\n"
+                                       + "POST/submit\tSubmits the converted documents to ElasticSearch";
 
-	private final DataCiteMapper dataCiteMapper = DataCiteMapper.instance();
-
-
-	/**
-	 * Displays an info string that shows the available REST calls and current
-	 * state of the developer options.
-	 *
-	 * @return an info string
-	 */
-	@GET
-	@Produces ({
-			MediaType.TEXT_PLAIN
-	})
-	public String getInfo()
-	{
-		String status = STATUS_NO_HARVEST;
-		AbstractHarvester harvester = MainContext.getHarvester();
-
-		if (dataCiteMapper.isFinished())
-		{
-			status = STATUS_DONE;
-		}
-		else if (dataCiteMapper.isConverting())
-		{
-			status = dataCiteMapper.getProgressString();
-		}
-		else if (harvester.isHarvestFinished())
-		{
-			status = STATUS_NOT_CONVERTED;
-		}
-
-		return String.format(
-				INFO,
-				MainContext.getModuleName(),
-				status );
-	}
+    private final DataCiteMapper dataCiteMapper = DataCiteMapper.instance();
 
 
-	/**
-	 * Starts converting harvested documents to the DataCite schema.
-	 *
-	 * @return an info message that describes the status of the operation
-	 */
-	@POST
-	@Produces ({
-			MediaType.TEXT_PLAIN
-	})
-	public String startConversion()
-	{
-		return dataCiteMapper.startConversion();
-	}
+    /**
+     * Displays an info string that shows the available REST calls and current
+     * state of the developer options.
+     *
+     * @return an info string
+     */
+    @GET
+    @Produces({
+        MediaType.TEXT_PLAIN
+    })
+    public String getInfo()
+    {
+        String status = STATUS_NO_HARVEST;
+        AbstractHarvester harvester = MainContext.getHarvester();
+
+        if (dataCiteMapper.isFinished())
+            status = STATUS_DONE;
+
+        else if (dataCiteMapper.isConverting())
+            status = dataCiteMapper.getProgressString();
+
+        else if (harvester.isHarvestFinished())
+            status = STATUS_NOT_CONVERTED;
+
+        return String.format(
+                   INFO,
+                   MainContext.getModuleName(),
+                   status);
+    }
 
 
-	/**
-	 * Saves the conversion result to disk.
-	 *
-	 * @return an info message that describes the status of the operation
-	 */
-	@POST
-	@Path ("save")
-	@Produces ({
-			MediaType.TEXT_PLAIN
-	})
-	public String saveToDisk()
-	{
-		if (!dataCiteMapper.isFinished())
-		{
-			return SAVE_FAILED;
-		}
-		String filePath = String.format( FILE_PATH, MainContext.getModuleName(), System.currentTimeMillis() );
-		return DevelopmentTools.instance().saveJsonToDisk( dataCiteMapper.getConvertedDocuments(), filePath );
-	}
+    /**
+     * Starts converting harvested documents to the DataCite schema.
+     *
+     * @return an info message that describes the status of the operation
+     */
+    @POST
+    @Produces({
+        MediaType.TEXT_PLAIN
+    })
+    public String startConversion()
+    {
+        return dataCiteMapper.startConversion();
+    }
 
 
-	/**
-	 * Submits the conversion result to ElasticSearch.
-	 *
-	 * @return an info message that describes the status of the operation
-	 */
-	@POST
-	@Path ("submit")
-	@Produces ({
-			MediaType.TEXT_PLAIN
-	})
-	public String submitToElasticSearch()
-	{
-		if (!dataCiteMapper.isFinished())
-		{
-			return SUBMIT_FAILED;
-		}
-		return ElasticSearchSender.instance().sendToElasticSearch( dataCiteMapper.getConvertedDocuments() );
-	}
+    /**
+     * Saves the conversion result to disk.
+     *
+     * @return an info message that describes the status of the operation
+     */
+    @POST
+    @Path("save")
+    @Produces({
+        MediaType.TEXT_PLAIN
+    })
+    public String saveToDisk()
+    {
+        if (!dataCiteMapper.isFinished())
+            return SAVE_FAILED;
+
+        String filePath = String.format(FILE_PATH, MainContext.getModuleName(), System.currentTimeMillis());
+        return DevelopmentTools.instance().saveJsonToDisk(dataCiteMapper.getConvertedDocuments(), filePath);
+    }
+
+
+    /**
+     * Submits the conversion result to ElasticSearch.
+     *
+     * @return an info message that describes the status of the operation
+     */
+    @POST
+    @Path("submit")
+    @Produces({
+        MediaType.TEXT_PLAIN
+    })
+    public String submitToElasticSearch()
+    {
+        if (!dataCiteMapper.isFinished())
+            return SUBMIT_FAILED;
+
+        return ElasticSearchSender.instance().sendToElasticSearch(dataCiteMapper.getConvertedDocuments());
+    }
 }
