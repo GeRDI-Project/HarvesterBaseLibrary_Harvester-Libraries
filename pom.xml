@@ -1,20 +1,18 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
-	<groupId>de.gerdi-project</groupId>
+	<parent>
+		<groupId>de.gerdi-project</groupId>
+		<artifactId>GeRDI-parent</artifactId>
+		<version>1.0.0</version>
+	</parent>
+	
 	<artifactId>RestfulHarvester-Library</artifactId>
 	<version>1.0.0-SNAPSHOT</version>
     <packaging>jar</packaging>
-  
+	
 	<name>Restful Harvester Library</name>
 	<description>This library provides a skeleton for restful harvesters.</description>
 	<url>http://www.gerdi-project.de</url>
-  
-	<licenses>
-	  <license>
-		<name>The Apache License, Version 2.0</name>
-		<url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
-	  </license>
-	</licenses>
   
 	<developers>
 		<developer>
@@ -24,17 +22,9 @@
 			<organizationUrl>http://www.uni-kiel.de/index-e.shtml</organizationUrl>
 		</developer>
 	</developers>
-	
-	
-	<properties>
-		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<java.version>1.8</java.version>
-		<reports.directory> target/reports/</reports.directory>
-	</properties>
 
 	<build>
         <finalName>${project.artifactId}_${project.version}</finalName>
-        <directory>target/</directory>
 		
         <plugins>
 			
@@ -154,102 +144,9 @@
 					</filesets>
 				</configuration>
 			</plugin>
-		
-			<!-- PMD -->
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-pmd-plugin</artifactId>
-				<version>3.8</version>
-				<configuration>
-					<linkXRef>true</linkXRef>
-					<targetJdk>${java.version}</targetJdk>
-					<includeTests>true</includeTests>
-					<failOnViolation>true</failOnViolation>
-					<printFailingErrors>true</printFailingErrors>
-					<targetDirectory>${reports.directory}</targetDirectory>
-					<rulesets>
-						<ruleset>rulesets/java/basic.xml</ruleset>
-						<ruleset>rulesets/java/sunsecure.xml</ruleset>
-						<ruleset>rulesets/java/imports.xml</ruleset>
-					</rulesets>
-				</configuration>
-				<executions>
-					<execution>
-						<phase>test</phase>
-						<goals>
-							<!-- fail the build if PMD or CPD finds violations -->
-							<goal>check</goal>
-							<goal>cpd-check</goal>
-							
-							<!-- generate reports for PMD and CPD -->
-							<goal>pmd</goal>
-							<goal>cpd</goal>
-						</goals>
-					</execution>
-				</executions>
-			</plugin>
-			
-			<!-- Findbugs -->
-			<plugin>
-				<groupId>org.codehaus.mojo</groupId>
-				<artifactId>findbugs-maven-plugin</artifactId>
-				<version>3.0.1</version>
-				<configuration>
-					<effort>Max</effort>
-					<threshold>Max</threshold>
-					<includeTests>true</includeTests>
-					<failOnError>true</failOnError>
-					<xmlOutput>true</xmlOutput>
-					<xmlOutputDirectory>${reports.directory}</xmlOutputDirectory>
-				</configuration>
-				<executions>
-					<execution>
-						<phase>test</phase>
-						<goals>
-							<goal>findbugs</goal>
-						</goals>
-					</execution>
-				</executions>
-				<dependencies>
-					<dependency>
-						<groupId>junit</groupId>
-						<artifactId>junit</artifactId>
-						<version>4.12</version>
-					</dependency>
-					<dependency>
-						<groupId>org.hamcrest</groupId>
-						<artifactId>hamcrest-library</artifactId>
-						<version>1.3</version>
-					</dependency>
-				</dependencies>
-			</plugin>
 		</plugins>
     </build>
 	
-	<reporting>
-		<plugins>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-pmd-plugin</artifactId>
-				<version>3.8</version>
-			</plugin>
-		
-			<!-- resolves PMD issue: [WARNING] Unable to locate Source XRef to link to - DISABLED -->
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-jxr-plugin</artifactId>
-				<version>2.5</version>
-			</plugin>
-		
-			<!-- Findbugs -->
-			<plugin>
-				<groupId>org.codehaus.mojo</groupId>
-				<artifactId>findbugs-maven-plugin</artifactId>
-				<version>3.0.1</version>
-			</plugin>
-		</plugins>
-	</reporting>
-
 	<distributionManagement>
 		<snapshotRepository>
 			<id>ossrh</id>
@@ -309,11 +206,4 @@
 		  <version>1.2.3</version>
 		</dependency>
 	</dependencies>
-	
-	<repositories>
-		<repository>
-			<id>Sonatype</id>
-			<url>https://oss.sonatype.org/content/repositories/snapshots/</url>
-		</repository>
-	</repositories>
 </project>
