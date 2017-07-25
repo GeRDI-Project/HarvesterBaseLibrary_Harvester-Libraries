@@ -171,20 +171,17 @@ public class Configuration
             devTools.setAutoSubmit(autoSubmit);
         }
 
-        // set ElasticSearch configuration
-        IJsonObject elasticSearchConfig = config.getJsonObject(ELASTIC_SEARCH_TITLE);
-
-        if (elasticSearchConfig != null) {
-            // set url
-            if (!elasticSearchConfig.isNull(ELASTIC_SEARCH_URL)
-                && !elasticSearchConfig.isNull(ELASTIC_SEARCH_INDEX)
-                && !elasticSearchConfig.isNull(ELASTIC_SEARCH_TYPE)) {
-                ElasticSearchSender.instance().setUrl(
-                    elasticSearchConfig.getString(ELASTIC_SEARCH_URL),
-                    elasticSearchConfig.getString(ELASTIC_SEARCH_INDEX),
-                    elasticSearchConfig.getString(ELASTIC_SEARCH_TYPE));
-            }
-        }
+		// set ElasticSearch configuration
+		IJsonObject elasticSearchConfig = config.getJsonObject( ELASTIC_SEARCH_TITLE );
+		if (elasticSearchConfig != null
+				&& !elasticSearchConfig.isNull( ELASTIC_SEARCH_URL )
+				&& !elasticSearchConfig.isNull( ELASTIC_SEARCH_INDEX )
+				&& !elasticSearchConfig.isNull( ELASTIC_SEARCH_TYPE )){
+			ElasticSearchSender.instance().setUrl(
+					elasticSearchConfig.getString( ELASTIC_SEARCH_URL ),
+					elasticSearchConfig.getString( ELASTIC_SEARCH_INDEX ),
+					elasticSearchConfig.getString( ELASTIC_SEARCH_TYPE ) );
+		}
 
         // set harvester configuration
         IJsonObject harvesterConfig = config.getJsonObject(HARVESTER_TITLE);

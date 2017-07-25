@@ -259,7 +259,7 @@ public abstract class AbstractHarvester
      * @return the time and date at which the last harvest finished, or null if
      *         no harvest has been finished successfully
      */
-    public final java.util.Date getHarvestDate()
+    public final Date getHarvestDate()
     {
         return harvestFinishedDate;
     }
@@ -271,7 +271,7 @@ public abstract class AbstractHarvester
      * @return the time and date at which the last harvest started, or null if
      *         no harvest has been started yet
      */
-    public final java.util.Date getHarvestStartDate()
+    public final Date getHarvestStartDate()
     {
         return harvestStartedDate;
     }
