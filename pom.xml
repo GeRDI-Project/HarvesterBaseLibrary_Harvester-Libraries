@@ -1,4 +1,7 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" 
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 
+         http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<parent>
 		<groupId>de.gerdi-project</groupId>
@@ -9,30 +12,31 @@
 	<artifactId>RestfulHarvester-Library</artifactId>
 	<version>1.0.0-SNAPSHOT</version>
     <packaging>jar</packaging>
-	
 	<name>Restful Harvester Library</name>
 	<description>This library provides a skeleton for restful harvesters.</description>
-	<url>http://www.gerdi-project.de</url>
   
-	<developers>
-		<developer>
-			<name>Robin Weiss</name>
-			<email>row@informatik.uni-kiel.de</email>
-			<organization>Kiel University</organization>
-			<organizationUrl>http://www.uni-kiel.de/index-e.shtml</organizationUrl>
-		</developer>
-	</developers>
-
+	<properties>
+		<compiler.plugin.version>3.6.1</compiler.plugin.version>
+		<jar.plugin.version>3.0.2</jar.plugin.version>
+		<javadoc.plugin.version>2.10.4</javadoc.plugin.version>
+		<source.plugin.version>3.0.1</source.plugin.version>
+		<bundle.plugin.version>3.0.1</bundle.plugin.version>
+		<gerdigson.dependency.version>1.0.0-SNAPSHOT</gerdigson.plugin.version>
+		<javaxservlet.dependency.version>3.1.0</javaxservlet.plugin.version>
+		<javaxwsrs.dependency.version>2.0.1</javaxwsrs.plugin.version>
+		<jsoup.dependency.version>1.8.3</jsoup.plugin.version>
+		<esri.dependency.version>1.2.1</esri.plugin.version>
+		<slf4j.dependency.version>1.7.25</slf4j.plugin.version>
+		<logbackclassic.dependency.version>1.2.3</logbackclassic.plugin.version>
+	</properties>
+	
 	<build>
-        <finalName>${project.artifactId}_${project.version}</finalName>
-		
         <plugins>
-			
-			<!-- Compile in UTF-8 with Java 8 -->
+			<!-- Compile Java -->
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
-				<version>3.6.1</version>
+				<version>${compiler.plugin.version}</version>
 				<configuration>
 				  <source>${java.version}</source>
 				  <target>${java.version}</target>
@@ -43,7 +47,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
-                <version>3.0.2</version>
+                <version>${jar.plugin.version}</version>
 				<configuration>
 				  <outputDirectory>${project.build.directory}</outputDirectory>
 					<archive>  
@@ -56,7 +60,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-javadoc-plugin</artifactId>
-                <version>2.10.4</version>
+                <version>${javadoc.plugin.version}</version>
 				<executions>
 					<execution>
 						<id>attach-javadocs</id>
@@ -74,7 +78,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-source-plugin</artifactId>
-                <version>3.0.1</version>
+                <version>${source.plugin.version}</version>
 				<executions>
 					<execution>
 						<id>attach-sources</id>
@@ -84,7 +88,6 @@
 					</execution>
 				</executions>
 				<configuration>
-					<encoding>UTF-8</encoding>
 					<outputDirectory>${project.build.directory}</outputDirectory>
 				</configuration>
 			</plugin>
@@ -93,7 +96,7 @@
 			<plugin>
 				<groupId>org.apache.felix</groupId>
 				<artifactId>maven-bundle-plugin</artifactId>
-				<version>3.0.1</version>
+				<version>${bundle.plugin.version}</version>
 				<extensions>true</extensions>
 				<configuration>
 					<manifestLocation>META-INF</manifestLocation>
@@ -112,48 +115,65 @@
 		<dependency>
 			<groupId>de.gerdi-project</groupId>
 			<artifactId>GSON</artifactId>
-			<version>1.0.0-SNAPSHOT</version>
+			<version>${gerdigson.dependency.version}</version>
 		</dependency>
 		
 		<!-- https://mvnrepository.com/artifact/javax.servlet/javax.servlet-api -->
 		<dependency>
 			<groupId>javax.servlet</groupId>
 			<artifactId>javax.servlet-api</artifactId>
-			<version>3.1.0</version>
+			<version>${javaxservlet.dependency.version}</version>
 		</dependency>
 			
 		<!-- https://mvnrepository.com/artifact/javax.ws.rs/javax.ws.rs-api -->
 		<dependency>
 			<groupId>javax.ws.rs</groupId>
 			<artifactId>javax.ws.rs-api</artifactId>
-			<version>2.0.1</version>
+			<version>${javaxwsrs.dependency.version}</version>
 		</dependency>
 		
 		<!-- https://mvnrepository.com/artifact/org.jsoup/jsoup -->
 		<dependency>
 			<groupId>org.jsoup</groupId>
 			<artifactId>jsoup</artifactId>
-			<version>1.8.3</version>
+			<version>${jsoup.dependency.version}</version>
 		</dependency>
 		
 		<!-- required for validating geo json -->
 		<dependency>
 		  <groupId>com.esri.geometry</groupId>
 		  <artifactId>esri-geometry-api</artifactId>
-		  <version>1.2.1</version>
+		  <version>${esri.dependency.version}</version>
 		</dependency>
 		
 		<!-- required for logging -->
 		<dependency>
 		  <groupId>org.slf4j</groupId>
 		  <artifactId>slf4j-api</artifactId>
-		  <version>1.7.25</version>
+		  <version>${slf4j.dependency.version}</version>
 		</dependency>
 		
 		<dependency>
 		  <groupId>ch.qos.logback</groupId>
 		  <artifactId>logback-classic</artifactId>
-		  <version>1.2.3</version>
+		  <version>${logbackclassic.dependency.version}</version>
 		</dependency>
 	</dependencies>
+	
+	<developers>
+		<developer>
+			<name>Robin Weiss</name>
+			<email>row@informatik.uni-kiel.de</email>
+			<organization>Kiel University</organization>
+			<organizationUrl>http://www.uni-kiel.de/index-e.shtml</organizationUrl>
+		</developer>
+	</developers>
+	
+	<!-- Define Sonatype repository for retrieving SNAPSHOT versions -->
+	<repositories>
+		<repository>
+			<id>Sonatype</id>
+			<url>https://oss.sonatype.org/content/repositories/snapshots/</url>
+		</repository>
+	</repositories>
 </project>
