@@ -91,23 +91,6 @@
 					<outputDirectory>${project.build.directory}</outputDirectory>
 				</configuration>
 			</plugin>
-			
-			<!-- Make classes usable -->
-			<plugin>
-				<groupId>org.apache.felix</groupId>
-				<artifactId>maven-bundle-plugin</artifactId>
-				<version>${bundle.plugin.version}</version>
-				<extensions>true</extensions>
-				<configuration>
-					<manifestLocation>META-INF</manifestLocation>
-					<instructions>
-						<Bundle-SymbolicName>${project.artifactId}</Bundle-SymbolicName>
-						<Bundle-Version>${project.version}</Bundle-Version>
-						<Export-Package>de.gerdiproject.*</Export-Package>
-						<Import-Package>javax.ws.rs.*,javax.json.*,javax.annotation.Resource,javax.servlet.ServletContextEvent,javax.servlet.ServletContextListener</Import-Package>
-					</instructions>
-				</configuration>
-			</plugin>
 		</plugins>
     </build>
 	
