@@ -27,6 +27,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
+import de.gerdiproject.harvest.MainContext;
+
 
 /**
  * This harvester manages a set of sub-harvesters. When the harvest is started,
@@ -184,7 +186,7 @@ public abstract class AbstractCompositeHarvester extends AbstractHarvester
         // generate hash of all concatenated hashes
         try {
             final MessageDigest md = MessageDigest.getInstance(SHA_HASH_ALGORITHM);
-            md.update(hashBuilder.toString().getBytes());
+            md.update(hashBuilder.toString().getBytes(MainContext.getCharset()));
 
             final byte[] digest = md.digest();
 

@@ -229,14 +229,16 @@ public abstract class AbstractHarvester
      */
     public final IJsonObject getHarvestResult()
     {
-        java.sql.Date sqlDate = new java.sql.Date(harvestStartedDate.getTime());
-        int harvestTime = (harvestFinishedDate != null && harvestStartedDate != null)
-                          ? (int)((harvestFinishedDate.getTime() - harvestStartedDate.getTime()) / 1000)
-                          : -1;
+        if (harvestStartedDate != null && harvestFinishedDate != null) {
+            java.sql.Date sqlDate = new java.sql.Date(harvestStartedDate.getTime());
+            int harvestTime = (int)((harvestFinishedDate.getTime() - harvestStartedDate.getTime()) / 1000);
 
-        synchronized (harvestedDocuments) {
-            return searchIndexFactory.createSearchIndex(harvestedDocuments, sqlDate, hash, harvestTime);
+            synchronized (harvestedDocuments) {
+                return searchIndexFactory.createSearchIndex(harvestedDocuments, sqlDate, hash, harvestTime);
+            }
         }
+
+        return null;
     }
 
 
@@ -261,7 +263,10 @@ public abstract class AbstractHarvester
      */
     public final Date getHarvestDate()
     {
-        return harvestFinishedDate;
+        if( harvestFinishedDate != null)
+    		return (Date) harvestFinishedDate.clone();
+    	else
+    		return null;
     }
 
 
@@ -273,7 +278,10 @@ public abstract class AbstractHarvester
      */
     public final Date getHarvestStartDate()
     {
-        return harvestStartedDate;
+    	if( harvestStartedDate != null)
+    		return (Date) harvestStartedDate.clone();
+    	else
+    		return null;
     }
 
 

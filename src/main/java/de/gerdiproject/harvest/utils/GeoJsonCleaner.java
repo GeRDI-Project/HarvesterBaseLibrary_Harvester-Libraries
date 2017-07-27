@@ -20,6 +20,7 @@ package de.gerdiproject.harvest.utils;
 
 
 import java.io.StringReader;
+import java.nio.charset.Charset;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Map;
@@ -30,6 +31,7 @@ import org.slf4j.LoggerFactory;
 
 import com.esri.core.geometry.ogc.OGCGeometry;
 
+import de.gerdiproject.harvest.MainContext;
 import de.gerdiproject.json.IJsonBuilder;
 import de.gerdiproject.json.IJsonObject;
 import de.gerdiproject.json.IJsonReader;
@@ -73,8 +75,10 @@ public class GeoJsonCleaner
 
     private String getGeoHash(IJsonObject geoJson)
     {
-        hashGenerator.update(geoJson.toJsonString().getBytes());
-        return new String(hashGenerator.digest());
+        Charset cs = MainContext.getCharset();
+
+        hashGenerator.update(geoJson.toJsonString().getBytes(cs));
+        return new String(hashGenerator.digest(), cs);
     }
 
 
@@ -98,7 +102,7 @@ public class GeoJsonCleaner
      */
     public IJsonObject cleanGeoData(IJsonObject geoJson)
     {
-        IJsonObject cleanedGeo = geoJson;
+        IJsonObject cleanedGeo = null;
 
         // check if this object has been processed in the past
         String geoJsonHash = getGeoHash(geoJson);
@@ -110,27 +114,27 @@ public class GeoJsonCleaner
         else {
             String type = geoJson.getString(TYPE_JSON, null);
 
-            switch (type) {
-                case POLYGON_TYPE:
-                case MULTI_POLYGON_TYPE:
+            if (type.equals(POLYGON_TYPE) || type.equals(MULTI_POLYGON_TYPE)) {
+                try {
+                    OGCGeometry polygon = OGCGeometry.fromGeoJson(geoJson.toString());
 
-                    try {
-                        OGCGeometry polygon = OGCGeometry.fromGeoJson(geoJson.toString());
-
-                        if (!polygon.isSimple()) {
-                            IJsonReader reader = jsonBuilder
-                                                 .createReader(new StringReader(polygon.makeSimple().asGeoJson()));
-                            cleanedGeo = reader.readObject();
-
-                            reader.close();
-                        }
-                    } catch (Exception e) {
-                        cleanedGeo = geoJson;
+                    if (!polygon.isSimple()) {
+                        IJsonReader reader = jsonBuilder
+                                             .createReader(new StringReader(polygon.makeSimple().asGeoJson()));
+                        cleanedGeo = reader.readObject();
+                        reader.close();
                     }
+                } catch (Exception e) {
+                    cleanedGeo = geoJson;
+                }
             }
         }
 
-        // cache the result
+        // fallback: use the original geo json
+        if (cleanedGeo == null)
+            cleanedGeo = geoJson;
+
+        // cache the simplified geo json
         CACHED_GEO_MAP.put(geoJsonHash, cleanedGeo);
 
         return cleanedGeo;

@@ -23,15 +23,11 @@ import de.gerdiproject.harvest.MainContext;
 import de.gerdiproject.harvest.development.DevelopmentTools;
 import de.gerdiproject.harvest.elasticsearch.ElasticSearchSender;
 import de.gerdiproject.harvest.harvester.AbstractHarvester;
+import de.gerdiproject.harvest.utils.FileUtils;
 import de.gerdiproject.json.IJsonBuilder;
 import de.gerdiproject.json.IJsonObject;
-import de.gerdiproject.json.IJsonReader;
 import de.gerdiproject.json.impl.JsonBuilder;
 
-import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
@@ -48,8 +44,6 @@ import org.slf4j.LoggerFactory;
 public class Configuration
 {
     private final static String CONFIG_PATH = "config/%sConfig.json";
-    private final static String SAVE_OK = "Saved configuration to '%s'.";
-    private final static String SAVE_FAILED = "Could not save configuration: ";
 
     private final static String LOAD_OK = "Loaded configuration from '%s'.";
     private final static String LOAD_FAILED = "Could not load configuration from '%s': %s";
@@ -72,7 +66,7 @@ public class Configuration
     private final static String DEV_AUTO_SAVE = "autoSave";
     private final static String DEV_AUTO_SUBMIT = "autoSubmit";
 
-    private final static String INFO = " Configuration:\n%s\n\n To change these settings, please use the corresponding PUT requests.";
+    private final static String INFO = " Configuration:%n%s%n%n To change these settings, please use the corresponding PUT requests.";
 
     private final static IJsonBuilder JSON_BUILDER = new JsonBuilder();
 
@@ -107,29 +101,17 @@ public class Configuration
     public static String loadFromDisk()
     {
         String path = getConfigFilePath();
-        final File file = new File(path);
+        IJsonObject configJson = (IJsonObject) FileUtils.readJsonFromDisk( path );
+        
+        if (configJson != null) {
+        	setConfigFromJson(configJson);
 
-        if (file.exists()) {
-            try {
-                // parse the json object
-                IJsonReader jsonReader = JSON_BUILDER.createReader(new FileReader(file));
-                IJsonObject configJson = jsonReader.readObject();
-                jsonReader.close();
-
-                // retrieve config from json
-                setConfigFromJson(configJson);
-
-                String okMsg = String.format(LOAD_OK, path);
-                LOGGER.info(okMsg);
-                return okMsg;
-
-            } catch (Exception ex) {
-                String errMsg = String.format(LOAD_FAILED, path, ex.toString());
-                LOGGER.error(errMsg, ex);
-                return errMsg;
-            }
-
-        } else {
+            String okMsg = String.format(LOAD_OK, path);
+            LOGGER.info(okMsg);
+            return okMsg;
+        }
+        else
+        {
             String errMsg = String.format(LOAD_FAILED, path, NO_EXISTS);
             LOGGER.error(errMsg);
             return errMsg;
@@ -171,17 +153,18 @@ public class Configuration
             devTools.setAutoSubmit(autoSubmit);
         }
 
-		// set ElasticSearch configuration
-		IJsonObject elasticSearchConfig = config.getJsonObject( ELASTIC_SEARCH_TITLE );
-		if (elasticSearchConfig != null
-				&& !elasticSearchConfig.isNull( ELASTIC_SEARCH_URL )
-				&& !elasticSearchConfig.isNull( ELASTIC_SEARCH_INDEX )
-				&& !elasticSearchConfig.isNull( ELASTIC_SEARCH_TYPE )){
-			ElasticSearchSender.instance().setUrl(
-					elasticSearchConfig.getString( ELASTIC_SEARCH_URL ),
-					elasticSearchConfig.getString( ELASTIC_SEARCH_INDEX ),
-					elasticSearchConfig.getString( ELASTIC_SEARCH_TYPE ) );
-		}
+        // set ElasticSearch configuration
+        IJsonObject elasticSearchConfig = config.getJsonObject(ELASTIC_SEARCH_TITLE);
+
+        if (elasticSearchConfig != null
+            && !elasticSearchConfig.isNull(ELASTIC_SEARCH_URL)
+            && !elasticSearchConfig.isNull(ELASTIC_SEARCH_INDEX)
+            && !elasticSearchConfig.isNull(ELASTIC_SEARCH_TYPE)) {
+            ElasticSearchSender.instance().setUrl(
+                elasticSearchConfig.getString(ELASTIC_SEARCH_URL),
+                elasticSearchConfig.getString(ELASTIC_SEARCH_INDEX),
+                elasticSearchConfig.getString(ELASTIC_SEARCH_TYPE));
+        }
 
         // set harvester configuration
         IJsonObject harvesterConfig = config.getJsonObject(HARVESTER_TITLE);
@@ -223,25 +206,9 @@ public class Configuration
     {
         // assemble path
         String path = getConfigFilePath();
-
-        // create directories
-        final File file = new File(path);
-        file.getParentFile().mkdirs();
-
+        
         // write to disk
-        try
-            (FileWriter writer = new FileWriter(file)) {
-            writer.write(toJson().toJsonString());
-            writer.close();
-
-            String okMsg = String.format(SAVE_OK, path);
-            LOGGER.info(okMsg);
-            return okMsg;
-
-        } catch (IOException e) {
-            LOGGER.error(SAVE_FAILED, e);
-            return SAVE_FAILED + e;
-        }
+        return  FileUtils.writeToDisk( path, toJson().toJsonString() );
     }
 
 

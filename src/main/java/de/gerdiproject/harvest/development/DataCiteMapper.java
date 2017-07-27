@@ -19,6 +19,7 @@
 package de.gerdiproject.harvest.development;
 
 
+import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 
 import org.slf4j.Logger;
@@ -77,7 +78,7 @@ public class DataCiteMapper
      *
      * @return a Singleton instance of this class
      */
-    public static DataCiteMapper instance()
+    public static synchronized DataCiteMapper instance()
     {
         if (instance == null)
             instance = new DataCiteMapper();
@@ -183,7 +184,7 @@ public class DataCiteMapper
         IJsonObject result = builder.createObject();
 
         // identifier
-        result.put("identifier", encoder.encodeToString(viewUrl.getBytes()));
+        result.put("identifier", encoder.encodeToString(viewUrl.getBytes(StandardCharsets.UTF_8)));
 
         // publisher
         String publisher = MainContext.getModuleName()

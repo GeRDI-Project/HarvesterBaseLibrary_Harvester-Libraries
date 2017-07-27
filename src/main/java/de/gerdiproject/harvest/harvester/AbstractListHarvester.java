@@ -19,6 +19,7 @@
 package de.gerdiproject.harvest.harvester;
 
 
+import de.gerdiproject.harvest.MainContext;
 import de.gerdiproject.json.IJsonObject;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -171,7 +172,7 @@ public abstract class AbstractListHarvester<T> extends AbstractHarvester
     {
         try {
             final MessageDigest md = MessageDigest.getInstance(SHA_HASH_ALGORITHM);
-            md.update(entries.toString().getBytes());
+            md.update(entries.toString().getBytes(MainContext.getCharset()));
 
             final byte[] digest = md.digest();
 

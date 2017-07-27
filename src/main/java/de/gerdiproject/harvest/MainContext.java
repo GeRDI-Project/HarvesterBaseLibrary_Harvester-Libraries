@@ -19,6 +19,9 @@
 package de.gerdiproject.harvest;
 
 
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,6 +46,7 @@ public class MainContext
     private static final Logger LOGGER = LoggerFactory.getLogger(MainContext.class);
 
     private AbstractHarvester harvester;
+    private Charset charset;
 
     private static MainContext instance;
 
@@ -83,23 +87,38 @@ public class MainContext
         return instance.moduleName;
     }
 
+    /**
+     * Retrieves the charset used for processing strings.
+     * @return the charset that is used for processing strings
+     */
+    public static Charset getCharset()
+    {
+        if (instance == null)
+            instance = new MainContext();
+
+        return instance.charset;
+    }
+
 
     /**
-     * Sets the global harvester and logger instances.
+     * Sets up global parameters and the harvester.
      *
      * @param moduleName
      *            name of this application
      * @param harvester
      *            an AbstractHarvester subclass
+     * @param charset
+     *            the default charset for processing strings
      * @see de.gerdiproject.harvest.harvester.AbstractHarvester
      */
-    public static void init(String moduleName, AbstractHarvester harvester)
+    public static void init(String moduleName, AbstractHarvester harvester, Charset charset)
     {
         if (instance == null)
             instance = new MainContext();
 
-        // set module name
+        // set parameters
         instance.moduleName = moduleName;
+        instance.charset = charset;
 
         // init harvester
         LOGGER.info(String.format(INIT_START, harvester.getName()));
@@ -110,5 +129,19 @@ public class MainContext
 
         // log ready state
         LOGGER.info(String.format(INIT_FINISHED, instance.moduleName));
+    }
+
+    /**
+     * Sets up global parameters and the harvester, using UTF-8 as the default charset.
+     *
+     * @param moduleName
+     *            name of this application
+     * @param harvester
+     *            an AbstractHarvester subclass
+     * @see de.gerdiproject.harvest.harvester.AbstractHarvester
+     */
+    public static void init(String moduleName, AbstractHarvester harvester)
+    {
+        init(moduleName, harvester, StandardCharsets.UTF_8);
     }
 }

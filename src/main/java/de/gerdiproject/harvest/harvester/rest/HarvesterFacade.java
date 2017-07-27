@@ -46,14 +46,14 @@ import javax.ws.rs.core.MultivaluedMap;
 @Path("harvest")
 public class HarvesterFacade
 {
-    private static final String INFO = "- %s -\n\nStatus:\t\t%s\n\nRange:\t\t%d-%d\n%s\n\n"
-                                       + "GET/result \t\tReturns the search index\n"
-                                       + "POST/save\t\tSaves the search index to disk\n"
-                                       + "POST\t\t\tCreates a search index\n"
-                                       + "POST/abort\t\tAborts an ongoing harvest\n"
-                                       + "PUT \t\t\tSets x-www-form-urlencoded parameters for the harvester (%s).\n"
-                                       + "PUT/range\t\tSets the start and end index of the harvest (from, to). default: 0, %d\n";
-    private static final String PROPERTY = "%s:\t%s\n";
+    private static final String INFO = "- %s -%n%nStatus:\t\t%s%n%nRange:\t\t%d-%d%n%s%n%n"
+                                       + "GET/result \t\tReturns the search index%n"
+                                       + "POST/save\t\tSaves the search index to disk%n"
+                                       + "POST\t\t\tCreates a search index%n"
+                                       + "POST/abort\t\tAborts an ongoing harvest%n"
+                                       + "PUT \t\t\tSets x-www-form-urlencoded parameters for the harvester (%s).%n"
+                                       + "PUT/range\t\tSets the start and end index of the harvest (from, to). default: 0, %d%n";
+    private static final String PROPERTY = "%s:\t%s%n";
     private static final String HARVEST_NOT_STARTED = "Not yet harvested!";
     private static final String HARVEST_IN_PROGRESS = "Harvested %d / %d (%.2f%%)  Remaining Time: %s";
     private static final String DAYS_HOURS = "%dd %dh";
@@ -67,14 +67,14 @@ public class HarvesterFacade
     private static final String HARVEST_ABORTED = "Harvesting aborted";
     private static final String HARVEST_ABORTED_FAILED = "No harvest is in progress";
     private static final String NO_CHANGES = "No changes were made. Valid Form Parameters: %s";
-    private static final String SET_OK = "Set property '%s' to '%s'\n";
-    private static final String SET_FAILED = "Cannot set '%s'! It is not a valid property\n";
+    private static final String SET_OK = "Set property '%s' to '%s'%n";
+    private static final String SET_FAILED = "Cannot set '%s'! It is not a valid property%n";
 
     private static final String FORM_PARAM_FROM = "from";
     private static final String FORM_PARAM_TO = "to";
-    private static final String RANGE_SET_FAILED_RANGE = "Invalid Harvesting range: %s - %s\nRange should be between 0 and %d";
+    private static final String RANGE_SET_FAILED_RANGE = "Invalid Harvesting range: %s - %s%nRange should be between 0 and %d";
     private static final String RANGE_SET_FAILED_PARAMS = "Invalid Parameters! All x-www-form-urlencoded parameters must be set."
-                                                          + " Use\n'from' to set the start index (default: 0)\n'to' to set the end index (default: %d)";
+                                                          + " Use%n'from' to set the start index (default: 0)%n'to' to set the end index (default: %d)";
     private static final String RANGE_SET_OK = "Harvesting Range set from %d to %d.";
 
     private final AbstractHarvester harvester = MainContext.getHarvester();
@@ -335,9 +335,10 @@ public class HarvesterFacade
     {
         IJsonObject result = harvester.getHarvestResult();
 
-        return (result != null)
-               ? result.toJsonString()
-               : "{}";
+        if (result != null)
+            return result.toJsonString();
+        else
+            return "{}";
     }
 
 

@@ -19,19 +19,12 @@
 package de.gerdiproject.harvest.development;
 
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStreamWriter;
-import java.nio.charset.StandardCharsets;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import de.gerdiproject.harvest.MainContext;
 import de.gerdiproject.harvest.harvester.AbstractHarvester;
-import de.gerdiproject.json.IJson;
+import de.gerdiproject.harvest.utils.FileUtils;
 import de.gerdiproject.json.IJsonObject;
 
 
@@ -45,9 +38,7 @@ public class DevelopmentTools
 {
     private static final String FILE_NAME = "harvestedIndices/%s_result_%d.json";
     private static final String FILE_NAME_PARTIAL = "harvestedIndices/%s_partialResult_%d-%d_%d.json";
-    private static final String SAVE_FAILED = "Could not save to disk: ";
-    private static final String SAVE_SUCCESS = "Saved search index to '%s'";
-    private static final String NO_HARVEST = "Nothing was harvested";
+    private static final String NO_HARVEST = "Cannot save: Nothing was harvested yet!";
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DevelopmentTools.class);
 
@@ -65,7 +56,7 @@ public class DevelopmentTools
      *
      * @return a Singleton instance of this class
      */
-    public static DevelopmentTools instance()
+    public static synchronized DevelopmentTools instance()
     {
         if (instance == null)
             instance = new DevelopmentTools();
@@ -115,48 +106,14 @@ public class DevelopmentTools
                                harvestStartTimestamp);
             }
 
-            return saveJsonToDisk(result, fileName);
+            return FileUtils.writeToDisk(fileName, result.toJsonString());
 
         } else {
-            LOGGER.warn(SAVE_FAILED + NO_HARVEST);
-            return SAVE_FAILED + NO_HARVEST;
+            LOGGER.warn(NO_HARVEST);
+            return NO_HARVEST;
         }
     }
 
-
-    /**
-     * Saves a JSON object to disk and logs the status of the operation.
-     *
-     * @param json
-     *            the json object that is to be saved
-     * @param filePath
-     *            the output path and filename
-     * @return a message indicating the status of the save operation
-     */
-    public String saveJsonToDisk(IJson json, String filePath)
-    {
-        try {
-            File file = new File(filePath);
-
-            // create directories
-            file.getParentFile().mkdirs();
-
-            // write to file
-            BufferedWriter writer = new BufferedWriter(
-                new OutputStreamWriter(new FileOutputStream(file), StandardCharsets.UTF_8));
-            writer.write(json.toJsonString());
-            writer.close();
-
-            String formattedString = String.format(SAVE_SUCCESS, filePath);
-            LOGGER.info(formattedString);
-            return formattedString;
-
-        } catch (IOException e) {
-            String errorMsg = SAVE_FAILED + e;
-            LOGGER.error(SAVE_FAILED, e);
-            return errorMsg;
-        }
-    }
 
 
     /**
