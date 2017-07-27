@@ -109,13 +109,13 @@ public abstract class AbstractCompositeHarvester extends AbstractHarvester
                 subHarvester.setRange(0, 0);
 
             } else if (from < numberOfProcessedDocs) {
-                int startIndex = (isBelowRange)
+                int startIndex = isBelowRange
                                  ? from - (numberOfProcessedDocs - numberOfSubDocs)
                                  : 0;
 
-                boolean isLastEntry = (to < numberOfProcessedDocs);
+                boolean isLastEntry = to < numberOfProcessedDocs;
 
-                int endIndex = (isLastEntry)
+                int endIndex = isLastEntry
                                ? numberOfSubDocs - (numberOfProcessedDocs - to)
                                : numberOfSubDocs;
 

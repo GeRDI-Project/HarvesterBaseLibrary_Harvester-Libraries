@@ -158,9 +158,9 @@ public class ElasticSearchSenderFacade
         StringBuilder sb = new StringBuilder();
 
         // check if form parameters are valid
-        boolean hasUrl = (url != null && !url.isEmpty());
-        boolean hasIndex = (index != null && !index.isEmpty());
-        boolean hasType = (type != null && !type.isEmpty());
+        boolean hasUrl = url != null && !url.isEmpty();
+        boolean hasIndex = index != null && !index.isEmpty();
+        boolean hasType = type != null && !type.isEmpty();
 
         // ignore "index" and "type" if "url" is not among the form parameters
         if (hasUrl || hasIndex || hasType) {

@@ -121,9 +121,9 @@ public class DataCiteMapperFacade
 
         String filePath = String.format(FILE_PATH, MainContext.getModuleName(), System.currentTimeMillis());
         String fileContent = dataCiteMapper.getConvertedDocuments().toJsonString();
-        FileUtils.writeToDisk( filePath, fileContent );
-        
-        return FileUtils.writeToDisk( filePath, fileContent );
+        FileUtils.writeToDisk(filePath, fileContent);
+
+        return FileUtils.writeToDisk(filePath, fileContent);
     }
 
 

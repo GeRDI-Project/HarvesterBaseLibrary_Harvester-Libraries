@@ -101,17 +101,15 @@ public class Configuration
     public static String loadFromDisk()
     {
         String path = getConfigFilePath();
-        IJsonObject configJson = (IJsonObject) FileUtils.readJsonFromDisk( path );
-        
+        IJsonObject configJson = (IJsonObject) FileUtils.readJsonFromDisk(path);
+
         if (configJson != null) {
-        	setConfigFromJson(configJson);
+            setConfigFromJson(configJson);
 
             String okMsg = String.format(LOAD_OK, path);
             LOGGER.info(okMsg);
             return okMsg;
-        }
-        else
-        {
+        } else {
             String errMsg = String.format(LOAD_FAILED, path, NO_EXISTS);
             LOGGER.error(errMsg);
             return errMsg;
@@ -206,9 +204,9 @@ public class Configuration
     {
         // assemble path
         String path = getConfigFilePath();
-        
+
         // write to disk
-        return  FileUtils.writeToDisk( path, toJson().toJsonString() );
+        return  FileUtils.writeToDisk(path, toJson().toJsonString());
     }
 
 

@@ -274,7 +274,7 @@ public class ElasticSearchSender
                 .append(String.format(BATCH_POST_INSTRUCTION, id, doc.toJsonString().replace("\n", "")));
 
                 // submit every 1024 posts, to decrease memory usage
-                if (((i + 1) % BULK_SUBMISSION_SIZE) == 0) {
+                if ((i + 1) % BULK_SUBMISSION_SIZE == 0) {
                     // submit to elasticsearch
                     String response = httpRequester
                                       .getRestResponse(RestRequestType.POST, elasticSearchUrl, bulkRequestBuilder.toString(), credentials);
@@ -444,16 +444,16 @@ public class ElasticSearchSender
         final String viewUrl = documentIdToViewUrl(elasticSearchResponse.getString(ID_JSON));
 
         // get the reason of the submission failure
-        final String submitFailedReason = (errorObject.isNull(REASON_JSON))
+        final String submitFailedReason = errorObject.isNull(REASON_JSON)
                                           ? NULL_JSON
                                           : errorObject.getString(REASON_JSON);
         final IJsonObject cause = errorObject.getJsonObject(CAUSED_BY_JSON);
 
-        final String exceptionType = (cause.isNull(TYPE_JSON))
+        final String exceptionType = cause.isNull(TYPE_JSON)
                                      ? NULL_JSON
                                      : cause.getString(TYPE_JSON);
 
-        final String exceptionReason = (cause.isNull(REASON_JSON))
+        final String exceptionReason = cause.isNull(REASON_JSON)
                                        ? NULL_JSON
                                        : cause.getString(REASON_JSON, NULL_JSON);
 
@@ -588,15 +588,15 @@ public class ElasticSearchSender
                     if (errorObject != null) {
                         // get error details
                         final String viewUrl = documentIdToViewUrl(singleDocResponse.getString(ID_JSON));
-                        final String submitFailedReason = (errorObject.isNull(REASON_JSON))
+                        final String submitFailedReason = errorObject.isNull(REASON_JSON)
                                                           ? NULL_JSON
                                                           : errorObject.getString(REASON_JSON);
                         final IJsonObject cause = errorObject.getJsonObject(CAUSED_BY_JSON);
 
-                        final String exceptionType = (cause.isNull(TYPE_JSON))
+                        final String exceptionType = cause.isNull(TYPE_JSON)
                                                      ? NULL_JSON
                                                      : cause.getString(TYPE_JSON);
-                        final String exceptionReason = (cause.isNull(REASON_JSON))
+                        final String exceptionReason = cause.isNull(REASON_JSON)
                                                        ? NULL_JSON
                                                        : cause.getString(REASON_JSON);
 

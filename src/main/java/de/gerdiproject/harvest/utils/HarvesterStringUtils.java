@@ -21,6 +21,7 @@ package de.gerdiproject.harvest.utils;
 
 import java.io.StringWriter;
 import java.util.HashMap;
+import java.util.Map;
 
 import org.jsoup.Jsoup;
 
@@ -451,7 +452,7 @@ public class HarvesterStringUtils
         }, // я - lowercase y, umlaut
     };
 
-    private static final HashMap<String, String> ESCAPE_LOOKUP_TABLE;
+    private static final Map<String, String> ESCAPE_LOOKUP_TABLE;
 
     static
     {

@@ -34,6 +34,7 @@ import de.gerdiproject.json.impl.JsonBuilder;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -66,7 +67,7 @@ public abstract class AbstractHarvester
 
     protected static final String HARVEST_ABORTED = "HARVEST ABORTED!";
 
-    private final HashMap<String, String> properties;
+    private final Map<String, String> properties;
     protected IJsonArray harvestedDocuments;
 
     private Date harvestStartedDate;
@@ -81,7 +82,7 @@ public abstract class AbstractHarvester
 
     protected String name;
     protected String hash;
-    protected Logger logger;
+    protected final Logger logger;
     protected final HttpRequester httpRequester;
     protected final SearchIndexFactory searchIndexFactory;
     protected final IJsonBuilder jsonBuilder;
@@ -263,10 +264,10 @@ public abstract class AbstractHarvester
      */
     public final Date getHarvestDate()
     {
-        if( harvestFinishedDate != null)
-    		return (Date) harvestFinishedDate.clone();
-    	else
-    		return null;
+        if (harvestFinishedDate != null)
+            return (Date) harvestFinishedDate.clone();
+        else
+            return null;
     }
 
 
@@ -278,10 +279,10 @@ public abstract class AbstractHarvester
      */
     public final Date getHarvestStartDate()
     {
-    	if( harvestStartedDate != null)
-    		return (Date) harvestStartedDate.clone();
-    	else
-    		return null;
+        if (harvestStartedDate != null)
+            return (Date) harvestStartedDate.clone();
+        else
+            return null;
     }
 
 
