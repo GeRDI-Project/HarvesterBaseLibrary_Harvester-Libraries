@@ -21,6 +21,10 @@ package de.gerdiproject.harvest;
 
 import de.gerdiproject.harvest.config.Configuration;
 import de.gerdiproject.harvest.harvester.AbstractHarvester;
+
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
 
@@ -37,20 +41,28 @@ import javax.servlet.ServletContextListener;
 public abstract class AbstractContextListener implements ServletContextListener
 {
     /**
-     * Creates a name of this harvester service.
+     * Retrieves the name of this harvester service.
      *
      * @return the name of this harvester service
      */
-    abstract protected String createServiceName();
+    abstract protected String getServiceName();
 
 
     /**
-     * Creates a harvester for the MainContext.
-     *
-     * @return an instance of an AbstractHarvester sub-class
+     * Retrieves the class of the main harvester for the harvester service.
+     * @param <T> an AbstractHarvester sub-class
+     * @return the class of an AbstractHarvester
      */
-    abstract protected AbstractHarvester createHarvester();
+    abstract protected <T extends AbstractHarvester> Class<T> getMainHarvesterClass();
 
+    /**
+     * Retrieves the charset that is used for harvesting and file operations.
+     * @return a charset
+     */
+    protected Charset getCharset()
+    {
+        return StandardCharsets.UTF_8;
+    }
 
     /**
      * This method is called when the server is set up. Creates a logger and
@@ -63,14 +75,8 @@ public abstract class AbstractContextListener implements ServletContextListener
     @Override
     public void contextInitialized(ServletContextEvent sce)
     {
-        // create service name
-        String name = createServiceName();
-
-        // create singleton logger and harvester
-        AbstractHarvester harvester = createHarvester();
-
         // init main context
-        MainContext.init(name, harvester);
+        MainContext.init(getServiceName(), getMainHarvesterClass(), getCharset());
 
         // try to load configuration
         Configuration.loadFromDisk();

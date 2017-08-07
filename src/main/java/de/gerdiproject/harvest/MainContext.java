@@ -20,7 +20,6 @@ package de.gerdiproject.harvest;
 
 
 import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,7 +41,7 @@ public class MainContext
     private static final String INIT_FINISHED = "%s is now ready!";
     private static final String INIT_START = "Initializing %s...";
     private static final String DONE = "done!";
-
+    private static final String FAILED = "FAILED!";
     private static final Logger LOGGER = LoggerFactory.getLogger(MainContext.class);
 
     private AbstractHarvester harvester;
@@ -103,15 +102,17 @@ public class MainContext
     /**
      * Sets up global parameters and the harvester.
      *
+     * @param <T>
+     *            an AbstractHarvester subclass
      * @param moduleName
      *            name of this application
-     * @param harvester
+     * @param harvesterClass
      *            an AbstractHarvester subclass
      * @param charset
      *            the default charset for processing strings
      * @see de.gerdiproject.harvest.harvester.AbstractHarvester
      */
-    public static void init(String moduleName, AbstractHarvester harvester, Charset charset)
+    public static <T extends AbstractHarvester> void init(String moduleName, Class<T> harvesterClass, Charset charset)
     {
         if (instance == null)
             instance = new MainContext();
@@ -121,27 +122,20 @@ public class MainContext
         instance.charset = charset;
 
         // init harvester
-        LOGGER.info(String.format(INIT_START, harvester.getName()));
-        harvester.init();
+        try {
+            AbstractHarvester harvey = harvesterClass.newInstance();
 
-        instance.harvester = harvester;
-        LOGGER.info(DONE);
+            LOGGER.info(String.format(INIT_START, harvey.getName()));
+            instance.harvester = harvey;
+            instance.harvester.init();
+            LOGGER.info(DONE);
+        } catch (InstantiationException | IllegalAccessException e) {
+            LOGGER.info(FAILED);
+            LOGGER.error(e.toString());
+            return;
+        }
 
         // log ready state
         LOGGER.info(String.format(INIT_FINISHED, instance.moduleName));
-    }
-
-    /**
-     * Sets up global parameters and the harvester, using UTF-8 as the default charset.
-     *
-     * @param moduleName
-     *            name of this application
-     * @param harvester
-     *            an AbstractHarvester subclass
-     * @see de.gerdiproject.harvest.harvester.AbstractHarvester
-     */
-    public static void init(String moduleName, AbstractHarvester harvester)
-    {
-        init(moduleName, harvester, StandardCharsets.UTF_8);
     }
 }

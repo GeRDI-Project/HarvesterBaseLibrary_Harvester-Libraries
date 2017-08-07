@@ -82,7 +82,7 @@ public abstract class AbstractHarvester
 
     protected String name;
     protected String hash;
-    protected final Logger logger;
+    protected final Logger logger; // NOPMD - we want to retrieve the type of the inheriting class
     protected final HttpRequester httpRequester;
     protected final SearchIndexFactory searchIndexFactory;
     protected final IJsonBuilder jsonBuilder;
@@ -102,7 +102,7 @@ public abstract class AbstractHarvester
      * @return true, if everything was harvested
      * @see de.gerdiproject.harvest.utils.SearchIndexFactory
      */
-    abstract protected boolean harvestInternal(int startIndex, int endIndex) throws Exception;
+    abstract protected boolean harvestInternal(int startIndex, int endIndex) throws Exception; // NOPMD - we want the inheriting class to be able to throw any exception
 
 
     /**

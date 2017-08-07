@@ -95,7 +95,7 @@ public abstract class AbstractListHarvester<T> extends AbstractHarvester
 
 
     @Override
-    protected boolean harvestInternal(int from, int to) throws Exception
+    protected boolean harvestInternal(int from, int to) throws Exception // NOPMD - we want the inheriting class to be able to throw any exception
     {
         if (from == to) {
             logger.warn(name + LOG_OUT_OF_RANGE);

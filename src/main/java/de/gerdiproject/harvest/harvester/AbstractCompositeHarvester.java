@@ -133,7 +133,7 @@ public abstract class AbstractCompositeHarvester extends AbstractHarvester
 
 
     @Override
-    protected boolean harvestInternal(int from, int to) throws Exception
+    protected boolean harvestInternal(int from, int to) throws Exception // NOPMD - we want the inheriting class to be able to throw any exception
     {
         List<CompletableFuture<?>> subProcesses = new LinkedList<>();
 
