@@ -22,6 +22,7 @@ package de.gerdiproject.harvest;
 import de.gerdiproject.harvest.config.Configuration;
 import de.gerdiproject.harvest.harvester.AbstractHarvester;
 
+import java.lang.reflect.ParameterizedType;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 
@@ -33,27 +34,38 @@ import javax.servlet.ServletContextListener;
  * This class registers a Logger and Harvester when the server is started. A
  * subclass with the @WebListener annotation must be defined.
  *
+ * @param <T> an AbstractHarvester sub-class
+ *
  * @see javax.servlet.annotation.WebListener
  * @see de.gerdiproject.harvest.harvester.AbstractHarvester
  *
  * @author Robin Weiss
  */
-public abstract class AbstractContextListener implements ServletContextListener
+public abstract class AbstractContextListener<T extends AbstractHarvester> implements ServletContextListener
 {
+    // this warning is suppressed, because the only generic Superclass MUST be T. The cast will always succeed.
+    @SuppressWarnings("unchecked")
+    private Class<T> harvesterClass =
+        (Class<T>)((ParameterizedType) getClass().getGenericSuperclass()).getActualTypeArguments()[0];
+
     /**
      * Retrieves the name of this harvester service.
      *
      * @return the name of this harvester service
      */
-    abstract protected String getServiceName();
+    protected String getServiceName()
+    {
+        // get name of main harvester class
+        String name = harvesterClass.getSimpleName();
 
+        // make sure the name ends with "HarvesterService"
+        if (name.endsWith("arvester"))
+            name += "Service";
+        else if (!name.endsWith("arvesterService"))
+            name += "HarvesterService";
 
-    /**
-     * Retrieves the class of the main harvester for the harvester service.
-     * @param <T> an AbstractHarvester sub-class
-     * @return the class of an AbstractHarvester
-     */
-    abstract protected <T extends AbstractHarvester> Class<T> getMainHarvesterClass();
+        return name;
+    }
 
     /**
      * Retrieves the charset that is used for harvesting and file operations.
@@ -62,6 +74,15 @@ public abstract class AbstractContextListener implements ServletContextListener
     protected Charset getCharset()
     {
         return StandardCharsets.UTF_8;
+    }
+
+    /**
+     * Retrieves the class of the main harvester for the harvester service.
+     * @return the class of an AbstractHarvester
+     */
+    final protected Class<T> getMainHarvesterClass()
+    {
+        return harvesterClass;
     }
 
     /**
