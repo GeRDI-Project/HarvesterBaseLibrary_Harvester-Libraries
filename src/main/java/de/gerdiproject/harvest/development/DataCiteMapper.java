@@ -126,7 +126,7 @@ public class DataCiteMapper
         IJsonArray originalDocs = harvester.getHarvestedDocuments();
 
         // check if the conversion is allowed to start
-        if (isConverting() || !harvester.isHarvestFinished() || originalDocs == null || originalDocs.isEmpty()) {
+        if (isConverting() || !harvester.isFinished() || originalDocs == null || originalDocs.isEmpty()) {
             LOGGER.info(CONVERSION_START_FAILED);
             return CONVERSION_START_FAILED;
         }

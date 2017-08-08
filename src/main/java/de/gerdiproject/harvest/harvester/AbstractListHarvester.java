@@ -79,7 +79,7 @@ public abstract class AbstractListHarvester<T> extends AbstractHarvester
      *
      * @return A JsonArray of entries
      */
-    abstract protected Collection<T> getEntries();
+    abstract protected Collection<T> loadEntries();
 
 
     /**
@@ -138,7 +138,7 @@ public abstract class AbstractListHarvester<T> extends AbstractHarvester
 
                 // add all harvested documents to the index
                 for (int j = jStart; j < jEnd; j++)
-                    addDocumentToIndex(docs.get(j));
+                    addDocument(docs.get(j));
 
                 // finish iteration after harvesting the last index
                 if (i == lastEntryIndex)
@@ -153,22 +153,22 @@ public abstract class AbstractListHarvester<T> extends AbstractHarvester
 
 
     @Override
-    public void init()
+    protected void init()
     {
-        entries = getEntries();
+        entries = loadEntries();
         super.init();
     }
 
 
     @Override
-    protected int calculateTotalNumberOfDocumentsInternal()
+    protected int initMaxNumberOfDocuments()
     {
         return entries.size() * numberOfDocumentsPerEntry;
     }
 
 
     @Override
-    protected String calculateHashInternal()
+    protected String initHash()
     {
         try {
             final MessageDigest md = MessageDigest.getInstance(SHA_HASH_ALGORITHM);

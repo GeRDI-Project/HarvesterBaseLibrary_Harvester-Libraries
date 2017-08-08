@@ -128,7 +128,7 @@ public class HarvesterFacade
         List<String> fromParam = formParams.getOrDefault(FORM_PARAM_FROM, null);
         List<String> toParam = formParams.getOrDefault(FORM_PARAM_TO, null);
 
-        int maxRange = harvester.getTotalNumberOfDocuments();
+        int maxRange = harvester.getMaxNumberOfDocuments();
 
         if (fromParam != null && toParam != null) {
             try {
@@ -239,7 +239,7 @@ public class HarvesterFacade
 
         if (harvester.isHarvesting()) {
             int numberOfHarvestedDocuments = harvester.getNumberOfHarvestedDocuments();
-            int totalNumberOfDocuments = harvester.getHarvestEndIndex() - harvester.getHarvestStartIndex();
+            int totalNumberOfDocuments = harvester.getEndIndex() - harvester.getStartIndex();
 
             // calculate completion in percent and estimate completion time
             double progressInPercent = 100.0 * numberOfHarvestedDocuments / totalNumberOfDocuments;
@@ -259,8 +259,8 @@ public class HarvesterFacade
             status = HARVEST_NOT_STARTED;
 
         // get harvesting range
-        int from = harvester.getHarvestStartIndex();
-        int to = harvester.getHarvestEndIndex();
+        int from = harvester.getStartIndex();
+        int to = harvester.getEndIndex();
 
         // get harvester name
         String name = MainContext.getModuleName();
@@ -277,7 +277,7 @@ public class HarvesterFacade
         String validProps = String.join(", ", harvester.getValidProperties());
 
         // get valid harvesting range
-        int maxRange = harvester.getTotalNumberOfDocuments();
+        int maxRange = harvester.getMaxNumberOfDocuments();
 
         return String.format(INFO, name, status, from, to, sb.toString(), validProps, maxRange);
     }
@@ -333,7 +333,7 @@ public class HarvesterFacade
     })
     public String getResult()
     {
-        IJsonObject result = harvester.getHarvestResult();
+        IJsonObject result = harvester.createDetailedJson();
 
         if (result != null)
             return result.toJsonString();

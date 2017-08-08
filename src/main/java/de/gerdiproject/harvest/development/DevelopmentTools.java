@@ -82,15 +82,15 @@ public class DevelopmentTools
     public final String saveHarvestResultToDisk()
     {
         AbstractHarvester harvester = MainContext.getHarvester();
-        IJsonObject result = harvester.getHarvestResult();
+        IJsonObject result = harvester.createDetailedJson();
 
         if (result != null) {
             String fileName;
             int harvestCount = harvester.getNumberOfHarvestedDocuments();
             long harvestStartTimestamp = harvester.getHarvestStartDate().getTime();
 
-            if (harvestCount < harvester.getTotalNumberOfDocuments()) {
-                int from = harvester.getHarvestStartIndex();
+            if (harvestCount < harvester.getMaxNumberOfDocuments()) {
+                int from = harvester.getStartIndex();
                 int to = from + harvestCount;
 
                 fileName = String.format(

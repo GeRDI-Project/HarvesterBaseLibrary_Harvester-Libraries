@@ -78,19 +78,6 @@ public abstract class AbstractCompositeHarvester extends AbstractHarvester
         this(null, subHarvesters);
     }
 
-
-    @Override
-    public void init()
-    {
-        // init sub-harvesters first, in order to properly calculate document
-        // hash and count
-        for (AbstractHarvester subHarvester : subHarvesters)
-            subHarvester.init();
-
-        super.init();
-    }
-
-
     @Override
     public void setRange(int from, int to)
     {
@@ -101,7 +88,7 @@ public abstract class AbstractCompositeHarvester extends AbstractHarvester
         int numberOfProcessedDocs = 0;
 
         for (AbstractHarvester subHarvester : subHarvesters) {
-            int numberOfSubDocs = subHarvester.getTotalNumberOfDocuments();
+            int numberOfSubDocs = subHarvester.getMaxNumberOfDocuments();
             numberOfProcessedDocs += numberOfSubDocs;
 
             if (isAboveRange) {
@@ -163,19 +150,19 @@ public abstract class AbstractCompositeHarvester extends AbstractHarvester
 
 
     @Override
-    protected int calculateTotalNumberOfDocumentsInternal()
+    protected int initMaxNumberOfDocuments()
     {
         int total = 0;
 
         for (AbstractHarvester subHarvester : subHarvesters)
-            total += subHarvester.getTotalNumberOfDocuments();
+            total += subHarvester.getMaxNumberOfDocuments();
 
         return total;
     }
 
 
     @Override
-    protected String calculateHashInternal()
+    protected String initHash()
     {
         // for now, concatenate all hashes
         final StringBuilder hashBuilder = new StringBuilder();
@@ -218,10 +205,10 @@ public abstract class AbstractCompositeHarvester extends AbstractHarvester
 
 
     @Override
-    public boolean isHarvestFinished()
+    public boolean isFinished()
     {
         for (AbstractHarvester subHarvester : subHarvesters) {
-            if (!subHarvester.isHarvestFinished())
+            if (!subHarvester.isFinished())
                 return false;
         }
 

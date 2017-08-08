@@ -79,7 +79,7 @@ public class DataCiteMapperFacade
         else if (dataCiteMapper.isConverting())
             status = dataCiteMapper.getProgressString();
 
-        else if (harvester.isHarvestFinished())
+        else if (harvester.isFinished())
             status = STATUS_NOT_CONVERTED;
 
         return String.format(

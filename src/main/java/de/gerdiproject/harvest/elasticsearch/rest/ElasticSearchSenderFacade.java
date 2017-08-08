@@ -110,7 +110,7 @@ public class ElasticSearchSenderFacade
         AbstractHarvester harvester = MainContext.getHarvester();
 
         // harvest the data, if it has not been done yet
-        if (!harvester.isHarvestFinished() && !harvester.isHarvesting())
+        if (!harvester.isFinished() && !harvester.isHarvesting())
             harvester.harvest();
 
         // retrieve harvested search index

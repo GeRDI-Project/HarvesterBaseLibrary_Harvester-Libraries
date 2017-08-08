@@ -127,7 +127,6 @@ public class MainContext
 
             LOGGER.info(String.format(INIT_START, harvey.getName()));
             instance.harvester = harvey;
-            instance.harvester.init();
             LOGGER.info(DONE);
         } catch (InstantiationException | IllegalAccessException e) {
             LOGGER.info(FAILED);

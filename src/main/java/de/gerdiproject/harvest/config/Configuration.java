@@ -172,8 +172,8 @@ public class Configuration
 
             // set range from config
             IJsonObject rangeObject = harvesterConfig.getJsonObject(HARVESTER_RANGE);
-            int rangeFrom = rangeObject.getInt(HARVESTER_FROM, harvester.getHarvestStartIndex());
-            int rangeTo = rangeObject.getInt(HARVESTER_TO, harvester.getHarvestEndIndex());
+            int rangeFrom = rangeObject.getInt(HARVESTER_FROM, harvester.getStartIndex());
+            int rangeTo = rangeObject.getInt(HARVESTER_TO, harvester.getEndIndex());
             harvester.setRange(rangeFrom, rangeTo);
 
             // set parameters from config
@@ -235,8 +235,8 @@ public class Configuration
 
         // get harvester range
         IJsonObject harvesterRange = JSON_BUILDER.createObject();
-        harvesterRange.put(HARVESTER_FROM, harvester.getHarvestStartIndex());
-        harvesterRange.put(HARVESTER_TO, harvester.getHarvestEndIndex());
+        harvesterRange.put(HARVESTER_FROM, harvester.getStartIndex());
+        harvesterRange.put(HARVESTER_TO, harvester.getEndIndex());
 
         // get implementation specific harvester parameters
         IJsonObject harvesterParams = JSON_BUILDER.createObject();
