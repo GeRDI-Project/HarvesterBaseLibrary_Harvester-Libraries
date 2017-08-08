@@ -129,7 +129,7 @@ public class Configuration
         Object devToolsConfig = config.get(DEV_TITLE);
 
         if (devToolsConfig != null) {
-            DevelopmentTools devTools = DevelopmentTools.instance();
+            DevelopmentTools devTools = DevelopmentTools.instance;
 
             // set write-to-disk
             boolean writeToDisk = ((IJsonObject) devToolsConfig)
@@ -226,10 +226,10 @@ public class Configuration
 
         // get developer options
         IJsonObject devToolsConfig = JSON_BUILDER.createObject();
-        devToolsConfig.put(DEV_WRITE_TO_DISK, DevelopmentTools.instance().isWritingHttpToDisk());
-        devToolsConfig.put(DEV_READ_FROM_DISK, DevelopmentTools.instance().isReadingHttpFromDisk());
-        devToolsConfig.put(DEV_AUTO_SAVE, DevelopmentTools.instance().isAutoSaving());
-        devToolsConfig.put(DEV_AUTO_SUBMIT, DevelopmentTools.instance().isAutoSubmitting());
+        devToolsConfig.put(DEV_WRITE_TO_DISK, DevelopmentTools.instance.isWritingHttpToDisk());
+        devToolsConfig.put(DEV_READ_FROM_DISK, DevelopmentTools.instance.isReadingHttpFromDisk());
+        devToolsConfig.put(DEV_AUTO_SAVE, DevelopmentTools.instance.isAutoSaving());
+        devToolsConfig.put(DEV_AUTO_SUBMIT, DevelopmentTools.instance.isAutoSubmitting());
 
         AbstractHarvester harvester = MainContext.getHarvester();
 

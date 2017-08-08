@@ -42,7 +42,6 @@ public class DevelopmentTools
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DevelopmentTools.class);
 
-    private static DevelopmentTools instance;
 
     private boolean saveHttpRequestsToDisk;
     private boolean readHttpRequestsFromDisk;
@@ -50,20 +49,7 @@ public class DevelopmentTools
     private boolean autoSaveHarvestResult;
     private boolean autoSubmitHarvestResult;
 
-
-    /**
-     * Returns the Singleton instance of this class.
-     *
-     * @return a Singleton instance of this class
-     */
-    public static synchronized DevelopmentTools instance()
-    {
-        if (instance == null)
-            instance = new DevelopmentTools();
-
-        return instance;
-    }
-
+    public static final DevelopmentTools instance = new DevelopmentTools();
 
     /**
      * Private constructor, because this class describes a Singleton.

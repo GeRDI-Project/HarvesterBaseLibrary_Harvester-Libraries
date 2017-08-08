@@ -184,7 +184,7 @@ public class SearchIndexFactory
     {
         IJsonObject searchIndex = jsonBuilder.createObject();
         searchIndex.put(HASH_JSON, hash);
-        searchIndex.put(IS_FROM_DISK_JSON, DevelopmentTools.instance().isReadingHttpFromDisk());
+        searchIndex.put(IS_FROM_DISK_JSON, DevelopmentTools.instance.isReadingHttpFromDisk());
         searchIndex.put(DURATION_JSON, duration);
         searchIndex.put(LAST_UPDATED_JSON, harvestDate.toString());
         searchIndex.put(DATA_JSON, documents);

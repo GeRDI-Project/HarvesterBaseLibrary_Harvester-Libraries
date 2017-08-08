@@ -473,7 +473,7 @@ public abstract class AbstractHarvester
 
         // do some things, only if this is the main harvester
         if (MainContext.getHarvester() == this) {
-            final DevelopmentTools devTools = DevelopmentTools.instance();
+            final DevelopmentTools devTools = DevelopmentTools.instance;
 
             // save to disk if auto-save is enabled
             if (devTools.isAutoSaving())
@@ -524,7 +524,7 @@ public abstract class AbstractHarvester
         logger.error(reason.getMessage(), reason);
 
         // save to disk if auto-save is enabled
-        final DevelopmentTools devTools = DevelopmentTools.instance();
+        final DevelopmentTools devTools = DevelopmentTools.instance;
 
         if (devTools.isAutoSaving() && MainContext.getHarvester() == this)
             devTools.saveHarvestResultToDisk();

@@ -55,7 +55,7 @@ public class DataCiteMapperFacade
                                        + "POST/save\tSaves the converted documents to disk%n"
                                        + "POST/submit\tSubmits the converted documents to ElasticSearch";
 
-    private final DataCiteMapper dataCiteMapper = DataCiteMapper.instance();
+    private final DataCiteMapper dataCiteMapper = DataCiteMapper.instance;
 
 
     /**

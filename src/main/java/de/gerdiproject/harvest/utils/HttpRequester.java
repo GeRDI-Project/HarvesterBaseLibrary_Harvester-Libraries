@@ -80,7 +80,7 @@ public class HttpRequester
     {
         httpCharset = MainContext.getCharset();
         suppressWarnings = false;
-        devTools = DevelopmentTools.instance();
+        devTools = DevelopmentTools.instance;
         jsonBuilder = new JsonBuilder();
     }
 
@@ -97,7 +97,7 @@ public class HttpRequester
     {
         this.httpCharset = httpCharset;
         this.suppressWarnings = suppressWarnings;
-        devTools = DevelopmentTools.instance();
+        devTools = DevelopmentTools.instance;
         jsonBuilder = new JsonBuilder();
     }
 
