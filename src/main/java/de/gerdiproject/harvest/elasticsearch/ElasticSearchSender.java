@@ -89,9 +89,9 @@ public class ElasticSearchSender
 
     private final static int BULK_SUBMISSION_SIZE = 1024;
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(ElasticSearchSender.class);
+    private final static Logger LOGGER = LoggerFactory.getLogger(ElasticSearchSender.class);
 
-    private static ElasticSearchSender instance;
+    public final static ElasticSearchSender instance = new ElasticSearchSender();
 
     private final IJsonBuilder jsonBuilder;
     private final HttpRequester httpRequester;
@@ -123,19 +123,6 @@ public class ElasticSearchSender
      */
     private String userName;
 
-
-    /**
-     * Returns the Singleton instance of this class.
-     *
-     * @return a Singleton instance of this class
-     */
-    public static synchronized ElasticSearchSender instance()
-    {
-        if (instance == null)
-            instance = new ElasticSearchSender();
-
-        return instance;
-    }
 
 
     /**

@@ -484,7 +484,7 @@ public abstract class AbstractHarvester
 
             // send to elastic search if auto-submission is enabled
             if (devTools.isAutoSubmitting())
-                ElasticSearchSender.instance().sendToElasticSearch(harvestedDocuments);
+                ElasticSearchSender.instance.sendToElasticSearch(harvestedDocuments);
         }
     }
 
