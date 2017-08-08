@@ -4,3 +4,5 @@
 .classpath
 .settings/
 /META-INF/MANIFEST.MF
+/bin/
+**/*.orig
