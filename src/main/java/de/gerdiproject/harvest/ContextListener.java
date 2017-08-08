@@ -41,7 +41,7 @@ import javax.servlet.ServletContextListener;
  *
  * @author Robin Weiss
  */
-public abstract class AbstractContextListener<T extends AbstractHarvester> implements ServletContextListener
+public class ContextListener<T extends AbstractHarvester> implements ServletContextListener
 {
     // this warning is suppressed, because the only generic Superclass MUST be T. The cast will always succeed.
     @SuppressWarnings("unchecked")
@@ -77,15 +77,6 @@ public abstract class AbstractContextListener<T extends AbstractHarvester> imple
     }
 
     /**
-     * Retrieves the class of the main harvester for the harvester service.
-     * @return the class of an AbstractHarvester
-     */
-    final protected Class<T> getMainHarvesterClass()
-    {
-        return harvesterClass;
-    }
-
-    /**
      * This method is called when the server is set up. Creates a logger and
      * harvester and sets them in the MainContext.
      *
@@ -97,7 +88,7 @@ public abstract class AbstractContextListener<T extends AbstractHarvester> imple
     public void contextInitialized(ServletContextEvent sce)
     {
         // init main context
-        MainContext.init(getServiceName(), getMainHarvesterClass(), getCharset());
+        MainContext.init(getServiceName(), harvesterClass, getCharset());
 
         // try to load configuration
         Configuration.loadFromDisk();
