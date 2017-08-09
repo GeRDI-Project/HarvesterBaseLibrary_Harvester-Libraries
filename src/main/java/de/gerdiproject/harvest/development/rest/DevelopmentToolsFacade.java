@@ -71,7 +71,7 @@ public class DevelopmentToolsFacade
     })
     public String getInfo()
     {
-        final DevelopmentTools devTools = DevelopmentTools.instance;
+        final DevelopmentTools devTools = DevelopmentTools.instance();
         return String.format(
                    INFO,
                    MainContext.getModuleName(),
@@ -94,7 +94,7 @@ public class DevelopmentToolsFacade
     })
     public String saveToDisk()
     {
-        return DevelopmentTools.instance.saveHarvestResultToDisk();
+        return DevelopmentTools.instance().saveHarvestResultToDisk();
     }
 
 
@@ -129,7 +129,7 @@ public class DevelopmentToolsFacade
         @FormParam("read_from_disk") String readFromDisk,
         @FormParam("write_to_disk") String writeToDisk)
     {
-        DevelopmentTools devTools = DevelopmentTools.instance;
+        DevelopmentTools devTools = DevelopmentTools.instance();
 
         StringBuilder sb = new StringBuilder();
 

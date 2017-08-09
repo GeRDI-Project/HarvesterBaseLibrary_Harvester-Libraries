@@ -91,7 +91,7 @@ public class ElasticSearchSender
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ElasticSearchSender.class);
 
-    private static ElasticSearchSender instance;
+    private static ElasticSearchSender instance = new ElasticSearchSender();
 
     private final IJsonBuilder jsonBuilder;
     private final HttpRequester httpRequester;
@@ -129,11 +129,8 @@ public class ElasticSearchSender
      *
      * @return a Singleton instance of this class
      */
-    public static synchronized ElasticSearchSender instance()
+    public static ElasticSearchSender instance()
     {
-        if (instance == null)
-            instance = new ElasticSearchSender();
-
         return instance;
     }
 

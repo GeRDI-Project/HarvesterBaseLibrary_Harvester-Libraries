@@ -54,7 +54,7 @@ public class DataCiteMapper
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DataCiteMapper.class);
 
-    public static final DataCiteMapper instance = new DataCiteMapper();
+    private static final DataCiteMapper instance = new DataCiteMapper();
 
     private final Base64.Encoder encoder;
     private final IJsonArray convertedDocuments;
@@ -70,6 +70,15 @@ public class DataCiteMapper
         jsonBuilder = new JsonBuilder();
         convertedDocuments = jsonBuilder.createArray();
         encoder = Base64.getEncoder();
+    }
+
+    /**
+     * Returns the Singleton instance.
+     * @return the singletonInstance
+     */
+    public static DataCiteMapper instance()
+    {
+        return instance;
     }
 
 

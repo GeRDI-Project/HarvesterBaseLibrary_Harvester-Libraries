@@ -49,13 +49,22 @@ public class DevelopmentTools
     private boolean autoSaveHarvestResult;
     private boolean autoSubmitHarvestResult;
 
-    public static final DevelopmentTools instance = new DevelopmentTools();
+    private static final DevelopmentTools instance = new DevelopmentTools();
 
     /**
      * Private constructor, because this class describes a Singleton.
      */
     private DevelopmentTools()
     {
+    }
+
+    /**
+     * Returns the Singleton instance.
+     * @return the singletonInstance
+     */
+    public static DevelopmentTools instance()
+    {
+        return instance;
     }
 
 
