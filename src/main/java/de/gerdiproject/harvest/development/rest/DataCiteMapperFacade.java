@@ -142,6 +142,6 @@ public class DataCiteMapperFacade
         if (!dataCiteMapper.isFinished())
             return SUBMIT_FAILED;
 
-        return ElasticSearchSender.instance.sendToElasticSearch(dataCiteMapper.getConvertedDocuments());
+        return ElasticSearchSender.instance().sendToElasticSearch(dataCiteMapper.getConvertedDocuments());
     }
 }

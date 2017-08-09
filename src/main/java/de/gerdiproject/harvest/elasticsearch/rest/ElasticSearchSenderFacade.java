@@ -69,14 +69,14 @@ public class ElasticSearchSenderFacade
     public String getInfo()
     {
         // get URL or default text
-        String url = ElasticSearchSender.instance.getBaseUrl();
+        String url = ElasticSearchSender.instance().getBaseUrl();
         url = (url == null) ? URL_MISSING : url;
 
-        String index = ElasticSearchSender.instance.getIndex();
-        String type = ElasticSearchSender.instance.getType();
+        String index = ElasticSearchSender.instance().getIndex();
+        String type = ElasticSearchSender.instance().getType();
 
         // get user name
-        String userName = ElasticSearchSender.instance.getUserName();
+        String userName = ElasticSearchSender.instance().getUserName();
 
         // add title and URL
         StringBuilder sb = new StringBuilder();
@@ -117,7 +117,7 @@ public class ElasticSearchSenderFacade
         IJsonArray harvestedDocuments = harvester.getHarvestedDocuments();
 
         // send search index to Elastic Search
-        String status = ElasticSearchSender.instance.sendToElasticSearch(harvestedDocuments);
+        String status = ElasticSearchSender.instance().sendToElasticSearch(harvestedDocuments);
 
         return status;
     }
@@ -178,7 +178,7 @@ public class ElasticSearchSenderFacade
 
             // set up Elastic Search URL if all required parameters are there
             if (hasUrl && hasIndex && hasType) {
-                String status = ElasticSearchSender.instance.setUrl(url, index, type);
+                String status = ElasticSearchSender.instance().setUrl(url, index, type);
                 sb.append(status).append('\n');
             }
         }
@@ -189,7 +189,7 @@ public class ElasticSearchSenderFacade
             if (!username.isEmpty() && (password == null || password.isEmpty()))
                 sb.append(String.format(MISSING_PARAM_PASSWORD, username)).append('\n');
             else {
-                ElasticSearchSender.instance.setCredentials(username, password);
+                ElasticSearchSender.instance().setCredentials(username, password);
                 sb.append(String.format(AUTHORIZATION_OK, username)).append('\n');
             }
         }

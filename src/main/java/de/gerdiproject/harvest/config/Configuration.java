@@ -158,7 +158,7 @@ public class Configuration
             && !elasticSearchConfig.isNull(ELASTIC_SEARCH_URL)
             && !elasticSearchConfig.isNull(ELASTIC_SEARCH_INDEX)
             && !elasticSearchConfig.isNull(ELASTIC_SEARCH_TYPE)) {
-            ElasticSearchSender.instance.setUrl(
+            ElasticSearchSender.instance().setUrl(
                 elasticSearchConfig.getString(ELASTIC_SEARCH_URL),
                 elasticSearchConfig.getString(ELASTIC_SEARCH_INDEX),
                 elasticSearchConfig.getString(ELASTIC_SEARCH_TYPE));
@@ -220,9 +220,9 @@ public class Configuration
     {
         // get ElasticSearch configuration
         IJsonObject elasticSearchConfig = JSON_BUILDER.createObject();
-        elasticSearchConfig.put(ELASTIC_SEARCH_URL, ElasticSearchSender.instance.getBaseUrl());
-        elasticSearchConfig.put(ELASTIC_SEARCH_INDEX, ElasticSearchSender.instance.getIndex());
-        elasticSearchConfig.put(ELASTIC_SEARCH_TYPE, ElasticSearchSender.instance.getType());
+        elasticSearchConfig.put(ELASTIC_SEARCH_URL, ElasticSearchSender.instance().getBaseUrl());
+        elasticSearchConfig.put(ELASTIC_SEARCH_INDEX, ElasticSearchSender.instance().getIndex());
+        elasticSearchConfig.put(ELASTIC_SEARCH_TYPE, ElasticSearchSender.instance().getType());
 
         // get developer options
         IJsonObject devToolsConfig = JSON_BUILDER.createObject();
