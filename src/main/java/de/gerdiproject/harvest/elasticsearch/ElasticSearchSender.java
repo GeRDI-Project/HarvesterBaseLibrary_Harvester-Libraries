@@ -51,47 +51,47 @@ import de.gerdiproject.json.utils.JsonHelper;
  */
 public class ElasticSearchSender
 {
-    private final static String ERROR_PREFIX = "Cannot send search index to Elastic Search: ";
-    private final static String EMPTY_INDEX_ERROR = ERROR_PREFIX + "JSON 'data' array is empty";
-    private final static String NO_URL_ERROR = ERROR_PREFIX + "You need to set up a valid  Elastic Search URL";
+    private static final String ERROR_PREFIX = "Cannot send search index to Elastic Search: ";
+    private static final String EMPTY_INDEX_ERROR = ERROR_PREFIX + "JSON 'data' array is empty";
+    private static final String NO_URL_ERROR = ERROR_PREFIX + "You need to set up a valid  Elastic Search URL";
 
-    private final static String MAPPINGS_URL = "%s/%s/_mapping/%s/";
-    private final static String BASIC_MAPPING = "{\"properties\":{}}";
+    private static final String MAPPINGS_URL = "%s/%s/_mapping/%s/";
+    private static final String BASIC_MAPPING = "{\"properties\":{}}";
 
-    private final static String BATCH_POST_INSTRUCTION = "{\"index\":{\"_id\":\"%s\"}}%n%s%n";
-    private final static String BULK_SUBMISSION_URL = "%s/%s/%s/_bulk?pretty";
+    private static final String BATCH_POST_INSTRUCTION = "{\"index\":{\"_id\":\"%s\"}}%n%s%n";
+    private static final String BULK_SUBMISSION_URL = "%s/%s/%s/_bulk?pretty";
 
-    private final static String URL_SET_OK = "Set ElasticSearch URL to '%s/%s/%s/'.";
-    private final static String URL_SET_FAILED = "Elastic Search URL '%s' is malformed!";
+    private static final String URL_SET_OK = "Set ElasticSearch URL to '%s/%s/%s/'.";
+    private static final String URL_SET_FAILED = "Elastic Search URL '%s' is malformed!";
 
-    private final static String SUBMISSION_START = "Submitting documents to '%s'...";
-    private final static String SUBMISSION_DONE = "SUBMISSION DONE!";
-    private final static String SUBMIT_ERROR_INDICATOR = "\"status\" : 400";
-    private final static String SUBMIT_PARTIAL_OK = "Succcessfully submitted documents %d to %d";
-    private final static String SUBMIT_PARTIAL_FAILED = "There were errors while submitting documents %d to %d:";
-    private final static String SUBMIT_PARTIAL_FAILED_FORMAT = "%n\t%s of document '%s': %s - %s'";
+    private static final String SUBMISSION_START = "Submitting documents to '%s'...";
+    private static final String SUBMISSION_DONE = "SUBMISSION DONE!";
+    private static final String SUBMIT_ERROR_INDICATOR = "\"status\" : 400";
+    private static final String SUBMIT_PARTIAL_OK = "Succcessfully submitted documents %d to %d";
+    private static final String SUBMIT_PARTIAL_FAILED = "There were errors while submitting documents %d to %d:";
+    private static final String SUBMIT_PARTIAL_FAILED_FORMAT = "%n\t%s of document '%s': %s - %s'";
 
-    private final static String RESUBMISSION_START = "Had to remove erroneous fields from %d documents! Re-submitting...";
-    private final static String RESUBMISSION_OK = "Succcessfully re-submitted documents!";
-    private final static String RESUBMISSION_FAILED = "Could not re-submit the following documents:";
+    private static final String RESUBMISSION_START = "Had to remove erroneous fields from %d documents! Re-submitting...";
+    private static final String RESUBMISSION_OK = "Succcessfully re-submitted documents!";
+    private static final String RESUBMISSION_FAILED = "Could not re-submit the following documents:";
 
-    private final static String ID_JSON = "_id";
-    private final static String INDEX_JSON = "index";
-    private final static String ITEMS_JSON = "items";
-    private final static String ERROR_JSON = "error";
-    private final static String REASON_JSON = "reason";
-    private final static String IDENTIFIER_JSON = "identifier";
-    private final static String CAUSED_BY_JSON = "caused_by";
-    private final static String TYPE_JSON = "type";
-    private final static String PARSE_ERROR_PREFIX = "failed to parse [";
+    private static final String ID_JSON = "_id";
+    private static final String INDEX_JSON = "index";
+    private static final String ITEMS_JSON = "items";
+    private static final String ERROR_JSON = "error";
+    private static final String REASON_JSON = "reason";
+    private static final String IDENTIFIER_JSON = "identifier";
+    private static final String CAUSED_BY_JSON = "caused_by";
+    private static final String TYPE_JSON = "type";
+    private static final String PARSE_ERROR_PREFIX = "failed to parse [";
 
-    private final static String NULL_JSON = "null";
+    private static final String NULL_JSON = "null";
 
-    private final static int BULK_SUBMISSION_SIZE = 1024;
+    private static final int BULK_SUBMISSION_SIZE = 1024;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ElasticSearchSender.class);
 
-    private static ElasticSearchSender instance = new ElasticSearchSender();
+    private static final ElasticSearchSender instance = new ElasticSearchSender();
 
     private final IJsonBuilder jsonBuilder;
     private final HttpRequester httpRequester;
@@ -311,6 +311,7 @@ public class ElasticSearchSender
     {
         String mappingsUrl = String.format(MAPPINGS_URL, baseUrl, index, type);
         IJsonObject mappings = httpRequester.getRawJsonFromUrl(mappingsUrl);
+        // TODO: send different request only to the web!
 
         if (mappings == null) {
             // create mappings on ElasticSearch
