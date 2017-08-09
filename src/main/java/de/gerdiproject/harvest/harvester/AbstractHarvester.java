@@ -34,6 +34,7 @@ import de.gerdiproject.json.impl.JsonBuilder;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -66,25 +67,26 @@ public abstract class AbstractHarvester
 
     protected static final String HARVEST_ABORTED = "HARVEST ABORTED!";
 
-    private final HashMap<String, String> properties;
+    private final Map<String, String> properties;
     protected IJsonArray harvestedDocuments;
 
-    private Date harvestStartedDate;
-    private Date harvestFinishedDate;
+    private Date startedDate;
+    private Date finishedDate;
     protected CancelableFuture<Boolean> currentHarvestingProcess;
 
-    private final AtomicInteger totalNumberOfDocuments;
-    private final AtomicInteger numberOfHarvestedDocuments;
+    private final AtomicInteger maxDocumentCount;
+    private final AtomicInteger harvestedDocumentCount;
 
-    private final AtomicInteger harvestStartIndex;
-    private final AtomicInteger harvestEndIndex;
+    private final AtomicInteger startIndex;
+    private final AtomicInteger endIndex;
 
     protected String name;
     protected String hash;
-    protected Logger logger;
     protected final HttpRequester httpRequester;
     protected final SearchIndexFactory searchIndexFactory;
     protected final IJsonBuilder jsonBuilder;
+
+    protected final Logger logger; // NOPMD - we want to retrieve the type of the inheriting class
 
 
     /**
@@ -101,7 +103,7 @@ public abstract class AbstractHarvester
      * @return true, if everything was harvested
      * @see de.gerdiproject.harvest.utils.SearchIndexFactory
      */
-    abstract protected boolean harvestInternal(int startIndex, int endIndex) throws Exception;
+    abstract protected boolean harvestInternal(int startIndex, int endIndex) throws Exception; // NOPMD - we want the inheriting class to be able to throw any exception
 
 
     /**
@@ -117,7 +119,7 @@ public abstract class AbstractHarvester
      *
      * @return the total number of documents that are to be harvested
      */
-    abstract protected int calculateTotalNumberOfDocumentsInternal();
+    abstract protected int initMaxNumberOfDocuments();
 
 
     /**
@@ -126,7 +128,7 @@ public abstract class AbstractHarvester
      *
      * @return a hash as a checksum of the data which is to be harvested
      */
-    abstract protected String calculateHashInternal();
+    abstract protected String initHash();
 
 
     /**
@@ -162,35 +164,32 @@ public abstract class AbstractHarvester
         searchIndexFactory = new SearchIndexFactory();
 
         currentHarvestingProcess = null;
-        harvestStartedDate = null;
-        harvestFinishedDate = null;
-        totalNumberOfDocuments = new AtomicInteger();
-        numberOfHarvestedDocuments = new AtomicInteger();
+        startedDate = null;
+        finishedDate = null;
+        maxDocumentCount = new AtomicInteger();
+        harvestedDocumentCount = new AtomicInteger();
 
-        harvestStartIndex = new AtomicInteger(0);
-        harvestEndIndex = new AtomicInteger(0);
+        startIndex = new AtomicInteger(0);
+        endIndex = new AtomicInteger(0);
         jsonBuilder = new JsonBuilder();
         this.harvestedDocuments = jsonBuilder.createArray();
+
+        init();
     }
 
 
     /**
-     * Initializes the Harvester, setting up missing values and the logger.
+     * Initializes the Harvester, calculating missing values.
      */
-    public void init()
+    protected void init()
     {
         // calculate hash
-        hash = calculateHashInternal();
+        hash = initHash();
 
         // calculate number of documents
-        totalNumberOfDocuments.set(calculateTotalNumberOfDocumentsInternal());
-
-        int oldEndIndex = harvestEndIndex.get();
-        int newEndIndex = totalNumberOfDocuments.get();
-
-        // if the end index is out of bounds, set it correctly
-        if (oldEndIndex == 0 || oldEndIndex > newEndIndex)
-            harvestEndIndex.set(newEndIndex);
+        int maxHarvestableDocs = initMaxNumberOfDocuments();
+        maxDocumentCount.set(maxHarvestableDocs);
+        endIndex.set(maxHarvestableDocs);
     }
 
 
@@ -227,16 +226,18 @@ public abstract class AbstractHarvester
      * @return the JSON object that was harvested via harvestInternal(), or null
      *         if no harvest has been finished successfully
      */
-    public final IJsonObject getHarvestResult()
+    public final IJsonObject createDetailedJson()
     {
-        java.sql.Date sqlDate = new java.sql.Date(harvestStartedDate.getTime());
-        int harvestTime = (harvestFinishedDate != null && harvestStartedDate != null)
-                          ? (int)((harvestFinishedDate.getTime() - harvestStartedDate.getTime()) / 1000)
-                          : -1;
+        if (startedDate != null && finishedDate != null) {
+            java.sql.Date sqlDate = new java.sql.Date(startedDate.getTime());
+            int harvestTime = (int)((finishedDate.getTime() - startedDate.getTime()) / 1000);
 
-        synchronized (harvestedDocuments) {
-            return searchIndexFactory.createSearchIndex(harvestedDocuments, sqlDate, hash, harvestTime);
+            synchronized (harvestedDocuments) {
+                return searchIndexFactory.createSearchIndex(harvestedDocuments, sqlDate, hash, harvestTime);
+            }
         }
+
+        return null;
     }
 
 
@@ -261,7 +262,10 @@ public abstract class AbstractHarvester
      */
     public final Date getHarvestDate()
     {
-        return harvestFinishedDate;
+        if (finishedDate != null)
+            return (Date) finishedDate.clone();
+        else
+            return null;
     }
 
 
@@ -273,7 +277,10 @@ public abstract class AbstractHarvester
      */
     public final Date getHarvestStartDate()
     {
-        return harvestStartedDate;
+        if (startedDate != null)
+            return (Date) startedDate.clone();
+        else
+            return null;
     }
 
 
@@ -285,7 +292,7 @@ public abstract class AbstractHarvester
      * @param document
      *            the document that is to be added to the search index
      */
-    protected void addDocumentToIndex(IJsonObject document)
+    protected void addDocument(IJsonObject document)
     {
         if (document != null) {
             synchronized (harvestedDocuments) {
@@ -294,14 +301,14 @@ public abstract class AbstractHarvester
         }
 
         // increment harvest count
-        final int harvestedDocs = numberOfHarvestedDocuments.incrementAndGet();
-        final int from = harvestStartIndex.get();
+        final int harvestedDocs = harvestedDocumentCount.incrementAndGet();
+        final int from = startIndex.get();
 
         // log progress
         logger.info(HarvesterStringUtils.formatProgress(
                         name,
                         from + harvestedDocs,
-                        harvestEndIndex.get()));
+                        endIndex.get()));
     }
 
 
@@ -313,9 +320,9 @@ public abstract class AbstractHarvester
      * @param documents
      *            the documents that are to be added to the search index
      */
-    protected void addDocumentsToIndex(Iterable<IJsonObject> documents)
+    protected void addDocuments(Iterable<IJsonObject> documents)
     {
-        documents.forEach((IJsonObject doc) -> addDocumentToIndex(doc));
+        documents.forEach((IJsonObject doc) -> addDocument(doc));
     }
 
 
@@ -324,9 +331,9 @@ public abstract class AbstractHarvester
      *
      * @return the total number of documents that can possibly be harvested
      */
-    public final int getTotalNumberOfDocuments()
+    public final int getMaxNumberOfDocuments()
     {
-        return totalNumberOfDocuments.get();
+        return maxDocumentCount.get();
     }
 
 
@@ -335,9 +342,9 @@ public abstract class AbstractHarvester
      *
      * @return the index of the first document that is to be harvested
      */
-    public final int getHarvestStartIndex()
+    public final int getStartIndex()
     {
-        return harvestStartIndex.get();
+        return startIndex.get();
     }
 
 
@@ -348,9 +355,9 @@ public abstract class AbstractHarvester
      * @return the index of the first document that is not to be harvested
      *         anymore
      */
-    public final int getHarvestEndIndex()
+    public final int getEndIndex()
     {
-        return harvestEndIndex.get();
+        return endIndex.get();
     }
 
 
@@ -365,8 +372,8 @@ public abstract class AbstractHarvester
      */
     public void setRange(int from, int to)
     {
-        harvestStartIndex.set(from);
-        harvestEndIndex.set(to);
+        startIndex.set(from);
+        endIndex.set(to);
     }
 
 
@@ -377,7 +384,7 @@ public abstract class AbstractHarvester
      */
     public int getNumberOfHarvestedDocuments()
     {
-        return numberOfHarvestedDocuments.get();
+        return harvestedDocumentCount.get();
     }
 
 
@@ -408,11 +415,11 @@ public abstract class AbstractHarvester
             Date now = new Date();
 
             // calculate how many milliseconds the harvest has been going on
-            long milliSecondsUntilNow = now.getTime() - harvestStartedDate.getTime();
+            long milliSecondsUntilNow = now.getTime() - startedDate.getTime();
 
             // estimate how many milliseconds the harvest will take
             long milliSecondsTotal = milliSecondsUntilNow
-                                     * (harvestEndIndex.get() - harvestStartIndex.get())
+                                     * (endIndex.get() - startIndex.get())
                                      / documentCount;
 
             return (milliSecondsTotal - milliSecondsUntilNow) / 1000l;
@@ -434,12 +441,12 @@ public abstract class AbstractHarvester
             harvestedDocuments.clear();
         }
 
-        numberOfHarvestedDocuments.set(0);
-        harvestStartedDate = new Date();
+        harvestedDocumentCount.set(0);
+        startedDate = new Date();
 
         // start asynchronous harvest
         currentHarvestingProcess = new CancelableFuture<>(
-            () -> harvestInternal(harvestStartIndex.get(), harvestEndIndex.get()));
+            () -> harvestInternal(startIndex.get(), endIndex.get()));
 
         // success handler
         currentHarvestingProcess.thenApply((isSuccessful) -> {
@@ -460,7 +467,7 @@ public abstract class AbstractHarvester
     protected void finishHarvestSuccessfully()
     {
         currentHarvestingProcess = null;
-        harvestFinishedDate = new Date();
+        finishedDate = new Date();
 
         logger.info(String.format(HARVESTER_END, name));
 
@@ -555,7 +562,7 @@ public abstract class AbstractHarvester
     public String getHash(boolean recalculate)
     {
         if (recalculate)
-            hash = calculateHashInternal();
+            hash = initHash();
 
         return hash;
     }
@@ -577,8 +584,8 @@ public abstract class AbstractHarvester
      *
      * @return true if a harvest was completed
      */
-    public boolean isHarvestFinished()
+    public boolean isFinished()
     {
-        return !isHarvesting() && harvestFinishedDate != null;
+        return !isHarvesting() && finishedDate != null;
     }
 }

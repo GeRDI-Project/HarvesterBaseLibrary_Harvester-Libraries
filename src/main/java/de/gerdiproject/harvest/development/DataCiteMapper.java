@@ -46,14 +46,15 @@ public class DataCiteMapper
 {
     private static final String CONVERSION_FAILED = "!!! CONVERTING TO DATACITE FAILED !!! ";
     private static final String CONVERSION_SUCCESS = "SUCCESSFULLY CONVERTED DOCUMENTS TO DATACITE";
-    private final static String CONVERSION_START = "+++ Starting Conversion to DataCite +++";
-    private final static String CONVERSION_START_FAILED = "Could not start DataCite conversion. Finish harvesting first!";
+    private static final String CONVERSION_START = "+++ Starting Conversion to DataCite +++";
+    private static final String CONVERSION_START_FAILED = "Could not start DataCite conversion. Finish harvesting first!";
+    private static final String STATUS_CONVERTING = "Converted %d / %d (%.2f%%)";
+    private static final String CONVERSION_PROGRESS_NAME = "DataCite Conversion";
 
-    private final static String STATUS_CONVERTING = "Converted %d / %d (%.2f%%)";
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DataCiteMapper.class);
 
-    private static DataCiteMapper instance;
+    private static final DataCiteMapper instance = new DataCiteMapper();
 
     private final Base64.Encoder encoder;
     private final IJsonArray convertedDocuments;
@@ -71,17 +72,12 @@ public class DataCiteMapper
         encoder = Base64.getEncoder();
     }
 
-
     /**
-     * Returns the Singleton instance of this class.
-     *
-     * @return a Singleton instance of this class
+     * Returns the Singleton instance.
+     * @return the singletonInstance
      */
     public static DataCiteMapper instance()
     {
-        if (instance == null)
-            instance = new DataCiteMapper();
-
         return instance;
     }
 
@@ -92,7 +88,7 @@ public class DataCiteMapper
         IJsonArray originalDocs = harvester.getHarvestedDocuments();
 
         // check if the conversion is allowed to start
-        if (isConverting() || !harvester.isHarvestFinished() || originalDocs == null || originalDocs.isEmpty()) {
+        if (isConverting() || !harvester.isFinished() || originalDocs == null || originalDocs.isEmpty()) {
             LOGGER.info(CONVERSION_START_FAILED);
             return CONVERSION_START_FAILED;
         }
@@ -160,12 +156,11 @@ public class DataCiteMapper
                 convertedDocuments.add(convertedDoc);
             }
 
-            LOGGER.info(HarvesterStringUtils.formatProgress("DataCite Conversion", ++convertedCount, docCount));
+            LOGGER.info(HarvesterStringUtils.formatProgress(CONVERSION_PROGRESS_NAME, ++convertedCount, docCount));
         }
 
         return true;
     }
-
 
     private IJsonObject convertSingleDocument(Object doc, IJsonBuilder builder)
     {
@@ -183,27 +178,27 @@ public class DataCiteMapper
         IJsonObject result = builder.createObject();
 
         // identifier
-        result.put("identifier", encoder.encodeToString(viewUrl.getBytes()));
+        result.put(DataCiteConstants.IDENTIFIER, encoder.encodeToString(viewUrl.getBytes(MainContext.getCharset())));
 
         // publisher
         String publisher = MainContext.getModuleName()
                            .substring(0, MainContext.getModuleName().indexOf("arvester") - 1);
-        result.put("publisher", publisher);
+        result.put(DataCiteConstants.PUBLISHER, publisher);
 
         // creators
         {
 
             IJsonObject creator = jsonBuilder.createObject();
-            creator.put("affiliation", publisher);
-            creator.put("name", "Peter Pansen");
-            result.put("creators", jsonBuilder.createArrayFromObjects(creator));
+            creator.put(DataCiteConstants.AFFILIATION, publisher);
+            creator.put(DataCiteConstants.NAME, "Peter Pansen");
+            result.put(DataCiteConstants.CREATORS, jsonBuilder.createArrayFromObjects(creator));
         }
 
         // titles
         {
             IJsonObject title = jsonBuilder.createObject();
-            title.put("title", label);
-            result.put("titles", jsonBuilder.createArrayFromObjects(title));
+            title.put(DataCiteConstants.TITLE, label);
+            result.put(DataCiteConstants.TITLES, jsonBuilder.createArrayFromObjects(title));
         }
 
         // descriptions
@@ -211,26 +206,26 @@ public class DataCiteMapper
             IJsonArray descriptionInfos = jsonBuilder.createArray();
             descriptions.forEach((Object o) -> {
                 IJsonObject description = jsonBuilder.createObject();
-                description.put("description", (String) o);
+                description.put(DataCiteConstants.DESCRIPTION, (String) o);
                 descriptionInfos.add(description);
             });
-            result.put("descriptions", descriptionInfos);
+            result.put(DataCiteConstants.DESCRIPTIONS, descriptionInfos);
 
         } else {
             IJsonObject description = jsonBuilder.createObject();
-            description.put("description", "I wanted a real description, but all I got was this stupid text...");
-            result.put("descriptions", jsonBuilder.createArrayFromObjects(description));
+            description.put(DataCiteConstants.DESCRIPTION, "I wanted a real description, but all I got was this stupid text...");
+            result.put(DataCiteConstants.DESCRIPTIONS, jsonBuilder.createArrayFromObjects(description));
         }
 
         // publication year
-        result.put("publicationYear", 2017);
+        result.put(DataCiteConstants.PUBLICATION_YEAR, 2017);
 
         // resource type
         {
             IJsonObject resourceType = jsonBuilder.createObject();
-            resourceType.put("resourceType", publisher + " Data");
-            resourceType.put("general", "Dataset");
-            result.put("resourceType", resourceType);
+            resourceType.put(DataCiteConstants.RESOURCE_TYPE, publisher + " Data");
+            resourceType.put(DataCiteConstants.GENERAL, "Dataset");
+            result.put(DataCiteConstants.RESOURCE_TYPE, resourceType);
         }
 
         // subjects
@@ -238,10 +233,10 @@ public class DataCiteMapper
             IJsonArray subjects = jsonBuilder.createArray();
             tags.forEach((Object tag) -> {
                 IJsonObject subject = jsonBuilder.createObject();
-                subject.put("subject", (String) tag);
+                subject.put(DataCiteConstants.SUBJECT, (String) tag);
                 subjects.add(subject);
             });
-            result.put("subjects", subjects);
+            result.put(DataCiteConstants.SUBJECTS, subjects);
         }
 
         // dates
@@ -254,29 +249,29 @@ public class DataCiteMapper
 
                 for (Object year : years) {
                     int y = (Integer) year;
-                    minYear = (y < minYear) ? y : minYear;
-                    maxYear = (y > maxYear) ? y : maxYear;
+                    minYear = y < minYear ? y : minYear;
+                    maxYear = y > maxYear ? y : maxYear;
                 }
 
                 IJsonObject date = jsonBuilder.createObject();
-                date.put("from", minYear + "-01-01");
-                date.put("to", maxYear + "-12-31");
+                date.put(DataCiteConstants.FROM, minYear + "-01-01");
+                date.put(DataCiteConstants.TO, maxYear + "-12-31");
                 IJsonObject dateInfo = jsonBuilder.createObject();
-                dateInfo.put("type", "Collected");
-                dateInfo.put("date", date);
+                dateInfo.put(DataCiteConstants.TYPE, "Collected");
+                dateInfo.put(DataCiteConstants.DATE, date);
                 dates.add(dateInfo);
             }
 
             if (lastUpdated != null) {
                 IJsonObject date = jsonBuilder.createObject();
-                date.put("exact", lastUpdated);
+                date.put(DataCiteConstants.EXACT, lastUpdated);
                 IJsonObject dateInfo = jsonBuilder.createObject();
-                dateInfo.put("type", "Updated");
-                dateInfo.put("date", date);
+                dateInfo.put(DataCiteConstants.TYPE, "Updated");
+                dateInfo.put(DataCiteConstants.DATE, date);
                 dates.add(dateInfo);
             }
 
-            result.put("dates", dates);
+            result.put(DataCiteConstants.DATES, dates);
         }
 
         // geo locations
@@ -284,38 +279,38 @@ public class DataCiteMapper
             IJsonArray geoLocations = jsonBuilder.createArray();
             geo.forEach((Object geoShape) -> {
                 IJsonObject geoEntry = jsonBuilder.createObject();
-                geoEntry.put("place", "This region encompasses: " + label);
+                geoEntry.put(DataCiteConstants.PLACE, "This region encompasses: " + label);
 
                 if (((IJsonObject) geoShape).getString("type").equals("Point"))
-                    geoEntry.put("point", geoShape);
+                    geoEntry.put(DataCiteConstants.POINT, geoShape);
                 else
-                    geoEntry.put("polygon", geoShape);
+                    geoEntry.put(DataCiteConstants.POLYGON, geoShape);
 
                 geoLocations.add(geoEntry);
             });
-            result.put("geoLocations", geoLocations);
+            result.put(DataCiteConstants.GEO_LOCATIONS, geoLocations);
         }
 
         // web links
         {
             IJsonObject webLink = jsonBuilder.createObject();
-            webLink.put("name", "View: " + label);
-            webLink.put("type", "ViewUrl");
-            webLink.put("url", viewUrl);
-            result.put("weblinks", jsonBuilder.createArrayFromObjects(webLink));
+            webLink.put(DataCiteConstants.NAME, "View: " + label);
+            webLink.put(DataCiteConstants.TYPE, "ViewUrl");
+            webLink.put(DataCiteConstants.URL, viewUrl);
+            result.put(DataCiteConstants.WEBLINKS, jsonBuilder.createArrayFromObjects(webLink));
         }
 
         // sources
         {
-            String providerUrl = (viewUrl.startsWith("http"))
+            String providerUrl = viewUrl.startsWith("http")
                                  ? viewUrl.substring(0, viewUrl.indexOf('/', 9))
                                  : viewUrl.substring(0, viewUrl.indexOf('/'));
 
             IJsonObject dataSource = jsonBuilder.createObject();
-            dataSource.put("providerURI", providerUrl);
-            dataSource.put("provider", publisher);
-            dataSource.put("URI", viewUrl);
-            result.put("sources", jsonBuilder.createArrayFromObjects(dataSource));
+            dataSource.put(DataCiteConstants.PROVIDER_URI, providerUrl);
+            dataSource.put(DataCiteConstants.PROVIDER, publisher);
+            dataSource.put(DataCiteConstants.URI, viewUrl);
+            result.put(DataCiteConstants.SOURCES, jsonBuilder.createArrayFromObjects(dataSource));
         }
 
         // files
@@ -325,14 +320,14 @@ public class DataCiteMapper
 
             for (Object dlUrl : downloadUrls) {
                 IJsonObject file = jsonBuilder.createObject();
-                file.put("identifier", "file " + i++);
-                file.put("label", publisher + " Dataset #" + i);
-                file.put("url", (String) dlUrl);
+                file.put(DataCiteConstants.IDENTIFIER, "file " + i++);
+                file.put(DataCiteConstants.LABEL, publisher + " Dataset #" + i);
+                file.put(DataCiteConstants.URL, (String) dlUrl);
 
                 files.add(file);
             }
 
-            result.put("files", files);
+            result.put(DataCiteConstants.FILES, files);
         }
 
         return result;

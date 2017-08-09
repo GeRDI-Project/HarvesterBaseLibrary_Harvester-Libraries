@@ -30,6 +30,7 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import de.gerdiproject.harvest.MainContext;
 import de.gerdiproject.harvest.utils.HttpRequester;
 import de.gerdiproject.harvest.utils.HttpRequester.RestRequestType;
 import de.gerdiproject.harvest.utils.SearchIndexFactory;
@@ -50,47 +51,47 @@ import de.gerdiproject.json.utils.JsonHelper;
  */
 public class ElasticSearchSender
 {
-    private final static String ERROR_PREFIX = "Cannot send search index to Elastic Search: ";
-    private final static String EMPTY_INDEX_ERROR = ERROR_PREFIX + "JSON 'data' array is empty";
-    private final static String NO_URL_ERROR = ERROR_PREFIX + "You need to set up a valid  Elastic Search URL";
+    private static final String ERROR_PREFIX = "Cannot send search index to Elastic Search: ";
+    private static final String EMPTY_INDEX_ERROR = ERROR_PREFIX + "JSON 'data' array is empty";
+    private static final String NO_URL_ERROR = ERROR_PREFIX + "You need to set up a valid  Elastic Search URL";
 
-    private final static String MAPPINGS_URL = "%s/%s/_mapping/%s/";
-    private final static String BASIC_MAPPING = "{\"properties\":{}}";
+    private static final String MAPPINGS_URL = "%s/%s/_mapping/%s/";
+    private static final String BASIC_MAPPING = "{\"properties\":{}}";
 
-    private final static String BATCH_POST_INSTRUCTION = "{\"index\":{\"_id\":\"%s\"}}\n%s\n";
-    private final static String BULK_SUBMISSION_URL = "%s/%s/%s/_bulk?pretty";
+    private static final String BATCH_POST_INSTRUCTION = "{\"index\":{\"_id\":\"%s\"}}%n%s%n";
+    private static final String BULK_SUBMISSION_URL = "%s/%s/%s/_bulk?pretty";
 
-    private final static String URL_SET_OK = "Set ElasticSearch URL to '%s/%s/%s/'.";
-    private final static String URL_SET_FAILED = "Elastic Search URL '%s' is malformed!";
+    private static final String URL_SET_OK = "Set ElasticSearch URL to '%s/%s/%s/'.";
+    private static final String URL_SET_FAILED = "Elastic Search URL '%s' is malformed!";
 
-    private final static String SUBMISSION_START = "Submitting documents to '%s'...";
-    private final static String SUBMISSION_DONE = "SUBMISSION DONE!";
-    private final static String SUBMIT_ERROR_INDICATOR = "\"status\" : 400";
-    private final static String SUBMIT_PARTIAL_OK = "Succcessfully submitted documents %d to %d";
-    private final static String SUBMIT_PARTIAL_FAILED = "There were errors while submitting documents %d to %d:";
-    private final static String SUBMIT_PARTIAL_FAILED_FORMAT = "\n\t%s of document '%s': %s - %s'";
+    private static final String SUBMISSION_START = "Submitting documents to '%s'...";
+    private static final String SUBMISSION_DONE = "SUBMISSION DONE!";
+    private static final String SUBMIT_ERROR_INDICATOR = "\"status\" : 400";
+    private static final String SUBMIT_PARTIAL_OK = "Succcessfully submitted documents %d to %d";
+    private static final String SUBMIT_PARTIAL_FAILED = "There were errors while submitting documents %d to %d:";
+    private static final String SUBMIT_PARTIAL_FAILED_FORMAT = "%n\t%s of document '%s': %s - %s'";
 
-    private final static String RESUBMISSION_START = "Had to remove erroneous fields from %d documents! Re-submitting...";
-    private final static String RESUBMISSION_OK = "Succcessfully submitted documents!";
-    private final static String RESUBMISSION_FAILED = "Could not re-submit the following documents:";
+    private static final String RESUBMISSION_START = "Had to remove erroneous fields from %d documents! Re-submitting...";
+    private static final String RESUBMISSION_OK = "Succcessfully re-submitted documents!";
+    private static final String RESUBMISSION_FAILED = "Could not re-submit the following documents:";
 
-    private final static String ID_JSON = "_id";
-    private final static String INDEX_JSON = "index";
-    private final static String ITEMS_JSON = "items";
-    private final static String ERROR_JSON = "error";
-    private final static String REASON_JSON = "reason";
-    private final static String IDENTIFIER_JSON = "identifier";
-    private final static String CAUSED_BY_JSON = "caused_by";
-    private final static String TYPE_JSON = "type";
-    private final static String PARSE_ERROR_PREFIX = "failed to parse [";
+    private static final String ID_JSON = "_id";
+    private static final String INDEX_JSON = "index";
+    private static final String ITEMS_JSON = "items";
+    private static final String ERROR_JSON = "error";
+    private static final String REASON_JSON = "reason";
+    private static final String IDENTIFIER_JSON = "identifier";
+    private static final String CAUSED_BY_JSON = "caused_by";
+    private static final String TYPE_JSON = "type";
+    private static final String PARSE_ERROR_PREFIX = "failed to parse [";
 
-    private final static String NULL_JSON = "null";
+    private static final String NULL_JSON = "null";
 
-    private final static int BULK_SUBMISSION_SIZE = 1024;
+    private static final int BULK_SUBMISSION_SIZE = 1024;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ElasticSearchSender.class);
 
-    private static ElasticSearchSender instance;
+    private static final ElasticSearchSender instance = new ElasticSearchSender();
 
     private final IJsonBuilder jsonBuilder;
     private final HttpRequester httpRequester;
@@ -130,9 +131,6 @@ public class ElasticSearchSender
      */
     public static ElasticSearchSender instance()
     {
-        if (instance == null)
-            instance = new ElasticSearchSender();
-
         return instance;
     }
 
@@ -226,7 +224,9 @@ public class ElasticSearchSender
 
         } else {
             this.userName = userName;
-            credentials = Base64.getEncoder().encodeToString((userName + ":" + password).getBytes());
+            credentials = Base64.getEncoder()
+                          .encodeToString((userName + ":" + password)
+                                          .getBytes(MainContext.getCharset()));
         }
     }
 
@@ -271,7 +271,7 @@ public class ElasticSearchSender
                 .append(String.format(BATCH_POST_INSTRUCTION, id, doc.toJsonString().replace("\n", "")));
 
                 // submit every 1024 posts, to decrease memory usage
-                if (((i + 1) % BULK_SUBMISSION_SIZE) == 0) {
+                if ((i + 1) % BULK_SUBMISSION_SIZE == 0) {
                     // submit to elasticsearch
                     String response = httpRequester
                                       .getRestResponse(RestRequestType.POST, elasticSearchUrl, bulkRequestBuilder.toString(), credentials);
@@ -311,6 +311,7 @@ public class ElasticSearchSender
     {
         String mappingsUrl = String.format(MAPPINGS_URL, baseUrl, index, type);
         IJsonObject mappings = httpRequester.getRawJsonFromUrl(mappingsUrl);
+        // TODO: send different request only to the web!
 
         if (mappings == null) {
             // create mappings on ElasticSearch
@@ -334,7 +335,7 @@ public class ElasticSearchSender
 
         if (url != null) {
             // base64 encoding:
-            String base64EncodedString = new String(encoder.encode(url.getBytes()));
+            String base64EncodedString = new String(encoder.encode(url.getBytes(MainContext.getCharset())), MainContext.getCharset());
             return base64EncodedString;
 
         } else {
@@ -348,7 +349,7 @@ public class ElasticSearchSender
     private String documentIdToViewUrl(String documentId)
     {
         // decode base64
-        String viewUrl = new String(decoder.decode(documentId));
+        String viewUrl = new String(decoder.decode(documentId), MainContext.getCharset());
         return viewUrl;
     }
 
@@ -441,16 +442,16 @@ public class ElasticSearchSender
         final String viewUrl = documentIdToViewUrl(elasticSearchResponse.getString(ID_JSON));
 
         // get the reason of the submission failure
-        final String submitFailedReason = (errorObject.isNull(REASON_JSON))
+        final String submitFailedReason = errorObject.isNull(REASON_JSON)
                                           ? NULL_JSON
                                           : errorObject.getString(REASON_JSON);
         final IJsonObject cause = errorObject.getJsonObject(CAUSED_BY_JSON);
 
-        final String exceptionType = (cause.isNull(TYPE_JSON))
+        final String exceptionType = cause.isNull(TYPE_JSON)
                                      ? NULL_JSON
                                      : cause.getString(TYPE_JSON);
 
-        final String exceptionReason = (cause.isNull(REASON_JSON))
+        final String exceptionReason = cause.isNull(REASON_JSON)
                                        ? NULL_JSON
                                        : cause.getString(REASON_JSON, NULL_JSON);
 
@@ -576,34 +577,36 @@ public class ElasticSearchSender
             // re-initialize the error string builder
             StringBuilder errorBuilder = new StringBuilder(RESUBMISSION_FAILED);
 
-            for (Object r : resubmitResponseArray) {
-                IJsonObject singleDocResponse = ((IJsonObject) r).getJsonObject(INDEX_JSON);
-                IJsonObject errorObject = singleDocResponse.getJsonObject(ERROR_JSON);
+            if (resubmitResponseArray != null) {
+                for (Object r : resubmitResponseArray) {
+                    IJsonObject singleDocResponse = ((IJsonObject) r).getJsonObject(INDEX_JSON);
+                    IJsonObject errorObject = singleDocResponse.getJsonObject(ERROR_JSON);
 
-                // did an error occur?
-                if (errorObject != null) {
-                    // get error details
-                    final String viewUrl = documentIdToViewUrl(singleDocResponse.getString(ID_JSON));
-                    final String submitFailedReason = (errorObject.isNull(REASON_JSON))
-                                                      ? NULL_JSON
-                                                      : errorObject.getString(REASON_JSON);
-                    final IJsonObject cause = errorObject.getJsonObject(CAUSED_BY_JSON);
+                    // did an error occur?
+                    if (errorObject != null) {
+                        // get error details
+                        final String viewUrl = documentIdToViewUrl(singleDocResponse.getString(ID_JSON));
+                        final String submitFailedReason = errorObject.isNull(REASON_JSON)
+                                                          ? NULL_JSON
+                                                          : errorObject.getString(REASON_JSON);
+                        final IJsonObject cause = errorObject.getJsonObject(CAUSED_BY_JSON);
 
-                    final String exceptionType = (cause.isNull(TYPE_JSON))
-                                                 ? NULL_JSON
-                                                 : cause.getString(TYPE_JSON);
-                    final String exceptionReason = (cause.isNull(REASON_JSON))
-                                                   ? NULL_JSON
-                                                   : cause.getString(REASON_JSON);
+                        final String exceptionType = cause.isNull(TYPE_JSON)
+                                                     ? NULL_JSON
+                                                     : cause.getString(TYPE_JSON);
+                        final String exceptionReason = cause.isNull(REASON_JSON)
+                                                       ? NULL_JSON
+                                                       : cause.getString(REASON_JSON);
 
-                    // append document failure to error log
-                    errorBuilder.append(
-                        String.format(
-                            SUBMIT_PARTIAL_FAILED_FORMAT,
-                            submitFailedReason,
-                            viewUrl,
-                            exceptionType,
-                            exceptionReason));
+                        // append document failure to error log
+                        errorBuilder.append(
+                            String.format(
+                                SUBMIT_PARTIAL_FAILED_FORMAT,
+                                submitFailedReason,
+                                viewUrl,
+                                exceptionType,
+                                exceptionReason));
+                    }
                 }
             }
 

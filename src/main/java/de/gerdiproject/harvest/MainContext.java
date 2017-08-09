@@ -19,6 +19,8 @@
 package de.gerdiproject.harvest;
 
 
+import java.nio.charset.Charset;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,10 +41,11 @@ public class MainContext
     private static final String INIT_FINISHED = "%s is now ready!";
     private static final String INIT_START = "Initializing %s...";
     private static final String DONE = "done!";
-
+    private static final String FAILED = "FAILED!";
     private static final Logger LOGGER = LoggerFactory.getLogger(MainContext.class);
 
     private AbstractHarvester harvester;
+    private Charset charset;
 
     private static MainContext instance;
 
@@ -83,30 +86,53 @@ public class MainContext
         return instance.moduleName;
     }
 
-
     /**
-     * Sets the global harvester and logger instances.
-     *
-     * @param moduleName
-     *            name of this application
-     * @param harvester
-     *            an AbstractHarvester subclass
-     * @see de.gerdiproject.harvest.harvester.AbstractHarvester
+     * Retrieves the charset used for processing strings.
+     * @return the charset that is used for processing strings
      */
-    public static void init(String moduleName, AbstractHarvester harvester)
+    public static Charset getCharset()
     {
         if (instance == null)
             instance = new MainContext();
 
-        // set module name
+        return instance.charset;
+    }
+
+
+    /**
+     * Sets up global parameters and the harvester.
+     *
+     * @param <T>
+     *            an AbstractHarvester subclass
+     * @param moduleName
+     *            name of this application
+     * @param harvesterClass
+     *            an AbstractHarvester subclass
+     * @param charset
+     *            the default charset for processing strings
+     * @see de.gerdiproject.harvest.harvester.AbstractHarvester
+     */
+    public static <T extends AbstractHarvester> void init(String moduleName, Class<T> harvesterClass, Charset charset)
+    {
+        if (instance == null)
+            instance = new MainContext();
+
+        // set parameters
         instance.moduleName = moduleName;
+        instance.charset = charset;
 
         // init harvester
-        LOGGER.info(String.format(INIT_START, harvester.getName()));
-        harvester.init();
+        try {
+            AbstractHarvester harvey = harvesterClass.newInstance();
 
-        instance.harvester = harvester;
-        LOGGER.info(DONE);
+            LOGGER.info(String.format(INIT_START, harvey.getName()));
+            instance.harvester = harvey;
+            LOGGER.info(DONE);
+        } catch (InstantiationException | IllegalAccessException e) {
+            LOGGER.info(FAILED);
+            LOGGER.error(e.toString());
+            return;
+        }
 
         // log ready state
         LOGGER.info(String.format(INIT_FINISHED, instance.moduleName));

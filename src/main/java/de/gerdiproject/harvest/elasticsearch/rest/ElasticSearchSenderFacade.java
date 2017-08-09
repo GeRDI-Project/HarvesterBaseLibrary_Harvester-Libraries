@@ -51,7 +51,7 @@ public class ElasticSearchSenderFacade
     private static final String AUTHORIZATION_OK = "Set Elastic Search user to '%s'";
     private static final String MISSING_PARAM_PASSWORD = "Could not set user to '%s'. Password is missing";
     private static final String URL_MISSING = "No URL has been set up";
-    private static final String INFO = "- %s ElasticSearch Interface -\n\nUrl:\t%s/%s/%s";
+    private static final String INFO = "- %s ElasticSearch Interface -%n%nUrl:\t%s/%s/%s";
     private static final String INFO_USER = "\nUser:\t";
     private static final String INFO_REST = "\n\nPOST\tSends the harvested search index to Elastic Search\n"
                                             + "PUT\tSets up the Elastic Search URL and optionally authorization. Form Parameters: url, index, type, username, password\n";
@@ -110,7 +110,7 @@ public class ElasticSearchSenderFacade
         AbstractHarvester harvester = MainContext.getHarvester();
 
         // harvest the data, if it has not been done yet
-        if (harvester.getHarvestResult() == null)
+        if (!harvester.isFinished() && !harvester.isHarvesting())
             harvester.harvest();
 
         // retrieve harvested search index
@@ -158,9 +158,9 @@ public class ElasticSearchSenderFacade
         StringBuilder sb = new StringBuilder();
 
         // check if form parameters are valid
-        boolean hasUrl = (url != null && !url.isEmpty());
-        boolean hasIndex = (index != null && !index.isEmpty());
-        boolean hasType = (type != null && !type.isEmpty());
+        boolean hasUrl = url != null && !url.isEmpty();
+        boolean hasIndex = index != null && !index.isEmpty();
+        boolean hasType = type != null && !type.isEmpty();
 
         // ignore "index" and "type" if "url" is not among the form parameters
         if (hasUrl || hasIndex || hasType) {

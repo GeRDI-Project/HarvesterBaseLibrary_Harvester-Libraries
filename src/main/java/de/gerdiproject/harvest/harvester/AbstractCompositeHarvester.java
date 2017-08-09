@@ -27,6 +27,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
+import de.gerdiproject.harvest.MainContext;
+
 
 /**
  * This harvester manages a set of sub-harvesters. When the harvest is started,
@@ -76,19 +78,6 @@ public abstract class AbstractCompositeHarvester extends AbstractHarvester
         this(null, subHarvesters);
     }
 
-
-    @Override
-    public void init()
-    {
-        // init sub-harvesters first, in order to properly calculate document
-        // hash and count
-        for (AbstractHarvester subHarvester : subHarvesters)
-            subHarvester.init();
-
-        super.init();
-    }
-
-
     @Override
     public void setRange(int from, int to)
     {
@@ -99,7 +88,7 @@ public abstract class AbstractCompositeHarvester extends AbstractHarvester
         int numberOfProcessedDocs = 0;
 
         for (AbstractHarvester subHarvester : subHarvesters) {
-            int numberOfSubDocs = subHarvester.getTotalNumberOfDocuments();
+            int numberOfSubDocs = subHarvester.getMaxNumberOfDocuments();
             numberOfProcessedDocs += numberOfSubDocs;
 
             if (isAboveRange) {
@@ -107,13 +96,13 @@ public abstract class AbstractCompositeHarvester extends AbstractHarvester
                 subHarvester.setRange(0, 0);
 
             } else if (from < numberOfProcessedDocs) {
-                int startIndex = (isBelowRange)
+                int startIndex = isBelowRange
                                  ? from - (numberOfProcessedDocs - numberOfSubDocs)
                                  : 0;
 
-                boolean isLastEntry = (to < numberOfProcessedDocs);
+                boolean isLastEntry = to < numberOfProcessedDocs;
 
-                int endIndex = (isLastEntry)
+                int endIndex = isLastEntry
                                ? numberOfSubDocs - (numberOfProcessedDocs - to)
                                : numberOfSubDocs;
 
@@ -131,7 +120,7 @@ public abstract class AbstractCompositeHarvester extends AbstractHarvester
 
 
     @Override
-    protected boolean harvestInternal(int from, int to) throws Exception
+    protected boolean harvestInternal(int from, int to) throws Exception // NOPMD - we want the inheriting class to be able to throw any exception
     {
         List<CompletableFuture<?>> subProcesses = new LinkedList<>();
 
@@ -161,19 +150,19 @@ public abstract class AbstractCompositeHarvester extends AbstractHarvester
 
 
     @Override
-    protected int calculateTotalNumberOfDocumentsInternal()
+    protected int initMaxNumberOfDocuments()
     {
         int total = 0;
 
         for (AbstractHarvester subHarvester : subHarvesters)
-            total += subHarvester.getTotalNumberOfDocuments();
+            total += subHarvester.getMaxNumberOfDocuments();
 
         return total;
     }
 
 
     @Override
-    protected String calculateHashInternal()
+    protected String initHash()
     {
         // for now, concatenate all hashes
         final StringBuilder hashBuilder = new StringBuilder();
@@ -184,7 +173,7 @@ public abstract class AbstractCompositeHarvester extends AbstractHarvester
         // generate hash of all concatenated hashes
         try {
             final MessageDigest md = MessageDigest.getInstance(SHA_HASH_ALGORITHM);
-            md.update(hashBuilder.toString().getBytes());
+            md.update(hashBuilder.toString().getBytes(MainContext.getCharset()));
 
             final byte[] digest = md.digest();
 
@@ -216,10 +205,10 @@ public abstract class AbstractCompositeHarvester extends AbstractHarvester
 
 
     @Override
-    public boolean isHarvestFinished()
+    public boolean isFinished()
     {
         for (AbstractHarvester subHarvester : subHarvesters) {
-            if (!subHarvester.isHarvestFinished())
+            if (!subHarvester.isFinished())
                 return false;
         }
 

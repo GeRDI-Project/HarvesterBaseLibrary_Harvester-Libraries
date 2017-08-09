@@ -21,6 +21,11 @@ package de.gerdiproject.harvest;
 
 import de.gerdiproject.harvest.config.Configuration;
 import de.gerdiproject.harvest.harvester.AbstractHarvester;
+
+import java.lang.reflect.ParameterizedType;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
 
@@ -29,28 +34,47 @@ import javax.servlet.ServletContextListener;
  * This class registers a Logger and Harvester when the server is started. A
  * subclass with the @WebListener annotation must be defined.
  *
+ * @param <T> an AbstractHarvester sub-class
+ *
  * @see javax.servlet.annotation.WebListener
  * @see de.gerdiproject.harvest.harvester.AbstractHarvester
  *
  * @author Robin Weiss
  */
-public abstract class AbstractContextListener implements ServletContextListener
+public class ContextListener<T extends AbstractHarvester> implements ServletContextListener
 {
+    // this warning is suppressed, because the only generic Superclass MUST be T. The cast will always succeed.
+    @SuppressWarnings("unchecked")
+    private Class<T> harvesterClass =
+        (Class<T>)((ParameterizedType) getClass().getGenericSuperclass()).getActualTypeArguments()[0];
+
     /**
-     * Creates a name of this harvester service.
+     * Retrieves the name of this harvester service.
      *
      * @return the name of this harvester service
      */
-    abstract protected String createServiceName();
+    protected String getServiceName()
+    {
+        // get name of main harvester class
+        String name = harvesterClass.getSimpleName();
 
+        // make sure the name ends with "HarvesterService"
+        if (name.endsWith("arvester"))
+            name += "Service";
+        else if (!name.endsWith("arvesterService"))
+            name += "HarvesterService";
+
+        return name;
+    }
 
     /**
-     * Creates a harvester for the MainContext.
-     *
-     * @return an instance of an AbstractHarvester sub-class
+     * Retrieves the charset that is used for harvesting and file operations.
+     * @return a charset
      */
-    abstract protected AbstractHarvester createHarvester();
-
+    protected Charset getCharset()
+    {
+        return StandardCharsets.UTF_8;
+    }
 
     /**
      * This method is called when the server is set up. Creates a logger and
@@ -63,14 +87,8 @@ public abstract class AbstractContextListener implements ServletContextListener
     @Override
     public void contextInitialized(ServletContextEvent sce)
     {
-        // create service name
-        String name = createServiceName();
-
-        // create singleton logger and harvester
-        AbstractHarvester harvester = createHarvester();
-
         // init main context
-        MainContext.init(name, harvester);
+        MainContext.init(getServiceName(), harvesterClass, getCharset());
 
         // try to load configuration
         Configuration.loadFromDisk();

@@ -83,7 +83,7 @@ public abstract class AbstractJsonArrayHarvester extends AbstractListHarvester<O
 
 
     @Override
-    final protected Collection<Object> getEntries()
+    final protected Collection<Object> loadEntries()
     {
         return getJsonArray();
     }

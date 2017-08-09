@@ -50,12 +50,12 @@ public class DevelopmentToolsFacade
     private final static String READ_FROM_DISK_SET = "Read HTTP requests from disk: ";
     private final static String AUTO_SUBMIT_SET = "Automatically submit to search index after harvest: ";
     private final static String AUTO_SAVE_SET = "Automatically save harvest result to disk: ";
-    private final static String INFO = "- %s Advanced Tools -\n\n"
-                                       + WRITE_TO_DISK_SET + "%b\n"
-                                       + READ_FROM_DISK_SET + "%b\n"
-                                       + AUTO_SUBMIT_SET + "%b\n"
-                                       + AUTO_SAVE_SET + "%b\n\n"
-                                       + "PUT\t\t\tChange any of the above options. Form Parameters: auto_save, auto_submit, read_from_disk, write_to_disk\n"
+    private final static String INFO = "- %s Advanced Tools -%n%n"
+                                       + WRITE_TO_DISK_SET + "%b%n"
+                                       + READ_FROM_DISK_SET + "%b%n"
+                                       + AUTO_SUBMIT_SET + "%b%n"
+                                       + AUTO_SAVE_SET + "%b%n%n"
+                                       + "PUT\t\t\tChange any of the above options. Form Parameters: auto_save, auto_submit, read_from_disk, write_to_disk%n"
                                        + "POST/save\tSaves the search index to disk";
 
 

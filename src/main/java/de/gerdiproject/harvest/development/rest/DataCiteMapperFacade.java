@@ -21,9 +21,9 @@ package de.gerdiproject.harvest.development.rest;
 
 import de.gerdiproject.harvest.MainContext;
 import de.gerdiproject.harvest.development.DataCiteMapper;
-import de.gerdiproject.harvest.development.DevelopmentTools;
 import de.gerdiproject.harvest.elasticsearch.ElasticSearchSender;
 import de.gerdiproject.harvest.harvester.AbstractHarvester;
+import de.gerdiproject.harvest.utils.FileUtils;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -50,9 +50,9 @@ public class DataCiteMapperFacade
     private final static String SUBMIT_FAILED = "Documents must be converted prior to submitting them. Use a POST request to start the conversion.";
     private final static String FILE_PATH = "harvestedIndices/dataCite/%s_datacite_%d.json";
 
-    private final static String INFO = "- %s DataCite Mapper -\n\n"
-                                       + "Status:\t\t%s\n"
-                                       + "POST/save\tSaves the converted documents to disk\n"
+    private final static String INFO = "- %s DataCite Mapper -%n%n"
+                                       + "Status:\t\t%s%n"
+                                       + "POST/save\tSaves the converted documents to disk%n"
                                        + "POST/submit\tSubmits the converted documents to ElasticSearch";
 
     private final DataCiteMapper dataCiteMapper = DataCiteMapper.instance();
@@ -79,7 +79,7 @@ public class DataCiteMapperFacade
         else if (dataCiteMapper.isConverting())
             status = dataCiteMapper.getProgressString();
 
-        else if (harvester.isHarvestFinished())
+        else if (harvester.isFinished())
             status = STATUS_NOT_CONVERTED;
 
         return String.format(
@@ -120,7 +120,10 @@ public class DataCiteMapperFacade
             return SAVE_FAILED;
 
         String filePath = String.format(FILE_PATH, MainContext.getModuleName(), System.currentTimeMillis());
-        return DevelopmentTools.instance().saveJsonToDisk(dataCiteMapper.getConvertedDocuments(), filePath);
+        String fileContent = dataCiteMapper.getConvertedDocuments().toJsonString();
+        FileUtils.writeToDisk(filePath, fileContent);
+
+        return FileUtils.writeToDisk(filePath, fileContent);
     }
 
 
