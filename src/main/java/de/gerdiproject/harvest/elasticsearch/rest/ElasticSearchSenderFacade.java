@@ -20,9 +20,12 @@ package de.gerdiproject.harvest.elasticsearch.rest;
 
 
 import de.gerdiproject.harvest.harvester.AbstractHarvester;
-import de.gerdiproject.json.IJsonArray;
+import de.gerdiproject.harvest.IDocument;
 import de.gerdiproject.harvest.MainContext;
 import de.gerdiproject.harvest.elasticsearch.ElasticSearchSender;
+
+import java.util.List;
+
 import javax.ws.rs.Consumes;
 import javax.ws.rs.FormParam;
 import javax.ws.rs.GET;
@@ -114,7 +117,7 @@ public class ElasticSearchSenderFacade
             harvester.harvest();
 
         // retrieve harvested search index
-        IJsonArray harvestedDocuments = harvester.getHarvestedDocuments();
+        List<IDocument> harvestedDocuments = harvester.getHarvestedDocuments();
 
         // send search index to Elastic Search
         String status = ElasticSearchSender.instance().sendToElasticSearch(harvestedDocuments);

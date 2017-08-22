@@ -19,6 +19,8 @@
 package de.gerdiproject.harvest.harvester;
 
 
+import de.gerdiproject.harvest.ICleanable;
+import de.gerdiproject.harvest.IDocument;
 import de.gerdiproject.harvest.MainContext;
 import de.gerdiproject.harvest.development.DevelopmentTools;
 import de.gerdiproject.harvest.elasticsearch.ElasticSearchSender;
@@ -27,12 +29,16 @@ import de.gerdiproject.harvest.utils.CancelableFuture;
 import de.gerdiproject.harvest.utils.HarvesterStringUtils;
 import de.gerdiproject.harvest.utils.HttpRequester;
 import de.gerdiproject.harvest.utils.SearchIndexFactory;
-import de.gerdiproject.json.IJsonArray;
+import de.gerdiproject.json.GsonUtils;
 import de.gerdiproject.json.IJsonBuilder;
 import de.gerdiproject.json.IJsonObject;
+import de.gerdiproject.json.SearchIndexJson;
+import de.gerdiproject.json.custom.GerdiJson;
 import de.gerdiproject.json.impl.JsonBuilder;
+
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CancellationException;
@@ -68,7 +74,7 @@ public abstract class AbstractHarvester
     protected static final String HARVEST_ABORTED = "HARVEST ABORTED!";
 
     private final Map<String, String> properties;
-    protected IJsonArray harvestedDocuments;
+    protected List<IDocument> harvestedDocuments;
 
     private Date startedDate;
     private Date finishedDate;
@@ -172,7 +178,7 @@ public abstract class AbstractHarvester
         startIndex = new AtomicInteger(0);
         endIndex = new AtomicInteger(0);
         jsonBuilder = new JsonBuilder();
-        this.harvestedDocuments = jsonBuilder.createArray();
+        this.harvestedDocuments = new LinkedList<>();
 
         init();
     }
@@ -226,18 +232,26 @@ public abstract class AbstractHarvester
      * @return the JSON object that was harvested via harvestInternal(), or null
      *         if no harvest has been finished successfully
      */
-    public final IJsonObject createDetailedJson()
+    public final SearchIndexJson createDetailedJson()
     {
-        if (startedDate != null && finishedDate != null) {
-            java.sql.Date sqlDate = new java.sql.Date(startedDate.getTime());
-            int harvestTime = (int)((finishedDate.getTime() - startedDate.getTime()) / 1000);
+        SearchIndexJson searchIndex = null;
 
+        if (startedDate != null && finishedDate != null) {
             synchronized (harvestedDocuments) {
-                return searchIndexFactory.createSearchIndex(harvestedDocuments, sqlDate, hash, harvestTime);
+                searchIndex = new SearchIndexJson(harvestedDocuments);
             }
+
+            long harvestDuration = (finishedDate.getTime() - startedDate.getTime()) / 1000;
+            long harvestStartDate = startedDate.getTime();
+            boolean wasReadFromDisk = DevelopmentTools.instance().isReadingHttpFromDisk();
+
+            searchIndex.setHarvestDate(harvestStartDate);
+            searchIndex.setHash(hash);
+            searchIndex.setDurationInSeconds(harvestDuration);
+            searchIndex.setWasHarvestedFromDisk(wasReadFromDisk);
         }
 
-        return null;
+        return searchIndex;
     }
 
 
@@ -246,7 +260,7 @@ public abstract class AbstractHarvester
      *
      * @return the harvested documents
      */
-    public final IJsonArray getHarvestedDocuments()
+    public final List<IDocument> getHarvestedDocuments()
     {
         synchronized (harvestedDocuments) {
             return harvestedDocuments;
@@ -285,6 +299,8 @@ public abstract class AbstractHarvester
 
 
     /**
+     * Deprecated: Use addDocument(IDocument document) instead
+     *
      * Adds a document to the search index and logs the progress. If the
      * document is null, it is not added to the search index, but the progress
      * is incremented regardlessly.
@@ -292,9 +308,50 @@ public abstract class AbstractHarvester
      * @param document
      *            the document that is to be added to the search index
      */
+    @Deprecated
     protected void addDocument(IJsonObject document)
     {
+        IDocument convertedDoc;
+
+        if (document != null)
+            convertedDoc = GsonUtils.jsonStringToObject(document.toJsonString(), GerdiJson.class);
+        else
+            convertedDoc = null;
+
+        addDocument(convertedDoc);
+    }
+
+
+    /**
+     * Deprecated: Use addDocuments(List<IDocument> documents) instead
+     *
+     * Adds multiple documents to the search index and logs the progress. If a
+     * document is null, it is not added to the search index, but the progress
+     * is incremented regardlessly.
+     *
+     * @param documents
+     *            the documents that are to be added to the search index
+     */
+    @Deprecated
+    protected void addDocuments(Iterable<IJsonObject> documents)
+    {
+        documents.forEach((IJsonObject doc) -> addDocument(doc));
+    }
+
+    /**
+     * Adds a document to the search index and logs the progress. If the
+     * document is null, it is not added to the search index, but the progress
+     * is incremented regardlessly.
+     *
+     * @param document
+     *            the document that is to be added to the search index
+     */
+    protected void addDocument(IDocument document)
+    {
         if (document != null) {
+            if (document instanceof ICleanable)
+                ((ICleanable) document).clean();
+
             synchronized (harvestedDocuments) {
                 harvestedDocuments.add(document);
             }
@@ -320,9 +377,9 @@ public abstract class AbstractHarvester
      * @param documents
      *            the documents that are to be added to the search index
      */
-    protected void addDocuments(Iterable<IJsonObject> documents)
+    protected void addDocuments(List<IDocument> documents)
     {
-        documents.forEach((IJsonObject doc) -> addDocument(doc));
+        documents.forEach((IDocument doc) -> addDocument(doc));
     }
 
 

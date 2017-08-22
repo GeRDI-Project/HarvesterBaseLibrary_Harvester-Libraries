@@ -25,7 +25,8 @@ import org.slf4j.LoggerFactory;
 import de.gerdiproject.harvest.MainContext;
 import de.gerdiproject.harvest.harvester.AbstractHarvester;
 import de.gerdiproject.harvest.utils.FileUtils;
-import de.gerdiproject.json.IJsonObject;
+import de.gerdiproject.json.GsonUtils;
+import de.gerdiproject.json.SearchIndexJson;
 
 
 /**
@@ -77,7 +78,7 @@ public class DevelopmentTools
     public final String saveHarvestResultToDisk()
     {
         AbstractHarvester harvester = MainContext.getHarvester();
-        IJsonObject result = harvester.createDetailedJson();
+        SearchIndexJson result = harvester.createDetailedJson();
 
         if (result != null) {
             String fileName;
@@ -101,7 +102,7 @@ public class DevelopmentTools
                                harvestStartTimestamp);
             }
 
-            return FileUtils.writeToDisk(fileName, result.toJsonString());
+            return FileUtils.writeToDisk(fileName, GsonUtils.objectToJsonString(result, false));
 
         } else {
             LOGGER.warn(NO_HARVEST);

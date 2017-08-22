@@ -21,12 +21,6 @@ package de.gerdiproject.harvest;
 
 import de.gerdiproject.harvest.config.Configuration;
 import de.gerdiproject.harvest.harvester.AbstractHarvester;
-import de.gerdiproject.harvest.utils.cleaner.CleanerFactory;
-import de.gerdiproject.harvest.utils.cleaner.DataCiteCleaner;
-import de.gerdiproject.harvest.utils.cleaner.GeoJsonCleaner;
-import de.gerdiproject.harvest.utils.cleaner.StringCleaner;
-import de.gerdiproject.json.datacite.DataCiteJson;
-import de.gerdiproject.json.geo.GeoJson;
 
 import java.lang.reflect.ParameterizedType;
 import java.nio.charset.Charset;
@@ -82,15 +76,6 @@ public class ContextListener<T extends AbstractHarvester> implements ServletCont
         return StandardCharsets.UTF_8;
     }
 
-    /**
-     * Registers classes that are used for cleaning up documents before they are being submitted to ElasticSearch.
-     */
-    protected void registerCleaners()
-    {
-        CleanerFactory.registerCleaner(String.class, StringCleaner.class);
-        CleanerFactory.registerCleaner(GeoJson.class, GeoJsonCleaner.class);
-        CleanerFactory.registerCleaner(DataCiteJson.class, DataCiteCleaner.class);
-    }
 
     /**
      * This method is called when the server is set up. Creates a logger and
@@ -103,9 +88,6 @@ public class ContextListener<T extends AbstractHarvester> implements ServletCont
     @Override
     public void contextInitialized(ServletContextEvent sce)
     {
-        // register (custom) cleaners
-        registerCleaners();
-
         // init main context
         MainContext.init(getServiceName(), harvesterClass, getCharset());
 

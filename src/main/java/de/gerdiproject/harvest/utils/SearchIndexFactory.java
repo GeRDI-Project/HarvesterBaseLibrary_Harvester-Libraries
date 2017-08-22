@@ -19,17 +19,18 @@
 package de.gerdiproject.harvest.utils;
 
 
-import de.gerdiproject.harvest.development.DevelopmentTools;
-import de.gerdiproject.harvest.utils.cleaner.GeoJsonCleaner;
+import de.gerdiproject.json.GsonUtils;
 import de.gerdiproject.json.IJsonArray;
-import de.gerdiproject.json.IJsonBuilder;
 import de.gerdiproject.json.IJsonObject;
-import de.gerdiproject.json.impl.JsonBuilder;
+import de.gerdiproject.json.custom.GerdiJson;
+import de.gerdiproject.json.impl.GsonObject;
 
 import java.sql.Date;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.google.gson.JsonObject;
 
 
 /**
@@ -37,41 +38,13 @@ import org.slf4j.LoggerFactory;
  *
  * @author Robin Weiss
  */
+@Deprecated
 public class SearchIndexFactory
 {
     public static final String WARNING_NO_LABEL = "Could not create document: Missing a label!";
     public static final String WARNING_NO_VIEW_URL = "Could not create document: Missing a view-URL!";
 
-    public static final String LABEL_JSON = "label";
-    public static final String LAST_UPDATED_JSON = "lastUpdated";
-    public static final String VIEW_URL_JSON = "viewUrl";
-    public static final String DOWNLOAD_URL_JSON = "downloadUrl";
-    public static final String LOGO_URL_JSON = "logoUrl";
-    public static final String DESCRIPTION_JSON = "description";
-    public static final String TAGS_JSON = "tag";
-    public static final String GEO_JSON = "geo";
-    public static final String YEARS_JSON = "year";
-
-    public static final String DATA_JSON = "data";
-    public static final String HASH_JSON = "hash";
-
-    public static final String DURATION_JSON = "durationInSeconds";
-    public static final String IS_FROM_DISK_JSON = "wasHarvestedFromDisk";
-
     private static final Logger LOGGER = LoggerFactory.getLogger(SearchIndexFactory.class);
-
-    private final GeoJsonCleaner geoCleaner;
-    private final IJsonBuilder jsonBuilder;
-
-
-    /**
-     * Initializes a geo object json cleaner.
-     */
-    public SearchIndexFactory()
-    {
-        geoCleaner = new GeoJsonCleaner();
-        jsonBuilder = new JsonBuilder();
-    }
 
 
     /**
@@ -100,6 +73,7 @@ public class SearchIndexFactory
      *            a json array of searchable terms or tags of the document
      * @return a JSON object that describes the searchable document
      */
+    @Deprecated
     public IJsonObject createSearchableDocument(String label, Date lastUpdate, String viewUrl,
                                                 IJsonArray downloadUrls, String logoUrl, IJsonArray descriptions, IJsonArray geoCoordinates,
                                                 IJsonArray years,
@@ -117,79 +91,17 @@ public class SearchIndexFactory
             return null;
         }
 
-        // init builder
-        IJsonObject document = jsonBuilder.createObject();
-
-        // add mandatory fields
-        document.put(LABEL_JSON, HarvesterStringUtils.cleanString(label));
-        document.put(VIEW_URL_JSON, HarvesterStringUtils.cleanString(viewUrl));
-
-        // add optional fields
-        if (downloadUrls != null && !downloadUrls.isEmpty())
-            document.put(DOWNLOAD_URL_JSON, downloadUrls);
-
-        if (logoUrl != null && !logoUrl.isEmpty())
-            document.put(LOGO_URL_JSON, HarvesterStringUtils.cleanString(logoUrl));
-
-        if (descriptions != null && !descriptions.isEmpty()) {
-            // clean descriptions
-            for (int i = 0, len = descriptions.size(); i < len; i++) {
-                String cleanDesc = HarvesterStringUtils.cleanString(descriptions.getString(i));
-                descriptions.put(i, cleanDesc);
-            }
-
-            document.put(DESCRIPTION_JSON, descriptions);
-        }
+        GerdiJson document = new GerdiJson(label, viewUrl);
+        document.setDescription(descriptions);
+        document.setDownloadUrl(downloadUrls);
+        document.setGeo(geoCoordinates);
+        document.setLogoUrl(logoUrl);
+        document.setTag(searchTags);
+        document.setYear(years);
 
         if (lastUpdate != null)
-            document.put(LAST_UPDATED_JSON, lastUpdate.toString());
+            document.setLastUpdated(lastUpdate.toString());
 
-
-        if (geoCoordinates != null && !geoCoordinates.isEmpty()) {
-            // correct possibly erroneous polygons
-            for (int i = 0, len = geoCoordinates.size(); i < len; i++) {
-                //IJsonObject cleanGeo =  geoCleaner.clean(geoCoordinates.getJsonObject(i));
-                //geoCoordinates.put(i, cleanGeo);
-            }
-
-            document.put(GEO_JSON, geoCoordinates);
-        }
-
-        if (years != null && !years.isEmpty())
-            document.put(YEARS_JSON, years);
-
-        if (searchTags != null && !searchTags.isEmpty())
-            document.put(TAGS_JSON, searchTags);
-
-        // build and return json object
-        return document;
-    }
-
-
-    /**
-     * Creates a search index out of a list of searchable documents. The search
-     * index also contains a date of the harvest.
-     *
-     * @param documents
-     *            an array of searchable documents
-     * @param harvestDate
-     *            the date when the harvest started
-     * @param hash
-     *            a checksum of the entries before being harvested
-     * @param duration
-     *            the harvesting duration in seconds
-     * @return a JSON object that contains an array of searchable documents and
-     *         the latest update date
-     */
-    public IJsonObject createSearchIndex(IJsonArray documents, Date harvestDate, String hash, int duration)
-    {
-        IJsonObject searchIndex = jsonBuilder.createObject();
-        searchIndex.put(HASH_JSON, hash);
-        searchIndex.put(IS_FROM_DISK_JSON, DevelopmentTools.instance().isReadingHttpFromDisk());
-        searchIndex.put(DURATION_JSON, duration);
-        searchIndex.put(LAST_UPDATED_JSON, harvestDate.toString());
-        searchIndex.put(DATA_JSON, documents);
-
-        return searchIndex;
+        return new GsonObject((JsonObject) GsonUtils.objectToJson(document));
     }
 }

@@ -20,7 +20,8 @@ package de.gerdiproject.harvest.harvester.rest;
 
 
 import de.gerdiproject.harvest.harvester.AbstractHarvester;
-import de.gerdiproject.json.IJsonObject;
+import de.gerdiproject.json.GsonUtils;
+import de.gerdiproject.json.SearchIndexJson;
 import de.gerdiproject.harvest.MainContext;
 import java.util.Date;
 import java.util.List;
@@ -333,10 +334,10 @@ public class HarvesterFacade
     })
     public String getResult()
     {
-        IJsonObject result = harvester.createDetailedJson();
+        SearchIndexJson result = harvester.createDetailedJson();
 
         if (result != null)
-            return result.toJsonString();
+            return GsonUtils.objectToJsonString(result, true);
         else
             return "{}";
     }
