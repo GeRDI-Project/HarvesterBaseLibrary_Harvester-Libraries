@@ -323,7 +323,7 @@ public abstract class AbstractHarvester
 
 
     /**
-     * Deprecated: Use addDocuments(List<IDocument> documents) instead
+     * Deprecated: Use addDocuments(List<<IDocument> documents) instead
      *
      * Adds multiple documents to the search index and logs the progress. If a
      * document is null, it is not added to the search index, but the progress
