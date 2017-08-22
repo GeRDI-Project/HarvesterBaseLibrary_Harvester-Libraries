@@ -35,6 +35,19 @@ public class DataCiteConstants
     public static final String PROVIDER = "provider";
     public static final String PROVIDER_URI = "providerURI";
     public static final String LABEL = "label";
+    public static final String GIVEN_NAME = "givenName";
+    public static final String FAMILY_NAME = "familyName";
+    public static final String NAME_ID = "nameId";
+    public static final String NAME_ID_SCHEME = "nameIdScheme";
+    public static final String NAME_ID_SCHEME_URI = "nameIdSchemeURI";
+    public static final String LANG = "lang";
+    public static final String VALUE = "value";
+    public static final String RESOURCE_TYPE_GENERAL = "resourceTypeGeneral";
+    public static final String SCHEME_URI = "schemeURI";
+    public static final String SUBJECT_SCHEME = "subjectScheme";
+    public static final String VALUE_URI = "valueURI";
+    public static final String CONTRIBUTORS = "contributors";
+
 
     /**
      * Private constructor, because this is a static class.

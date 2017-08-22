@@ -20,6 +20,7 @@ package de.gerdiproject.harvest.utils;
 
 
 import de.gerdiproject.harvest.development.DevelopmentTools;
+import de.gerdiproject.harvest.utils.cleaner.GeoJsonCleaner;
 import de.gerdiproject.json.IJsonArray;
 import de.gerdiproject.json.IJsonBuilder;
 import de.gerdiproject.json.IJsonObject;
@@ -147,8 +148,8 @@ public class SearchIndexFactory
         if (geoCoordinates != null && !geoCoordinates.isEmpty()) {
             // correct possibly erroneous polygons
             for (int i = 0, len = geoCoordinates.size(); i < len; i++) {
-                IJsonObject cleanGeo =  geoCleaner.cleanGeoData(geoCoordinates.getJsonObject(i));
-                geoCoordinates.put(i, cleanGeo);
+                //IJsonObject cleanGeo =  geoCleaner.clean(geoCoordinates.getJsonObject(i));
+                //geoCoordinates.put(i, cleanGeo);
             }
 
             document.put(GEO_JSON, geoCoordinates);
