@@ -208,7 +208,17 @@ public class HttpRequester
         return htmlResponse;
     }
 
-
+    /**
+     * Sends a GET request to a specified URL and tries to retrieve the JSON
+     * response, mapping it to a Java object. If the development option is enabled,
+     * the response will be read from disk instead.
+     *
+     * @param url a URL that returns a JSON object
+     * @param targetClass the class of the returned object
+     * @param <T> the type of the returned object
+     *
+     * @return a Java object
+     */
     public <T> T getObjectFromUrl(String url, Class<T> targetClass)
     {
         T targetObject = null;
