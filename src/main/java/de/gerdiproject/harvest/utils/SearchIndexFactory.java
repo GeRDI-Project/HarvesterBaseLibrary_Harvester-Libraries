@@ -31,6 +31,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.gson.JsonObject;
+import com.google.gson.reflect.TypeToken;
 
 
 /**
@@ -45,7 +46,6 @@ public class SearchIndexFactory
     public static final String WARNING_NO_VIEW_URL = "Could not create document: Missing a view-URL!";
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SearchIndexFactory.class);
-
 
     /**
      * Creates a JSON object that represents a searchable document within a
@@ -102,6 +102,7 @@ public class SearchIndexFactory
         if (lastUpdate != null)
             document.setLastUpdated(lastUpdate.toString());
 
-        return new GsonObject((JsonObject) GsonUtils.objectToJson(document));
+
+        return new GsonObject((JsonObject) GsonUtils.getGson().toJsonTree(document, new TypeToken<GerdiJson>() {} .getType()));
     }
 }

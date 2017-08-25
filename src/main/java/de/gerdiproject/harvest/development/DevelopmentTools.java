@@ -24,7 +24,7 @@ import org.slf4j.LoggerFactory;
 
 import de.gerdiproject.harvest.MainContext;
 import de.gerdiproject.harvest.harvester.AbstractHarvester;
-import de.gerdiproject.harvest.utils.FileUtils;
+import de.gerdiproject.harvest.utils.data.DiskIO;
 import de.gerdiproject.json.GsonUtils;
 import de.gerdiproject.json.SearchIndexJson;
 
@@ -102,7 +102,8 @@ public class DevelopmentTools
                                harvestStartTimestamp);
             }
 
-            return FileUtils.writeToDisk(fileName, GsonUtils.objectToJsonString(result, false));
+            DiskIO diskWriter = new DiskIO();
+            return diskWriter.writeStringToFile(fileName, GsonUtils.getGson().toJson(result));
 
         } else {
             LOGGER.warn(NO_HARVEST);

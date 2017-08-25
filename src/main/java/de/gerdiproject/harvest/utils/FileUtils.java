@@ -1,44 +1,28 @@
 package de.gerdiproject.harvest.utils;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
 import java.io.Reader;
-import java.nio.charset.StandardCharsets;
-import java.text.ParseException;
-import java.util.stream.Collectors;
-
-import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.google.gson.JsonElement;
 
 import de.gerdiproject.harvest.MainContext;
+import de.gerdiproject.harvest.utils.data.DiskIO;
 import de.gerdiproject.json.IJson;
-import de.gerdiproject.json.IJsonBuilder;
-import de.gerdiproject.json.IJsonReader;
-import de.gerdiproject.json.impl.JsonBuilder;
+import de.gerdiproject.json.impl.GsonArray;
+import de.gerdiproject.json.impl.GsonObject;
 
 /**
+ * Deprecated: Use {@link DiskIO} instead
  * This class offers methods for file operations.
  * @author Robin Weiss
  *
  */
+@Deprecated
 public class FileUtils
 {
-    private final static String SAVE_OK = "Saved file: '%s'";
-    private final static String SAVE_FAILED = "Could not save file '%s': %s";
-    private final static String SAVE_FAILED_NO_FOLDERS = "Failed to create directories!";
-    private final static String LOAD_FAILED = "Could not load file '%s': %s";
-
-    private final static Logger LOGGER = LoggerFactory.getLogger(FileUtils.class);
-    private final static IJsonBuilder JSON_BUILDER = new JsonBuilder();
+    private final static DiskIO DISK_IO = new DiskIO();
 
     /**
      * Writes a string to a file on disk.
@@ -51,41 +35,7 @@ public class FileUtils
      */
     public static String writeToDisk(String filePath, String fileContent)
     {
-        String statusMessage;
-        boolean isSuccessful = false;
-
-        try {
-            File file = new File(filePath);
-
-            // create directories
-            boolean isDirectoryCreated = file.getParentFile().exists() || file.getParentFile().mkdirs();
-
-            if (!isDirectoryCreated)
-                statusMessage = String.format(SAVE_FAILED, filePath, SAVE_FAILED_NO_FOLDERS);
-            else {
-                // write content to file
-                BufferedWriter writer = new BufferedWriter(
-                    new OutputStreamWriter(new FileOutputStream(file), StandardCharsets.UTF_8));
-                writer.write(fileContent);
-
-                writer.close();
-
-                // set status message
-                isSuccessful = true;
-                statusMessage = String.format(SAVE_OK, filePath);
-            }
-        } catch (IOException | SecurityException e) {
-            statusMessage = String.format(SAVE_FAILED, filePath, e.getMessage());
-        }
-
-        // log the status
-        if (isSuccessful)
-            LOGGER.info(statusMessage);
-        else
-            LOGGER.error(statusMessage);
-
-        return statusMessage;
-
+        return DISK_IO.writeStringToFile(filePath, fileContent);
     }
 
     /**
@@ -112,18 +62,7 @@ public class FileUtils
      */
     public static String readStringFromDisk(String filePath)
     {
-        String fileContent = null;
-
-        try {
-            BufferedReader reader = new BufferedReader(readFromDisk(filePath));
-            fileContent = reader.lines().collect(Collectors.joining("\n"));
-
-            reader.close();
-        } catch (IOException e) {
-            LOGGER.warn(String.format(LOAD_FAILED, filePath, e.toString()));
-        }
-
-        return fileContent;
+        return DISK_IO.getString(filePath);
     }
 
     /**
@@ -136,18 +75,16 @@ public class FileUtils
      */
     public static IJson readJsonFromDisk(String filePath)
     {
-        IJson fileContent = null;
+        JsonElement ele = DISK_IO.getJson(filePath);
+        IJson readJson = null;
 
-        try {
-            IJsonReader reader = JSON_BUILDER.createReader(readFromDisk(filePath));
-            fileContent = reader.read();
+        if (ele != null && ele.isJsonArray())
+            readJson = new GsonArray(ele.getAsJsonArray());
 
-            reader.close();
-        } catch (IOException | IllegalStateException | ParseException e) {
-            LOGGER.warn(String.format(LOAD_FAILED, filePath, e.toString()));
-        }
+        else if (ele != null && ele.isJsonObject())
+            readJson = new GsonObject(ele.getAsJsonObject());
 
-        return fileContent;
+        return readJson;
     }
 
     /**
@@ -160,14 +97,7 @@ public class FileUtils
      */
     public static Document readHtmlFromDisk(String filePath)
     {
-        Document htmlResponse = null;
-
-        String fileContent = readStringFromDisk(filePath);
-
-        if (fileContent != null)
-            htmlResponse = Jsoup.parse(fileContent);
-
-        return htmlResponse;
+        return DISK_IO.getHtml(filePath);
     }
 
 }

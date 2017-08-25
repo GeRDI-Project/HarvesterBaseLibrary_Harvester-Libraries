@@ -257,7 +257,7 @@ public class ElasticSearchSender
                 String id = doc.getElasticSearchId();
 
                 bulkRequestBuilder
-                .append(String.format(BATCH_POST_INSTRUCTION, id, GsonUtils.objectToJsonString(doc, false)));
+                .append(String.format(BATCH_POST_INSTRUCTION, id, GsonUtils.getGson().toJson(doc)));
 
                 // submit every 1024 posts, to decrease memory usage
                 if ((i + 1) % BULK_SUBMISSION_SIZE == 0) {

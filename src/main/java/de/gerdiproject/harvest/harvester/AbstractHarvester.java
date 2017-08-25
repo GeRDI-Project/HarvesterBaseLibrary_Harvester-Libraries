@@ -314,7 +314,7 @@ public abstract class AbstractHarvester
         IDocument convertedDoc;
 
         if (document != null)
-            convertedDoc = GsonUtils.jsonStringToObject(document.toJsonString(), GerdiJson.class);
+            convertedDoc = GsonUtils.getGson().fromJson(document.toJsonString(), GerdiJson.class);
         else
             convertedDoc = null;
 

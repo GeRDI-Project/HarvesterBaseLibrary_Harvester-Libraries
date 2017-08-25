@@ -21,6 +21,7 @@ package de.gerdiproject.harvest;
 
 import de.gerdiproject.harvest.config.Configuration;
 import de.gerdiproject.harvest.harvester.AbstractHarvester;
+import de.gerdiproject.json.GsonUtils;
 
 import java.lang.reflect.ParameterizedType;
 import java.nio.charset.Charset;
@@ -28,6 +29,10 @@ import java.nio.charset.StandardCharsets;
 
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
+
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonDeserializer;
+import com.google.gson.JsonSerializer;
 
 
 /**
@@ -76,6 +81,20 @@ public class ContextListener<T extends AbstractHarvester> implements ServletCont
         return StandardCharsets.UTF_8;
     }
 
+    /**
+     * Creates a GsonBuilder that is to be shared across the service.
+     * If you have custom  JSON (de-)serialization adapters, you can register
+     * them to the GsonBuilder when overriding this method.
+     * @see JsonDeserializer
+     * @see JsonSerializer
+     *
+     * @return a GsonBuilder that will be used to initialize {@link GsonUtils}
+     */
+    protected GsonBuilder createGsonBuilder()
+    {
+        return new GsonBuilder();
+    }
+
 
     /**
      * This method is called when the server is set up. Creates a logger and
@@ -88,6 +107,9 @@ public class ContextListener<T extends AbstractHarvester> implements ServletCont
     @Override
     public void contextInitialized(ServletContextEvent sce)
     {
+        // init Json utilities
+        GsonUtils.init(createGsonBuilder());
+
         // init main context
         MainContext.init(getServiceName(), harvesterClass, getCharset());
 

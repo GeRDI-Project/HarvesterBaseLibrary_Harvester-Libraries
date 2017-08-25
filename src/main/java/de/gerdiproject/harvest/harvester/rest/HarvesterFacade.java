@@ -337,7 +337,7 @@ public class HarvesterFacade
         SearchIndexJson result = harvester.createDetailedJson();
 
         if (result != null)
-            return GsonUtils.objectToJsonString(result, true);
+            return GsonUtils.getPrettyGson().toJson(result);
         else
             return "{}";
     }
