@@ -318,7 +318,7 @@ public abstract class AbstractHarvester
             if (document.get("viewUrl", null) != null)
                 convertedDoc = GsonUtils.getGson().fromJson(document.toJsonString(), GerdiJson.class);
 
-            else if (document.get("identifier", null) != null)
+            else if (document.get("publisher", null) != null)
                 convertedDoc = GsonUtils.getGson().fromJson(document.toJsonString(), DataCiteJson.class);
 
             else {
