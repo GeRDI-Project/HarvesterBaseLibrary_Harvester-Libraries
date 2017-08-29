@@ -34,6 +34,7 @@ import de.gerdiproject.json.IJsonBuilder;
 import de.gerdiproject.json.IJsonObject;
 import de.gerdiproject.json.SearchIndexJson;
 import de.gerdiproject.json.custom.GerdiJson;
+import de.gerdiproject.json.datacite.DataCiteJson;
 import de.gerdiproject.json.impl.JsonBuilder;
 
 import java.util.Date;
@@ -311,14 +312,22 @@ public abstract class AbstractHarvester
     @Deprecated
     protected void addDocument(IJsonObject document)
     {
-        IDocument convertedDoc;
+        IDocument convertedDoc = null;
 
-        if (document != null)
-            convertedDoc = GsonUtils.getGson().fromJson(document.toJsonString(), GerdiJson.class);
-        else
-            convertedDoc = null;
+        if (document != null) {
+            if (document.get("viewUrl", null) != null)
+                convertedDoc = GsonUtils.getGson().fromJson(document.toJsonString(), GerdiJson.class);
 
-        addDocument(convertedDoc);
+            else if (document.get("identifier", null) != null)
+                convertedDoc = GsonUtils.getGson().fromJson(document.toJsonString(), DataCiteJson.class);
+
+            else {
+                logger.error("UNKNOWN DOCUMENT FORMAT:\n" + document.toJsonString());
+                return;
+            }
+
+            addDocument(convertedDoc);
+        }
     }
 
 
