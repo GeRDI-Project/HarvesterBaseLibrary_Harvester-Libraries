@@ -19,11 +19,18 @@
 package de.gerdiproject.harvest.harvester;
 
 
-import java.util.Collection;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.List;
 
-import de.gerdiproject.json.IJsonArray;
-import de.gerdiproject.json.IJsonObject;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+
+import de.gerdiproject.harvest.IDocument;
+import de.gerdiproject.harvest.MainContext;
+import de.gerdiproject.json.GsonUtils;
 
 
 /**
@@ -33,8 +40,15 @@ import de.gerdiproject.json.IJsonObject;
  * @author Robin Weiss
  *
  */
-public abstract class AbstractJsonArrayHarvester extends AbstractListHarvester<Object>
+public abstract class AbstractJsonArrayHarvester extends AbstractHarvester
 {
+    protected final static String ERROR_NO_ENTRIES = ": Could not harvest. The JsonArray is empty or could not be retrieved";
+    protected final static String LOG_OUT_OF_RANGE = ": Harvesting indices out of range. Harvesting will be skipped";
+
+    protected JsonArray jsonArray;
+    protected final int numberOfDocumentsPerEntry;
+    protected boolean isAborting;
+
     /**
      * Forwarding the superclass constructor.
      *
@@ -42,11 +56,12 @@ public abstract class AbstractJsonArrayHarvester extends AbstractListHarvester<O
      *            a unique name of the harvester
      * @param numberOfDocumentsPerEntry
      *            the number of documents that are expected to be harvested from
-     *            each entry
+     *            each element of the JsonArray
      */
     public AbstractJsonArrayHarvester(String harvesterName, int numberOfDocumentsPerEntry)
     {
-        super(harvesterName, numberOfDocumentsPerEntry);
+        super(harvesterName);
+        this.numberOfDocumentsPerEntry = numberOfDocumentsPerEntry;
     }
 
 
@@ -55,43 +70,143 @@ public abstract class AbstractJsonArrayHarvester extends AbstractListHarvester<O
      *
      * @param numberOfDocumentsPerEntry
      *            the number of documents that are expected to be harvested from
-     *            each entry
+     *            each element of the JsonArray
      */
     public AbstractJsonArrayHarvester(int numberOfDocumentsPerEntry)
     {
-        super(null, numberOfDocumentsPerEntry);
+        this(null, numberOfDocumentsPerEntry);
     }
 
 
     /**
-     * Reads a single element from the JsonArray and creates at least one
-     * document.
+     * Retrieves a JSON-array of entries that are to be searched.
+     *
+     * @return a JsonArray of entries
+     */
+    abstract protected JsonArray loadJsonArray();
+
+
+    /**
+     * Harvests a single entry, adding between zero and 'numberOfDocumentsPerEntry' entries to the search index.
      *
      * @param entry
-     *            an element from the JsonArray
-     * @return a list of at least one document
-     */
-    protected abstract List<IJsonObject> harvestJsonArrayEntry(IJsonObject entry);
-
-
-    /**
-     * Retrieves the JsonArray that is to be harvested.
+     *            the entry that is to be read
      *
-     * @return the JsonArray that is to be harvested
+     * @return a list of search documents
      */
-    protected abstract IJsonArray getJsonArray();
+    abstract protected List<IDocument> harvestEntry(JsonElement entry);
 
 
     @Override
-    final protected Collection<Object> loadEntries()
+    protected boolean harvestInternal(int from, int to) throws Exception
     {
-        return getJsonArray();
+        if (from == to) {
+            logger.warn(name + LOG_OUT_OF_RANGE);
+            return true;
+
+        } else if (jsonArray == null || jsonArray.size() == 0) {
+            logger.error(name + ERROR_NO_ENTRIES);
+            return false;
+        }
+
+        // indices of entries that are to be harvested
+        int firstEntryIndex = from / numberOfDocumentsPerEntry;
+        int lastEntryIndex = (to - 1) / numberOfDocumentsPerEntry;
+
+        // indices of documents that are harvested from one entry
+        int startIndex = from % numberOfDocumentsPerEntry;
+        int endIndex = to % numberOfDocumentsPerEntry;
+
+        // the endIndex must be in [1, docsPerEntry]
+        if (endIndex == 0)
+            endIndex = numberOfDocumentsPerEntry;
+
+        // harvest the first entry
+        int i = 0;
+
+        for (JsonElement e : jsonArray) {
+            // abort harvest, if it is flagged for cancellation
+            if (isAborting) {
+                currentHarvestingProcess.cancel(false);
+                return false;
+            }
+
+            // skip entries that come before the firstEntryIndex
+            if (i >= firstEntryIndex) {
+                // get documents from entry
+                final List<IDocument> docs = harvestEntry(e);
+
+                int jStart = (i == firstEntryIndex) ? startIndex : 0;
+                int jEnd = (i == lastEntryIndex) ? endIndex : numberOfDocumentsPerEntry;
+
+                // add all harvested documents to the index
+                for (int j = jStart; j < jEnd; j++)
+                    addDocument(docs.get(j));
+
+                // finish iteration after harvesting the last index
+                if (i == lastEntryIndex)
+                    break;
+            }
+
+            i++;
+        }
+
+        return true;
     }
 
 
     @Override
-    final protected List<IJsonObject> harvestEntry(Object entry)
+    protected void init()
     {
-        return harvestJsonArrayEntry((IJsonObject) entry);
+        jsonArray = loadJsonArray();
+        super.init();
+    }
+
+
+    @Override
+    protected int initMaxNumberOfDocuments()
+    {
+        return jsonArray.size() * numberOfDocumentsPerEntry;
+    }
+
+
+    @Override
+    protected String initHash()
+    {
+        try {
+            final MessageDigest md = MessageDigest.getInstance(SHA_HASH_ALGORITHM);
+
+            md.update(GsonUtils.getGson().toJson(jsonArray).getBytes(MainContext.getCharset()));
+
+            final byte[] digest = md.digest();
+
+            final StringWriter buffer = new StringWriter(digest.length * 2);
+            final PrintWriter pw = new PrintWriter(buffer);
+
+            for (byte b : digest)
+                pw.printf(OCTAT_FORMAT, b);
+
+            return buffer.toString();
+
+        } catch (NoSuchAlgorithmException | NullPointerException e) {
+            logger.error(HASH_CREATE_FAILED);
+            return null;
+        }
+    }
+
+
+    @Override
+    public void abortHarvest()
+    {
+        if (currentHarvestingProcess != null)
+            isAborting = true;
+    }
+
+
+    @Override
+    protected void onHarvestAborted()
+    {
+        isAborting = false;
+        super.onHarvestAborted();
     }
 }

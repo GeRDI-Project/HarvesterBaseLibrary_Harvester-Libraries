@@ -19,8 +19,8 @@
 package de.gerdiproject.harvest.harvester;
 
 
+import de.gerdiproject.harvest.IDocument;
 import de.gerdiproject.harvest.MainContext;
-import de.gerdiproject.json.IJsonObject;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.security.MessageDigest;
@@ -75,23 +75,23 @@ public abstract class AbstractListHarvester<T> extends AbstractHarvester
 
 
     /**
-     * Retrieves a JSON-array of entries that are to be searched.
+     * Retrieves a collection of entries that are to be searched.
      *
-     * @return A JsonArray of entries
+     * @return a collection of entries
      */
     abstract protected Collection<T> loadEntries();
 
 
     /**
-     * Harvests a single entry, adding exactly one document to the search index.
+     * Harvests a single entry, adding between zero and 'numberOfDocumentsPerEntry' entries to the search index.
      *
      * @param entry
      *            the entry that is to be read
      *
-     * @return a list of search documents, created via the SearchIndexFactory
+     * @return a list of search documents
      * @see de.gerdiproject.harvest.utils.SearchIndexFactory
      */
-    abstract protected List<IJsonObject> harvestEntry(T entry);
+    abstract protected List<IDocument> harvestEntry(T entry);
 
 
     @Override
@@ -131,7 +131,7 @@ public abstract class AbstractListHarvester<T> extends AbstractHarvester
             // skip entries that come before the firstEntryIndex
             if (i >= firstEntryIndex) {
                 // get documents from entry
-                final List<IJsonObject> docs = harvestEntry(e);
+                final List<IDocument> docs = harvestEntry(e);
 
                 int jStart = (i == firstEntryIndex) ? startIndex : 0;
                 int jEnd = (i == lastEntryIndex) ? endIndex : numberOfDocumentsPerEntry;

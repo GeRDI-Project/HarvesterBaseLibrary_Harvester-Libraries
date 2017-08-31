@@ -28,14 +28,7 @@ import de.gerdiproject.harvest.harvester.rest.HarvesterFacade;
 import de.gerdiproject.harvest.utils.CancelableFuture;
 import de.gerdiproject.harvest.utils.HarvesterStringUtils;
 import de.gerdiproject.harvest.utils.HttpRequester;
-import de.gerdiproject.harvest.utils.SearchIndexFactory;
-import de.gerdiproject.json.GsonUtils;
-import de.gerdiproject.json.IJsonBuilder;
-import de.gerdiproject.json.IJsonObject;
 import de.gerdiproject.json.SearchIndexJson;
-import de.gerdiproject.json.custom.GerdiJson;
-import de.gerdiproject.json.datacite.DataCiteJson;
-import de.gerdiproject.json.impl.JsonBuilder;
 
 import java.util.Date;
 import java.util.HashMap;
@@ -90,8 +83,6 @@ public abstract class AbstractHarvester
     protected String name;
     protected String hash;
     protected final HttpRequester httpRequester;
-    protected final SearchIndexFactory searchIndexFactory;
-    protected final IJsonBuilder jsonBuilder;
 
     protected final Logger logger; // NOPMD - we want to retrieve the type of the inheriting class
 
@@ -168,7 +159,6 @@ public abstract class AbstractHarvester
 
         properties = new HashMap<>();
         httpRequester = new HttpRequester();
-        searchIndexFactory = new SearchIndexFactory();
 
         currentHarvestingProcess = null;
         startedDate = null;
@@ -178,7 +168,6 @@ public abstract class AbstractHarvester
 
         startIndex = new AtomicInteger(0);
         endIndex = new AtomicInteger(0);
-        jsonBuilder = new JsonBuilder();
         this.harvestedDocuments = new LinkedList<>();
 
         init();
@@ -298,54 +287,6 @@ public abstract class AbstractHarvester
             return null;
     }
 
-
-    /**
-     * Deprecated: Use addDocument(IDocument document) instead
-     *
-     * Adds a document to the search index and logs the progress. If the
-     * document is null, it is not added to the search index, but the progress
-     * is incremented regardlessly.
-     *
-     * @param document
-     *            the document that is to be added to the search index
-     */
-    @Deprecated
-    protected void addDocument(IJsonObject document)
-    {
-        IDocument convertedDoc = null;
-
-        if (document != null) {
-            if (document.get("viewUrl", null) != null)
-                convertedDoc = GsonUtils.getGson().fromJson(document.toJsonString(), GerdiJson.class);
-
-            else if (document.get("publisher", null) != null)
-                convertedDoc = GsonUtils.getGson().fromJson(document.toJsonString(), DataCiteJson.class);
-
-            else {
-                logger.error("UNKNOWN DOCUMENT FORMAT:\n" + document.toJsonString());
-                return;
-            }
-
-            addDocument(convertedDoc);
-        }
-    }
-
-
-    /**
-     * Deprecated: Use addDocuments(List&lt;IDocument&gt; documents) instead
-     *
-     * Adds multiple documents to the search index and logs the progress. If a
-     * document is null, it is not added to the search index, but the progress
-     * is incremented regardlessly.
-     *
-     * @param documents
-     *            the documents that are to be added to the search index
-     */
-    @Deprecated
-    protected void addDocuments(Iterable<IJsonObject> documents)
-    {
-        documents.forEach((IJsonObject doc) -> addDocument(doc));
-    }
 
     /**
      * Adds a document to the search index and logs the progress. If the

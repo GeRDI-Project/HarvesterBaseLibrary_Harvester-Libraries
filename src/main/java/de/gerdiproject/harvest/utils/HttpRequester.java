@@ -23,9 +23,6 @@ import de.gerdiproject.harvest.MainContext;
 import de.gerdiproject.harvest.development.DevelopmentTools;
 import de.gerdiproject.harvest.utils.data.DiskIO;
 import de.gerdiproject.harvest.utils.data.WebDataRetriever;
-import de.gerdiproject.json.IJsonArray;
-import de.gerdiproject.json.IJsonObject;
-import de.gerdiproject.json.impl.GsonObject;
 
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
@@ -56,7 +53,6 @@ import javax.ws.rs.core.HttpHeaders;
  */
 public class HttpRequester
 {
-    private static final String DATA_JSON = "data";
     private static final String FILE_PATH = "savedHttpResponses/%s/%sresponse.%s";
     private static final String FILE_ENDING_JSON = "json";
     private static final String FILE_ENDING_HTML = "html";
@@ -106,36 +102,6 @@ public class HttpRequester
 
 
     /**
-     * Sends a GET request to a specified URL and tries to retrieve the 'data'
-     * field of the JSON response as a List of JSON objects.
-     *
-     * @param url
-     *            a URL that returns a JSON object
-     * @return a List of JSON objects
-     */
-    public IJsonArray getJsonArrayFromUrl(String url)
-    {
-        IJsonObject entireObject = getRawJsonFromUrl(url);
-        return (entireObject != null) ? entireObject.getJsonArray(DATA_JSON) : null;
-    }
-
-
-    /**
-     * Sends a GET request to a specified URL and tries to retrieve the the
-     * 'data' field of the JSON response as a JSON object.
-     *
-     * @param url
-     *            a URL that returns a JSON object
-     * @return a JSON object
-     */
-    public IJsonObject getJsonObjectFromUrl(String url)
-    {
-        IJsonObject entireObject = getRawJsonFromUrl(url);
-        return (entireObject != null) ? entireObject.getJsonObject(DATA_JSON) : null;
-    }
-
-
-    /**
      * Sends a GET request to a specified URL and tries to retrieve the JSON
      * response. If the development option is enabled, the JSON will be read
      * from disk instead.
@@ -144,30 +110,31 @@ public class HttpRequester
      *            a URL that returns a JSON object
      * @return a JSON object
      */
-    public IJsonObject getRawJsonFromUrl(String url)
+    public JsonObject getJsonFromUrl(String url)
     {
-        JsonObject jsonRaw  = null;
+        JsonObject jsonObj  = null;
         boolean isResponseReadFromWeb = false;
 
         // read json file from disk, if the option is enabled
         if (devTools.isReadingHttpFromDisk()) {
             String filePath = urlToFilePath(url, FILE_ENDING_JSON);
-            jsonRaw = (JsonObject) diskIO.getJson(filePath);
+            jsonObj = (JsonObject) diskIO.getJson(filePath);
         }
 
         // request json from web, if it has not been read from disk already
-        if (jsonRaw == null) {
-            jsonRaw = (JsonObject) webDataRetriever.getJson(url);
+        if (jsonObj == null) {
+            jsonObj = (JsonObject) webDataRetriever.getJson(url);
             isResponseReadFromWeb = true;
         }
 
         // write whole response to disk, if the option is enabled
         if (isResponseReadFromWeb && devTools.isWritingHttpToDisk())
-            diskIO.writeJsonToFile(urlToFilePath(url, FILE_ENDING_JSON), jsonRaw);
+            diskIO.writeJsonToFile(urlToFilePath(url, FILE_ENDING_JSON), jsonObj);
 
-        // only create object if it is  not empty
-        if (jsonRaw != null && jsonRaw.size() > 0)
-            return new GsonObject(jsonRaw);
+
+        // only return the object if it is not empty
+        if (jsonObj != null && jsonObj.size() > 0)
+            return jsonObj;
         else
             return null;
     }
