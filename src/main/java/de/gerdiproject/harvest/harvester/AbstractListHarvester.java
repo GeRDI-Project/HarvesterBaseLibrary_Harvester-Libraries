@@ -89,7 +89,6 @@ public abstract class AbstractListHarvester<T> extends AbstractHarvester
      *            the entry that is to be read
      *
      * @return a list of search documents
-     * @see de.gerdiproject.harvest.utils.SearchIndexFactory
      */
     abstract protected List<IDocument> harvestEntry(T entry);
 

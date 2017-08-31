@@ -99,7 +99,6 @@ public abstract class AbstractHarvester
      *             any kind of exception that can occur during the harvesting
      *             process
      * @return true, if everything was harvested
-     * @see de.gerdiproject.harvest.utils.SearchIndexFactory
      */
     abstract protected boolean harvestInternal(int startIndex, int endIndex) throws Exception; // NOPMD - we want the inheriting class to be able to throw any exception
 
