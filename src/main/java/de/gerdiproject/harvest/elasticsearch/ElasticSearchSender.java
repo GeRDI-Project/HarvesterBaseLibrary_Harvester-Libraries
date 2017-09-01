@@ -238,7 +238,7 @@ public class ElasticSearchSender
         boolean hasMappings = validateAndCreateMappings();
 
         // if no mappings were created, abort
-        if (hasMappings) {
+        if (!hasMappings) {
             LOGGER.error(NO_MAPPINGS_ERROR);
             return NO_MAPPINGS_ERROR;
         }
