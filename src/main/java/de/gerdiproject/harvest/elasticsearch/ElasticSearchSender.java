@@ -25,6 +25,8 @@ import java.security.NoSuchAlgorithmException;
 import java.util.Base64;
 import java.util.List;
 
+import javax.xml.ws.http.HTTPException;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -295,10 +297,10 @@ public class ElasticSearchSender
     public void validateAndCreateMappings()
     {
         String mappingsUrl = String.format(MAPPINGS_URL, baseUrl, index, type);
-        JsonObject mappings = httpRequester.getJsonFromUrl(mappingsUrl);
-        // TODO: send different request only to the web!
 
-        if (mappings == null) {
+        try {
+            httpRequester.getRestResponse(RestRequestType.GET, mappingsUrl, "");
+        } catch (HTTPException e) {
             // create mappings on ElasticSearch
             httpRequester.getRestResponse(RestRequestType.PUT, mappingsUrl, BASIC_MAPPING, credentials);
         }

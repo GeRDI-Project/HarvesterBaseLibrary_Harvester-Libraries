@@ -36,6 +36,7 @@ import java.util.List;
 import java.util.Map;
 
 import javax.ws.rs.core.MediaType;
+import javax.xml.ws.http.HTTPException;
 
 import org.jsoup.nodes.Document;
 import org.slf4j.Logger;
@@ -47,7 +48,7 @@ import javax.ws.rs.core.HttpHeaders;
 
 
 /**
- * This class serves as a facade for RESTful HTTP requests.
+ * This class serves as a facade for HTTP requests.
  *
  * @author Robin Weiss
  */
@@ -250,15 +251,15 @@ public class HttpRequester
     /**
      * Sends an REST request with a plain-text body.
      *
-     * @param method
-     *            the request method that is being sent
-     * @param url
-     *            the URL to which the request is being sent
-     * @param body
-     *            the plain-text body of the request
+     * @param method the request method that is being sent
+     * @param url the URL to which the request is being sent
+     * @param body the plain-text body of the request
+     *
+     * @throws HTTPException thrown if the response code is neither 200 nor 202
+     *
      * @return the HTTP response
      */
-    public String getRestResponse(RestRequestType method, String url, String body)
+    public String getRestResponse(RestRequestType method, String url, String body) throws HTTPException
     {
         return getRestResponse(method, url, body, null);
     }
@@ -268,18 +269,17 @@ public class HttpRequester
      * Sends an authorized REST request with a plain-text body and returns the
      * response as a string.
      *
-     * @param method
-     *            the request method that is being sent
-     * @param url
-     *            the URL to which the request is being sent
-     * @param body
-     *            the plain-text body of the request
-     * @param authorization
-     *            the base-64-encoded username and password, or null if no
-     *            authorization is required
+     * @param method the request method that is being sent
+     * @param url the URL to which the request is being sent
+     * @param body the plain-text body of the request
+     * @param authorization the base-64-encoded username and password, or null if no
+     *                       authorization is required
+     *
+     * @throws HTTPException thrown if the response code is neither 200 nor 202
+     *
      * @return the HTTP response
      */
-    public String getRestResponse(RestRequestType method, String url, String body, String authorization)
+    public String getRestResponse(RestRequestType method, String url, String body, String authorization) throws HTTPException
     {
         try {
             HttpURLConnection connection = sendRestRequest(method, url, body, authorization);
@@ -324,15 +324,15 @@ public class HttpRequester
      * Sends a REST request with a plain-text body and returns the header
      * fields.
      *
-     * @param method
-     *            the request method that is being sent
-     * @param url
-     *            the URL to which the request is being sent
-     * @param body
-     *            the plain-text body of the request
+     * @param method the request method that is being sent
+     * @param url the URL to which the request is being sent
+     * @param body the plain-text body of the request
+     *
+     * @throws HTTPException thrown if the response code is neither 200 nor 202
+     *
      * @return the response header fields
      */
-    public Map<String, List<String>> getRestHeader(RestRequestType method, String url, String body)
+    public Map<String, List<String>> getRestHeader(RestRequestType method, String url, String body) throws HTTPException
     {
         return getRestHeader(method, url, body, null);
     }
@@ -342,19 +342,18 @@ public class HttpRequester
      * Sends an authorized REST request with a plain-text body and returns the
      * header fields.
      *
-     * @param method
-     *            the request method that is being sent
-     * @param url
-     *            the URL to which the request is being sent
-     * @param body
-     *            the plain-text body of the request
-     * @param authorization
-     *            the base-64-encoded username and password, or null if no
-     *            authorization is required
+     * @param method the request method that is being sent
+     * @param url the URL to which the request is being sent
+     * @param body the plain-text body of the request
+     * @param authorization the base-64-encoded username and password, or null if no
+     *                       authorization is required
+     *
+     * @throws HTTPException thrown if the response code is neither 200 nor 202
+     *
      * @return the response header fields
      */
     public Map<String, List<String>> getRestHeader(RestRequestType method, String url, String body,
-                                                   String authorization)
+                                                   String authorization) throws HTTPException
     {
         Map<String, List<String>> headerFields = null;
 
@@ -373,19 +372,18 @@ public class HttpRequester
     /**
      * Sends a REST request with a plain-text body and returns the connection.
      *
-     * @param method
-     *            the request method that is being sent
-     * @param url
-     *            the URL to which the request is being sent
-     * @param body
-     *            the plain-text body of the request
-     * @param authorization
-     *            the base-64-encoded username and password, or null if no
-     *            authorization is required
+     * @param method the request method that is being sent
+     * @param url the URL to which the request is being sent
+     * @param body the plain-text body of the request
+     * @param authorization the base-64-encoded username and password, or null if no
+     *                           authorization is required
+     *
+     * @throws HTTPException thrown if the response code is neither 200 nor 202
+     *
      * @return the connection to the host
      */
     private HttpURLConnection sendRestRequest(RestRequestType method, String url, String body, String authorization)
-    throws IOException
+    throws IOException, HTTPException
     {
         // generate a URL and open a connection
         HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
@@ -413,6 +411,10 @@ public class HttpRequester
             wr.write(bodyBytes);
             wr.close();
         }
+
+        if (connection.getResponseCode() != HttpURLConnection.HTTP_ACCEPTED
+            && connection.getResponseCode() != HttpURLConnection.HTTP_OK)
+            throw new HTTPException(connection.getResponseCode());
 
         return connection;
     }
