@@ -88,7 +88,7 @@ public abstract class AbstractListHarvester<T> extends AbstractHarvester
      * @param entry
      *            the entry that is to be read
      *
-     * @return a list of search documents
+     * @return a list of search documents, or null if no documents could be retrieved from the entry
      */
     abstract protected List<IDocument> harvestEntry(T entry);
 
