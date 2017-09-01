@@ -53,6 +53,7 @@ public class ElasticSearchSender
     private static final String ERROR_PREFIX = "Cannot send search index to Elastic Search: ";
     private static final String EMPTY_INDEX_ERROR = ERROR_PREFIX + "JSON 'data' array is empty";
     private static final String NO_URL_ERROR = ERROR_PREFIX + "You need to set up a valid  Elastic Search URL";
+    private static final String NO_MAPPINGS_ERROR = ERROR_PREFIX + "Could not create mappings. Is the Elastic Search URL correct and is the server up and running?";
 
     private static final String MAPPINGS_URL = "%s/%s/_mapping/%s/";
     private static final String BASIC_MAPPING = "{\"properties\":{}}";
@@ -227,13 +228,19 @@ public class ElasticSearchSender
      */
     public String sendToElasticSearch(List<IDocument> documents)
     {
-        // if the type does not exist on ElasticSearch yet, initialize it
-        validateAndCreateMappings();
-
         // check if a URL has been set up
         if (baseUrl == null) {
             LOGGER.warn(NO_URL_ERROR);
             return NO_URL_ERROR;
+        }
+
+        // if the type does not exist on ElasticSearch yet, initialize it
+        boolean hasMappings = validateAndCreateMappings();
+
+        // if no mappings were created, abort
+        if (hasMappings) {
+            LOGGER.error(NO_MAPPINGS_ERROR);
+            return NO_MAPPINGS_ERROR;
         }
 
         // check if entries exist
@@ -293,17 +300,32 @@ public class ElasticSearchSender
     /**
      * Checks if mappings exist for the index and type combination. If they do
      * not, they are created on the ElasticSearch node.
+     *
+     * @return true, if a mapping exists or was just created
      */
-    public void validateAndCreateMappings()
+    public boolean validateAndCreateMappings()
     {
         String mappingsUrl = String.format(MAPPINGS_URL, baseUrl, index, type);
+        boolean hasMapping;
 
         try {
             httpRequester.getRestResponse(RestRequestType.GET, mappingsUrl, "");
+            hasMapping = true;
         } catch (HTTPException e) {
-            // create mappings on ElasticSearch
-            httpRequester.getRestResponse(RestRequestType.PUT, mappingsUrl, BASIC_MAPPING, credentials);
+            hasMapping = false;
         }
+
+        if (!hasMapping) {
+            try {
+                // create mappings on ElasticSearch
+                httpRequester.getRestResponse(RestRequestType.PUT, mappingsUrl, BASIC_MAPPING, credentials);
+                hasMapping = true;
+            } catch (HTTPException e) {
+                hasMapping = false;
+            }
+        }
+
+        return hasMapping;
     }
 
 

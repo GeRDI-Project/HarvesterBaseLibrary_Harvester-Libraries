@@ -412,8 +412,11 @@ public class HttpRequester
             wr.close();
         }
 
-        if (connection.getResponseCode() != HttpURLConnection.HTTP_ACCEPTED
-            && connection.getResponseCode() != HttpURLConnection.HTTP_OK)
+        // check if we got an erroneous response
+        int responseCode = connection.getResponseCode();
+
+        if (responseCode != HttpURLConnection.HTTP_ACCEPTED
+            && responseCode != HttpURLConnection.HTTP_OK)
             throw new HTTPException(connection.getResponseCode());
 
         return connection;
