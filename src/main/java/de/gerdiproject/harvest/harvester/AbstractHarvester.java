@@ -168,15 +168,13 @@ public abstract class AbstractHarvester
         startIndex = new AtomicInteger(0);
         endIndex = new AtomicInteger(0);
         this.harvestedDocuments = new LinkedList<>();
-
-        init();
     }
 
 
     /**
-     * Initializes the Harvester, calculating missing values.
+     * Initializes the Harvester, calculating the hash and maximum number of harvestable documents.
      */
-    protected void init()
+    public void init()
     {
         // calculate hash
         hash = initHash();

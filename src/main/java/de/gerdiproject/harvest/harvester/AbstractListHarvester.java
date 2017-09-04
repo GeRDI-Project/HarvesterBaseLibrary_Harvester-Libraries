@@ -158,7 +158,7 @@ public abstract class AbstractListHarvester<T> extends AbstractHarvester
 
 
     @Override
-    protected void init()
+    public void init()
     {
         entries = loadEntries();
         super.init();
