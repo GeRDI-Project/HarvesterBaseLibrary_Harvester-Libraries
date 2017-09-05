@@ -55,8 +55,8 @@ public class ElasticSearchSender
     private static final String NO_URL_ERROR = ERROR_PREFIX + "You need to set up a valid  Elastic Search URL";
     private static final String NO_MAPPINGS_ERROR = ERROR_PREFIX + "Could not create mappings. Is the Elastic Search URL correct and is the server up and running?";
 
-    private static final String MAPPINGS_URL = "%s/%s/_mapping/%s/";
-    private static final String BASIC_MAPPING = "{\"properties\":{}}";
+    private static final String MAPPINGS_URL = "%s/%s?pretty";
+    private static final String BASIC_MAPPING = "{\"mappings\":{\"%s\":{\"properties\":{}}}}";
 
     private static final String BATCH_POST_INSTRUCTION = "{\"index\":{\"_id\":\"%s\"}}%n%s%n";
     private static final String BULK_SUBMISSION_URL = "%s/%s/%s/_bulk?pretty";
@@ -305,12 +305,14 @@ public class ElasticSearchSender
      */
     public boolean validateAndCreateMappings()
     {
-        String mappingsUrl = String.format(MAPPINGS_URL, baseUrl, index, type);
+        HttpRequester httpRequester = new HttpRequester();
+        String mappingsUrl = String.format(MAPPINGS_URL, baseUrl, index.toLowerCase());
         boolean hasMapping;
 
         try {
-            httpRequester.getRestResponse(RestRequestType.GET, mappingsUrl, "");
+            httpRequester.getRestResponse(RestRequestType.GET, mappingsUrl, null);
             hasMapping = true;
+
         } catch (HTTPException e) {
             hasMapping = false;
         }
@@ -318,8 +320,13 @@ public class ElasticSearchSender
         if (!hasMapping) {
             try {
                 // create mappings on ElasticSearch
-                httpRequester.getRestResponse(RestRequestType.PUT, mappingsUrl, BASIC_MAPPING, credentials);
+                httpRequester.getRestResponse(
+                    RestRequestType.PUT,
+                    mappingsUrl,
+                    String.format(BASIC_MAPPING, type),
+                    null);
                 hasMapping = true;
+
             } catch (HTTPException e) {
                 hasMapping = false;
             }
