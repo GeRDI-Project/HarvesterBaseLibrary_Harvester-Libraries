@@ -109,7 +109,7 @@ public class HttpRequester
      *
      * @param url
      *            a URL that returns a JSON object
-     * @return a JSON object
+     * @return a JSON object, or null if the object is empty or could not be read
      */
     public JsonObject getJsonFromUrl(String url)
     {
@@ -148,7 +148,7 @@ public class HttpRequester
      *
      * @param url
      *            a URL that returns a JSON object
-     * @return a JSON object
+     * @return a JSON object, or null if the HTML document could not be retrieved
      */
     public Document getHtmlFromUrl(String url)
     {
@@ -185,7 +185,7 @@ public class HttpRequester
      * @param targetClass the class of the returned object
      * @param <T> the type of the returned object
      *
-     * @return a Java object
+     * @return a Java object, or null if the object could not be loaded or parsed
      */
     public <T> T getObjectFromUrl(String url, Class<T> targetClass)
     {
@@ -257,7 +257,7 @@ public class HttpRequester
      *
      * @throws HTTPException thrown if the response code is neither 200 nor 202
      *
-     * @return the HTTP response
+     * @return the HTTP response as plain text
      */
     public String getRestResponse(RestRequestType method, String url, String body) throws HTTPException
     {
@@ -277,7 +277,7 @@ public class HttpRequester
      *
      * @throws HTTPException thrown if the response code is neither 200 nor 202
      *
-     * @return the HTTP response
+     * @return the HTTP response as plain text
      */
     public String getRestResponse(RestRequestType method, String url, String body, String authorization) throws HTTPException
     {
@@ -330,7 +330,7 @@ public class HttpRequester
      *
      * @throws HTTPException thrown if the response code is neither 200 nor 202
      *
-     * @return the response header fields
+     * @return the response header fields, or null if the response could not be parsed
      */
     public Map<String, List<String>> getRestHeader(RestRequestType method, String url, String body) throws HTTPException
     {
@@ -350,7 +350,7 @@ public class HttpRequester
      *
      * @throws HTTPException thrown if the response code is neither 200 nor 202
      *
-     * @return the response header fields
+     * @return the response header fields, or null if the response could not be parsed
      */
     public Map<String, List<String>> getRestHeader(RestRequestType method, String url, String body,
                                                    String authorization) throws HTTPException
@@ -379,6 +379,7 @@ public class HttpRequester
      *                           authorization is required
      *
      * @throws HTTPException thrown if the response code is neither 200 nor 202
+     * @throws IOException thrown if the response output stream could not be created
      *
      * @return the connection to the host
      */
