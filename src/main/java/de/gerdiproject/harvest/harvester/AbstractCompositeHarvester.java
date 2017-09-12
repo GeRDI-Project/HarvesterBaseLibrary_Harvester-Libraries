@@ -23,10 +23,12 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
+import de.gerdiproject.harvest.IDocument;
 import de.gerdiproject.harvest.MainContext;
 
 
@@ -58,11 +60,19 @@ public abstract class AbstractCompositeHarvester extends AbstractHarvester
         super(harvesterName);
 
         this.subHarvesters = subHarvesters;
+    }
 
-        // make sure the sub-harvesters deposit their documents in the same
-        // array
-        for (AbstractHarvester subHarvester : subHarvesters)
-            subHarvester.harvestedDocuments = harvestedDocuments;
+
+    @Override
+    public List<IDocument> getHarvestedDocuments()
+    {
+        List<IDocument> mergedDocuments = new LinkedList<>();
+
+        subHarvesters.forEach((AbstractHarvester subHarvester) ->
+                              mergedDocuments.addAll(subHarvester.getHarvestedDocuments())
+                             );
+
+        return Collections.unmodifiableList( mergedDocuments );
     }
 
 
@@ -126,7 +136,7 @@ public abstract class AbstractCompositeHarvester extends AbstractHarvester
 
         // the range can be ignored at this point, because it was already set in
         // the subharvesters via the overriden setRange() method
-        for (AbstractHarvester subHarvester : subHarvesters) {
+        subHarvesters.forEach((AbstractHarvester subHarvester) -> {
             subHarvester.harvest();
 
             CompletableFuture<Boolean> subHarvestingProcess = subHarvester.currentHarvestingProcess;
@@ -134,7 +144,7 @@ public abstract class AbstractCompositeHarvester extends AbstractHarvester
             // add the process only if it was created successfully
             if (subHarvestingProcess != null)
                 subProcesses.add(subHarvestingProcess);
-        }
+        });
 
         // convert list to array
         CompletableFuture<?>[] futureArray = new CompletableFuture<?>[subProcesses.size()];
@@ -219,9 +229,7 @@ public abstract class AbstractCompositeHarvester extends AbstractHarvester
     @Override
     public void abortHarvest()
     {
-        if (currentHarvestingProcess != null) {
-            for (AbstractHarvester subHarvester : subHarvesters)
-                subHarvester.abortHarvest();
-        }
+        if (currentHarvestingProcess != null)
+            subHarvesters.forEach((AbstractHarvester sub) -> sub.abortHarvest());
     }
 }
