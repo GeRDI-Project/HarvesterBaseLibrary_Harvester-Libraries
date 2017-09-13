@@ -126,6 +126,7 @@ public class MainContext
             AbstractHarvester harvey = harvesterClass.newInstance();
 
             LOGGER.info(String.format(INIT_START, harvey.getName()));
+            harvey.init();
             instance.harvester = harvey;
             LOGGER.info(DONE);
         } catch (InstantiationException | IllegalAccessException e) {

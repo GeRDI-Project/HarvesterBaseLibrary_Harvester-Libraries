@@ -160,6 +160,16 @@ public abstract class AbstractCompositeHarvester extends AbstractHarvester
 
 
     @Override
+    public void init()
+    {
+        subHarvesters.forEach((AbstractHarvester subHarvester) ->
+                              subHarvester.init()
+                             );
+        super.init();
+    }
+
+
+    @Override
     protected int initMaxNumberOfDocuments()
     {
         int total = 0;
@@ -177,8 +187,9 @@ public abstract class AbstractCompositeHarvester extends AbstractHarvester
         // for now, concatenate all hashes
         final StringBuilder hashBuilder = new StringBuilder();
 
-        for (AbstractHarvester subHarvester : subHarvesters)
-            hashBuilder.append(subHarvester.getHash(false));
+        subHarvesters.forEach((AbstractHarvester subHarvester) ->
+                              hashBuilder.append(subHarvester.getHash(false))
+                             );
 
         // generate hash of all concatenated hashes
         try {

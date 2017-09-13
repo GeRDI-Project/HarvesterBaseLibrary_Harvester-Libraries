@@ -19,26 +19,26 @@
 package de.gerdiproject.harvest.elasticsearch;
 
 
-import java.io.StringReader;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.security.NoSuchAlgorithmException;
 import java.util.Base64;
 import java.util.List;
 
+import javax.xml.ws.http.HTTPException;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 
 import de.gerdiproject.harvest.IDocument;
 import de.gerdiproject.harvest.MainContext;
 import de.gerdiproject.harvest.utils.HttpRequester;
 import de.gerdiproject.harvest.utils.HttpRequester.RestRequestType;
 import de.gerdiproject.json.GsonUtils;
-import de.gerdiproject.json.IJsonArray;
-import de.gerdiproject.json.IJsonBuilder;
-import de.gerdiproject.json.IJsonObject;
-import de.gerdiproject.json.IJsonReader;
-import de.gerdiproject.json.impl.JsonBuilder;
 
 
 /**
@@ -53,9 +53,10 @@ public class ElasticSearchSender
     private static final String ERROR_PREFIX = "Cannot send search index to Elastic Search: ";
     private static final String EMPTY_INDEX_ERROR = ERROR_PREFIX + "JSON 'data' array is empty";
     private static final String NO_URL_ERROR = ERROR_PREFIX + "You need to set up a valid  Elastic Search URL";
+    private static final String NO_MAPPINGS_ERROR = ERROR_PREFIX + "Could not create mappings. Is the Elastic Search URL correct and is the server up and running?";
 
-    private static final String MAPPINGS_URL = "%s/%s/_mapping/%s/";
-    private static final String BASIC_MAPPING = "{\"properties\":{}}";
+    private static final String MAPPINGS_URL = "%s/%s?pretty";
+    private static final String BASIC_MAPPING = "{\"mappings\":{\"%s\":{\"properties\":{}}}}";
 
     private static final String BATCH_POST_INSTRUCTION = "{\"index\":{\"_id\":\"%s\"}}%n%s%n";
     private static final String BULK_SUBMISSION_URL = "%s/%s/%s/_bulk?pretty";
@@ -87,7 +88,6 @@ public class ElasticSearchSender
 
     private static final ElasticSearchSender instance = new ElasticSearchSender();
 
-    private final IJsonBuilder jsonBuilder;
     private final HttpRequester httpRequester;
 
     /**
@@ -135,7 +135,6 @@ public class ElasticSearchSender
     private ElasticSearchSender()
     {
         httpRequester = new HttpRequester();
-        jsonBuilder = new JsonBuilder();
     }
 
 
@@ -229,13 +228,19 @@ public class ElasticSearchSender
      */
     public String sendToElasticSearch(List<IDocument> documents)
     {
-        // if the type does not exist on ElasticSearch yet, initialize it
-        validateAndCreateMappings();
-
         // check if a URL has been set up
         if (baseUrl == null) {
             LOGGER.warn(NO_URL_ERROR);
             return NO_URL_ERROR;
+        }
+
+        // if the type does not exist on ElasticSearch yet, initialize it
+        boolean hasMappings = validateAndCreateMappings();
+
+        // if no mappings were created, abort
+        if (!hasMappings) {
+            LOGGER.error(NO_MAPPINGS_ERROR);
+            return NO_MAPPINGS_ERROR;
         }
 
         // check if entries exist
@@ -295,17 +300,39 @@ public class ElasticSearchSender
     /**
      * Checks if mappings exist for the index and type combination. If they do
      * not, they are created on the ElasticSearch node.
+     *
+     * @return true, if a mapping exists or was just created
      */
-    public void validateAndCreateMappings()
+    public boolean validateAndCreateMappings()
     {
-        String mappingsUrl = String.format(MAPPINGS_URL, baseUrl, index, type);
-        IJsonObject mappings = httpRequester.getRawJsonFromUrl(mappingsUrl);
-        // TODO: send different request only to the web!
+        HttpRequester httpRequester = new HttpRequester();
+        String mappingsUrl = String.format(MAPPINGS_URL, baseUrl, index.toLowerCase());
+        boolean hasMapping;
 
-        if (mappings == null) {
-            // create mappings on ElasticSearch
-            httpRequester.getRestResponse(RestRequestType.PUT, mappingsUrl, BASIC_MAPPING, credentials);
+        try {
+            httpRequester.getRestResponse(RestRequestType.GET, mappingsUrl, null);
+            hasMapping = true;
+
+        } catch (HTTPException e) {
+            hasMapping = false;
         }
+
+        if (!hasMapping) {
+            try {
+                // create mappings on ElasticSearch
+                httpRequester.getRestResponse(
+                    RestRequestType.PUT,
+                    mappingsUrl,
+                    String.format(BASIC_MAPPING, type),
+                    null);
+                hasMapping = true;
+
+            } catch (HTTPException e) {
+                hasMapping = false;
+            }
+        }
+
+        return hasMapping;
     }
 
 
@@ -325,20 +352,8 @@ public class ElasticSearchSender
     private void handleSubmissionResponse(String response, int from, int to)
     {
         // parse a json object from the response string
-        IJsonArray responseArray = null;
-        {
-            IJsonReader reader = jsonBuilder.createReader(new StringReader(response));
-
-            try {
-                IJsonObject responseObj = reader.readObject();
-                reader.close();
-                responseArray = responseObj.getJsonArray(ITEMS_JSON);
-
-            } catch (Exception e) {
-                LOGGER.error(e.toString());
-                return;
-            }
-        }
+        JsonObject responseObj = GsonUtils.getGson().fromJson(response, JsonObject.class);
+        JsonArray responseArray = responseObj.get(ITEMS_JSON).getAsJsonArray();
 
         // if the server response is not JSON, it's probably an error
         if (responseArray == null) {
@@ -357,12 +372,12 @@ public class ElasticSearchSender
         StringBuilder errorBuilder = new StringBuilder(String.format(SUBMIT_PARTIAL_FAILED, from, to));
 
         // collect failed documents
-        for (Object r : responseArray) {
+        for (JsonElement r : responseArray) {
             // get the json object that holds the response to a single document
-            IJsonObject singleDocResponse = ((IJsonObject) r).getJsonObject(INDEX_JSON);
+            JsonObject singleDocResponse = r.getAsJsonObject().get(INDEX_JSON).getAsJsonObject();
 
             // if document was transmitted successfully, check the next one
-            if (singleDocResponse.getJsonObject(ERROR_JSON) == null)
+            if (singleDocResponse.get(ERROR_JSON) == null)
                 continue;
 
             hasErrors = true;
@@ -378,24 +393,25 @@ public class ElasticSearchSender
     }
 
 
-    private String formatSubmissionError(IJsonObject elasticSearchResponse)
+    private String formatSubmissionError(JsonObject elasticSearchResponse)
     {
-        IJsonObject errorObject = elasticSearchResponse.getJsonObject(ERROR_JSON);
-        final String documentId = elasticSearchResponse.getString(ID_JSON);
+        JsonObject errorObject = elasticSearchResponse.get(ERROR_JSON).getAsJsonObject();
+        final String documentId = elasticSearchResponse.get(ID_JSON).getAsString();
 
         // get the reason of the submission failure
-        final String submitFailedReason = errorObject.isNull(REASON_JSON)
-                                          ? NULL_JSON
-                                          : errorObject.getString(REASON_JSON);
-        final IJsonObject cause = errorObject.getJsonObject(CAUSED_BY_JSON);
+        final String submitFailedReason = errorObject.has(REASON_JSON)
+                                          ? errorObject.get(REASON_JSON).getAsString()
+                                          : NULL_JSON;
 
-        final String exceptionType = cause.isNull(TYPE_JSON)
-                                     ? NULL_JSON
-                                     : cause.getString(TYPE_JSON);
+        final JsonObject cause = errorObject.get(CAUSED_BY_JSON).getAsJsonObject();
 
-        final String exceptionReason = cause.isNull(REASON_JSON)
-                                       ? NULL_JSON
-                                       : cause.getString(REASON_JSON, NULL_JSON);
+        final String exceptionType = cause.has(TYPE_JSON)
+                                     ? cause.get(TYPE_JSON).getAsString()
+                                     : NULL_JSON;
+
+        final String exceptionReason = cause.has(REASON_JSON)
+                                       ? cause.get(REASON_JSON).getAsString()
+                                       : NULL_JSON;
 
         // append document failure to error log
         return String.format(
