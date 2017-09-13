@@ -24,22 +24,21 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.security.NoSuchAlgorithmException;
 import java.util.Base64;
-import java.util.LinkedList;
 import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import de.gerdiproject.harvest.IDocument;
 import de.gerdiproject.harvest.MainContext;
 import de.gerdiproject.harvest.utils.HttpRequester;
 import de.gerdiproject.harvest.utils.HttpRequester.RestRequestType;
-import de.gerdiproject.harvest.utils.SearchIndexFactory;
+import de.gerdiproject.json.GsonUtils;
 import de.gerdiproject.json.IJsonArray;
 import de.gerdiproject.json.IJsonBuilder;
 import de.gerdiproject.json.IJsonObject;
 import de.gerdiproject.json.IJsonReader;
 import de.gerdiproject.json.impl.JsonBuilder;
-import de.gerdiproject.json.utils.JsonHelper;
 
 
 /**
@@ -71,19 +70,14 @@ public class ElasticSearchSender
     private static final String SUBMIT_PARTIAL_FAILED = "There were errors while submitting documents %d to %d:";
     private static final String SUBMIT_PARTIAL_FAILED_FORMAT = "%n\t%s of document '%s': %s - %s'";
 
-    private static final String RESUBMISSION_START = "Had to remove erroneous fields from %d documents! Re-submitting...";
-    private static final String RESUBMISSION_OK = "Succcessfully re-submitted documents!";
-    private static final String RESUBMISSION_FAILED = "Could not re-submit the following documents:";
 
     private static final String ID_JSON = "_id";
     private static final String INDEX_JSON = "index";
     private static final String ITEMS_JSON = "items";
     private static final String ERROR_JSON = "error";
     private static final String REASON_JSON = "reason";
-    private static final String IDENTIFIER_JSON = "identifier";
     private static final String CAUSED_BY_JSON = "caused_by";
     private static final String TYPE_JSON = "type";
-    private static final String PARSE_ERROR_PREFIX = "failed to parse [";
 
     private static final String NULL_JSON = "null";
 
@@ -95,8 +89,6 @@ public class ElasticSearchSender
 
     private final IJsonBuilder jsonBuilder;
     private final HttpRequester httpRequester;
-    private final Base64.Encoder encoder;
-    private final Base64.Decoder decoder;
 
     /**
      * the bulk-POST URL for an ElasticSearch index and type
@@ -143,10 +135,6 @@ public class ElasticSearchSender
     private ElasticSearchSender()
     {
         httpRequester = new HttpRequester();
-
-        encoder = Base64.getEncoder();
-        decoder = Base64.getDecoder();
-
         jsonBuilder = new JsonBuilder();
     }
 
@@ -239,7 +227,7 @@ public class ElasticSearchSender
      * @return the HTTP response of the Elastic Search POST request, or an error
      *         message if the operation does not succeed
      */
-    public String sendToElasticSearch(IJsonArray documents)
+    public String sendToElasticSearch(List<IDocument> documents)
     {
         // if the type does not exist on ElasticSearch yet, initialize it
         validateAndCreateMappings();
@@ -265,10 +253,11 @@ public class ElasticSearchSender
 
         try {
             for (int i = 0, len = documents.size(); i < len; i++) {
-                IJsonObject doc = documents.getJsonObject(i);
-                String id = createDocumentID(doc);
+                IDocument doc = documents.get(i);
+                String id = doc.getElasticSearchId();
+
                 bulkRequestBuilder
-                .append(String.format(BATCH_POST_INSTRUCTION, id, doc.toJsonString().replace("\n", "")));
+                .append(String.format(BATCH_POST_INSTRUCTION, id, GsonUtils.getGson().toJson(doc)));
 
                 // submit every 1024 posts, to decrease memory usage
                 if ((i + 1) % BULK_SUBMISSION_SIZE == 0) {
@@ -277,7 +266,7 @@ public class ElasticSearchSender
                                       .getRestResponse(RestRequestType.POST, elasticSearchUrl, bulkRequestBuilder.toString(), credentials);
 
                     // handle response
-                    handleSubmissionResponse(response, from, i, documents);
+                    handleSubmissionResponse(response, from, i);
 
                     // reset the string builder and free memory
                     bulkRequestBuilder = new StringBuilder();
@@ -291,7 +280,7 @@ public class ElasticSearchSender
                                   .getRestResponse(RestRequestType.POST, elasticSearchUrl, bulkRequestBuilder.toString(), credentials);
 
                 // log response
-                handleSubmissionResponse(response, from, documents.size() - 1, documents);
+                handleSubmissionResponse(response, from, documents.size() - 1);
             }
         } catch (Exception e) {
             LOGGER.error(ERROR_PREFIX, e);
@@ -321,40 +310,6 @@ public class ElasticSearchSender
 
 
     /**
-     * Encodes the viewUrl in order to use it as an ID for submitting documents
-     * to Elasticsearch.
-     *
-     * @param document
-     *            the searchable document of which an ID needs to be created
-     * @return an ID string
-     */
-    private String createDocumentID(IJsonObject document)
-    {
-        // get view URL
-        String url = document.getString(SearchIndexFactory.VIEW_URL_JSON);
-
-        if (url != null) {
-            // base64 encoding:
-            String base64EncodedString = new String(encoder.encode(url.getBytes(MainContext.getCharset())), MainContext.getCharset());
-            return base64EncodedString;
-
-        } else {
-            // check if the document already has an identifier
-            String identifier = document.getString(IDENTIFIER_JSON, null);
-            return identifier;
-        }
-    }
-
-
-    private String documentIdToViewUrl(String documentId)
-    {
-        // decode base64
-        String viewUrl = new String(decoder.decode(documentId), MainContext.getCharset());
-        return viewUrl;
-    }
-
-
-    /**
      * Handles the response from ElasticSearch that is sent after a bulk
      * submission. If any document failed, it will be logged and attempted to be
      * fixed.
@@ -366,10 +321,8 @@ public class ElasticSearchSender
      *            bulk
      * @param to
      *            the index of the first document that is not submitted anymore
-     * @param documents
-     *            all harvested documents
      */
-    private void handleSubmissionResponse(String response, int from, int to, IJsonArray documents)
+    private void handleSubmissionResponse(String response, int from, int to)
     {
         // parse a json object from the response string
         IJsonArray responseArray = null;
@@ -403,9 +356,7 @@ public class ElasticSearchSender
         boolean hasErrors = false;
         StringBuilder errorBuilder = new StringBuilder(String.format(SUBMIT_PARTIAL_FAILED, from, to));
 
-        // collect and fix failed documents
-        List<IJsonObject> fixedDocuments = new LinkedList<>();
-
+        // collect failed documents
         for (Object r : responseArray) {
             // get the json object that holds the response to a single document
             IJsonObject singleDocResponse = ((IJsonObject) r).getJsonObject(INDEX_JSON);
@@ -419,27 +370,18 @@ public class ElasticSearchSender
             // log the error message
             String errorMessage = formatSubmissionError(singleDocResponse);
             errorBuilder.append(errorMessage);
-
-            // attempt to fix the document
-            IJsonObject fixedDoc = fixErroneousDocument(singleDocResponse, documents);
-
-            if (fixedDoc != null)
-                fixedDocuments.add(fixedDoc);
         }
 
         // log failed documents
         if (hasErrors)
             LOGGER.error(errorBuilder.toString());
-
-        // try to submit the documents again
-        resubmitDocuments(fixedDocuments);
     }
 
 
     private String formatSubmissionError(IJsonObject elasticSearchResponse)
     {
         IJsonObject errorObject = elasticSearchResponse.getJsonObject(ERROR_JSON);
-        final String viewUrl = documentIdToViewUrl(elasticSearchResponse.getString(ID_JSON));
+        final String documentId = elasticSearchResponse.getString(ID_JSON);
 
         // get the reason of the submission failure
         final String submitFailedReason = errorObject.isNull(REASON_JSON)
@@ -459,160 +401,9 @@ public class ElasticSearchSender
         return String.format(
                    SUBMIT_PARTIAL_FAILED_FORMAT,
                    submitFailedReason,
-                   viewUrl,
+                   documentId,
                    exceptionType,
                    exceptionReason);
-    }
-
-
-    /**
-     * Attempts to fix a document that could not be submitted to ElasticSearch.
-     * Searches the ElasticSearch response for error details and removes a field
-     * from the document if it caused the error.
-     *
-     * @param elasticSearchResponse
-     *            the response from elastic search for one submitted document
-     * @param documents
-     *            the documents that are to be submitted
-     */
-    private IJsonObject fixErroneousDocument(IJsonObject elasticSearchResponse, IJsonArray documents)
-    {
-        // get error object from response
-        IJsonObject errorObject = elasticSearchResponse.getJsonObject(ERROR_JSON);
-
-        // get reason for submission failure
-        final String submitFailedReason = (errorObject != null) ? errorObject.getString(REASON_JSON, null) : null;
-
-        if (submitFailedReason == null)
-            return null;
-
-        // make sure it's a parsing error. these can be fixed by removing the
-        // field that cannot be parsed
-        if (submitFailedReason.startsWith(PARSE_ERROR_PREFIX)) {
-            // decode document ID to get the viewUrl
-            final String viewUrl = documentIdToViewUrl(elasticSearchResponse.getString(ID_JSON));
-
-            // find document with matching ViewURL
-            IJsonObject failedDocument = JsonHelper.findObjectInArray(
-                                             documents,
-                                             SearchIndexFactory.VIEW_URL_JSON,
-                                             viewUrl);
-
-            // make sure the failed document was found
-            if (failedDocument != null) {
-                // retrieve the field that could not be parsed
-                String failedField = submitFailedReason.substring(
-                                         PARSE_ERROR_PREFIX.length(),
-                                         submitFailedReason.length() - 1);
-
-                // the error can be nested within JsonObjects. we need to find
-                // the field inside the object tree
-                String[] failedObjPath = failedField.split("\\.");
-                IJsonObject failedObj = failedDocument;
-
-                for (int i = 0; i < failedObjPath.length - 1; i++)
-                    failedObj = failedObj.getJsonObject(failedObjPath[i]);
-
-                // remove erroneous field from document
-                failedObj.remove(failedObjPath[failedObjPath.length - 1]);
-
-                // TODO: mark the corrected document as being changed
-
-                return failedDocument;
-            }
-        }
-
-        return null;
-    }
-
-
-    /**
-     * Submits a list of documents to ElasticSearch, logging the process as
-     * "Resubmitting".
-     *
-     * @param documents
-     *            a list of documents that are to be submitted
-     */
-    private void resubmitDocuments(List<IJsonObject> documents)
-    {
-        // did any document fail?
-        if (documents.size() == 0)
-            return;
-
-        // log resubmission
-        LOGGER.info(String.format(RESUBMISSION_START, documents.size()));
-
-        final String elasticSearchUrl = getBulkSubmissionUrl();
-        final StringBuilder bulkRequestBuilder = new StringBuilder();
-
-        // create bulk submission body
-        for (IJsonObject fixedDoc : documents) {
-            bulkRequestBuilder.append(
-                String.format(
-                    BATCH_POST_INSTRUCTION,
-                    createDocumentID(fixedDoc),
-                    fixedDoc.toJsonString().replace("\n", "")));
-        }
-
-        // re-submit fixed documents
-        String resubmitResponse = httpRequester
-                                  .getRestResponse(RestRequestType.POST, elasticSearchUrl, bulkRequestBuilder.toString(), credentials);
-
-        if (resubmitResponse.indexOf(SUBMIT_ERROR_INDICATOR) == -1)
-            LOGGER.info(RESUBMISSION_OK);
-
-        else {
-            // parse the re-submission response
-            IJsonReader reader = jsonBuilder.createReader(new StringReader(resubmitResponse));
-            IJsonArray resubmitResponseArray = null;
-
-            try {
-                resubmitResponseArray = reader.readObject().getJsonArray(ITEMS_JSON);
-                reader.close();
-
-            } catch (Exception e) {
-                LOGGER.error(e.toString());
-            }
-
-            // re-initialize the error string builder
-            StringBuilder errorBuilder = new StringBuilder(RESUBMISSION_FAILED);
-
-            if (resubmitResponseArray != null) {
-                for (Object r : resubmitResponseArray) {
-                    IJsonObject singleDocResponse = ((IJsonObject) r).getJsonObject(INDEX_JSON);
-                    IJsonObject errorObject = singleDocResponse.getJsonObject(ERROR_JSON);
-
-                    // did an error occur?
-                    if (errorObject != null) {
-                        // get error details
-                        final String viewUrl = documentIdToViewUrl(singleDocResponse.getString(ID_JSON));
-                        final String submitFailedReason = errorObject.isNull(REASON_JSON)
-                                                          ? NULL_JSON
-                                                          : errorObject.getString(REASON_JSON);
-                        final IJsonObject cause = errorObject.getJsonObject(CAUSED_BY_JSON);
-
-                        final String exceptionType = cause.isNull(TYPE_JSON)
-                                                     ? NULL_JSON
-                                                     : cause.getString(TYPE_JSON);
-                        final String exceptionReason = cause.isNull(REASON_JSON)
-                                                       ? NULL_JSON
-                                                       : cause.getString(REASON_JSON);
-
-                        // append document failure to error log
-                        errorBuilder.append(
-                            String.format(
-                                SUBMIT_PARTIAL_FAILED_FORMAT,
-                                submitFailedReason,
-                                viewUrl,
-                                exceptionType,
-                                exceptionReason));
-                    }
-                }
-            }
-
-            // log re-submission errors
-            LOGGER.error(errorBuilder.toString());
-        }
     }
 
 

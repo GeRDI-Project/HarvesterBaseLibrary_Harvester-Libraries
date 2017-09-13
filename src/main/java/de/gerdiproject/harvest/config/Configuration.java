@@ -23,9 +23,10 @@ import de.gerdiproject.harvest.MainContext;
 import de.gerdiproject.harvest.development.DevelopmentTools;
 import de.gerdiproject.harvest.elasticsearch.ElasticSearchSender;
 import de.gerdiproject.harvest.harvester.AbstractHarvester;
-import de.gerdiproject.harvest.utils.FileUtils;
+import de.gerdiproject.harvest.utils.data.DiskIO;
 import de.gerdiproject.json.IJsonBuilder;
 import de.gerdiproject.json.IJsonObject;
+import de.gerdiproject.json.impl.GsonObject;
 import de.gerdiproject.json.impl.JsonBuilder;
 
 import java.util.List;
@@ -33,6 +34,8 @@ import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.google.gson.JsonElement;
 
 
 /**
@@ -69,6 +72,7 @@ public class Configuration
     private final static String INFO = " Configuration:%n%s%n%n To change these settings, please use the corresponding PUT requests.";
 
     private final static IJsonBuilder JSON_BUILDER = new JsonBuilder();
+    private final static DiskIO DISK_IO = new DiskIO();
 
     private static final Logger LOGGER = LoggerFactory.getLogger(Configuration.class);
 
@@ -101,9 +105,10 @@ public class Configuration
     public static String loadFromDisk()
     {
         String path = getConfigFilePath();
-        IJsonObject configJson = (IJsonObject) FileUtils.readJsonFromDisk(path);
+        JsonElement configElement = DISK_IO.getJson(path);
 
-        if (configJson != null) {
+        if (configElement != null) {
+            IJsonObject configJson = new GsonObject(configElement.getAsJsonObject());
             setConfigFromJson(configJson);
 
             String okMsg = String.format(LOAD_OK, path);
@@ -206,7 +211,7 @@ public class Configuration
         String path = getConfigFilePath();
 
         // write to disk
-        return  FileUtils.writeToDisk(path, toJson().toJsonString());
+        return  DISK_IO.writeStringToFile(path, toJson().toJsonString());
     }
 
 

@@ -21,11 +21,11 @@ package de.gerdiproject.harvest.utils;
 
 import de.gerdiproject.harvest.MainContext;
 import de.gerdiproject.harvest.development.DevelopmentTools;
+import de.gerdiproject.harvest.utils.data.DiskIO;
+import de.gerdiproject.harvest.utils.data.WebDataRetriever;
 import de.gerdiproject.json.IJsonArray;
-import de.gerdiproject.json.IJsonBuilder;
 import de.gerdiproject.json.IJsonObject;
-import de.gerdiproject.json.IJsonReader;
-import de.gerdiproject.json.impl.JsonBuilder;
+import de.gerdiproject.json.impl.GsonObject;
 
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
@@ -40,10 +40,11 @@ import java.util.Map;
 
 import javax.ws.rs.core.MediaType;
 
-import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.google.gson.JsonObject;
 
 import javax.ws.rs.core.HttpHeaders;
 
@@ -56,7 +57,6 @@ import javax.ws.rs.core.HttpHeaders;
 public class HttpRequester
 {
     private static final String DATA_JSON = "data";
-    private static final String ERROR_JSON = "Could not load and parse '%s': %s";
     private static final String FILE_PATH = "savedHttpResponses/%s/%sresponse.%s";
     private static final String FILE_ENDING_JSON = "json";
     private static final String FILE_ENDING_HTML = "html";
@@ -64,7 +64,8 @@ public class HttpRequester
 
     private final Charset httpCharset;
     private final DevelopmentTools devTools;
-    private final IJsonBuilder jsonBuilder;
+    private final DiskIO diskIO;
+    private final WebDataRetriever webDataRetriever;
 
     /**
      * if true, no http error responses are being logged
@@ -81,7 +82,8 @@ public class HttpRequester
         httpCharset = MainContext.getCharset();
         suppressWarnings = false;
         devTools = DevelopmentTools.instance();
-        jsonBuilder = new JsonBuilder();
+        diskIO = new DiskIO();
+        webDataRetriever = new WebDataRetriever();
     }
 
 
@@ -98,7 +100,8 @@ public class HttpRequester
         this.httpCharset = httpCharset;
         this.suppressWarnings = suppressWarnings;
         devTools = DevelopmentTools.instance();
-        jsonBuilder = new JsonBuilder();
+        diskIO = new DiskIO();
+        webDataRetriever = new WebDataRetriever();
     }
 
 
@@ -143,63 +146,30 @@ public class HttpRequester
      */
     public IJsonObject getRawJsonFromUrl(String url)
     {
-        IJsonObject jsonResponse = null;
+        JsonObject jsonRaw  = null;
         boolean isResponseReadFromWeb = false;
 
         // read json file from disk, if the option is enabled
-        if (devTools.isReadingHttpFromDisk())
-            jsonResponse = (IJsonObject) FileUtils.readJsonFromDisk(urlToFilePath(url, FILE_ENDING_JSON));
+        if (devTools.isReadingHttpFromDisk()) {
+            String filePath = urlToFilePath(url, FILE_ENDING_JSON);
+            jsonRaw = (JsonObject) diskIO.getJson(filePath);
+        }
 
         // request json from web, if it has not been read from disk already
-        if (jsonResponse == null) {
-            jsonResponse = readJsonFromWeb(url);
+        if (jsonRaw == null) {
+            jsonRaw = (JsonObject) webDataRetriever.getJson(url);
             isResponseReadFromWeb = true;
         }
 
-        // nullify object if it is empty anyway
-        if (jsonResponse != null && jsonResponse.isEmpty())
-            jsonResponse = null;
-
         // write whole response to disk, if the option is enabled
-        if (isResponseReadFromWeb && devTools.isWritingHttpToDisk()) {
-            // deliberately write an empty object to disk, if the response could
-            // not
-            // be retrieved
-            String responseText = (jsonResponse == null) ? "{}" : jsonResponse.toString();
-            FileUtils.writeToDisk(urlToFilePath(url, FILE_ENDING_JSON), responseText);
-        }
+        if (isResponseReadFromWeb && devTools.isWritingHttpToDisk())
+            diskIO.writeJsonToFile(urlToFilePath(url, FILE_ENDING_JSON), jsonRaw);
 
-        return jsonResponse;
-    }
-
-
-    /**
-     * Sends a GET request to a specified URL and tries to parse the response as
-     * a JSON object.
-     *
-     * @param url
-     *            a URL pointing to a JSON object
-     * @return a JSON object, or null if the response could not be parsed
-     */
-    private IJsonObject readJsonFromWeb(String url)
-    {
-        IJsonObject jsonResponse = null;
-
-        try {
-            // send web request
-            InputStream response = new URL(url).openStream();
-
-            // parse the json object
-            IJsonReader jsonReader = jsonBuilder.createReader(new InputStreamReader(response, httpCharset));
-            jsonResponse = jsonReader.readObject();
-            jsonReader.close();
-
-        } catch (Exception e) {
-            if (!suppressWarnings)
-                LOGGER.warn(String.format(ERROR_JSON, url, e.toString()));
-        }
-
-        return jsonResponse;
+        // only create object if it is  not empty
+        if (jsonRaw != null && jsonRaw.size() > 0)
+            return new GsonObject(jsonRaw);
+        else
+            return null;
     }
 
 
@@ -219,11 +189,11 @@ public class HttpRequester
 
         // read json file from disk, if the option is enabled
         if (devTools.isReadingHttpFromDisk())
-            htmlResponse = FileUtils.readHtmlFromDisk(urlToFilePath(url, FILE_ENDING_HTML));
+            htmlResponse = diskIO.getHtml(urlToFilePath(url, FILE_ENDING_HTML));
 
         // request json from web, if it has not been read from disk already
         if (htmlResponse == null) {
-            htmlResponse = readHtmlFromWeb(url);
+            htmlResponse = webDataRetriever.getHtml(url);
             isResponseReadFromWeb = true;
         }
 
@@ -232,40 +202,46 @@ public class HttpRequester
             // deliberately write an empty object to disk, if the response could
             // not be retrieved
             String responseText = (htmlResponse == null) ? "" : htmlResponse.toString();
-            FileUtils.writeToDisk(urlToFilePath(url, FILE_ENDING_HTML), responseText);
+            diskIO.writeStringToFile(urlToFilePath(url, FILE_ENDING_HTML), responseText);
         }
 
         return htmlResponse;
     }
 
-
     /**
-     * Sends a GET request to a specified URL and tries to parse the response as
-     * a HTML document.
+     * Sends a GET request to a specified URL and tries to retrieve the JSON
+     * response, mapping it to a Java object. If the development option is enabled,
+     * the response will be read from disk instead.
      *
-     * @param url
-     *            a URL pointing to HTML content
-     * @return a HTML document, or null if the response could not be parsed
+     * @param url a URL that returns a JSON object
+     * @param targetClass the class of the returned object
+     * @param <T> the type of the returned object
+     *
+     * @return a Java object
      */
-    private Document readHtmlFromWeb(String url)
+    public <T> T getObjectFromUrl(String url, Class<T> targetClass)
     {
-        Document htmlResponse = null;
+        T targetObject = null;
+        boolean isResponseReadFromWeb = false;
 
-        try {
-            // send web request
-            InputStream response = new URL(url).openStream();
+        // read json file from disk, if the option is enabled
+        if (devTools.isReadingHttpFromDisk())
+            targetObject = diskIO.getObject(urlToFilePath(url, FILE_ENDING_JSON), targetClass);
 
-            // parse the html object
-            htmlResponse = Jsoup.parse(response, httpCharset.displayName(), url);
-
-            response.close();
-
-        } catch (Exception e) {
-            if (!suppressWarnings)
-                LOGGER.warn(String.format(ERROR_JSON, url, e.toString()));
+        // request json from web, if it has not been read from disk already
+        if (targetObject == null) {
+            targetObject = webDataRetriever.getObject(url, targetClass);
+            isResponseReadFromWeb = true;
         }
 
-        return htmlResponse;
+        // write whole response to disk, if the option is enabled
+        if (isResponseReadFromWeb && devTools.isWritingHttpToDisk()) {
+            // deliberately write an empty object to disk, if the response could
+            // not be retrieved
+            diskIO.writeObjectToFile(urlToFilePath(url, FILE_ENDING_JSON), targetObject);
+        }
+
+        return targetObject;
     }
 
 
