@@ -30,6 +30,7 @@ import de.gerdiproject.harvest.utils.HarvesterStringUtils;
 import de.gerdiproject.harvest.utils.HttpRequester;
 import de.gerdiproject.json.SearchIndexJson;
 
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -167,7 +168,9 @@ public abstract class AbstractHarvester
 
         startIndex = new AtomicInteger(0);
         endIndex = new AtomicInteger(0);
-        this.harvestedDocuments = new LinkedList<>();
+        this.harvestedDocuments = Collections.synchronizedList(new LinkedList<>());
+
+        init();
     }
 
 
@@ -224,9 +227,7 @@ public abstract class AbstractHarvester
         SearchIndexJson searchIndex = null;
 
         if (startedDate != null && finishedDate != null) {
-            synchronized (harvestedDocuments) {
-                searchIndex = new SearchIndexJson(harvestedDocuments);
-            }
+            searchIndex = new SearchIndexJson(getHarvestedDocuments());
 
             long harvestDuration = (finishedDate.getTime() - startedDate.getTime()) / 1000;
             long harvestStartDate = startedDate.getTime();
@@ -243,15 +244,13 @@ public abstract class AbstractHarvester
 
 
     /**
-     * Returns the harvested documents.
+     * Returns an unmodifiable list of the harvested documents.
      *
-     * @return the harvested documents
+     * @return an unmodifiable list of the harvested documents
      */
-    public final List<IDocument> getHarvestedDocuments()
+    public List<IDocument> getHarvestedDocuments()
     {
-        synchronized (harvestedDocuments) {
-            return harvestedDocuments;
-        }
+        return Collections.unmodifiableList(harvestedDocuments);
     }
 
 
@@ -299,9 +298,7 @@ public abstract class AbstractHarvester
             if (document instanceof ICleanable)
                 ((ICleanable) document).clean();
 
-            synchronized (harvestedDocuments) {
-                harvestedDocuments.add(document);
-            }
+            harvestedDocuments.add(document);
         }
 
         // increment harvest count
@@ -441,9 +438,7 @@ public abstract class AbstractHarvester
     {
         logger.info(String.format(HARVESTER_START, name));
 
-        synchronized (harvestedDocuments) {
-            harvestedDocuments.clear();
-        }
+        harvestedDocuments.clear();
 
         harvestedDocumentCount.set(0);
         startedDate = new Date();
@@ -488,7 +483,7 @@ public abstract class AbstractHarvester
 
             // send to elastic search if auto-submission is enabled
             if (devTools.isAutoSubmitting())
-                ElasticSearchSender.instance().sendToElasticSearch(harvestedDocuments);
+                ElasticSearchSender.instance().sendToElasticSearch(getHarvestedDocuments());
         }
     }
 

@@ -116,7 +116,7 @@ public class DiskIO implements IDataRetriever
      */
     public String writeObjectToFile(String filePath, Object obj)
     {
-        String jsonString = (obj == null) ? "null" : GsonUtils.getGson().toJson(obj);
+        String jsonString = (obj == null) ? "{}" : GsonUtils.getGson().toJson(obj);
         return writeStringToFile(filePath, jsonString);
     }
 
