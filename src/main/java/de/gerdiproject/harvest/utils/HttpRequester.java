@@ -29,6 +29,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.lang.reflect.Type;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.Charset;
@@ -199,6 +200,43 @@ public class HttpRequester
         // request json from web, if it has not been read from disk already
         if (targetObject == null) {
             targetObject = webDataRetriever.getObject(url, targetClass);
+            isResponseReadFromWeb = true;
+        }
+
+        // write whole response to disk, if the option is enabled
+        if (isResponseReadFromWeb && devTools.isWritingHttpToDisk()) {
+            // deliberately write an empty object to disk, if the response could
+            // not be retrieved
+            diskIO.writeObjectToFile(urlToFilePath(url, FILE_ENDING_JSON), targetObject);
+        }
+
+        return targetObject;
+    }
+    
+    
+    /**
+     * Sends a GET request to a specified URL and tries to retrieve the JSON
+     * response, mapping it to a Java object. If the development option is enabled,
+     * the response will be read from disk instead.
+     *
+     * @param url a URL that returns a JSON object
+     * @param targetType the type of the returned object
+     * @param <T> the type of the returned object
+     *
+     * @return a Java object, or null if the object could not be loaded or parsed
+     */
+    public <T> T getObjectFromUrl(String url, Type targetType)
+    {
+        T targetObject = null;
+        boolean isResponseReadFromWeb = false;
+
+        // read json file from disk, if the option is enabled
+        if (devTools.isReadingHttpFromDisk())
+            targetObject = diskIO.getObject(urlToFilePath(url, FILE_ENDING_JSON), targetType);
+
+        // request json from web, if it has not been read from disk already
+        if (targetObject == null) {
+            targetObject = webDataRetriever.getObject(url, targetType);
             isResponseReadFromWeb = true;
         }
 

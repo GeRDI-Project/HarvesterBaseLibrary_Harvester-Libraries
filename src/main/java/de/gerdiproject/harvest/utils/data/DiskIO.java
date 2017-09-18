@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.Reader;
+import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
 import java.util.stream.Collectors;
 
@@ -166,6 +167,24 @@ public class DiskIO implements IDataRetriever
         try {
             Reader reader = createDiskReader(filePath);
             object = GsonUtils.getGson().fromJson(reader, targetClass);
+            reader.close();
+
+        } catch (IOException | IllegalStateException | JsonIOException | JsonSyntaxException e) {
+            LOGGER.warn(String.format(LOAD_FAILED, filePath, e.toString()));
+        }
+
+        return object;
+    }
+
+
+    @Override
+    public <T> T getObject(String filePath, Type targetType)
+    {
+        T object = null;
+
+        try {
+            Reader reader = createDiskReader(filePath);
+            object = GsonUtils.getGson().fromJson(reader, targetType);
             reader.close();
 
         } catch (IOException | IllegalStateException | JsonIOException | JsonSyntaxException e) {

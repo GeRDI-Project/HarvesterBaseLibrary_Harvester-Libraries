@@ -72,7 +72,7 @@ public abstract class AbstractCompositeHarvester extends AbstractHarvester
                               mergedDocuments.addAll(subHarvester.getHarvestedDocuments())
                              );
 
-        return Collections.unmodifiableList( mergedDocuments );
+        return Collections.unmodifiableList(mergedDocuments);
     }
 
 
