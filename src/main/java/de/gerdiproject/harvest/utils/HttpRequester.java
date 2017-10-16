@@ -212,8 +212,8 @@ public class HttpRequester
 
         return targetObject;
     }
-    
-    
+
+
     /**
      * Sends a GET request to a specified URL and tries to retrieve the JSON
      * response, mapping it to a Java object. If the development option is enabled,
