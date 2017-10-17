@@ -150,7 +150,14 @@ public class MainContext
         // exception handler
         .exceptionally(throwable -> {
         	LOGGER.info(FAILED);
-            LOGGER.error(throwable.getCause().toString());
+        	
+        	StringBuilder errorMessage = new StringBuilder( throwable.getCause().getMessage() );
+        	StackTraceElement[] stackTrace = throwable.getCause().getStackTrace();
+        	for(StackTraceElement ele : stackTrace)
+        	{
+        		errorMessage.append( ele.toString() );
+        	}
+            LOGGER.error(errorMessage.toString());
             return false;
         });
     }
