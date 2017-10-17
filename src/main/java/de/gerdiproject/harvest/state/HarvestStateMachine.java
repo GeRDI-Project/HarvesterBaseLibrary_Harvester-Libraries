@@ -32,7 +32,13 @@ public class HarvestStateMachine
     private HarvestStateMachine()
     {
         currentState = new PreloadingState();
+    }
 
+    /**
+     * Init must be called explicitly, because this class must be referenced once, in order to work.
+     */
+    public void init()
+    {
         // register event listeners
         EventSystem.instance().addListener(ChangeStateEvent.class, (ChangeStateEvent e) -> setState(e.getState()));
     }

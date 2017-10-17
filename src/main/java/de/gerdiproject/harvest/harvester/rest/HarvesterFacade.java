@@ -21,14 +21,10 @@ package de.gerdiproject.harvest.harvester.rest;
 
 import de.gerdiproject.harvest.harvester.AbstractHarvester;
 import de.gerdiproject.harvest.state.HarvestStateMachine;
-import de.gerdiproject.harvest.state.impl.HarvestingState;
 import de.gerdiproject.json.GsonUtils;
 import de.gerdiproject.json.SearchIndexJson;
 import de.gerdiproject.harvest.MainContext;
-import de.gerdiproject.harvest.event.EventSystem;
-import de.gerdiproject.harvest.event.impl.ChangeStateEvent;
 
-import java.util.Date;
 import java.util.List;
 import java.util.Map.Entry;
 import javax.ws.rs.Consumes;
@@ -59,14 +55,6 @@ public class HarvesterFacade
                                        + "PUT \t\t\tSets x-www-form-urlencoded parameters for the harvester (%s).%n"
                                        + "PUT/range\t\tSets the start and end index of the harvest (from, to). default: 0, %d%n";
     private static final String PROPERTY = "%s:\t%s%n";
-    private static final String HARVEST_NOT_STARTED = "Not yet harvested!";
-    private static final String HARVEST_IN_PROGRESS = "Harvested %d / %d (%.2f%%)  Remaining Time: %s";
-    private static final String DAYS_HOURS = "%dd %dh";
-    private static final String HOURS_MINUTES = "%dh %dm";
-    private static final String MINUTES_SECONDS = "%dm %ds";
-    private static final String SECONDS = "%ds";
-    private static final String CANNOT_ESTIMATE = "unknown";
-    private static final String HARVEST_DONE = "Harvested finished at %s";
     private static final String HARVEST_STARTED = "Harvesting started";
     private static final String HARVEST_ALREADY_STARTED = "Another harvest is already in progress";
     private static final String HARVEST_ABORTED = "Harvesting aborted";

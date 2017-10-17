@@ -52,7 +52,7 @@ public class MainContext
     private AbstractHarvester harvester;
     private Charset charset;
 
-    private static MainContext instance;
+    private static MainContext instance = new MainContext();
 
 
     /**
@@ -71,9 +71,6 @@ public class MainContext
      */
     public static AbstractHarvester getHarvester()
     {
-        if (instance == null)
-            instance = new MainContext();
-
         return instance.harvester;
     }
 
@@ -85,9 +82,6 @@ public class MainContext
      */
     public static String getModuleName()
     {
-        if (instance == null)
-            instance = new MainContext();
-
         return instance.moduleName;
     }
 
@@ -97,9 +91,6 @@ public class MainContext
      */
     public static Charset getCharset()
     {
-        if (instance == null)
-            instance = new MainContext();
-
         return instance.charset;
     }
 
@@ -119,9 +110,6 @@ public class MainContext
      */
     public static <T extends AbstractHarvester> void init(String moduleName, Class<T> harvesterClass, Charset charset)
     {
-        if (instance == null)
-            instance = new MainContext();
-
         // set parameters
         instance.moduleName = moduleName;
         instance.charset = charset;

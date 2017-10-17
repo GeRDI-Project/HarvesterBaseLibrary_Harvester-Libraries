@@ -19,8 +19,8 @@
 package de.gerdiproject.harvest;
 
 
-import de.gerdiproject.harvest.config.Configuration;
 import de.gerdiproject.harvest.harvester.AbstractHarvester;
+import de.gerdiproject.harvest.state.HarvestStateMachine;
 import de.gerdiproject.json.GsonUtils;
 
 import java.lang.reflect.ParameterizedType;
@@ -109,6 +109,9 @@ public class ContextListener<T extends AbstractHarvester> implements ServletCont
     {
         // init Json utilities
         GsonUtils.init(createGsonBuilder());
+
+        // init state machine
+        HarvestStateMachine.instance().init();
 
         // init main context
         MainContext.init(getServiceName(), harvesterClass, getCharset());

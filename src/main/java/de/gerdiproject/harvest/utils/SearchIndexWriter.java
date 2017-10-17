@@ -28,7 +28,6 @@ import com.google.gson.stream.JsonWriter;
 import de.gerdiproject.harvest.IDocument;
 import de.gerdiproject.harvest.MainContext;
 import de.gerdiproject.json.GsonUtils;
-import de.gerdiproject.json.SearchIndexJson;
 
 public class SearchIndexWriter
 {
