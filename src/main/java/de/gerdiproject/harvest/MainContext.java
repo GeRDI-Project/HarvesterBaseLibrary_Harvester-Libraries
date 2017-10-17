@@ -24,7 +24,12 @@ import java.nio.charset.Charset;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import de.gerdiproject.harvest.event.EventSystem;
+import de.gerdiproject.harvest.event.impl.ChangeStateEvent;
 import de.gerdiproject.harvest.harvester.AbstractHarvester;
+import de.gerdiproject.harvest.state.HarvestStateMachine;
+import de.gerdiproject.harvest.state.impl.ReadyState;
+import de.gerdiproject.harvest.utils.CancelableFuture;
 
 
 /**
@@ -38,7 +43,6 @@ public class MainContext
 {
     private String moduleName;
 
-    private static final String INIT_FINISHED = "%s is now ready!";
     private static final String INIT_START = "Initializing %s...";
     private static final String DONE = "done!";
     private static final String FAILED = "FAILED!";
@@ -122,20 +126,25 @@ public class MainContext
         instance.charset = charset;
 
         // init harvester
-        try {
-            AbstractHarvester harvey = harvesterClass.newInstance();
+        CancelableFuture<Boolean> initProcess = new CancelableFuture<>(() -> {
+		            AbstractHarvester harvey = harvesterClass.newInstance();
+		            instance.harvester = harvey;
+        			LOGGER.info(String.format(INIT_START, harvey.getName()));
+        			harvey.init();
+        			return true;
+        });
 
-            LOGGER.info(String.format(INIT_START, harvey.getName()));
-            harvey.init();
-            instance.harvester = harvey;
+        // success handler
+        initProcess.thenApply((isSuccessful) -> {
             LOGGER.info(DONE);
-        } catch (InstantiationException | IllegalAccessException e) {
-            LOGGER.info(FAILED);
-            LOGGER.error(e.toString());
-            return;
-        }
-
-        // log ready state
-        LOGGER.info(String.format(INIT_FINISHED, instance.moduleName));
+            EventSystem.instance().sendEvent( new ChangeStateEvent(new ReadyState()) );
+            return isSuccessful;
+        })
+        // exception handler
+        .exceptionally(throwable -> {
+        	LOGGER.info(FAILED);
+            LOGGER.error(throwable.getCause().toString());
+            return false;
+        });
     }
 }

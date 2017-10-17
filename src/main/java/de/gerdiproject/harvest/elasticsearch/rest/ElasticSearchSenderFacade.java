@@ -117,12 +117,13 @@ public class ElasticSearchSenderFacade
             harvester.harvest();
 
         // retrieve harvested search index
-        List<IDocument> harvestedDocuments = harvester.getHarvestedDocuments();
+        // TODO List<IDocument> harvestedDocuments = harvester.getHarvestedDocuments();
 
         // send search index to Elastic Search
-        String status = ElasticSearchSender.instance().sendToElasticSearch(harvestedDocuments);
+        // TODO String status = ElasticSearchSender.instance().sendToElasticSearch(harvestedDocuments);
 
-        return status;
+        // TODO return status;
+        return null;
     }
 
 

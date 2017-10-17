@@ -20,9 +20,14 @@ package de.gerdiproject.harvest.harvester.rest;
 
 
 import de.gerdiproject.harvest.harvester.AbstractHarvester;
+import de.gerdiproject.harvest.state.HarvestStateMachine;
+import de.gerdiproject.harvest.state.impl.HarvestingState;
 import de.gerdiproject.json.GsonUtils;
 import de.gerdiproject.json.SearchIndexJson;
 import de.gerdiproject.harvest.MainContext;
+import de.gerdiproject.harvest.event.EventSystem;
+import de.gerdiproject.harvest.event.impl.ChangeStateEvent;
+
 import java.util.Date;
 import java.util.List;
 import java.util.Map.Entry;
@@ -49,7 +54,6 @@ public class HarvesterFacade
 {
     private static final String INFO = "- %s -%n%nStatus:\t\t%s%n%nRange:\t\t%d-%d%n%s%n%n"
                                        + "GET/result \t\tReturns the search index%n"
-                                       + "POST/save\t\tSaves the search index to disk%n"
                                        + "POST\t\t\tCreates a search index%n"
                                        + "POST/abort\t\tAborts an ongoing harvest%n"
                                        + "PUT \t\t\tSets x-www-form-urlencoded parameters for the harvester (%s).%n"
@@ -233,31 +237,7 @@ public class HarvesterFacade
     })
     public String getInfo()
     {
-        // get harvest date
-        Date harvestDate = harvester.getHarvestDate();
-
-        String status;
-
-        if (harvester.isHarvesting()) {
-            int numberOfHarvestedDocuments = harvester.getNumberOfHarvestedDocuments();
-            int totalNumberOfDocuments = harvester.getEndIndex() - harvester.getStartIndex();
-
-            // calculate completion in percent and estimate completion time
-            double progressInPercent = 100.0 * numberOfHarvestedDocuments / totalNumberOfDocuments;
-            String estimatedCompletion = getDurationText(harvester.estimateRemainingSeconds());
-
-            status = String.format(
-                         HARVEST_IN_PROGRESS,
-                         numberOfHarvestedDocuments,
-                         totalNumberOfDocuments,
-                         progressInPercent,
-                         estimatedCompletion);
-
-        } else if (harvestDate != null)
-            status = String.format(HARVEST_DONE, harvestDate.toString());
-
-        else
-            status = HARVEST_NOT_STARTED;
+        String status = HarvestStateMachine.instance().getCurrentState().getProgressString();
 
         // get harvesting range
         int from = harvester.getStartIndex();
@@ -281,44 +261,6 @@ public class HarvesterFacade
         int maxRange = harvester.getMaxNumberOfDocuments();
 
         return String.format(INFO, name, status, from, to, sb.toString(), validProps, maxRange);
-    }
-
-
-    /**
-     * Creates a duration string out of a specified number of seconds
-     *
-     * @param durationInSeconds
-     *            the duration in seconds (duh!)
-     * @return a formatted duration string, or "unknown" if the duration is
-     *         negative
-     */
-    private String getDurationText(long durationInSeconds)
-    {
-        String durationText;
-
-        if (durationInSeconds < 0)
-            durationText = CANNOT_ESTIMATE;
-
-        else if (durationInSeconds <= 60)
-            durationText = String.format(SECONDS, durationInSeconds);
-
-        else if (durationInSeconds <= 3600) {
-            long minutes = durationInSeconds / 60;
-            long seconds = durationInSeconds - minutes * 60;
-            durationText = String.format(MINUTES_SECONDS, minutes, seconds);
-
-        } else if (durationInSeconds <= 86400) {
-            long hours = durationInSeconds / 3600;
-            long minutes = durationInSeconds / 60 - hours * 60;
-            durationText = String.format(HOURS_MINUTES, hours, minutes);
-
-        } else {
-            long days = durationInSeconds / 86400;
-            long hours = durationInSeconds / 3600 - days * 24;
-            durationText = String.format(DAYS_HOURS, days, hours);
-        }
-
-        return durationText;
     }
 
 

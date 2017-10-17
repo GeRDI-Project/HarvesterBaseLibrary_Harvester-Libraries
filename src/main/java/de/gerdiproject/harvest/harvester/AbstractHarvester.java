@@ -24,12 +24,19 @@ import de.gerdiproject.harvest.IDocument;
 import de.gerdiproject.harvest.MainContext;
 import de.gerdiproject.harvest.development.DevelopmentTools;
 import de.gerdiproject.harvest.elasticsearch.ElasticSearchSender;
+import de.gerdiproject.harvest.event.EventSystem;
+import de.gerdiproject.harvest.event.impl.ChangeStateEvent;
+import de.gerdiproject.harvest.event.impl.DocumentHarvestedEvent;
 import de.gerdiproject.harvest.harvester.rest.HarvesterFacade;
+import de.gerdiproject.harvest.state.impl.HarvestingState;
+import de.gerdiproject.harvest.state.impl.ReadyState;
 import de.gerdiproject.harvest.utils.CancelableFuture;
 import de.gerdiproject.harvest.utils.HarvesterStringUtils;
 import de.gerdiproject.harvest.utils.HttpRequester;
+import de.gerdiproject.harvest.utils.SearchIndexWriter;
 import de.gerdiproject.json.SearchIndexJson;
 
+import java.io.File;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -69,7 +76,6 @@ public abstract class AbstractHarvester
     protected static final String HARVEST_ABORTED = "HARVEST ABORTED!";
 
     private final Map<String, String> properties;
-    protected List<IDocument> harvestedDocuments;
 
     private Date startedDate;
     private Date finishedDate;
@@ -84,6 +90,7 @@ public abstract class AbstractHarvester
     protected String name;
     protected String hash;
     protected final HttpRequester httpRequester;
+    protected final SearchIndexWriter indexWriter;
 
     protected final Logger logger; // NOPMD - we want to retrieve the type of the inheriting class
 
@@ -168,7 +175,7 @@ public abstract class AbstractHarvester
 
         startIndex = new AtomicInteger(0);
         endIndex = new AtomicInteger(0);
-        this.harvestedDocuments = Collections.synchronizedList(new LinkedList<>());
+        indexWriter = new SearchIndexWriter(name);
 
         init();
     }
@@ -225,7 +232,7 @@ public abstract class AbstractHarvester
     public final SearchIndexJson createDetailedJson()
     {
         SearchIndexJson searchIndex = null;
-
+/*TODO
         if (startedDate != null && finishedDate != null) {
             searchIndex = new SearchIndexJson(getHarvestedDocuments());
 
@@ -238,6 +245,7 @@ public abstract class AbstractHarvester
             searchIndex.setDurationInSeconds(harvestDuration);
             searchIndex.setWasHarvestedFromDisk(wasReadFromDisk);
         }
+        */
 
         return searchIndex;
     }
@@ -248,9 +256,9 @@ public abstract class AbstractHarvester
      *
      * @return an unmodifiable list of the harvested documents
      */
-    public List<IDocument> getHarvestedDocuments()
+    public File getHarvestedDocuments()
     {
-        return Collections.unmodifiableList(harvestedDocuments);
+        return indexWriter.getOutputFile();
     }
 
 
@@ -298,7 +306,8 @@ public abstract class AbstractHarvester
             if (document instanceof ICleanable)
                 ((ICleanable) document).clean();
 
-            harvestedDocuments.add(document);
+            indexWriter.addDocument(document);
+            EventSystem.instance().sendEvent( new DocumentHarvestedEvent(document) );
         }
 
         // increment harvest count
@@ -438,11 +447,13 @@ public abstract class AbstractHarvester
     {
         logger.info(String.format(HARVESTER_START, name));
 
-        harvestedDocuments.clear();
+        indexWriter.clear();
 
         harvestedDocumentCount.set(0);
         startedDate = new Date();
 
+    	EventSystem.instance().sendEvent( new ChangeStateEvent( new HarvestingState( endIndex.get() - startIndex.get() ) ) );
+    	
         // start asynchronous harvest
         currentHarvestingProcess = new CancelableFuture<>(
             () -> harvestInternal(startIndex.get(), endIndex.get()));
@@ -481,9 +492,11 @@ public abstract class AbstractHarvester
             // log complete harvest end
             logger.info(HARVEST_DONE);
 
+
+        	EventSystem.instance().sendEvent( new ChangeStateEvent( new ReadyState()));
             // send to elastic search if auto-submission is enabled
-            if (devTools.isAutoSubmitting())
-                ElasticSearchSender.instance().sendToElasticSearch(getHarvestedDocuments());
+            // TODO if (devTools.isAutoSubmitting())
+                // TODO ElasticSearchSender.instance().sendToElasticSearch(getHarvestedDocuments());
         }
     }
 

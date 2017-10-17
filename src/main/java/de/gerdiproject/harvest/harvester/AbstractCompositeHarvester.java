@@ -62,7 +62,7 @@ public abstract class AbstractCompositeHarvester extends AbstractHarvester
         this.subHarvesters = subHarvesters;
     }
 
-
+/* TODO
     @Override
     public List<IDocument> getHarvestedDocuments()
     {
@@ -72,8 +72,8 @@ public abstract class AbstractCompositeHarvester extends AbstractHarvester
                               mergedDocuments.addAll(subHarvester.getHarvestedDocuments())
                              );
 
-        return Collections.unmodifiableList( mergedDocuments );
-    }
+        return Collections.unmodifiableList(mergedDocuments);
+    }*/
 
 
     /**
