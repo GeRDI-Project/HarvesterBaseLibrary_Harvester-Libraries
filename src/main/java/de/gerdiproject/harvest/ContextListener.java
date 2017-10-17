@@ -112,9 +112,6 @@ public class ContextListener<T extends AbstractHarvester> implements ServletCont
 
         // init main context
         MainContext.init(getServiceName(), harvesterClass, getCharset());
-
-        // try to load configuration
-        Configuration.loadFromDisk();
     }
 
 

@@ -24,6 +24,7 @@ import java.nio.charset.Charset;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import de.gerdiproject.harvest.config.Configuration;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.event.impl.ChangeStateEvent;
 import de.gerdiproject.harvest.harvester.AbstractHarvester;
@@ -137,7 +138,13 @@ public class MainContext
         // success handler
         initProcess.thenApply((isSuccessful) -> {
             LOGGER.info(DONE);
+
+            // try to load configuration
+            Configuration.loadFromDisk();
+            
+            // change state
             EventSystem.instance().sendEvent( new ChangeStateEvent(new ReadyState()) );
+            
             return isSuccessful;
         })
         // exception handler
