@@ -62,18 +62,18 @@ public abstract class AbstractCompositeHarvester extends AbstractHarvester
         this.subHarvesters = subHarvesters;
     }
 
-/* TODO
-    @Override
-    public List<IDocument> getHarvestedDocuments()
-    {
-        List<IDocument> mergedDocuments = new LinkedList<>();
+    /* TODO
+        @Override
+        public List<IDocument> getHarvestedDocuments()
+        {
+            List<IDocument> mergedDocuments = new LinkedList<>();
 
-        subHarvesters.forEach((AbstractHarvester subHarvester) ->
-                              mergedDocuments.addAll(subHarvester.getHarvestedDocuments())
-                             );
+            subHarvesters.forEach((AbstractHarvester subHarvester) ->
+                                  mergedDocuments.addAll(subHarvester.getHarvestedDocuments())
+                                 );
 
-        return Collections.unmodifiableList(mergedDocuments);
-    }*/
+            return Collections.unmodifiableList(mergedDocuments);
+        }*/
 
 
     /**

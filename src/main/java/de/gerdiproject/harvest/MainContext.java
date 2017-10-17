@@ -45,8 +45,9 @@ public class MainContext
     private String moduleName;
 
     private static final String INIT_START = "Initializing %s...";
+    private static final String INIT_FAILED = "Could not initialize Harvester!";
     private static final String DONE = "done!";
-    private static final String FAILED = "FAILED!";
+
     private static final Logger LOGGER = LoggerFactory.getLogger(MainContext.class);
 
     private AbstractHarvester harvester;
@@ -128,11 +129,13 @@ public class MainContext
 
         // init harvester
         CancelableFuture<Boolean> initProcess = new CancelableFuture<>(() -> {
-		            AbstractHarvester harvey = harvesterClass.newInstance();
-		            instance.harvester = harvey;
-        			LOGGER.info(String.format(INIT_START, harvey.getName()));
-        			harvey.init();
-        			return true;
+            AbstractHarvester harvey = harvesterClass.newInstance();
+
+            LOGGER.info(String.format(INIT_START, harvey.getName()));
+
+            instance.harvester = harvey;
+            harvey.init();
+            return true;
         });
 
         // success handler
@@ -141,24 +144,15 @@ public class MainContext
 
             // try to load configuration
             Configuration.loadFromDisk();
-            
+
             // change state
-            EventSystem.instance().sendEvent( new ChangeStateEvent(new ReadyState()) );
-            
+            EventSystem.instance().sendEvent(new ChangeStateEvent(new ReadyState()));
+
             return isSuccessful;
         })
         // exception handler
         .exceptionally(throwable -> {
-        	LOGGER.info(FAILED);
-        	LOGGER.error(throwable.getCause().getMessage(), throwable.getCause());
-        	
-        	StringBuilder errorMessage = new StringBuilder( throwable.getCause().toString() );
-        	StackTraceElement[] stackTrace = throwable.getCause().getStackTrace();
-        	for(StackTraceElement ele : stackTrace)
-        	{
-        		errorMessage.append('\n').append( ele.toString() );
-        	}
-            LOGGER.error(errorMessage.toString());
+            LOGGER.error(INIT_FAILED, throwable.getCause());
             return false;
         });
     }

@@ -23,17 +23,17 @@ import de.gerdiproject.harvest.state.IHarvestState;
 
 public class ChangeStateEvent implements IEvent
 {
-	private final IHarvestState state;
-
-	
-	public ChangeStateEvent( IHarvestState state )
-	{
-		this.state = state;
-	}
+    private final IHarvestState state;
 
 
-	public IHarvestState getState()
-	{
-		return state;
-	}
+    public ChangeStateEvent(IHarvestState state)
+    {
+        this.state = state;
+    }
+
+
+    public IHarvestState getState()
+    {
+        return state;
+    }
 }

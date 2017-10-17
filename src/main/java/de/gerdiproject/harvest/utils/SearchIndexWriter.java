@@ -102,8 +102,8 @@ public class SearchIndexWriter
         }
     }
 
-	public File getOutputFile()
-	{
-		return outputFile;
-	}
+    public File getOutputFile()
+    {
+        return outputFile;
+    }
 }

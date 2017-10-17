@@ -39,16 +39,16 @@ public abstract class AbstractProgressHarvestState implements IHarvestState
     protected int currentProgress;
     protected int maxProgress;
     protected long startTimeStamp;
-    
-	abstract public String getName();
-	
-	
-	 @Override
-	public void onStateEnter()
-	{
-    	startTimeStamp = new Date().getTime();
-	}
-	 
+
+    abstract public String getName();
+
+
+    @Override
+    public void onStateEnter()
+    {
+        startTimeStamp = new Date().getTime();
+    }
+
 
     @Override
     public String getProgressString()
@@ -96,7 +96,7 @@ public abstract class AbstractProgressHarvestState implements IHarvestState
     {
         return Math.min(100f, 100f * currentProgress / maxProgress);
     }
-    
+
 
     /**
      * Creates a duration string out of a specified number of seconds
@@ -138,7 +138,7 @@ public abstract class AbstractProgressHarvestState implements IHarvestState
 
     /**
      * Adds progress to the state and logs a percentual increase if applicable.
-     * 
+     *
      * @param progress a number that represents progress of this state
      */
     public void addProgress(int progress)

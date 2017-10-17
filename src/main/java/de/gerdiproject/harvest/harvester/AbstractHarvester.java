@@ -176,8 +176,6 @@ public abstract class AbstractHarvester
         startIndex = new AtomicInteger(0);
         endIndex = new AtomicInteger(0);
         indexWriter = new SearchIndexWriter(name);
-
-        init();
     }
 
 
@@ -232,20 +230,20 @@ public abstract class AbstractHarvester
     public final SearchIndexJson createDetailedJson()
     {
         SearchIndexJson searchIndex = null;
-/*TODO
-        if (startedDate != null && finishedDate != null) {
-            searchIndex = new SearchIndexJson(getHarvestedDocuments());
+        /*TODO
+                if (startedDate != null && finishedDate != null) {
+                    searchIndex = new SearchIndexJson(getHarvestedDocuments());
 
-            long harvestDuration = (finishedDate.getTime() - startedDate.getTime()) / 1000;
-            long harvestStartDate = startedDate.getTime();
-            boolean wasReadFromDisk = DevelopmentTools.instance().isReadingHttpFromDisk();
+                    long harvestDuration = (finishedDate.getTime() - startedDate.getTime()) / 1000;
+                    long harvestStartDate = startedDate.getTime();
+                    boolean wasReadFromDisk = DevelopmentTools.instance().isReadingHttpFromDisk();
 
-            searchIndex.setHarvestDate(harvestStartDate);
-            searchIndex.setHash(hash);
-            searchIndex.setDurationInSeconds(harvestDuration);
-            searchIndex.setWasHarvestedFromDisk(wasReadFromDisk);
-        }
-        */
+                    searchIndex.setHarvestDate(harvestStartDate);
+                    searchIndex.setHash(hash);
+                    searchIndex.setDurationInSeconds(harvestDuration);
+                    searchIndex.setWasHarvestedFromDisk(wasReadFromDisk);
+                }
+                */
 
         return searchIndex;
     }
@@ -307,7 +305,7 @@ public abstract class AbstractHarvester
                 ((ICleanable) document).clean();
 
             indexWriter.addDocument(document);
-            EventSystem.instance().sendEvent( new DocumentHarvestedEvent(document) );
+            EventSystem.instance().sendEvent(new DocumentHarvestedEvent(document));
         }
 
         // increment harvest count
@@ -452,8 +450,8 @@ public abstract class AbstractHarvester
         harvestedDocumentCount.set(0);
         startedDate = new Date();
 
-    	EventSystem.instance().sendEvent( new ChangeStateEvent( new HarvestingState( endIndex.get() - startIndex.get() ) ) );
-    	
+        EventSystem.instance().sendEvent(new ChangeStateEvent(new HarvestingState(endIndex.get() - startIndex.get())));
+
         // start asynchronous harvest
         currentHarvestingProcess = new CancelableFuture<>(
             () -> harvestInternal(startIndex.get(), endIndex.get()));
@@ -493,10 +491,10 @@ public abstract class AbstractHarvester
             logger.info(HARVEST_DONE);
 
 
-        	EventSystem.instance().sendEvent( new ChangeStateEvent( new ReadyState()));
+            EventSystem.instance().sendEvent(new ChangeStateEvent(new ReadyState()));
             // send to elastic search if auto-submission is enabled
             // TODO if (devTools.isAutoSubmitting())
-                // TODO ElasticSearchSender.instance().sendToElasticSearch(getHarvestedDocuments());
+            // TODO ElasticSearchSender.instance().sendToElasticSearch(getHarvestedDocuments());
         }
     }
 

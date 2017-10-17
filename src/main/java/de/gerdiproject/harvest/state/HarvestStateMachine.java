@@ -24,36 +24,36 @@ import de.gerdiproject.harvest.state.impl.PreloadingState;
 
 public class HarvestStateMachine
 {
-	private static final HarvestStateMachine instance = new HarvestStateMachine();
-	
-	private IHarvestState currentState;
-	
-	
-	private HarvestStateMachine()
-	{
-		currentState = new PreloadingState();
-		
-		// register event listeners
-		EventSystem.instance().addListener( ChangeStateEvent.class, (ChangeStateEvent e) -> setState(e.getState()) );
-	}
-	
-	
-	public static HarvestStateMachine instance()
-	{
-		return instance;
-	}
+    private static final HarvestStateMachine instance = new HarvestStateMachine();
 
-	
-	private void setState( IHarvestState newState )
-	{
-		currentState.onStateLeave();
-		currentState = newState;
-		currentState.onStateEnter();
-	}
+    private IHarvestState currentState;
 
-	
-	public IHarvestState getCurrentState()
-	{
-		return currentState;
-	}
+
+    private HarvestStateMachine()
+    {
+        currentState = new PreloadingState();
+
+        // register event listeners
+        EventSystem.instance().addListener(ChangeStateEvent.class, (ChangeStateEvent e) -> setState(e.getState()));
+    }
+
+
+    public static HarvestStateMachine instance()
+    {
+        return instance;
+    }
+
+
+    private void setState(IHarvestState newState)
+    {
+        currentState.onStateLeave();
+        currentState = newState;
+        currentState.onStateEnter();
+    }
+
+
+    public IHarvestState getCurrentState()
+    {
+        return currentState;
+    }
 }
