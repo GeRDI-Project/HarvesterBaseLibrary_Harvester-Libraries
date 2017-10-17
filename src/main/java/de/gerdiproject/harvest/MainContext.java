@@ -150,12 +150,13 @@ public class MainContext
         // exception handler
         .exceptionally(throwable -> {
         	LOGGER.info(FAILED);
+        	LOGGER.error(throwable.getCause().getMessage(), throwable.getCause());
         	
-        	StringBuilder errorMessage = new StringBuilder( throwable.getCause().getMessage() );
+        	StringBuilder errorMessage = new StringBuilder( throwable.getCause().toString() );
         	StackTraceElement[] stackTrace = throwable.getCause().getStackTrace();
         	for(StackTraceElement ele : stackTrace)
         	{
-        		errorMessage.append( ele.toString() );
+        		errorMessage.append('\n').append( ele.toString() );
         	}
             LOGGER.error(errorMessage.toString());
             return false;
