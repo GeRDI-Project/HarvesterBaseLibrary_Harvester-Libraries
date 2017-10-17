@@ -28,7 +28,6 @@ import de.gerdiproject.harvest.config.Configuration;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.event.impl.ChangeStateEvent;
 import de.gerdiproject.harvest.harvester.AbstractHarvester;
-import de.gerdiproject.harvest.state.HarvestStateMachine;
 import de.gerdiproject.harvest.state.impl.ReadyState;
 import de.gerdiproject.harvest.utils.CancelableFuture;
 
@@ -44,9 +43,9 @@ public class MainContext
 {
     private String moduleName;
 
-    private static final String INIT_START = "Initializing %s...";
+    private static final String INIT_START = "Initializing Harvester...";
     private static final String INIT_FAILED = "Could not initialize Harvester!";
-    private static final String DONE = "done!";
+    private static final String INIT_SUCCESS = "%s initialized!";
 
     private static final Logger LOGGER = LoggerFactory.getLogger(MainContext.class);
 
@@ -129,18 +128,15 @@ public class MainContext
 
         // init harvester
         CancelableFuture<Boolean> initProcess = new CancelableFuture<>(() -> {
-            AbstractHarvester harvey = harvesterClass.newInstance();
-
-            LOGGER.info(String.format(INIT_START, harvey.getName()));
-
-            instance.harvester = harvey;
-            harvey.init();
+            LOGGER.info(INIT_START);
+            instance.harvester = harvesterClass.newInstance();
+            instance.harvester.init();
             return true;
         });
 
         // success handler
         initProcess.thenApply((isSuccessful) -> {
-            LOGGER.info(DONE);
+            LOGGER.info(String.format(INIT_SUCCESS, instance.harvester.getName()));
 
             // try to load configuration
             Configuration.loadFromDisk();
