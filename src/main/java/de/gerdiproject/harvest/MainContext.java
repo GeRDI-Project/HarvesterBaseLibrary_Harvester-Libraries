@@ -20,6 +20,7 @@ package de.gerdiproject.harvest;
 
 
 import java.nio.charset.Charset;
+import java.util.function.Function;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,6 +29,7 @@ import de.gerdiproject.harvest.config.Configuration;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.event.impl.ChangeStateEvent;
 import de.gerdiproject.harvest.harvester.AbstractHarvester;
+import de.gerdiproject.harvest.state.impl.NotReadyState;
 import de.gerdiproject.harvest.state.impl.ReadyState;
 import de.gerdiproject.harvest.utils.CancelableFuture;
 
@@ -98,19 +100,16 @@ public class MainContext
     /**
      * Sets up global parameters and the harvester.
      *
-     * @param <T>
-     *            an AbstractHarvester subclass
-     * @param moduleName
-     *            name of this application
-     * @param harvesterClass
-     *            an AbstractHarvester subclass
-     * @param charset
-     *            the default charset for processing strings
+     * @param <T> an AbstractHarvester subclass
+     * @param moduleName name of this application
+     * @param harvesterClass an AbstractHarvester subclass
+     * @param charset the default charset for processing strings
+     * 
      * @see de.gerdiproject.harvest.harvester.AbstractHarvester
      */
     public static <T extends AbstractHarvester> void init(String moduleName, Class<T> harvesterClass, Charset charset)
     {
-        // set parameters
+        // set global parameters
         instance.moduleName = moduleName;
         instance.charset = charset;
 
@@ -121,23 +120,42 @@ public class MainContext
             instance.harvester.init();
             return true;
         });
-
-        // success handler
-        initProcess.thenApply((isSuccessful) -> {
-            LOGGER.info(String.format(INIT_SUCCESS, instance.harvester.getName()));
-
-            // try to load configuration
-            Configuration.loadFromDisk();
-
-            // change state
-            EventSystem.instance().sendEvent(new ChangeStateEvent(new ReadyState()));
-
-            return isSuccessful;
-        })
-        // exception handler
-        .exceptionally(throwable -> {
-            LOGGER.error(INIT_FAILED, throwable.getCause());
-            return false;
-        });
+        initProcess.thenApply(onHarvesterInitializedSuccess)
+        .exceptionally(onHarvesterInitializedFailed);
     }
+    
+
+    /**
+     * This function is called when the asynchronous harvester initialization completes successfully.
+     * It logs the success and changes the state machine's current state.
+     */
+    private static Function<Boolean, Boolean> onHarvesterInitializedSuccess = (Boolean state) -> {
+    	
+    	// log sucess
+        LOGGER.info(String.format(INIT_SUCCESS, instance.harvester.getName()));
+
+        // try to load configuration
+        Configuration.loadFromDisk();
+
+        // change state
+        EventSystem.instance().sendEvent(new ChangeStateEvent(new ReadyState()));
+
+        return true;
+    };
+
+
+    /**
+     * This function is called when the asynchronous harvester fails to be initialized.
+     * It logs the exception that caused the failure and changes the state machine's current state.
+     */
+    private static Function<Throwable, Boolean> onHarvesterInitializedFailed = (Throwable reason) -> {
+    	
+    	// log exception that caused the failure
+        LOGGER.error(INIT_FAILED, reason.getCause());
+        
+        // change stage
+        EventSystem.instance().sendEvent(new ChangeStateEvent(new NotReadyState()));
+
+        return false;
+    };
 }

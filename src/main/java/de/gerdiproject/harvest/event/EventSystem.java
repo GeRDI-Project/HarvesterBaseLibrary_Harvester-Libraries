@@ -24,13 +24,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class EventSystem
 {
-    private static final Logger LOGGER = LoggerFactory.getLogger(EventSystem.class);
-
     private Map<Class<? extends IEvent>, List<Consumer<? extends IEvent>>> callbackMap;
 
 
@@ -58,8 +54,6 @@ public class EventSystem
             callbackMap.put(eventClass, eventList);
         }
 
-        LOGGER.debug("Added callback for Event " + eventClass);
-
         // add callback to list
         eventList.add(callback);
     }
@@ -72,8 +66,6 @@ public class EventSystem
         // remove event from list, if the list exists
         if (eventList != null)
             eventList.remove(callback);
-
-        LOGGER.debug("Removed callback for Event " + eventClass);
     }
 
 
@@ -83,21 +75,11 @@ public class EventSystem
     }
 
 
-    /*public void sendEvent2( IEvent event)
-    {
-        List<Consumer<? extends IEvent>> eventList = callbackMap.get( event.getClass() );
-        if( eventList != null)
-        {
-            eventList.forEach( ( Consumer<? extends IEvent> c) -> c.accept( event ));
-        }
-    }*/
-
+    // this warning is suppressed, because the public functions guarantee that the consumer consumes events of the same class as the corresponding key
     @SuppressWarnings("unchecked")
     public <T extends IEvent> void sendEvent(T event)
     {
         List<Consumer<? extends IEvent>> eventList = callbackMap.get(event.getClass());
-
-        LOGGER.debug("Sending Event " + event.getClass() +  ". eventList null? " + (eventList == null));
 
         if (eventList != null)
             eventList.forEach((Consumer<? extends IEvent> c) -> ((Consumer<T>)c).accept(event));
