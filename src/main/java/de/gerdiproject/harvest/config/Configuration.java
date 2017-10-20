@@ -20,65 +20,51 @@ package de.gerdiproject.harvest.config;
 
 
 import de.gerdiproject.harvest.MainContext;
-import de.gerdiproject.harvest.development.DevelopmentTools;
-import de.gerdiproject.harvest.elasticsearch.ElasticSearchSender;
-import de.gerdiproject.harvest.harvester.AbstractHarvester;
+import de.gerdiproject.harvest.config.constants.ConfigurationConstants;
+import de.gerdiproject.harvest.config.parameters.AbstractParameter;
+import de.gerdiproject.harvest.config.parameters.BooleanParameter;
+import de.gerdiproject.harvest.config.parameters.ParameterFactory;
+import de.gerdiproject.harvest.state.StateMachine;
 import de.gerdiproject.harvest.utils.data.DiskIO;
 import de.gerdiproject.json.GsonUtils;
 
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
 
 
 /**
- * This static class deals with saving and loading all application flags and
- * options to/from disk.
+ * This class manages all application parameters.
  *
  * @author Robin Weiss
  */
 public class Configuration
 {
-    private final static String CONFIG_PATH = "config/%sConfig.json";
-
-    private final static String LOAD_OK = "Loaded configuration from '%s'.";
-    private final static String LOAD_FAILED = "Could not load configuration from '%s': %s";
-    private final static String NO_EXISTS = "No configuration exists!";
-
-    private final static String ELASTIC_SEARCH_TITLE = "elasticSearch";
-    private final static String ELASTIC_SEARCH_URL = "url";
-    private final static String ELASTIC_SEARCH_INDEX = "index";
-    private final static String ELASTIC_SEARCH_TYPE = "type";
-
-    private final static String HARVESTER_TITLE = "harvester";
-    private final static String HARVESTER_RANGE = "range";
-    private final static String HARVESTER_FROM = "from";
-    private final static String HARVESTER_TO = "to";
-    private final static String HARVESTER_PARAMETERS = "parameters";
-
-    private final static String DEV_TITLE = "devOptions";
-    private final static String DEV_WRITE_TO_DISK = "writeHttpToDisk";
-    private final static String DEV_READ_FROM_DISK = "readHttpFromDisk";
-    private final static String DEV_AUTO_SAVE = "autoSave";
-    private final static String DEV_AUTO_SUBMIT = "autoSubmit";
-
-    private final static String INFO = " Configuration:%n%s%n%n To change these settings, please use the corresponding PUT requests.";
-
-    private final static DiskIO DISK_IO = new DiskIO();
+    private static final String CONFIG_PATH = "config/%sConfig.json";
+    private static final String LOAD_OK = "Loaded configuration from '%s'.";
+    private static final String LOAD_FAILED = "Could not load configuration from '%s': %s";
+    private static final String NO_EXISTS = "No configuration exists!";
+    private static final String INFO = "%s Configuration:%n%s%n%n"
+                                       + "POST\t\tSaves the current configuration to disk.%n"
+                                       + "PUT \t\t\tSets x-www-form-urlencoded parameters for the harvester. Valid values: %s.%n";
 
     private static final Logger LOGGER = LoggerFactory.getLogger(Configuration.class);
 
+    private Map<String, AbstractParameter<?>> globalParameters;
+    private Map<String, AbstractParameter<?>> harvesterParameters;
 
-    /**
-     * The constructor is private, because this is a static class.
-     */
-    private Configuration()
+
+
+    public Configuration(Map<String, AbstractParameter<?>> harvesterParams)
     {
+        this.globalParameters = ParameterFactory.createDefaultParameters();
+        this.harvesterParameters = harvesterParams;
     }
 
 
@@ -87,104 +73,49 @@ public class Configuration
      *
      * @return a pretty String that summarizes all options and flags
      */
-    public static String getInfoString()
+    public String getInfoString()
     {
-        return MainContext.getModuleName()
-               + String.format(INFO, GsonUtils.getPrettyGson().toJson(toJson()));
+        String modName = MainContext.getModuleName();
+        String parameters = GsonUtils.getPrettyGson().toJson(this);
+        String globalParamKeys = globalParameters.keySet().toString();
+
+        // remove brackets of the string representation
+        globalParamKeys = globalParamKeys.substring(1, globalParamKeys.length() - 1);
+
+        String validValues;
+
+        if (harvesterParameters != null) {
+            String harvesterParamKeys = harvesterParameters.keySet().toString();
+
+            // remove brackets of the string representation
+            harvesterParamKeys = harvesterParamKeys.substring(1, harvesterParamKeys.length() - 1);
+
+            validValues = harvesterParamKeys + ", " + globalParamKeys;
+        } else
+            validValues = globalParamKeys;
+
+        // return assembled string
+        return String.format(INFO, modName, parameters, validValues);
     }
 
 
     /**
-     * Attempts to load a configuration file and sets all options according to
-     * the file.
+     * Attempts to load a configuration file from disk.<br>
      *
-     * @return a string describing the status of the operation
+     * @return a configuration that was loaded from disk, or null if no config exists
      */
-    public static String loadFromDisk()
+    public static Configuration loadFromDisk()
     {
         String path = getConfigFilePath();
-        JsonElement configElement = DISK_IO.getJson(path);
+        Configuration config = new DiskIO().getObject(path, Configuration.class);
 
-        if (configElement != null) {
-            JsonObject configJson = configElement.getAsJsonObject();
-            setConfigFromJson(configJson);
+        if (config == null)
+            LOGGER.error(String.format(LOAD_FAILED, path, NO_EXISTS));
 
-            String okMsg = String.format(LOAD_OK, path);
-            LOGGER.info(okMsg);
-            return okMsg;
-        } else {
-            String errMsg = String.format(LOAD_FAILED, path, NO_EXISTS);
-            LOGGER.error(errMsg);
-            return errMsg;
-        }
-    }
+        else
+            LOGGER.info(String.format(LOAD_OK, path));
 
-
-    /**
-     * Sets configuration from reading a Json-object.
-     *
-     * @param config
-     *            a Json-object containing the service configuration
-     */
-    private static void setConfigFromJson(JsonObject config)
-    {
-        // set development tools configuration
-
-        if (config.has(DEV_TITLE)) {
-            JsonObject devToolsConfig = config.get(DEV_TITLE).getAsJsonObject();
-            DevelopmentTools devTools = DevelopmentTools.instance();
-
-            // set write-to-disk
-            boolean writeToDisk = devToolsConfig.get(DEV_WRITE_TO_DISK).getAsBoolean();
-            devTools.setWriteHttpToDisk(writeToDisk);
-
-            // set read-from-disk
-            boolean readFromDisk = devToolsConfig.get(DEV_READ_FROM_DISK).getAsBoolean();
-            devTools.setReadHttpFromDisk(readFromDisk);
-
-            // set auto-save
-            boolean autoSave = devToolsConfig.get(DEV_AUTO_SAVE).getAsBoolean();
-            devTools.setAutoSave(autoSave);
-
-            // set auto-submit
-            boolean autoSubmit = devToolsConfig.get(DEV_AUTO_SUBMIT).getAsBoolean();
-            devTools.setAutoSubmit(autoSubmit);
-        }
-
-        // set ElasticSearch configuration
-        if (config.has(ELASTIC_SEARCH_TITLE)) {
-            JsonObject elasticSearchConfig = config.get(ELASTIC_SEARCH_TITLE).getAsJsonObject();
-
-            if (elasticSearchConfig.has(ELASTIC_SEARCH_URL)
-                && elasticSearchConfig.has(ELASTIC_SEARCH_INDEX)
-                && elasticSearchConfig.has(ELASTIC_SEARCH_TYPE)) {
-                ElasticSearchSender.instance().setUrl(
-                    elasticSearchConfig.get(ELASTIC_SEARCH_URL).getAsString(),
-                    elasticSearchConfig.get(ELASTIC_SEARCH_INDEX).getAsString(),
-                    elasticSearchConfig.get(ELASTIC_SEARCH_TYPE).getAsString());
-            }
-        }
-
-
-
-
-        // set harvester configuration
-
-        if (config.has(HARVESTER_TITLE)) {
-            JsonObject harvesterConfig = config.get(HARVESTER_TITLE).getAsJsonObject();
-            AbstractHarvester harvester = MainContext.getHarvester();
-
-            // set range from config
-            JsonObject rangeObject = harvesterConfig.get(HARVESTER_RANGE).getAsJsonObject();
-            int rangeFrom = rangeObject.get(HARVESTER_FROM).getAsInt();
-            int rangeTo = rangeObject.get(HARVESTER_TO).getAsInt();
-            harvester.setRange(rangeFrom, rangeTo);
-
-            // set parameters from config
-            JsonObject paramsObject = harvesterConfig.get(HARVESTER_PARAMETERS).getAsJsonObject();
-            paramsObject.entrySet().forEach(
-                (Map.Entry<String, JsonElement> e) -> harvester.setProperty(e.getKey(), e.getValue().getAsString()));
-        }
+        return config;
     }
 
 
@@ -204,58 +135,58 @@ public class Configuration
      *
      * @return a string describing the status of the operation
      */
-    public static String saveToDisk()
+    public String saveToDisk()
     {
         // assemble path
         String path = getConfigFilePath();
 
         // write to disk
-        return  DISK_IO.writeJsonToFile(path, toJson());
+        return  new DiskIO().writeObjectToFile(path, GsonUtils.getGson().toJson(this));
     }
 
 
     /**
-     * Creates a Json-object that contains all flags and options that have been
-     * set up in the service.
+     * Returns the value of the parameter with a specified key.
      *
-     * @return a Json-object that contains the configuration of this service
+     * @param key the key of the parameter
+     * @param parameterType the type of the parameter value
+     *
+     * @return the value of the parameter with the specified key
      */
-    private static JsonObject toJson()
+    @SuppressWarnings("unchecked")  // the cast will succeed, because the value type is compared to the parameterType
+    public <T> T getParameterValue(String key, Class<T> parameterType)
     {
-        // get ElasticSearch configuration
-        JsonObject elasticSearchConfig = new JsonObject();
-        elasticSearchConfig.addProperty(ELASTIC_SEARCH_URL, ElasticSearchSender.instance().getBaseUrl());
-        elasticSearchConfig.addProperty(ELASTIC_SEARCH_INDEX, ElasticSearchSender.instance().getIndex());
-        elasticSearchConfig.addProperty(ELASTIC_SEARCH_TYPE, ElasticSearchSender.instance().getType());
+        AbstractParameter<?> param = globalParameters.get(key);
+        Object value = param.getValue();
 
-        // get developer options
-        JsonObject devToolsConfig = new JsonObject();
-        devToolsConfig.addProperty(DEV_WRITE_TO_DISK, DevelopmentTools.instance().isWritingHttpToDisk());
-        devToolsConfig.addProperty(DEV_READ_FROM_DISK, DevelopmentTools.instance().isReadingHttpFromDisk());
-        devToolsConfig.addProperty(DEV_AUTO_SAVE, DevelopmentTools.instance().isAutoSaving());
-        devToolsConfig.addProperty(DEV_AUTO_SUBMIT, DevelopmentTools.instance().isAutoSubmitting());
+        // check if the parameter exist and if the value matches the parameterType
+        if (param != null && value.getClass().equals(parameterType))
+            return (T) value;
+        else
+            return null;
+    }
 
-        AbstractHarvester harvester = MainContext.getHarvester();
+    /**
+     * Changes a configuration parameter, returning a status message about the change.
+     *
+     * @param key the parameter name
+     * @param value the new value of the parameter
+     *
+     * @return a message describing if the operation was successful, or if not, why it failed
+     */
+    public String setParameter(String key, String value)
+    {
+        // look up the key in the global parameters
+        AbstractParameter<?> param = globalParameters.get(key);
 
-        // get harvester range
-        JsonObject harvesterRange = new JsonObject();
-        harvesterRange.addProperty(HARVESTER_FROM, harvester.getStartIndex());
-        harvesterRange.addProperty(HARVESTER_TO, harvester.getEndIndex());
+        // if no global parameter with the specific name exists, look in the harvester parameters
+        if (param == null && harvesterParameters != null)
+            param = harvesterParameters.get(key);
 
-        // get implementation specific harvester parameters
-        JsonObject harvesterParams = new JsonObject();
-        List<String> harvesterParamKeys = harvester.getValidProperties();
-        harvesterParamKeys.forEach((key) -> harvesterParams.addProperty(key, harvester.getProperty(key)));
-
-        JsonObject harvesterConfig = new JsonObject();
-        harvesterConfig.add(HARVESTER_RANGE, harvesterRange);
-        harvesterConfig.add(HARVESTER_PARAMETERS, harvesterParams);
-
-        JsonObject globalConfig = new JsonObject();
-        globalConfig.add(HARVESTER_TITLE, harvesterConfig);
-        globalConfig.add(ELASTIC_SEARCH_TITLE, elasticSearchConfig);
-        globalConfig.add(DEV_TITLE, devToolsConfig);
-
-        return globalConfig;
+        // change the parameter value or return an error, if it does not exist
+        if (param == null)
+            return String.format(ConfigurationConstants.UNKNOWN_PARAM, key);
+        else
+            return param.setValue(value, StateMachine.getCurrentState());
     }
 }

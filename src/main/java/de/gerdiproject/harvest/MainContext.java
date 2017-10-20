@@ -20,12 +20,14 @@ package de.gerdiproject.harvest;
 
 
 import java.nio.charset.Charset;
+import java.util.Map;
 import java.util.function.Function;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import de.gerdiproject.harvest.config.Configuration;
+import de.gerdiproject.harvest.config.parameters.AbstractParameter;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.event.impl.ChangeStateEvent;
 import de.gerdiproject.harvest.harvester.AbstractHarvester;
@@ -37,7 +39,6 @@ import de.gerdiproject.harvest.utils.CancelableFuture;
 /**
  * This class provides static methods for retrieving the application name, the
  * dedicated harvester class and logger.
- *
  *
  * @author Robin Weiss
  */
@@ -53,6 +54,7 @@ public class MainContext
 
     private AbstractHarvester harvester;
     private Charset charset;
+    private Configuration configuration;
 
     private static MainContext instance = new MainContext();
 
@@ -98,17 +100,34 @@ public class MainContext
 
 
     /**
+     * Retrieves the global configuration.
+     * @return the harvester configuration
+     */
+    public static  Configuration getConfiguration()
+    {
+        return instance.configuration;
+    }
+
+
+    /**
      * Sets up global parameters and the harvester.
      *
      * @param <T> an AbstractHarvester subclass
      * @param moduleName name of this application
      * @param harvesterClass an AbstractHarvester subclass
      * @param charset the default charset for processing strings
-     * 
+     * @param harvesterParams additional parameters, specific to the harvester, or null
+     *
      * @see de.gerdiproject.harvest.harvester.AbstractHarvester
      */
-    public static <T extends AbstractHarvester> void init(String moduleName, Class<T> harvesterClass, Charset charset)
+    public static <T extends AbstractHarvester> void init(String moduleName, Class<T> harvesterClass, Charset charset, Map<String, AbstractParameter<?>> harvesterParams)
     {
+        // try to load configuration
+        instance.configuration = Configuration.loadFromDisk();
+
+        if (instance.configuration == null)
+            instance.configuration = new Configuration(harvesterParams);
+
         // set global parameters
         instance.moduleName = moduleName;
         instance.charset = charset;
@@ -123,19 +142,16 @@ public class MainContext
         initProcess.thenApply(onHarvesterInitializedSuccess)
         .exceptionally(onHarvesterInitializedFailed);
     }
-    
+
 
     /**
      * This function is called when the asynchronous harvester initialization completes successfully.
      * It logs the success and changes the state machine's current state.
      */
     private static Function<Boolean, Boolean> onHarvesterInitializedSuccess = (Boolean state) -> {
-    	
-    	// log sucess
-        LOGGER.info(String.format(INIT_SUCCESS, instance.harvester.getName()));
 
-        // try to load configuration
-        Configuration.loadFromDisk();
+        // log sucess
+        LOGGER.info(String.format(INIT_SUCCESS, instance.harvester.getName()));
 
         // change state
         EventSystem.instance().sendEvent(new ChangeStateEvent(new ReadyState()));

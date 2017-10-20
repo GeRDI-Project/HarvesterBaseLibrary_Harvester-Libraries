@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package de.gerdiproject.harvest.elasticsearch;
+package de.gerdiproject.harvest.submission;
 
 
 import java.net.MalformedURLException;
@@ -90,31 +90,6 @@ public class ElasticSearchSender
 
     private final HttpRequester httpRequester;
 
-    /**
-     * the bulk-POST URL for an ElasticSearch index and type
-     */
-    private String baseUrl;
-
-    /**
-     * the search index of ElasticSearch
-     */
-    private String index;
-
-    /**
-     * the document type of the harvested documents
-     */
-    private String type;
-
-    /**
-     * base-64 encoded user credentials (optional)
-     */
-    private String credentials;
-
-    /**
-     * user name (optional).
-     */
-    private String userName;
-
 
     /**
      * Returns the Singleton instance of this class.
@@ -139,81 +114,21 @@ public class ElasticSearchSender
 
 
     /**
-     * Creates a bulk-post URL for creating/updating search indices in Elastic
-     * Search.
+     * Creates login credentials for a submission.
      *
-     * @param baseUrl
-     *            the main Elastic Search URL without index or type
-     * @param index
-     *            the index that will be updated/created
-     * @param type
-     *            the type that will be updated/created
+     * @param userName the login user name
+     * @param password the password for the user
      *
-     * @return the generated bulk-post URL, or an error message, if the
-     *         operation does not succeed
+     * @return a base64 encoded username/password string
      */
-    public String setUrl(String baseUrl, String index, String type)
+    public String getCredentials(String userName, String password)
     {
-        // remove superfluous slashes
-        index = index.replace("/", "");
-        type = type.replace("/", "");
-
-        if (baseUrl.charAt(baseUrl.length() - 1) == '/')
-            baseUrl = baseUrl.substring(0, baseUrl.length() - 1);
-
-        // assemble complete URL
-        try {
-            // test if URL is valid
-            new URL(baseUrl);
-
-            // assign properties
-            this.baseUrl = baseUrl;
-            this.index = index;
-            this.type = type;
-
-            return String.format(URL_SET_OK, this.baseUrl, this.index, this.type);
-
-        } catch (MalformedURLException mue) {
-            String string = String.format(URL_SET_FAILED, baseUrl);
-            LOGGER.error(string);
-            return string;
-        }
-    }
-
-
-    /**
-     * Assembles a bulk submission URL that is used for submitting multiple
-     * documents at once.
-     *
-     * @return an ElasticSearch bulk submission URL
-     */
-    private String getBulkSubmissionUrl()
-    {
-        return String.format(BULK_SUBMISSION_URL, baseUrl, index, type);
-    }
-
-
-    /**
-     * Sets login credentials that will be used in subsequent Elastic Search
-     * requests. If userName is an empty string, the login credentials will be
-     * removed.
-     *
-     * @param userName
-     *            the login user name
-     * @param password
-     *            the password for the user
-     */
-    public void setCredentials(String userName, String password)
-    {
-        if (userName == null || userName.isEmpty()) {
-            this.userName = null;
-            credentials = null;
-
-        } else {
-            this.userName = userName;
-            credentials = Base64.getEncoder()
-                          .encodeToString((userName + ":" + password)
-                                          .getBytes(MainContext.getCharset()));
+        if (userName == null || password == null || userName.isEmpty())
+            return null;
+        else {
+            return Base64.getEncoder()
+                   .encodeToString((userName + ":" + password)
+                                   .getBytes(MainContext.getCharset()));
         }
     }
 
@@ -221,15 +136,15 @@ public class ElasticSearchSender
     /**
      * Updates or creates a search index in Elastic Search.
      *
-     * @param documents
-     *            a JSON-array of searchable objects
+     * @param documents a JSON-array of searchable objects
      * @return the HTTP response of the Elastic Search POST request, or an error
      *         message if the operation does not succeed
      */
-    public String sendToElasticSearch(List<IDocument> documents)
+    public static String submit(String elasticSearchUrl, List<IDocument> documents)
     {
+
         // check if a URL has been set up
-        if (baseUrl == null) {
+        if (elasticSearchUrl == null) {
             LOGGER.warn(NO_URL_ERROR);
             return NO_URL_ERROR;
         }
@@ -249,11 +164,11 @@ public class ElasticSearchSender
             return EMPTY_INDEX_ERROR;
         }
 
-        final String elasticSearchUrl = getBulkSubmissionUrl();
         LOGGER.info(String.format(SUBMISSION_START, elasticSearchUrl));
 
         // build a string for bulk-posting to Elastic search
         StringBuilder bulkRequestBuilder = new StringBuilder();
+        HttpRequester httpRequester = new HttpRequester();
         int from = 0;
 
         try {
@@ -420,51 +335,5 @@ public class ElasticSearchSender
                    documentId,
                    exceptionType,
                    exceptionReason);
-    }
-
-
-    /**
-     * Returns the base url of an Elastic Search node, or null if the URL has
-     * not been set up.
-     *
-     * @return the base url of an Elastic Search node, or null if the URL has
-     *         not been set up
-     */
-    public String getBaseUrl()
-    {
-        return baseUrl;
-    }
-
-
-    /**
-     * Returns the user name or null, if it is not set.
-     *
-     * @return the user name or null, if it is not set
-     */
-    public String getUserName()
-    {
-        return userName;
-    }
-
-
-    /**
-     * Return the search index name.
-     *
-     * @return the search index name
-     */
-    public String getIndex()
-    {
-        return index;
-    }
-
-
-    /**
-     * Returns the search document type.
-     *
-     * @return he search document type
-     */
-    public String getType()
-    {
-        return type;
     }
 }

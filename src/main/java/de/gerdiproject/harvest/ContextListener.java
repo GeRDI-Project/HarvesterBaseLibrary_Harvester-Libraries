@@ -19,6 +19,7 @@
 package de.gerdiproject.harvest;
 
 
+import de.gerdiproject.harvest.config.parameters.AbstractParameter;
 import de.gerdiproject.harvest.harvester.AbstractHarvester;
 import de.gerdiproject.harvest.state.HarvestStateMachine;
 import de.gerdiproject.json.GsonUtils;
@@ -26,6 +27,7 @@ import de.gerdiproject.json.GsonUtils;
 import java.lang.reflect.ParameterizedType;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.util.Map;
 
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
@@ -95,6 +97,16 @@ public class ContextListener<T extends AbstractHarvester> implements ServletCont
         return new GsonBuilder();
     }
 
+    /**
+     * Returns additional parameters that are specific to the harvester implementation.
+     *
+     * @return a map of key to parameters, or null, if no additional parameters are needed
+     */
+    protected Map<String, AbstractParameter<?>> getHarvesterSpecificParameters()
+    {
+        return null;
+    }
+
 
     /**
      * This method is called when the server is set up. Creates a logger and
@@ -114,7 +126,7 @@ public class ContextListener<T extends AbstractHarvester> implements ServletCont
         HarvestStateMachine.instance().init();
 
         // init main context
-        MainContext.init(getServiceName(), harvesterClass, getCharset());
+        MainContext.init(getServiceName(), harvesterClass, getCharset(), getHarvesterSpecificParameters());
     }
 
 

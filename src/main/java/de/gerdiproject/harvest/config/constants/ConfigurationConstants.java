@@ -1,0 +1,70 @@
+/*
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
+ */
+package de.gerdiproject.harvest.config.constants;
+
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+
+/**
+ * This static class is a collection of constants, commonly used for dealing with configuration.
+ *
+ * @author Robin Weiss
+ */
+public class ConfigurationConstants
+{
+    public static final String AUTO_SAVE = "autoSave";
+    public static final String AUTO_SUBMIT = "autoSubmit";
+    public static final String WRITE_HTTP_TO_DISK = "writeToDisk";
+    public static final String READ_HTTP_FROM_DISK = "readFromDisk";
+    public static final String HARVEST_START_INDEX = "harvestFrom";
+    public static final String HARVEST_END_INDEX = "harvestTo";
+    public static final String SUBMISSION_URL = "submissionUrl";
+    public static final String SUBMISSION_USER_NAME = "submissionUserName";
+    public static final String SUBMISSION_PASSWORD = "submissionPassword";
+    public static final String SUBMISSION_SIZE = "submissionSize";
+
+    public static final String CHANGED_PARAM = "Set parameter '%s' to '%s'.";
+    public static final String CANNOT_CHANGE_PARAM_INVALID_STATE = "Cannot change parameter '%s' during the %s-process.";
+    public static final String CANNOT_CHANGE_PARAM_INVALID_VALUE = "Cannot change parameter '%s' to '%s'. Allowed values are: %s";
+    public static final String CANNOT_CHANGE_PARAM_INVALID_URL = "Cannot change parameter '%s'. '%s' is not a valid URL!";
+    public static final String NO_CHANGES = "No parameters were changed!";
+    public static final String UNKNOWN_PARAM = "Cannot change parameter '%s'. Unknown parameter!";
+
+
+    public static final String BOOLEAN_VALID_VALUES_TEXT = "0, 1, true, false";
+    public static final List<String> BOOLEAN_VALID_VALUES_LIST = Collections.unmodifiableList(Arrays.asList("1", "0", "true", "false"));
+
+
+    public static final String INTEGER_VALUE_MAX = "max";
+    public static final String INTEGER_VALUE_MIN = "min";
+    public static final String INTEGER_VALID_VALUES_TEXT = INTEGER_VALUE_MAX + ", " + INTEGER_VALUE_MIN + ", 0, 1, ...";
+
+    public static final String STRING_VALID_VALUES_TEXT = "<anything>";
+    public static final String URL_VALID_VALUES_TEXT = "<a valid URL>";
+
+
+    /**
+     * Private constructor, because this is a static class.
+     */
+    private ConfigurationConstants()
+    {
+
+    }
+}
