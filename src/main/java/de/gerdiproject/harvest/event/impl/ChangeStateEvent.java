@@ -19,20 +19,34 @@
 package de.gerdiproject.harvest.event.impl;
 
 import de.gerdiproject.harvest.event.IEvent;
-import de.gerdiproject.harvest.state.IHarvestState;
+import de.gerdiproject.harvest.state.StateMachine;
+import de.gerdiproject.harvest.state.IState;
 
+/**
+ * This event causes a state transition of the {@linkplain StateMachine}.
+ *
+ * @author Robin Weiss
+ */
 public class ChangeStateEvent implements IEvent
 {
-    private final IHarvestState state;
+    private final IState state;
 
-
-    public ChangeStateEvent(IHarvestState state)
+    /**
+     * Simple Constructor.
+     *
+     * @param state the state that is to be loaded by the {@linkplain StateMachine}
+     */
+    public ChangeStateEvent(IState state)
     {
         this.state = state;
     }
 
-
-    public IHarvestState getState()
+    /**
+     * Returns the state that is to be loaded by the {@linkplain StateMachine}.
+     *
+     * @return the state that is to be loaded
+     */
+    public IState getState()
     {
         return state;
     }

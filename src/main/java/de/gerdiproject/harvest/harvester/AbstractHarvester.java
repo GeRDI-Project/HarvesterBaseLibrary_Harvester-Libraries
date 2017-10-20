@@ -22,25 +22,19 @@ package de.gerdiproject.harvest.harvester;
 import de.gerdiproject.harvest.ICleanable;
 import de.gerdiproject.harvest.IDocument;
 import de.gerdiproject.harvest.MainContext;
-import de.gerdiproject.harvest.development.DevelopmentTools;
-import de.gerdiproject.harvest.elasticsearch.ElasticSearchSender;
 import de.gerdiproject.harvest.event.EventSystem;
-import de.gerdiproject.harvest.event.impl.ChangeStateEvent;
 import de.gerdiproject.harvest.event.impl.DocumentHarvestedEvent;
+import de.gerdiproject.harvest.event.impl.HarvestFinishedEvent;
+import de.gerdiproject.harvest.event.impl.HarvestStartedEvent;
 import de.gerdiproject.harvest.harvester.rest.HarvesterFacade;
-import de.gerdiproject.harvest.state.impl.HarvestingState;
-import de.gerdiproject.harvest.state.impl.ReadyState;
+import de.gerdiproject.harvest.submission.ElasticSearchSender;
 import de.gerdiproject.harvest.utils.CancelableFuture;
 import de.gerdiproject.harvest.utils.HarvesterStringUtils;
 import de.gerdiproject.harvest.utils.HttpRequester;
-import de.gerdiproject.harvest.utils.SearchIndexWriter;
 import de.gerdiproject.json.SearchIndexJson;
 
-import java.io.File;
-import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CancellationException;
@@ -70,8 +64,6 @@ public abstract class AbstractHarvester
     private final static String HARVESTER_END = "--- %s finished ---";
     private final static String HARVESTER_FAILED = "!!! %s failed !!!";
     private final static String HARVESTER_ABORTED = "!!! %s aborted !!!";
-    private static final String HARVEST_DONE = "HARVEST FINISHED!";
-    private static final String HARVEST_FAILED = "HARVEST FAILED!";
 
     protected static final String HARVEST_ABORTED = "HARVEST ABORTED!";
 
@@ -90,7 +82,6 @@ public abstract class AbstractHarvester
     protected String name;
     protected String hash;
     protected final HttpRequester httpRequester;
-    protected final SearchIndexWriter indexWriter;
 
     protected final Logger logger; // NOPMD - we want to retrieve the type of the inheriting class
 
@@ -175,7 +166,6 @@ public abstract class AbstractHarvester
 
         startIndex = new AtomicInteger(0);
         endIndex = new AtomicInteger(0);
-        indexWriter = new SearchIndexWriter(name);
     }
 
 
@@ -250,17 +240,6 @@ public abstract class AbstractHarvester
 
 
     /**
-     * Returns an unmodifiable list of the harvested documents.
-     *
-     * @return an unmodifiable list of the harvested documents
-     */
-    public File getHarvestedDocuments()
-    {
-        return indexWriter.getOutputFile();
-    }
-
-
-    /**
      * Returns the timestamp of the last successful harvest.
      *
      * @return the time and date at which the last harvest finished, or null if
@@ -304,8 +283,7 @@ public abstract class AbstractHarvester
             if (document instanceof ICleanable)
                 ((ICleanable) document).clean();
 
-            indexWriter.addDocument(document);
-            EventSystem.instance().sendEvent(new DocumentHarvestedEvent(document));
+            EventSystem.sendEvent(new DocumentHarvestedEvent(document));
         }
 
         // increment harvest count
@@ -342,30 +320,6 @@ public abstract class AbstractHarvester
     public final int getMaxNumberOfDocuments()
     {
         return maxDocumentCount.get();
-    }
-
-
-    /**
-     * Returns the index of the first document that is to be harvested.
-     *
-     * @return the index of the first document that is to be harvested
-     */
-    public final int getStartIndex()
-    {
-        return startIndex.get();
-    }
-
-
-    /**
-     * Returns the index of the first document that is not to be harvested
-     * anymore.
-     *
-     * @return the index of the first document that is not to be harvested
-     *         anymore
-     */
-    public final int getEndIndex()
-    {
-        return endIndex.get();
     }
 
 
@@ -445,12 +399,10 @@ public abstract class AbstractHarvester
     {
         logger.info(String.format(HARVESTER_START, name));
 
-        indexWriter.clear();
-
         harvestedDocumentCount.set(0);
         startedDate = new Date();
 
-        EventSystem.instance().sendEvent(new ChangeStateEvent(new HarvestingState(endIndex.get() - startIndex.get())));
+        EventSystem.sendEvent(new HarvestStartedEvent(endIndex.get(), startIndex.get()));
 
         // start asynchronous harvest
         currentHarvestingProcess = new CancelableFuture<>(
@@ -480,22 +432,8 @@ public abstract class AbstractHarvester
         logger.info(String.format(HARVESTER_END, name));
 
         // do some things, only if this is the main harvester
-        if (MainContext.getHarvester() == this) {
-            final DevelopmentTools devTools = DevelopmentTools.instance();
-
-            // save to disk if auto-save is enabled
-            if (devTools.isAutoSaving())
-                devTools.saveHarvestResultToDisk();
-
-            // log complete harvest end
-            logger.info(HARVEST_DONE);
-
-
-            EventSystem.instance().sendEvent(new ChangeStateEvent(new ReadyState()));
-            // send to elastic search if auto-submission is enabled
-            // TODO if (devTools.isAutoSubmitting())
-            // TODO ElasticSearchSender.instance().sendToElasticSearch(getHarvestedDocuments());
-        }
+        if (MainContext.getHarvester() == this)
+            EventSystem.sendEvent(new HarvestFinishedEvent(true));
     }
 
 
@@ -533,18 +471,11 @@ public abstract class AbstractHarvester
         // log the error
         logger.error(reason.getMessage(), reason);
 
-        // save to disk if auto-save is enabled
-        final DevelopmentTools devTools = DevelopmentTools.instance();
-
-        if (devTools.isAutoSaving() && MainContext.getHarvester() == this)
-            devTools.saveHarvestResultToDisk();
-
         // log failure
         logger.warn(String.format(HARVESTER_FAILED, name));
 
-        // log failure for main harvester
         if (MainContext.getHarvester() == this)
-            logger.error(HARVEST_FAILED);
+            EventSystem.sendEvent(new HarvestFinishedEvent(false));
     }
 
 

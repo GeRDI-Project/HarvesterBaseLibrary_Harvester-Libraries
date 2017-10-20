@@ -20,37 +20,31 @@ package de.gerdiproject.harvest.state;
 
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.event.impl.ChangeStateEvent;
-import de.gerdiproject.harvest.state.impl.PreloadingState;
+import de.gerdiproject.harvest.state.impl.InitializationState;
 
-public class HarvestStateMachine
+public class StateMachine
 {
-    private static final HarvestStateMachine instance = new HarvestStateMachine();
+    private static final StateMachine instance = new StateMachine();
 
-    private IHarvestState currentState;
+    private IState currentState;
 
 
-    private HarvestStateMachine()
+    private StateMachine()
     {
-        currentState = new PreloadingState();
+        currentState = new InitializationState();
     }
 
     /**
      * Init must be called explicitly, because this class must be referenced once, in order to work.
      */
-    public void init()
+    public static void init()
     {
         // register event listeners
-        EventSystem.instance().addListener(ChangeStateEvent.class, (ChangeStateEvent e) -> setState(e.getState()));
+        EventSystem.addListener(ChangeStateEvent.class, (ChangeStateEvent e) -> instance.setState(e.getState()));
     }
 
 
-    public static HarvestStateMachine instance()
-    {
-        return instance;
-    }
-
-
-    private void setState(IHarvestState newState)
+    private void setState(IState newState)
     {
         currentState.onStateLeave();
         currentState = newState;
@@ -58,8 +52,8 @@ public class HarvestStateMachine
     }
 
 
-    public IHarvestState getCurrentState()
+    public static IState getCurrentState()
     {
-        return currentState;
+        return instance.currentState;
     }
 }

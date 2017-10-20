@@ -20,7 +20,7 @@ package de.gerdiproject.harvest.harvester.rest;
 
 
 import de.gerdiproject.harvest.harvester.AbstractHarvester;
-import de.gerdiproject.harvest.state.HarvestStateMachine;
+import de.gerdiproject.harvest.state.StateMachine;
 import de.gerdiproject.json.GsonUtils;
 import de.gerdiproject.json.SearchIndexJson;
 import de.gerdiproject.harvest.MainContext;
@@ -225,7 +225,7 @@ public class HarvesterFacade
     })
     public String getInfo()
     {
-        String status = HarvestStateMachine.instance().getCurrentState().getProgressString();
+        String status = StateMachine.getCurrentState().getProgressString();
 
         // get harvesting range
         int from = harvester.getStartIndex();
@@ -257,20 +257,20 @@ public class HarvesterFacade
      *
      * @return the search index or an empty object if nothing was harvested
      */
-    @GET
-    @Path("result")
-    @Produces({
-        MediaType.TEXT_PLAIN, MediaType.APPLICATION_JSON
-    })
-    public String getResult()
-    {
-        SearchIndexJson result = harvester.createDetailedJson();
+    /* @GET
+     @Path("result")
+     @Produces({
+         MediaType.TEXT_PLAIN, MediaType.APPLICATION_JSON
+     })
+     public String getResult()
+     {
+         SearchIndexJson result = harvester.createDetailedJson();
 
-        if (result != null)
-            return GsonUtils.getPrettyGson().toJson(result);
-        else
-            return "{}";
-    }
+         if (result != null)
+             return GsonUtils.getPrettyGson().toJson(result);
+         else
+             return "{}";
+     }*/
 
 
     /**
@@ -291,5 +291,35 @@ public class HarvesterFacade
 
         } else
             return HARVEST_ABORTED_FAILED;
+    }
+
+    /**
+     * Displays the search index or an empty object if nothing was harvested.
+     *
+     * @return the search index or an empty object if nothing was harvested
+     */
+    @POST
+    @Path("save")
+    @Produces({
+        MediaType.TEXT_PLAIN
+    })
+    public String saveDocuments()
+    {
+        return StateMachine.getCurrentState().save();
+    }
+
+    /**
+     * Displays the search index or an empty object if nothing was harvested.
+     *
+     * @return the search index or an empty object if nothing was harvested
+     */
+    @POST
+    @Path("submit")
+    @Produces({
+        MediaType.TEXT_PLAIN
+    })
+    public String submitDocuments()
+    {
+        return StateMachine.getCurrentState().submit();
     }
 }

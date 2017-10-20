@@ -7,20 +7,22 @@ Bundle-Name: Restful-Harvester-Library
 Bundle-SymbolicName: Restful-Harvester-Library
 Bundle-Version: 1.0
 Created-By: Apache Maven Bundle Plugin
-Export-Package: de.gerdiproject.harvest;uses:="de.gerdiproject.harvest.h
- arvester,de.gerdiproject.logger,javax.ws.rs,javax.ws.rs.core";version="
- 1.0.0",de.gerdiproject.harvest.config;version="1.0.0",de.gerdiproject.h
- arvest.config.rest;uses:="javax.ws.rs";version="1.0.0",de.gerdiproject.
- harvest.development;version="1.0.0",de.gerdiproject.harvest.development
- .rest;uses:="javax.ws.rs";version="1.0.0",de.gerdiproject.harvest.elast
- icsearch;uses:="javax.json";version="1.0.0",de.gerdiproject.harvest.ela
- sticsearch.rest;uses:="javax.ws.rs";version="1.0.0",de.gerdiproject.har
- vest.harvester;uses:="de.gerdiproject.harvest.utils,de.gerdiproject.log
- ger,javax.json";version="1.0.0",de.gerdiproject.harvest.harvester.rest;
- uses:="javax.ws.rs,javax.ws.rs.core";version="1.0.0",de.gerdiproject.ha
- rvest.utils;uses:="javax.json";version="1.0.0",de.gerdiproject.logger;v
- ersion="1.0.0",de.gerdiproject.logger.impl;uses:="de.gerdiproject.logge
- r";version="1.0.0"
+Export-Package: de.gerdiproject.harvest;version="1.0.0";
+  uses:="de.gerdiproject.harvest.harvester,
+   de.gerdiproject.logger,
+   javax.ws.rs,
+   javax.ws.rs.core",
+ de.gerdiproject.harvest.config;version="1.0.0",
+ de.gerdiproject.harvest.config.rest;version="1.0.0";uses:="javax.ws.rs",
+ de.gerdiproject.harvest.development;version="1.0.0",
+ de.gerdiproject.harvest.development.rest;version="1.0.0";uses:="javax.ws.rs",
+ de.gerdiproject.harvest.elasticsearch.rest;version="1.0.0";uses:="javax.ws.rs",
+ de.gerdiproject.harvest.harvester;version="1.0.0";uses:="de.gerdiproject.harvest.utils,de.gerdiproject.logger,javax.json",
+ de.gerdiproject.harvest.harvester.rest;version="1.0.0";uses:="javax.ws.rs,javax.ws.rs.core",
+ de.gerdiproject.harvest.submission;version="1.0.0";uses:="javax.json",
+ de.gerdiproject.harvest.utils;version="1.0.0";uses:="javax.json",
+ de.gerdiproject.logger;version="1.0.0",
+ de.gerdiproject.logger.impl;version="1.0.0";uses:="de.gerdiproject.logger"
 Import-Package: javax.ws.rs;version="[2.0,3)",javax.ws.rs.core;version="
  [2.0,3)",javax.json;version="[1.0,2)",javax.annotation.Resource,javax.s
  ervlet.ServletContextEvent,javax.servlet.ServletContextListener

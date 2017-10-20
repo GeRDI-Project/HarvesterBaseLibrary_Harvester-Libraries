@@ -29,10 +29,8 @@ import org.slf4j.LoggerFactory;
 import de.gerdiproject.harvest.config.Configuration;
 import de.gerdiproject.harvest.config.parameters.AbstractParameter;
 import de.gerdiproject.harvest.event.EventSystem;
-import de.gerdiproject.harvest.event.impl.ChangeStateEvent;
+import de.gerdiproject.harvest.event.impl.HarvesterInitializedEvent;
 import de.gerdiproject.harvest.harvester.AbstractHarvester;
-import de.gerdiproject.harvest.state.impl.NotReadyState;
-import de.gerdiproject.harvest.state.impl.ReadyState;
 import de.gerdiproject.harvest.utils.CancelableFuture;
 
 
@@ -154,9 +152,9 @@ public class MainContext
         LOGGER.info(String.format(INIT_SUCCESS, instance.harvester.getName()));
 
         // change state
-        EventSystem.instance().sendEvent(new ChangeStateEvent(new ReadyState()));
+        EventSystem.sendEvent(new HarvesterInitializedEvent(state));
 
-        return true;
+        return state;
     };
 
 
@@ -165,12 +163,12 @@ public class MainContext
      * It logs the exception that caused the failure and changes the state machine's current state.
      */
     private static Function<Throwable, Boolean> onHarvesterInitializedFailed = (Throwable reason) -> {
-    	
-    	// log exception that caused the failure
+
+        // log exception that caused the failure
         LOGGER.error(INIT_FAILED, reason.getCause());
-        
+
         // change stage
-        EventSystem.instance().sendEvent(new ChangeStateEvent(new NotReadyState()));
+        EventSystem.sendEvent(new HarvesterInitializedEvent(false));
 
         return false;
     };

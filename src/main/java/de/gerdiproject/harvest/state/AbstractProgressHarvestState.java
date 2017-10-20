@@ -23,7 +23,7 @@ import java.util.Date;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public abstract class AbstractProgressHarvestState implements IHarvestState
+public abstract class AbstractProgressHarvestState implements IState
 {
     private static final int UNKNOWN_NUMBER = -1;
     private static final String TIME_UNKNOWN = "unknown";
@@ -34,13 +34,11 @@ public abstract class AbstractProgressHarvestState implements IHarvestState
 
     private static final String PROGESS_TEXT = "%s: %3d%% (%d / %d)";
     private static final String PROGESS_TEXT_DETAILED = "%s %d / %d (%.2f%%)  Remaining Time: %s";
-    private static final Logger LOGGER = LoggerFactory.getLogger(HarvestStateMachine.class);
+    protected static final Logger LOGGER = LoggerFactory.getLogger(StateMachine.class);
 
     protected int currentProgress;
     protected int maxProgress;
     protected long startTimeStamp;
-
-    abstract public String getName();
 
 
     @Override

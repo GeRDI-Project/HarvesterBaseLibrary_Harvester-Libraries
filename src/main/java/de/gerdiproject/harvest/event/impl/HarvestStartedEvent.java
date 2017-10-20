@@ -18,35 +18,48 @@
  */
 package de.gerdiproject.harvest.event.impl;
 
-import de.gerdiproject.harvest.IDocument;
 import de.gerdiproject.harvest.event.IEvent;
 
 /**
- * This event signifies that a document was harvested and successfully cached.
+ * This event signifies that a harvest has been started.
  *
  * @author Robin Weiss
  */
-public class DocumentHarvestedEvent implements IEvent
+public class HarvestStartedEvent implements IEvent
 {
-    private final IDocument document;
+    private final int startIndex;
+    private final int endIndex;
+
 
     /**
-     * Simple constructor providing the harvested document.
+     * Simple constructor that requires the harvesting range.
      *
-     * @param doc the document that was harvested
+     * @param startIndex the index of the first document to be harvested
+     * @param endIndex the index of the last document that is to be harvested + 1
      */
-    public DocumentHarvestedEvent(IDocument doc)
+    public HarvestStartedEvent(int startIndex, int endIndex)
     {
-        document = doc;
+        this.startIndex = startIndex;
+        this.endIndex = endIndex;
     }
 
 
     /**
-     * Returns the harvested document.
-     * @return the document that was harvested
+     * Returns the index of the first document to be harvested.
+     * @return the index of the first document to be harvested
      */
-    public IDocument getDocument()
+    public int getStartIndex()
     {
-        return document;
+        return startIndex;
+    }
+
+
+    /**
+     * Returns the index of the last document that is to be harvested + 1.
+     * @return the index of the last document that is to be harvested + 1
+     */
+    public int getEndIndex()
+    {
+        return endIndex;
     }
 }

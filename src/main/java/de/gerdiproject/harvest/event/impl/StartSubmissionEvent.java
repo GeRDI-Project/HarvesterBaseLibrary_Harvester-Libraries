@@ -16,27 +16,16 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package de.gerdiproject.harvest.state;
+package de.gerdiproject.harvest.event.impl;
 
-import java.util.List;
+
+import de.gerdiproject.harvest.event.IEvent;
 
 /**
- * An interface for states of the {@linkplain StateMachine}.
+ * This event aims to send all harvested documents to be processed and submitted.
  *
  * @author Robin Weiss
  */
-public interface IState
+public class StartSubmissionEvent implements IEvent
 {
-    String getName();
-    String getProgressString();
-    void onStateEnter();
-    void onStateLeave();
-
-    String startHarvest();
-    String abort();
-    String pause();
-    String resume();
-    List<String> getAllowedParameters();
-    String submit();
-    String save();
 }

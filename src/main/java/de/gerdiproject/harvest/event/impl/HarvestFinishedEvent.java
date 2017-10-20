@@ -16,27 +16,36 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package de.gerdiproject.harvest.state;
+package de.gerdiproject.harvest.event.impl;
 
-import java.util.List;
+import de.gerdiproject.harvest.event.IEvent;
 
 /**
- * An interface for states of the {@linkplain StateMachine}.
+ * This event signifies that a harvest has been completed.
  *
  * @author Robin Weiss
  */
-public interface IState
+public class HarvestFinishedEvent implements IEvent
 {
-    String getName();
-    String getProgressString();
-    void onStateEnter();
-    void onStateLeave();
+    private final boolean isSuccessful;
 
-    String startHarvest();
-    String abort();
-    String pause();
-    String resume();
-    List<String> getAllowedParameters();
-    String submit();
-    String save();
+    /**
+     * Simple Constructor.
+     *
+     * @param isSuccessful true if the harvest finished successfully
+     */
+    public HarvestFinishedEvent(boolean isSuccessful)
+    {
+        this.isSuccessful = isSuccessful;
+    }
+
+    /**
+     * Returns true if the harvest finished successfully.
+     *
+     * @return true if the harvest finished successfully
+     */
+    public boolean isSuccessful()
+    {
+        return isSuccessful;
+    }
 }
