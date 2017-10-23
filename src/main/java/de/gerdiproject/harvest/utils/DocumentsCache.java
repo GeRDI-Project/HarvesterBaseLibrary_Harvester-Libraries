@@ -50,17 +50,13 @@ import de.gerdiproject.harvest.event.impl.SaveStartedEvent;
 import de.gerdiproject.harvest.event.impl.StartSaveEvent;
 import de.gerdiproject.harvest.event.impl.StartSubmissionEvent;
 import de.gerdiproject.harvest.submission.AbstractSubmitter;
+import de.gerdiproject.harvest.utils.constants.DocumentsCacheConstants;
 import de.gerdiproject.json.GsonUtils;
 import de.gerdiproject.json.datacite.DataCiteJson;
 
 public class DocumentsCache
 {
-    private static final String SAVE_FILE_NAME = "harvestedIndices/%s_result_%d.json";
-    private static final String SAVE_FILE_NAME_PARTIAL = "harvestedIndices/%s_partialResult_%d-%d_%d.json";
-    private static final String SAVE_FAILED_DIRECTORY = "Could not save documents: Unable to create directories!";
-    private static final String SAVE_FAILED_ERROR = "Could not save documents: %s";
     private static final String NO_HARVEST = "Cannot save: Nothing was harvested yet!";
-    private static final String CACHE_FILE_PATH = "cachedIndex/%s/cachedDocuments_%d.json";
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DocumentsCache.class);
     public static final DocumentsCache instance = new DocumentsCache();
@@ -71,6 +67,7 @@ public class DocumentsCache
     private int documentCount;
     private JsonWriter cacheWriter;
     private File cacheFile;
+    private String documentHash;
 
 
     private Consumer<HarvestStartedEvent> onHarvestStarted = (HarvestStartedEvent e) -> {
@@ -81,6 +78,7 @@ public class DocumentsCache
 
     private Consumer<HarvestFinishedEvent> onHarvestFinished = (HarvestFinishedEvent e) -> {
         finishTimeStamp = new Date().getTime();
+        documentHash = e.getDocumentChecksum();
         finishCaching();
     };
 
@@ -102,7 +100,12 @@ public class DocumentsCache
     private DocumentsCache()
     {
         this.documentCount = 0;
-        this.cacheFile = new File(String.format(CACHE_FILE_PATH, MainContext.getModuleName(), new Date().getTime()));
+        this.cacheFile = new File(
+            String.format(
+                DocumentsCacheConstants.CACHE_FILE_PATH,
+                MainContext.getModuleName(),
+                new Date().getTime()
+            ));
     }
 
 
@@ -143,8 +146,8 @@ public class DocumentsCache
                 cacheWriter.beginArray();
 
                 return true;
-            } catch (IOException e1) {
-                // TODO
+            } catch (IOException e) {
+                LOGGER.error(DocumentsCacheConstants.START_CACHE_ERROR, e);
             }
         }
 
@@ -160,7 +163,7 @@ public class DocumentsCache
                 cacheWriter.close();
             }
         } catch (IOException e) {
-            // TODO
+            LOGGER.error(DocumentsCacheConstants.FINISH_CACHE_ERROR, e);
         }
     }
 
@@ -204,14 +207,14 @@ public class DocumentsCache
         if (from > 0 || to != Integer.MAX_VALUE) {
 
             fileName = String.format(
-                           SAVE_FILE_NAME_PARTIAL,
+                           DocumentsCacheConstants.SAVE_FILE_NAME_PARTIAL,
                            MainContext.getModuleName(),
                            from,
                            to,
                            startTimeStamp);
         } else {
             fileName = String.format(
-                           SAVE_FILE_NAME,
+                           DocumentsCacheConstants.SAVE_FILE_NAME,
                            MainContext.getModuleName(),
                            startTimeStamp);
         }
@@ -221,7 +224,7 @@ public class DocumentsCache
         boolean isDirectoryCreated = saveFile.getParentFile().exists() || saveFile.getParentFile().mkdirs();
 
         if (!isDirectoryCreated) {
-            LOGGER.error(SAVE_FAILED_DIRECTORY);
+            LOGGER.error(DocumentsCacheConstants.SAVE_FAILED_DIRECTORY);
             isSuccessful = false;
         } else {
             try {
@@ -249,7 +252,7 @@ public class DocumentsCache
                 writer.value(config.getParameterValue(ConfigurationConstants.READ_HTTP_FROM_DISK, Boolean.class));
 
                 writer.name("hash");
-                writer.value(MainContext.getHarvester().getHash(false));
+                writer.value(documentHash);
 
                 writer.name("data");
                 writer.beginArray();
@@ -271,7 +274,7 @@ public class DocumentsCache
                 writer.endObject();
                 writer.close();
             } catch (IOException e) {
-                LOGGER.error(SAVE_FAILED_ERROR, e);
+                LOGGER.error(DocumentsCacheConstants.SAVE_FAILED_ERROR, e);
                 isSuccessful = false;
             }
         }

@@ -26,6 +26,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.BiConsumer;
 
 import de.gerdiproject.harvest.MainContext;
 
@@ -60,19 +61,6 @@ public abstract class AbstractCompositeHarvester extends AbstractHarvester
         this.subHarvesters = subHarvesters;
     }
 
-    /* TODO
-        @Override
-        public List<IDocument> getHarvestedDocuments()
-        {
-            List<IDocument> mergedDocuments = new LinkedList<>();
-
-            subHarvesters.forEach((AbstractHarvester subHarvester) ->
-                                  mergedDocuments.addAll(subHarvester.getHarvestedDocuments())
-                                 );
-
-            return Collections.unmodifiableList(mergedDocuments);
-        }*/
-
 
     /**
      * Constructor that requires an Iterable of sub-harvesters.
@@ -86,43 +74,50 @@ public abstract class AbstractCompositeHarvester extends AbstractHarvester
         this(null, subHarvesters);
     }
 
-    @Override
-    public void setRange(int from, int to)
-    {
-        super.setRange(from, to);
 
-        boolean isBelowRange = true;
-        boolean isAboveRange = false;
+    @Override
+    protected void setStartIndex(int startIndex)
+    {
+        updateRangeIndex(startIndex, (AbstractHarvester h, Integer index) -> h.setStartIndex(index));
+    }
+
+
+    @Override
+    protected void setEndIndex(int endIndex)
+    {
+        updateRangeIndex(endIndex, (AbstractHarvester h, Integer index) -> h.setEndIndex(index));
+    }
+
+
+    /**
+     * Takes an index of all documents combined and adapts the harvesting ranges of all sub-harvesters accordingly.
+     *
+     * @param index the new index, either start- or end index
+     * @param indexSetter a function that sets the sub-harvesters index range
+     */
+    private void updateRangeIndex(int index, BiConsumer<AbstractHarvester, Integer> indexSetter)
+    {
         int numberOfProcessedDocs = 0;
 
         for (AbstractHarvester subHarvester : subHarvesters) {
             int numberOfSubDocs = subHarvester.getMaxNumberOfDocuments();
+            int previouslyProcessedDocs = numberOfProcessedDocs;
             numberOfProcessedDocs += numberOfSubDocs;
+            int subValue;
 
-            if (isAboveRange) {
-                // above range: this harvester will be skipped completely
-                subHarvester.setRange(0, 0);
+            // index comes after this sub-harvester
+            if (index >= numberOfProcessedDocs)
+                subValue = Integer.MAX_VALUE;
 
-            } else if (from < numberOfProcessedDocs) {
-                int startIndex = isBelowRange
-                                 ? from - (numberOfProcessedDocs - numberOfSubDocs)
-                                 : 0;
+            // index is within this sub-harvester
+            else if (index >= previouslyProcessedDocs)
+                subValue = index - previouslyProcessedDocs;
 
-                boolean isLastEntry = to < numberOfProcessedDocs;
+            // index comes before this sub-harvester
+            else
+                subValue = Integer.MIN_VALUE;
 
-                int endIndex = isLastEntry
-                               ? numberOfSubDocs - (numberOfProcessedDocs - to)
-                               : numberOfSubDocs;
-
-                subHarvester.setRange(startIndex, endIndex);
-
-                isBelowRange = false;
-                isAboveRange = isLastEntry;
-
-            } else {
-                // below range: this harvester will be skipped completely
-                subHarvester.setRange(0, 0);
-            }
+            indexSetter.accept(subHarvester, subValue);
         }
     }
 
@@ -212,31 +207,7 @@ public abstract class AbstractCompositeHarvester extends AbstractHarvester
 
 
     @Override
-    public int getNumberOfHarvestedDocuments()
-    {
-        int totalNumber = 0;
-
-        for (AbstractHarvester subHarvester : subHarvesters)
-            totalNumber += subHarvester.getNumberOfHarvestedDocuments();
-
-        return totalNumber;
-    }
-
-
-    @Override
-    public boolean isFinished()
-    {
-        for (AbstractHarvester subHarvester : subHarvesters) {
-            if (!subHarvester.isFinished())
-                return false;
-        }
-
-        return true;
-    }
-
-
-    @Override
-    public void abortHarvest()
+    protected void abortHarvest()
     {
         if (currentHarvestingProcess != null)
             subHarvesters.forEach((AbstractHarvester sub) -> sub.abortHarvest());

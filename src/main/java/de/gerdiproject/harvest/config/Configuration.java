@@ -23,6 +23,9 @@ import de.gerdiproject.harvest.MainContext;
 import de.gerdiproject.harvest.config.constants.ConfigurationConstants;
 import de.gerdiproject.harvest.config.parameters.AbstractParameter;
 import de.gerdiproject.harvest.config.parameters.ParameterFactory;
+import de.gerdiproject.harvest.event.EventSystem;
+import de.gerdiproject.harvest.event.impl.GlobalParameterChangedEvent;
+import de.gerdiproject.harvest.event.impl.HarvesterParameterChangedEvent;
 import de.gerdiproject.harvest.state.StateMachine;
 import de.gerdiproject.harvest.utils.data.DiskIO;
 import de.gerdiproject.json.GsonUtils;
@@ -53,7 +56,6 @@ public class Configuration
 
     private Map<String, AbstractParameter<?>> globalParameters;
     private Map<String, AbstractParameter<?>> harvesterParameters;
-
 
 
     public Configuration(Map<String, AbstractParameter<?>> harvesterParams)
@@ -190,17 +192,30 @@ public class Configuration
      */
     public String setParameter(String key, String value)
     {
+        boolean isHarvesterParam = false;
+
         // look up the key in the global parameters
         AbstractParameter<?> param = globalParameters.get(key);
 
         // if no global parameter with the specific name exists, look in the harvester parameters
-        if (param == null && harvesterParameters != null)
+        if (param == null && harvesterParameters != null) {
             param = harvesterParameters.get(key);
+            isHarvesterParam = true;
+        }
 
         // change the parameter value or return an error, if it does not exist
         if (param == null)
             return String.format(ConfigurationConstants.UNKNOWN_PARAM, key);
-        else
-            return param.setValue(value, StateMachine.getCurrentState());
+        else {
+            Object oldValue = param.getValue();
+            String message = param.setValue(value, StateMachine.getCurrentState());
+
+            if (isHarvesterParam)
+                EventSystem.sendEvent(new HarvesterParameterChangedEvent(param, oldValue));
+            else
+                EventSystem.sendEvent(new GlobalParameterChangedEvent(param, oldValue));
+
+            return message;
+        }
     }
 }

@@ -66,18 +66,6 @@ public class MainContext
 
 
     /**
-     * Returns the harvester singleton instance of this application
-     *
-     * @return this application's harvester class
-     * @see de.gerdiproject.harvest.harvester.AbstractHarvester
-     */
-    public static AbstractHarvester getHarvester()
-    {
-        return instance.harvester;
-    }
-
-
-    /**
      * Returns the name of the application.
      *
      * @return the module name
@@ -136,6 +124,7 @@ public class MainContext
         CancelableFuture<Boolean> initProcess = new CancelableFuture<>(() -> {
             LOGGER.info(INIT_START);
             instance.harvester = harvesterClass.newInstance();
+            instance.harvester.setAsMainHarvester();
             instance.harvester.init();
             return true;
         });
@@ -151,7 +140,7 @@ public class MainContext
     private static Function<Boolean, Boolean> onHarvesterInitializedSuccess = (Boolean state) -> {
 
         // log sucess
-        LOGGER.info(String.format(INIT_SUCCESS, instance.harvester.getName()));
+        LOGGER.info(String.format(INIT_SUCCESS, getModuleName()));
 
         // change state
         EventSystem.sendEvent(new HarvesterInitializedEvent(state));

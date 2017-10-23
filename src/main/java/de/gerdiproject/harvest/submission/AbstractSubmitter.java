@@ -51,7 +51,7 @@ public abstract class AbstractSubmitter
     private static final String NO_URL_ERROR = "Cannot submit documents: You need to set up a valid submission URL!";
     private static final String NO_DOCS_ERROR = "There are no documents to submit!";
 
-    protected final Logger logger;
+    protected final Logger logger; // NOPMD - we want to retrieve the type of the inheriting class
 
     private int submittedDocumentCount;
     private int failedDocumentCount;

@@ -97,7 +97,7 @@ public class HarvestingState extends AbstractProgressHarvestState
     @Override
     public String pause()
     {
-        // TODO Auto-generated method stub
+        // TODO implement pause
         return null;
     }
 

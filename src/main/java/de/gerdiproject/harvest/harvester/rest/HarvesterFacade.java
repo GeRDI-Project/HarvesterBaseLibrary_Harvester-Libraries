@@ -19,19 +19,14 @@
 package de.gerdiproject.harvest.harvester.rest;
 
 
-import de.gerdiproject.harvest.harvester.AbstractHarvester;
 import de.gerdiproject.harvest.state.StateMachine;
 import de.gerdiproject.harvest.MainContext;
 import de.gerdiproject.harvest.config.Configuration;
 import de.gerdiproject.harvest.config.constants.ConfigurationConstants;
 
-import java.util.List;
-import java.util.Map.Entry;
-import javax.ws.rs.Consumes;
 import javax.ws.rs.Produces;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
@@ -48,23 +43,11 @@ import javax.ws.rs.core.MultivaluedMap;
 @Path("harvest")
 public class HarvesterFacade
 {
-    private static final String INFO = "- %s -%n%nStatus:\t\t%s%n%nRange:\t\t%s-%s%n%s%n%n"
+    private static final String INFO = "- %s -%n%nStatus:\t\t%s%n%nRange:\t\t%s-%s%n%n"
                                        + "POST\t\t\tStarts the harvest%n"
-                                       + "POST/abort\t\tAborts an ongoing harvest";
-    private static final String PROPERTY = "%s:\t%s%n";
-    private static final String NO_CHANGES = "No changes were made. Valid Form Parameters: %s";
-    private static final String SET_OK = "Set property '%s' to '%s'%n";
-    private static final String SET_FAILED = "Cannot set '%s'! It is not a valid property%n";
-
-    private static final String FORM_PARAM_FROM = "from";
-    private static final String FORM_PARAM_TO = "to";
-    private static final String RANGE_SET_FAILED_RANGE = "Invalid Harvesting range: %s - %s%nRange should be between 0 and %d";
-    private static final String RANGE_SET_FAILED_PARAMS = "Invalid Parameters! All x-www-form-urlencoded parameters must be set."
-                                                          + " Use%n'from' to set the start index (default: 0)%n'to' to set the end index (default: %d)";
-    private static final String RANGE_SET_OK = "Harvesting Range set from %d to %d.";
-
-    private final AbstractHarvester harvester = MainContext.getHarvester();
-
+                                       + "POST/abort\t\tAborts an ongoing harvest%n"
+                                       + "POST/submit\t\tSubmits harvested documents to a DataBase%n"
+                                       + "POST/save\t\tSaves harvested documents to disk";
 
     /**
      * Starts a harvest using the harvester that is registered in the
@@ -87,119 +70,6 @@ public class HarvesterFacade
 
 
     /**
-     * Sets the harvest range, specifying the index of the first and last
-     * document to be harvested.
-     *
-     * @param formParams
-     *            should include 'from' and 'to'
-     * @return a message describing if the range setting was successful or not
-     */
-    @PUT
-    @Path("range")
-    @Consumes({
-        MediaType.APPLICATION_FORM_URLENCODED
-    })
-    @Produces({
-        MediaType.TEXT_PLAIN
-    })
-    public String setRange(final MultivaluedMap<String, String> formParams)
-    {
-        List<String> fromParam = formParams.getOrDefault(FORM_PARAM_FROM, null);
-        List<String> toParam = formParams.getOrDefault(FORM_PARAM_TO, null);
-
-        int maxRange = harvester.getMaxNumberOfDocuments();
-
-        if (fromParam != null && toParam != null) {
-            try {
-                // get and convert form params to integer
-                int from = Integer.parseInt(fromParam.get(0));
-                int to = Integer.parseInt(toParam.get(0));
-
-                // make sure the specified range is valid
-                if (to < from || from < 0 || to > maxRange)
-                    throw new NumberFormatException();
-
-                harvester.setRange(from, to);
-                return String.format(RANGE_SET_OK, from, to);
-
-            } catch (NumberFormatException e) {
-                // a parameter could not be cast to int, or is out of range
-                return String.format(
-                           RANGE_SET_FAILED_RANGE,
-                           fromParam.get(0),
-                           toParam.get(0),
-                           maxRange);
-            }
-        }
-
-        return String.format(RANGE_SET_FAILED_PARAMS, maxRange);
-    }
-
-
-    /**
-     * Sets one or more properties of the registered harvester.
-     *
-     * @param formParams
-     *            a generic list of x-www-form-urlencoded key value pairs
-     * @return a status text describing successful or unsuccessful changes of
-     *         properties
-     */
-    @PUT
-    @Consumes({
-        MediaType.APPLICATION_FORM_URLENCODED
-    })
-    @Produces({
-        MediaType.TEXT_PLAIN
-    })
-    public String setProperties(final MultivaluedMap<String, String> formParams)
-    {
-        StringBuilder sb = new StringBuilder();
-        List<String> validProperties = harvester.getValidProperties();
-        boolean hasChanges = false;
-
-        for (Entry<String, List<String>> entry : formParams.entrySet()) {
-            // retrieve the property key
-            String key = entry.getKey();
-
-            // check if property is among the valid properties of the harvester
-            if (validProperties.contains(key)) {
-                hasChanges = true;
-
-                // a value can appear multiple times. process all values
-                for (String value : entry.getValue()) {
-                    // set harvester property and add the change to the response
-                    // string
-                    harvester.setProperty(key, value);
-                    sb.append(String.format(SET_OK, key, value));
-                }
-            } else
-                sb.append(String.format(SET_FAILED, key));
-        }
-
-        // if no property changes were made, inform the user
-        if (!hasChanges)
-            sb.append(String.format(NO_CHANGES, String.join(", ", harvester.getValidProperties())));
-
-        return sb.toString();
-    }
-
-
-    @GET
-    @Path("isLatest")
-    @Produces({
-        MediaType.TEXT_PLAIN, MediaType.APPLICATION_JSON
-    })
-    public String isLatestVersion()
-    {
-        final String latestChecksum = ""; // TODO get from Elasticsearch or from
-        // prospector(?)
-        final String currentChecksum = harvester.getHash(true);
-
-        return String.valueOf(currentChecksum != null && !currentChecksum.equals(latestChecksum));
-    }
-
-
-    /**
      * Displays a text that describes the status and possible REST calls.
      *
      * @return a text describing the harvesting status and available RESTful
@@ -216,48 +86,13 @@ public class HarvesterFacade
         // get harvesting range
         Configuration config = MainContext.getConfiguration();
         String from = config.getParameterStringValue(ConfigurationConstants.HARVEST_START_INDEX);
-        String to = config.getParameterStringValue(ConfigurationConstants.HARVEST_START_INDEX);
+        String to = config.getParameterStringValue(ConfigurationConstants.HARVEST_END_INDEX);
 
         // get harvester name
         String name = MainContext.getModuleName();
 
-        // get properties and values
-        StringBuilder sb = new StringBuilder();
-        harvester.getValidProperties().forEach((String s) -> {
-            // convert first char to upper case
-            String propertyName = s.substring(0, 1).toUpperCase() + s.substring(1);
-            sb.append(String.format(PROPERTY, propertyName, harvester.getProperty(s)));
-        });
-
-        // get valid properties
-        String validProps = String.join(", ", harvester.getValidProperties());
-
-        // get valid harvesting range
-        int maxRange = harvester.getMaxNumberOfDocuments();
-
-        return String.format(INFO, name, status, from, to, sb.toString(), validProps, maxRange);
+        return String.format(INFO, name, status, from, to);
     }
-
-
-    /**
-     * Displays the search index or an empty object if nothing was harvested.
-     *
-     * @return the search index or an empty object if nothing was harvested
-     */
-    /* @GET
-     @Path("result")
-     @Produces({
-         MediaType.TEXT_PLAIN, MediaType.APPLICATION_JSON
-     })
-     public String getResult()
-     {
-         SearchIndexJson result = harvester.createDetailedJson();
-
-         if (result != null)
-             return GsonUtils.getPrettyGson().toJson(result);
-         else
-             return "{}";
-     }*/
 
 
     /**
@@ -275,6 +110,7 @@ public class HarvesterFacade
         return StateMachine.getCurrentState().abort();
     }
 
+
     /**
      * Displays the search index or an empty object if nothing was harvested.
      *
@@ -290,6 +126,7 @@ public class HarvesterFacade
         return StateMachine.getCurrentState().save();
     }
 
+
     /**
      * Displays the search index or an empty object if nothing was harvested.
      *
@@ -304,4 +141,21 @@ public class HarvesterFacade
     {
         return StateMachine.getCurrentState().submit();
     }
+
+
+    /*
+    @GET
+    @Path("isLatest")
+    @Produces({
+        MediaType.TEXT_PLAIN, MediaType.APPLICATION_JSON
+    })
+    public String isLatestVersion()
+    {
+        final String latestChecksum = ""; // TODO get from disk
+        // prospector(?)
+        final String currentChecksum = harvester.getHash(true);
+
+        return String.valueOf(currentChecksum != null && !currentChecksum.equals(latestChecksum));
+    }
+    */
 }
