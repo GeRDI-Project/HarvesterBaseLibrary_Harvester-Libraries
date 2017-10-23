@@ -47,10 +47,8 @@ public class ConfigurationConstants
     public static final String NO_CHANGES = "No parameters were changed!";
     public static final String UNKNOWN_PARAM = "Cannot change parameter '%s'. Unknown parameter!";
 
-
     public static final String BOOLEAN_VALID_VALUES_TEXT = "0, 1, true, false";
     public static final List<String> BOOLEAN_VALID_VALUES_LIST = Collections.unmodifiableList(Arrays.asList("1", "0", "true", "false"));
-
 
     public static final String INTEGER_VALUE_MAX = "max";
     public static final String INTEGER_VALUE_MIN = "min";

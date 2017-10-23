@@ -20,7 +20,8 @@ package de.gerdiproject.harvest.utils;
 
 
 import de.gerdiproject.harvest.MainContext;
-import de.gerdiproject.harvest.development.DevelopmentTools;
+import de.gerdiproject.harvest.config.Configuration;
+import de.gerdiproject.harvest.config.constants.ConfigurationConstants;
 import de.gerdiproject.harvest.utils.data.DiskIO;
 import de.gerdiproject.harvest.utils.data.WebDataRetriever;
 
@@ -60,7 +61,7 @@ public class HttpRequester
     private static final Logger LOGGER = LoggerFactory.getLogger(HttpRequester.class);
 
     private final Charset httpCharset;
-    private final DevelopmentTools devTools;
+    private final Configuration config;
     private final DiskIO diskIO;
     private final WebDataRetriever webDataRetriever;
 
@@ -71,16 +72,12 @@ public class HttpRequester
 
 
     /**
-     * Standard constructor. Sets charset to UTF-8 and does not suppress
+     * Standard constructor. Sets charset to whatever is defined via the {@linkplain ContextListener} and does not suppress
      * warnings.
      */
     public HttpRequester()
     {
-        httpCharset = MainContext.getCharset();
-        suppressWarnings = false;
-        devTools = DevelopmentTools.instance();
-        diskIO = new DiskIO();
-        webDataRetriever = new WebDataRetriever();
+        this(MainContext.getCharset(), false);
     }
 
 
@@ -96,7 +93,7 @@ public class HttpRequester
     {
         this.httpCharset = httpCharset;
         this.suppressWarnings = suppressWarnings;
-        devTools = DevelopmentTools.instance();
+        config = MainContext.getConfiguration();
         diskIO = new DiskIO();
         webDataRetriever = new WebDataRetriever();
     }
@@ -117,7 +114,7 @@ public class HttpRequester
         boolean isResponseReadFromWeb = false;
 
         // read json file from disk, if the option is enabled
-        if (devTools.isReadingHttpFromDisk()) {
+        if (config.getParameterValue(ConfigurationConstants.READ_HTTP_FROM_DISK, Boolean.class)) {
             String filePath = urlToFilePath(url, FILE_ENDING_JSON);
             jsonObj = (JsonObject) diskIO.getJson(filePath);
         }
@@ -129,7 +126,7 @@ public class HttpRequester
         }
 
         // write whole response to disk, if the option is enabled
-        if (isResponseReadFromWeb && devTools.isWritingHttpToDisk())
+        if (isResponseReadFromWeb && config.getParameterValue(ConfigurationConstants.WRITE_HTTP_TO_DISK, Boolean.class))
             diskIO.writeJsonToFile(urlToFilePath(url, FILE_ENDING_JSON), jsonObj);
 
 
@@ -156,7 +153,7 @@ public class HttpRequester
         boolean isResponseReadFromWeb = false;
 
         // read json file from disk, if the option is enabled
-        if (devTools.isReadingHttpFromDisk())
+        if (config.getParameterValue(ConfigurationConstants.READ_HTTP_FROM_DISK, Boolean.class))
             htmlResponse = diskIO.getHtml(urlToFilePath(url, FILE_ENDING_HTML));
 
         // request json from web, if it has not been read from disk already
@@ -166,7 +163,7 @@ public class HttpRequester
         }
 
         // write whole response to disk, if the option is enabled
-        if (isResponseReadFromWeb && devTools.isWritingHttpToDisk()) {
+        if (isResponseReadFromWeb && config.getParameterValue(ConfigurationConstants.WRITE_HTTP_TO_DISK, Boolean.class)) {
             // deliberately write an empty object to disk, if the response could
             // not be retrieved
             String responseText = (htmlResponse == null) ? "" : htmlResponse.toString();
@@ -193,7 +190,7 @@ public class HttpRequester
         boolean isResponseReadFromWeb = false;
 
         // read json file from disk, if the option is enabled
-        if (devTools.isReadingHttpFromDisk())
+        if (config.getParameterValue(ConfigurationConstants.READ_HTTP_FROM_DISK, Boolean.class))
             targetObject = diskIO.getObject(urlToFilePath(url, FILE_ENDING_JSON), targetClass);
 
         // request json from web, if it has not been read from disk already
@@ -203,7 +200,7 @@ public class HttpRequester
         }
 
         // write whole response to disk, if the option is enabled
-        if (isResponseReadFromWeb && devTools.isWritingHttpToDisk()) {
+        if (isResponseReadFromWeb && config.getParameterValue(ConfigurationConstants.WRITE_HTTP_TO_DISK, Boolean.class)) {
             // deliberately write an empty object to disk, if the response could
             // not be retrieved
             diskIO.writeObjectToFile(urlToFilePath(url, FILE_ENDING_JSON), targetObject);

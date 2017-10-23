@@ -184,22 +184,23 @@ public class DocumentsCache
      * successful or not.
      *
      * @return A status message describing whether the save succeeded or not
-     * @throws  
+     * @throws
      */
-    private void saveDocumentsToDisk() 
+    private void saveDocumentsToDisk()
     {
-    	boolean isSuccessful = true;
+        boolean isSuccessful = true;
         EventSystem.sendEvent(new SaveStartedEvent());
-        
+
         final Gson gson = GsonUtils.getGson();
         final Configuration config = MainContext.getConfiguration();
-        
+
         // get harvesting range
         int from = config.getParameterValue(ConfigurationConstants.HARVEST_START_INDEX, Integer.class);
         int to = config.getParameterValue(ConfigurationConstants.HARVEST_END_INDEX, Integer.class);
-        
+
         // assemble file name
         String fileName;
+
         if (from > 0 || to != Integer.MAX_VALUE) {
 
             fileName = String.format(
@@ -214,73 +215,68 @@ public class DocumentsCache
                            MainContext.getModuleName(),
                            startTimeStamp);
         }
-        
+
         // create file and directories
         File saveFile = new File(fileName);
         boolean isDirectoryCreated = saveFile.getParentFile().exists() || saveFile.getParentFile().mkdirs();
-        
-        if(!isDirectoryCreated)
-        {
-        	LOGGER.error( SAVE_FAILED_DIRECTORY );
-        	isSuccessful = false;
+
+        if (!isDirectoryCreated) {
+            LOGGER.error(SAVE_FAILED_DIRECTORY);
+            isSuccessful = false;
+        } else {
+            try {
+                // prepare json writer for the save file
+                JsonWriter writer = new JsonWriter(
+                    new OutputStreamWriter(
+                        new FileOutputStream(saveFile),
+                        MainContext.getCharset()));
+
+                // prepare json reader for the cached document list
+                JsonReader reader = new JsonReader(
+                    new InputStreamReader(
+                        new FileInputStream(cacheFile),
+                        MainContext.getCharset()));
+
+
+                writer.beginObject();
+                writer.name("harvestDate");
+                writer.value(startTimeStamp);
+
+                writer.name("durationInSeconds");
+                writer.value((finishTimeStamp - startTimeStamp) / 1000l);
+
+                writer.name("wasHarvestedFromDisk");
+                writer.value(config.getParameterValue(ConfigurationConstants.READ_HTTP_FROM_DISK, Boolean.class));
+
+                writer.name("hash");
+                writer.value(MainContext.getHarvester().getHash(false));
+
+                writer.name("data");
+                writer.beginArray();
+
+                // iterate through cached array
+                reader.beginArray();
+
+                while (reader.hasNext()) {
+                    // read a document from the array
+                    gson.toJson(gson.fromJson(reader, DataCiteJson.class), writer);
+                }
+
+                // close reader
+                reader.endArray();
+                reader.close();
+
+                // close writer
+                writer.endArray();
+                writer.endObject();
+                writer.close();
+            } catch (IOException e) {
+                LOGGER.error(SAVE_FAILED_ERROR, e);
+                isSuccessful = false;
+            }
         }
-        else
-        {
-	        try {
-		        // prepare json writer for the save file
-		        JsonWriter writer = new JsonWriter(
-		        		new OutputStreamWriter(
-		        			new FileOutputStream(saveFile), 
-		        			MainContext.getCharset()));
-		        
-		        // prepare json reader for the cached document list
-		        JsonReader reader = new JsonReader(
-		            new InputStreamReader(
-		                new FileInputStream(cacheFile),
-		                MainContext.getCharset()));
-		        
-		
-		        writer.beginObject();
-		        writer.name( "harvestDate" );
-		        writer.value( startTimeStamp );
-		        
-		        writer.name( "durationInSeconds" );
-		        writer.value( (finishTimeStamp - startTimeStamp) / 1000l );
-		        
-		        writer.name( "wasHarvestedFromDisk" );
-		        writer.value( config.getParameterValue( ConfigurationConstants.READ_HTTP_FROM_DISK, Boolean.class ));
-		        
-		        writer.name( "hash" );
-		        writer.value( MainContext.getHarvester().getHash( false ) );
-		        
-		        writer.name( "data" );
-		        writer.beginArray();
-		        
-		        // iterate through cached array
-		        reader.beginArray();
-		
-		        while (reader.hasNext())
-		        {
-		            // read a document from the array
-		            gson.toJson( gson.fromJson(reader, DataCiteJson.class), writer);
-		        }
-		
-		        // close reader
-		        reader.endArray();
-		        reader.close();
-		        
-		        // close writer
-		        writer.endArray();
-		        writer.endObject();
-		        writer.close();
-	        }
-	        catch( IOException e)
-	        {
-	        	LOGGER.error( SAVE_FAILED_ERROR, e );
-	        	isSuccessful = false;
-	        }
-        }
-        EventSystem.sendEvent( new SaveFinishedEvent(isSuccessful) );
+
+        EventSystem.sendEvent(new SaveFinishedEvent(isSuccessful));
     }
 
 

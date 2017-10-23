@@ -28,4 +28,25 @@ import de.gerdiproject.harvest.event.IEvent;
  */
 public class SaveFinishedEvent implements IEvent
 {
+    private final boolean isSuccessful;
+
+    /**
+     * Simple Constructor.
+     *
+     * @param isSuccessful true if the saving process finished successfully
+     */
+    public SaveFinishedEvent(boolean isSuccessful)
+    {
+        this.isSuccessful = isSuccessful;
+    }
+
+    /**
+     * Returns true if the saving process finished successfully.
+     *
+     * @return true if the saving process finished successfully
+     */
+    public boolean isSuccessful()
+    {
+        return isSuccessful;
+    }
 }

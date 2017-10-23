@@ -23,12 +23,10 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
-import de.gerdiproject.harvest.IDocument;
 import de.gerdiproject.harvest.MainContext;
 
 

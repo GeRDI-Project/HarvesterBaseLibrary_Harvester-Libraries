@@ -22,16 +22,11 @@ package de.gerdiproject.harvest.config;
 import de.gerdiproject.harvest.MainContext;
 import de.gerdiproject.harvest.config.constants.ConfigurationConstants;
 import de.gerdiproject.harvest.config.parameters.AbstractParameter;
-import de.gerdiproject.harvest.config.parameters.BooleanParameter;
 import de.gerdiproject.harvest.config.parameters.ParameterFactory;
 import de.gerdiproject.harvest.state.StateMachine;
 import de.gerdiproject.harvest.utils.data.DiskIO;
 import de.gerdiproject.json.GsonUtils;
 
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import org.slf4j.Logger;
@@ -159,9 +154,28 @@ public class Configuration
         AbstractParameter<?> param = globalParameters.get(key);
         Object value = param.getValue();
 
-        // check if the parameter exist and if the value matches the parameterType
+        // check if the parameter exists and if the value matches the parameterType
         if (param != null && value.getClass().equals(parameterType))
             return (T) value;
+        else
+            return null;
+    }
+
+    /**
+     * Returns the human readable value of the parameter with a specified key.
+     *
+     * @param key the key of the parameter
+     * @param parameterType the type of the parameter value
+     *
+     * @return the human readable value of the parameter with a specified key
+     */
+    public String getParameterStringValue(String key)
+    {
+        AbstractParameter<?> param = globalParameters.get(key);
+
+        // check if the parameter exists
+        if (param != null)
+            return param.getStringValue();
         else
             return null;
     }
