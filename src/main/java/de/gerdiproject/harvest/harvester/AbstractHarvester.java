@@ -23,11 +23,14 @@ import de.gerdiproject.harvest.ICleanable;
 import de.gerdiproject.harvest.IDocument;
 import de.gerdiproject.harvest.MainContext;
 import de.gerdiproject.harvest.event.EventSystem;
+import de.gerdiproject.harvest.event.impl.AbortingFinishedEvent;
 import de.gerdiproject.harvest.event.impl.DocumentHarvestedEvent;
 import de.gerdiproject.harvest.event.impl.HarvestFinishedEvent;
 import de.gerdiproject.harvest.event.impl.HarvestStartedEvent;
+import de.gerdiproject.harvest.event.impl.StartAbortingEvent;
+import de.gerdiproject.harvest.event.impl.StartHarvestEvent;
 import de.gerdiproject.harvest.harvester.rest.HarvesterFacade;
-import de.gerdiproject.harvest.submission.ElasticSearchSender;
+import de.gerdiproject.harvest.submission.ElasticSearchSubmitter;
 import de.gerdiproject.harvest.utils.CancelableFuture;
 import de.gerdiproject.harvest.utils.HarvesterStringUtils;
 import de.gerdiproject.harvest.utils.HttpRequester;
@@ -47,7 +50,7 @@ import org.slf4j.LoggerFactory;
 /**
  * AbstractHarvesters offer a skeleton for harvesting a data provider to
  * retrieve all of its metadata. The metadata can subsequently be submitted to
- * ElasticSearch via the {@link ElasticSearchSender}. This most basic Harvester
+ * ElasticSearch via the {@link ElasticSearchSubmitter}. This most basic Harvester
  * class offers functions that can be controlled via REST requests from the
  * {@link HarvesterFacade}, as well as some utility objects that are required by
  * all harvests. Subclasses must implement the concrete harvesting process.
@@ -181,6 +184,9 @@ public abstract class AbstractHarvester
         int maxHarvestableDocs = initMaxNumberOfDocuments();
         maxDocumentCount.set(maxHarvestableDocs);
         endIndex.set(maxHarvestableDocs);
+
+        EventSystem.addListener(StartHarvestEvent.class, (StartHarvestEvent e) -> harvest());
+        EventSystem.addListener(StartAbortingEvent.class, (StartAbortingEvent e) -> abortHarvest());
     }
 
 
@@ -362,36 +368,6 @@ public abstract class AbstractHarvester
 
 
     /**
-     * Estimates the completion date of an ongoing harvest by regarding the
-     * already passed time.
-     *
-     * @return a Date or null, if no harvest is in progress
-     */
-    public long estimateRemainingSeconds()
-    {
-        // get number of harvested documents
-        long documentCount = getNumberOfHarvestedDocuments();
-
-        // only estimate if some progress was made
-        if (isHarvesting() && documentCount > 0) {
-            Date now = new Date();
-
-            // calculate how many milliseconds the harvest has been going on
-            long milliSecondsUntilNow = now.getTime() - startedDate.getTime();
-
-            // estimate how many milliseconds the harvest will take
-            long milliSecondsTotal = milliSecondsUntilNow
-                                     * (endIndex.get() - startIndex.get())
-                                     / documentCount;
-
-            return (milliSecondsTotal - milliSecondsUntilNow) / 1000l;
-        }
-
-        return -1;
-    }
-
-
-    /**
      * Starts an asynchronous harvest with the implemented harvestInternal()
      * method and saves the result and date for this session
      */
@@ -485,6 +461,8 @@ public abstract class AbstractHarvester
      */
     protected void onHarvestAborted()
     {
+        EventSystem.sendEvent(new AbortingFinishedEvent());
+
         logger.warn(String.format(HARVESTER_ABORTED, name));
 
         // log abort for main harvester

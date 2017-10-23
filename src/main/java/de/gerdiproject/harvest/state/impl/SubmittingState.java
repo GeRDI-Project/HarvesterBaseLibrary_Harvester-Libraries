@@ -20,8 +20,11 @@ package de.gerdiproject.harvest.state.impl;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.Consumer;
 
 import de.gerdiproject.harvest.config.constants.ConfigurationConstants;
+import de.gerdiproject.harvest.event.EventSystem;
+import de.gerdiproject.harvest.event.impl.DocumentsSubmittedEvent;
 import de.gerdiproject.harvest.state.AbstractProgressHarvestState;
 import de.gerdiproject.harvest.state.constants.StateConstants;
 
@@ -32,6 +35,9 @@ import de.gerdiproject.harvest.state.constants.StateConstants;
  */
 public class SubmittingState extends AbstractProgressHarvestState
 {
+    private Consumer<DocumentsSubmittedEvent> onDocumentsSubmitted = (DocumentsSubmittedEvent e) -> addProgress(e.getNumberOfSubmittedDocuments());;
+
+
     @Override
     public String getProgressString()
     {
@@ -42,14 +48,14 @@ public class SubmittingState extends AbstractProgressHarvestState
     @Override
     public void onStateEnter()
     {
-        // nothing to do here
+        EventSystem.addListener(DocumentsSubmittedEvent.class, onDocumentsSubmitted);
     }
 
 
     @Override
     public void onStateLeave()
     {
-        // nothing to do here
+        EventSystem.removeListener(DocumentsSubmittedEvent.class, onDocumentsSubmitted);
     }
 
 

@@ -21,9 +21,9 @@ package de.gerdiproject.harvest.harvester.rest;
 
 import de.gerdiproject.harvest.harvester.AbstractHarvester;
 import de.gerdiproject.harvest.state.StateMachine;
-import de.gerdiproject.json.GsonUtils;
-import de.gerdiproject.json.SearchIndexJson;
 import de.gerdiproject.harvest.MainContext;
+import de.gerdiproject.harvest.config.Configuration;
+import de.gerdiproject.harvest.config.constants.ConfigurationConstants;
 
 import java.util.List;
 import java.util.Map.Entry;
@@ -48,17 +48,10 @@ import javax.ws.rs.core.MultivaluedMap;
 @Path("harvest")
 public class HarvesterFacade
 {
-    private static final String INFO = "- %s -%n%nStatus:\t\t%s%n%nRange:\t\t%d-%d%n%s%n%n"
-                                       + "GET/result \t\tReturns the search index%n"
-                                       + "POST\t\t\tCreates a search index%n"
-                                       + "POST/abort\t\tAborts an ongoing harvest%n"
-                                       + "PUT \t\t\tSets x-www-form-urlencoded parameters for the harvester (%s).%n"
-                                       + "PUT/range\t\tSets the start and end index of the harvest (from, to). default: 0, %d%n";
+    private static final String INFO = "- %s -%n%nStatus:\t\t%s%n%nRange:\t\t%s-%s%n%s%n%n"
+                                       + "POST\t\t\tStarts the harvest%n"
+                                       + "POST/abort\t\tAborts an ongoing harvest";
     private static final String PROPERTY = "%s:\t%s%n";
-    private static final String HARVEST_STARTED = "Harvesting started";
-    private static final String HARVEST_ALREADY_STARTED = "Another harvest is already in progress";
-    private static final String HARVEST_ABORTED = "Harvesting aborted";
-    private static final String HARVEST_ABORTED_FAILED = "No harvest is in progress";
     private static final String NO_CHANGES = "No changes were made. Valid Form Parameters: %s";
     private static final String SET_OK = "Set property '%s' to '%s'%n";
     private static final String SET_FAILED = "Cannot set '%s'! It is not a valid property%n";
@@ -89,14 +82,7 @@ public class HarvesterFacade
     })
     public String startHarvest(final MultivaluedMap<String, String> formParams)
     {
-        // start the harvest
-        if (harvester.isHarvesting())
-            return HARVEST_ALREADY_STARTED;
-
-        else {
-            harvester.harvest();
-            return HARVEST_STARTED;
-        }
+        return StateMachine.getCurrentState().startHarvest();
     }
 
 
@@ -228,8 +214,9 @@ public class HarvesterFacade
         String status = StateMachine.getCurrentState().getProgressString();
 
         // get harvesting range
-        int from = harvester.getStartIndex();
-        int to = harvester.getEndIndex();
+        Configuration config = MainContext.getConfiguration();
+        String from = config.getParameterStringValue(ConfigurationConstants.HARVEST_START_INDEX);
+        String to = config.getParameterStringValue(ConfigurationConstants.HARVEST_START_INDEX);
 
         // get harvester name
         String name = MainContext.getModuleName();
@@ -283,14 +270,9 @@ public class HarvesterFacade
     @Produces({
         MediaType.TEXT_PLAIN
     })
-    public String abortHarvest()
+    public String abort()
     {
-        if (harvester.isHarvesting()) {
-            harvester.abortHarvest();
-            return HARVEST_ABORTED;
-
-        } else
-            return HARVEST_ABORTED_FAILED;
+        return StateMachine.getCurrentState().abort();
     }
 
     /**

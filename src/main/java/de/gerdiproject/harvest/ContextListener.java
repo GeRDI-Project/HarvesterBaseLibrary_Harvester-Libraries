@@ -22,6 +22,9 @@ package de.gerdiproject.harvest;
 import de.gerdiproject.harvest.config.parameters.AbstractParameter;
 import de.gerdiproject.harvest.harvester.AbstractHarvester;
 import de.gerdiproject.harvest.state.StateMachine;
+import de.gerdiproject.harvest.submission.AbstractSubmitter;
+import de.gerdiproject.harvest.submission.ElasticSearchSubmitter;
+import de.gerdiproject.harvest.utils.DocumentsCache;
 import de.gerdiproject.json.GsonUtils;
 
 import java.lang.reflect.ParameterizedType;
@@ -109,6 +112,17 @@ public class ContextListener<T extends AbstractHarvester> implements ServletCont
 
 
     /**
+     * Creates a means to submit documents to any place.
+     *
+     * @return a harvested documents submitter
+     */
+    protected AbstractSubmitter createSubmitter()
+    {
+        return new ElasticSearchSubmitter();
+    }
+
+
+    /**
      * This method is called when the server is set up. Creates a logger and
      * harvester and sets them in the MainContext.
      *
@@ -126,7 +140,15 @@ public class ContextListener<T extends AbstractHarvester> implements ServletCont
         StateMachine.init();
 
         // init main context
-        MainContext.init(getServiceName(), harvesterClass, getCharset(), getHarvesterSpecificParameters());
+        MainContext.init(
+            getServiceName(),
+            harvesterClass,
+            getCharset(),
+            getHarvesterSpecificParameters()
+        );
+
+        // init documents cache and sender
+        DocumentsCache.init(createSubmitter());
     }
 
 

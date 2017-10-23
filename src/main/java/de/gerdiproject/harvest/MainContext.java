@@ -89,6 +89,7 @@ public class MainContext
 
     /**
      * Retrieves the charset used for processing strings.
+     *
      * @return the charset that is used for processing strings
      */
     public static Charset getCharset()
@@ -99,6 +100,7 @@ public class MainContext
 
     /**
      * Retrieves the global configuration.
+     *
      * @return the harvester configuration
      */
     public static  Configuration getConfiguration()
