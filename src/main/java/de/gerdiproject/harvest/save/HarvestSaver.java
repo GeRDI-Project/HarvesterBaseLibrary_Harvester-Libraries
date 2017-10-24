@@ -24,6 +24,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.util.concurrent.Callable;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,8 +37,10 @@ import de.gerdiproject.harvest.MainContext;
 import de.gerdiproject.harvest.config.Configuration;
 import de.gerdiproject.harvest.config.constants.ConfigurationConstants;
 import de.gerdiproject.harvest.event.EventSystem;
+import de.gerdiproject.harvest.save.events.DocumentSavedEvent;
 import de.gerdiproject.harvest.save.events.SaveFinishedEvent;
 import de.gerdiproject.harvest.save.events.SaveStartedEvent;
+import de.gerdiproject.harvest.utils.CancelableFuture;
 import de.gerdiproject.harvest.utils.constants.DocumentsCacheConstants;
 import de.gerdiproject.json.GsonUtils;
 import de.gerdiproject.json.datacite.DataCiteJson;
@@ -52,6 +55,15 @@ public class HarvestSaver
     private static Logger LOGGER = LoggerFactory.getLogger(HarvestSaver.class);
 
     /**
+     * Private constructor, because this class does not have to be instantiated.
+     */
+    private HarvestSaver()
+    {
+
+    }
+
+
+    /**
      * Saves cached harvested documents to disk.
      *
      * @param cachedDocuments the file in which the cached documents are stored as a JSON array
@@ -63,41 +75,72 @@ public class HarvestSaver
     {
         EventSystem.sendEvent(new SaveStartedEvent());
 
-        // create file
-        final Configuration config = MainContext.getConfiguration();
-        File saveFile = createTargetFile(config, startTimestamp);
-        boolean isSuccessful = saveFile != null;
+        // start asynchronous save
+        CancelableFuture<Boolean> asyncSave = new CancelableFuture<>(
+            createSaveProcess(cachedDocuments, startTimestamp, finishTimestamp, sourceHash));
 
-        if (isSuccessful) {
-            try {
-                // prepare json reader for the cached document list
-                JsonReader reader = new JsonReader(
-                    new InputStreamReader(
-                        new FileInputStream(cachedDocuments),
-                        MainContext.getCharset()));
+        // exception handler
+        asyncSave.thenApply((isSuccessful) -> {
+            EventSystem.sendEvent(new SaveFinishedEvent(isSuccessful));
+            return isSuccessful;
+        })
+        .exceptionally(throwable -> {
+            EventSystem.sendEvent(new SaveFinishedEvent(false));
+            return false;
+        });
+    }
 
-                // prepare json writer for the save file
-                JsonWriter writer = new JsonWriter(
-                    new OutputStreamWriter(
-                        new FileOutputStream(saveFile),
-                        MainContext.getCharset()));
 
-                // transfer data to target file
-                writeDocuments(
-                    reader,
-                    writer,
-                    startTimestamp,
-                    finishTimestamp,
-                    sourceHash,
-                    config.getParameterValue(ConfigurationConstants.READ_HTTP_FROM_DISK, Boolean.class)
-                );
-            } catch (IOException e) {
-                LOGGER.error(DocumentsCacheConstants.SAVE_FAILED_ERROR, e);
-                isSuccessful = false;
+    /**
+     * Creates a saving-process that can be called asynchronously.
+     *
+     * @param cachedDocuments the file in which the cached documents are stored as a JSON array
+     * @param startTimestamp the UNIX Timestamp of the beginning of the harvest
+     * @param finishTimestamp the UNIX Timestamp of the end of the harvest
+     * @param sourceHash a String used for version checks of the source data that was harvested
+     *
+     * @return true, if the file was saved successfully
+     */
+    private static Callable<Boolean> createSaveProcess(File cachedDocuments, long startTimestamp, long finishTimestamp, String sourceHash)
+    {
+        return () -> {
+            // create file
+            final Configuration config = MainContext.getConfiguration();
+            File saveFile = createTargetFile(config, startTimestamp);
+            boolean isSuccessful = saveFile != null;
+
+            if (isSuccessful)
+            {
+                try {
+                    // prepare json reader for the cached document list
+                    JsonReader reader = new JsonReader(
+                        new InputStreamReader(
+                            new FileInputStream(cachedDocuments),
+                            MainContext.getCharset()));
+
+                    // prepare json writer for the save file
+                    JsonWriter writer = new JsonWriter(
+                        new OutputStreamWriter(
+                            new FileOutputStream(saveFile),
+                            MainContext.getCharset()));
+
+                    // transfer data to target file
+                    writeDocuments(
+                        reader,
+                        writer,
+                        startTimestamp,
+                        finishTimestamp,
+                        sourceHash,
+                        config.getParameterValue(ConfigurationConstants.READ_HTTP_FROM_DISK, Boolean.class)
+                    );
+                } catch (IOException e) {
+                    LOGGER.error(DocumentsCacheConstants.SAVE_FAILED_ERROR, e);
+                    isSuccessful = false;
+                }
             }
-        }
 
-        EventSystem.sendEvent(new SaveFinishedEvent(isSuccessful));
+            return isSuccessful;
+        };
     }
 
 
@@ -160,6 +203,9 @@ public class HarvestSaver
      */
     private static void writeDocuments(JsonReader cacheReader, JsonWriter writer, long startTimestamp, long finishTimestamp, String sourceHash, boolean readFromDisk) throws IOException
     {
+        // this event holds no unique data, we can resubmit it as often as we want
+        DocumentSavedEvent savedEvent = new DocumentSavedEvent();
+
         writer.beginObject();
         writer.name("harvestDate");
         writer.value(startTimestamp);
@@ -183,6 +229,7 @@ public class HarvestSaver
         while (cacheReader.hasNext()) {
             // read a document from the array
             gson.toJson(gson.fromJson(cacheReader, DataCiteJson.class), writer);
+            EventSystem.sendEvent(savedEvent);
         }
 
         // close reader

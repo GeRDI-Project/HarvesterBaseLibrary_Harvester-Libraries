@@ -91,8 +91,12 @@ public abstract class AbstractSubmitter
         CancelableFuture<Boolean> asyncSubmission = new CancelableFuture<>(
             createSubmissionProcess(cachedDocuments, submissionUrl, credentials, batchSize));
 
-        // exception handler
-        asyncSubmission.exceptionally(throwable -> {
+        // finished handler
+        asyncSubmission.thenApply((isSuccessful) -> {
+            endSubmission();
+            return isSuccessful;
+        })
+        .exceptionally(throwable -> {
             endSubmission();
             return false;
         });
@@ -146,7 +150,7 @@ public abstract class AbstractSubmitter
             // send remainder of documents
             if (documentList.size() > 0)
             {
-                trySubmitBatch(documentList, submissionUrl, credentials);
+                areAllSubmissionsSuccessful &= trySubmitBatch(documentList, submissionUrl, credentials);
                 documentList.clear();
             }
 
