@@ -29,6 +29,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.BiConsumer;
 
 import de.gerdiproject.harvest.MainContext;
+import de.gerdiproject.harvest.harvester.constants.HarvesterConstants;
 
 
 /**
@@ -175,7 +176,7 @@ public abstract class AbstractCompositeHarvester extends AbstractHarvester
 
 
     @Override
-    protected String initHash()
+    protected String initHash() throws NoSuchAlgorithmException, NullPointerException
     {
         // for now, concatenate all hashes
         final StringBuilder hashBuilder = new StringBuilder();
@@ -185,24 +186,18 @@ public abstract class AbstractCompositeHarvester extends AbstractHarvester
                              );
 
         // generate hash of all concatenated hashes
-        try {
-            final MessageDigest md = MessageDigest.getInstance(SHA_HASH_ALGORITHM);
-            md.update(hashBuilder.toString().getBytes(MainContext.getCharset()));
+        final MessageDigest md = MessageDigest.getInstance(HarvesterConstants.SHA_HASH_ALGORITHM);
+        md.update(hashBuilder.toString().getBytes(MainContext.getCharset()));
 
-            final byte[] digest = md.digest();
+        final byte[] digest = md.digest();
 
-            final StringWriter buffer = new StringWriter(digest.length * 2);
-            final PrintWriter pw = new PrintWriter(buffer);
+        final StringWriter buffer = new StringWriter(digest.length * 2);
+        final PrintWriter pw = new PrintWriter(buffer);
 
-            for (byte b : digest)
-                pw.printf(OCTAT_FORMAT, b);
+        for (byte b : digest)
+            pw.printf(HarvesterConstants.OCTAT_FORMAT, b);
 
-            return buffer.toString();
-
-        } catch (NoSuchAlgorithmException | NullPointerException e) {
-            logger.error(HASH_CREATE_FAILED);
-            return null;
-        }
+        return buffer.toString();
     }
 
 

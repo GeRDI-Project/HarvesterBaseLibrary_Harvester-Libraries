@@ -22,11 +22,16 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.function.Consumer;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.event.impl.StartAbortingEvent;
 import de.gerdiproject.harvest.event.impl.ChangeStateEvent;
 import de.gerdiproject.harvest.event.impl.AbortingFinishedEvent;
+import de.gerdiproject.harvest.event.impl.AbortingStartedEvent;
 import de.gerdiproject.harvest.state.IState;
+import de.gerdiproject.harvest.state.StateMachine;
 import de.gerdiproject.harvest.state.constants.StateConstants;
 
 /**
@@ -36,15 +41,20 @@ import de.gerdiproject.harvest.state.constants.StateConstants;
  */
 public class AbortingState implements IState
 {
-    /**
-     * Switches the state to {@linkplain IdleState} if the abortion (bad phrasing!) was successful.
-     */
-    private static final Consumer<AbortingFinishedEvent> ON_PROCESS_ABORTED =
-    (AbortingFinishedEvent e) -> {
-        EventSystem.sendEvent(new ChangeStateEvent(new IdleState()));
-    };
+    private static final Logger LOGGER = LoggerFactory.getLogger(StateMachine.class);
 
     private final String processName;
+
+    /**
+     * Switches the state to {@linkplain IdleState} if the aborting was successful.
+     */
+    private final Consumer<AbortingFinishedEvent> onProcessAbortingFinished;
+
+    /**
+     * Logs the aborting process when it starts.
+     */
+    private final Consumer<AbortingStartedEvent> onProcessAbortingStarted;
+
 
     /**
      * Constructs the state with the name of the aborted process.
@@ -53,13 +63,23 @@ public class AbortingState implements IState
     public AbortingState(String processName)
     {
         this.processName = processName;
+
+        this.onProcessAbortingStarted = (AbortingStartedEvent e) -> {
+            LOGGER.info(String.format(StateConstants.ABORT_STARTED, processName));
+        };
+
+        this.onProcessAbortingFinished = (AbortingFinishedEvent e) -> {
+            LOGGER.info(String.format(StateConstants.ABORT_FINISHED, processName));
+            EventSystem.sendEvent(new ChangeStateEvent(new IdleState()));
+        };
     }
 
 
     @Override
     public void onStateEnter()
     {
-        EventSystem.addListener(AbortingFinishedEvent.class, ON_PROCESS_ABORTED);
+        EventSystem.addListener(AbortingStartedEvent.class, onProcessAbortingStarted);
+        EventSystem.addListener(AbortingFinishedEvent.class, onProcessAbortingFinished);
         EventSystem.sendEvent(new StartAbortingEvent());
     }
 
@@ -67,7 +87,8 @@ public class AbortingState implements IState
     @Override
     public void onStateLeave()
     {
-        EventSystem.removeListener(AbortingFinishedEvent.class, ON_PROCESS_ABORTED);
+        EventSystem.removeListener(AbortingStartedEvent.class, onProcessAbortingStarted);
+        EventSystem.removeListener(AbortingFinishedEvent.class, onProcessAbortingFinished);
     }
 
 

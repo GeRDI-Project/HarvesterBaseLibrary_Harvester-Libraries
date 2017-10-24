@@ -31,11 +31,15 @@ import de.gerdiproject.harvest.event.impl.HarvestStartedEvent;
 import de.gerdiproject.harvest.event.impl.HarvesterParameterChangedEvent;
 import de.gerdiproject.harvest.event.impl.StartAbortingEvent;
 import de.gerdiproject.harvest.event.impl.StartHarvestEvent;
+import de.gerdiproject.harvest.harvester.constants.HarvesterConstants;
 import de.gerdiproject.harvest.harvester.rest.HarvesterFacade;
 import de.gerdiproject.harvest.submission.ElasticSearchSubmitter;
 import de.gerdiproject.harvest.utils.CancelableFuture;
 import de.gerdiproject.harvest.utils.HarvesterStringUtils;
 import de.gerdiproject.harvest.utils.HttpRequester;
+
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -59,15 +63,10 @@ import org.slf4j.LoggerFactory;
  */
 public abstract class AbstractHarvester
 {
-    protected static final String HASH_CREATE_FAILED = "Failed to create hash";
-    protected static final String OCTAT_FORMAT = "%02x";
-    protected static final String SHA_HASH_ALGORITHM = "SHA";
-    private final static String HARVESTER_START = "+++ Starting %s +++";
-    private final static String HARVESTER_END = "--- %s finished ---";
-    private final static String HARVESTER_FAILED = "!!! %s failed !!!";
-    private final static String HARVESTER_ABORTED = "!!! %s aborted !!!";
-    protected static final String HARVEST_ABORTED = "HARVEST ABORTED!";
-
+    /**
+     * Event listener for harvester parameter changes. Parameters include the harvesting range, as well as
+     * any implementation specific properties.
+     */
     private final Consumer<HarvesterParameterChangedEvent> onParameterChanged = (HarvesterParameterChangedEvent e) -> {
         String key = e.getParameter().getKey();
 
@@ -122,14 +121,16 @@ public abstract class AbstractHarvester
      */
     abstract protected int initMaxNumberOfDocuments();
 
-
     /**
      * Computes a hash value of the files that are to be harvested, which is
      * used for checking if the files have changed.
      *
      * @return a hash as a checksum of the data which is to be harvested
+     *
+     * @throws NoSuchAlgorithmException occurs if an invalid algorithm is used for a {@linkplain MessageDigest}
+     * @throws NullPointerException occurs for several reasons, depending on the implementation
      */
-    abstract protected String initHash();
+    abstract protected String initHash() throws NoSuchAlgorithmException, NullPointerException;
 
 
     /**
@@ -181,7 +182,12 @@ public abstract class AbstractHarvester
     public void init()
     {
         // calculate hash
-        hash = initHash();
+        try {
+            hash = initHash();
+        } catch (NoSuchAlgorithmException | NullPointerException e) {
+            logger.error(String.format(HarvesterConstants.HASH_CREATION_FAILED, name), e);
+            hash = null;
+        }
 
         // calculate number of documents
         int maxHarvestableDocs = initMaxNumberOfDocuments();
@@ -327,7 +333,7 @@ public abstract class AbstractHarvester
      */
     protected final void harvest()
     {
-        logger.info(String.format(HARVESTER_START, name));
+        logger.info(String.format(HarvesterConstants.HARVESTER_START, name));
 
         harvestedDocumentCount.set(0);
 
@@ -356,7 +362,7 @@ public abstract class AbstractHarvester
     protected void finishHarvestSuccessfully()
     {
         currentHarvestingProcess = null;
-        logger.info(String.format(HARVESTER_END, name));
+        logger.info(String.format(HarvesterConstants.HARVESTER_END, name));
 
         // do some things, only if this is the main harvester
         if (isMainHarvester)
@@ -399,7 +405,7 @@ public abstract class AbstractHarvester
         logger.error(reason.getMessage(), reason);
 
         // log failure
-        logger.warn(String.format(HARVESTER_FAILED, name));
+        logger.warn(String.format(HarvesterConstants.HARVESTER_FAILED, name));
 
         if (isMainHarvester)
             EventSystem.sendEvent(new HarvestFinishedEvent(false, getHash(false)));
@@ -413,12 +419,7 @@ public abstract class AbstractHarvester
     protected void onHarvestAborted()
     {
         EventSystem.sendEvent(new AbortingFinishedEvent());
-
-        logger.warn(String.format(HARVESTER_ABORTED, name));
-
-        // log abort for main harvester
-        if (isMainHarvester)
-            logger.error(HARVEST_ABORTED);
+        logger.warn(String.format(HarvesterConstants.HARVESTER_ABORTED, name));
     }
 
 
@@ -431,8 +432,13 @@ public abstract class AbstractHarvester
      */
     public String getHash(boolean recalculate)
     {
-        if (recalculate)
-            hash = initHash();
+        if (recalculate) {
+            try {
+                hash = initHash();
+            } catch (NoSuchAlgorithmException | NullPointerException e) {
+                logger.error(String.format(HarvesterConstants.HASH_CREATION_FAILED, name), e);
+            }
+        }
 
         return hash;
     }

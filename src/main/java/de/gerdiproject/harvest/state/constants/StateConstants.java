@@ -65,8 +65,11 @@ public class StateConstants
     public static final String HARVEST_SUBMITTED_AT = ", submitted at %s";
     public static final String HARVEST_NOT_STARTED = "Ready to harvest";
 
-    public static final String HARVEST_DONE = "HARVEST FINISHED!";
-    public static final String HARVEST_FAILED = "HARVEST FAILED!";
+    public static final String HARVEST_DONE = "Harvest finished!";
+    public static final String HARVEST_FAILED = "Harvest failed!";
+
+    public static final String ABORT_STARTED = "Aborting %s-process...";
+    public static final String ABORT_FINISHED = "%s-process aborted!";
     /**
      * Private constructor, because this is a static class.
      */
