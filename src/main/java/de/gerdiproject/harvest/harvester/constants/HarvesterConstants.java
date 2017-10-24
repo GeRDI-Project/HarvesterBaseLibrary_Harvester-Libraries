@@ -31,14 +31,14 @@ public class HarvesterConstants
     public static final String SHA_HASH_ALGORITHM = "SHA";
 
     // ALL HARVESTERS
-    public final static String HARVESTER_START = "Starting %s...";
-    public final static String HARVESTER_END = "%s finished!";
-    public final static String HARVESTER_FAILED = "%s failed!";
-    public final static String HARVESTER_ABORTED = "%s aborted!";
+    public static final String HARVESTER_START = "Starting %s...";
+    public static final String HARVESTER_END = "%s finished!";
+    public static final String HARVESTER_FAILED = "%s failed!";
+    public static final String HARVESTER_ABORTED = "%s aborted!";
 
     // LIST HARVESTER
-    public final static String ERROR_NO_ENTRIES = "Cannot harvest %s - The source entries are empty or could not be retrieved!";
-    public final static String LOG_OUT_OF_RANGE = "Skipping %s - Document indices out of range.";
+    public static final String ERROR_NO_ENTRIES = "Cannot harvest %s - The source entries are empty or could not be retrieved!";
+    public static final String LOG_OUT_OF_RANGE = "Skipping %s - Document indices out of range.";
 
 
     /**

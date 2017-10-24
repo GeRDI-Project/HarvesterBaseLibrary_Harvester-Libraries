@@ -16,15 +16,16 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package de.gerdiproject.harvest.event.impl;
+package de.gerdiproject.harvest.state.events;
+
 
 import de.gerdiproject.harvest.event.IEvent;
 
 /**
- * This event aims to start a harvest.
+ * This event aborts the current process, if it is abortable.
  *
  * @author Robin Weiss
  */
-public class StartHarvestEvent implements IEvent
+public class StartAbortingEvent implements IEvent
 {
 }

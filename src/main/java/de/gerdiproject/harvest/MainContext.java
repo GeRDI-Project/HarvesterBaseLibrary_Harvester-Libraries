@@ -29,8 +29,8 @@ import org.slf4j.LoggerFactory;
 import de.gerdiproject.harvest.config.Configuration;
 import de.gerdiproject.harvest.config.parameters.AbstractParameter;
 import de.gerdiproject.harvest.event.EventSystem;
-import de.gerdiproject.harvest.event.impl.HarvesterInitializedEvent;
 import de.gerdiproject.harvest.harvester.AbstractHarvester;
+import de.gerdiproject.harvest.harvester.events.HarvesterInitializedEvent;
 import de.gerdiproject.harvest.utils.CancelableFuture;
 
 

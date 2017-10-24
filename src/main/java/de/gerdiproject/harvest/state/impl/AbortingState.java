@@ -26,13 +26,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import de.gerdiproject.harvest.event.EventSystem;
-import de.gerdiproject.harvest.event.impl.StartAbortingEvent;
-import de.gerdiproject.harvest.event.impl.ChangeStateEvent;
-import de.gerdiproject.harvest.event.impl.AbortingFinishedEvent;
-import de.gerdiproject.harvest.event.impl.AbortingStartedEvent;
 import de.gerdiproject.harvest.state.IState;
 import de.gerdiproject.harvest.state.StateMachine;
 import de.gerdiproject.harvest.state.constants.StateConstants;
+import de.gerdiproject.harvest.state.events.AbortingFinishedEvent;
+import de.gerdiproject.harvest.state.events.AbortingStartedEvent;
+import de.gerdiproject.harvest.state.events.ChangeStateEvent;
+import de.gerdiproject.harvest.state.events.StartAbortingEvent;
 
 /**
  * This state indicates it is waiting for a harvest to start.

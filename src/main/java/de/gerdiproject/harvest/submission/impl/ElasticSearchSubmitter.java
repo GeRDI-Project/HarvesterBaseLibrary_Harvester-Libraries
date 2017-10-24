@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package de.gerdiproject.harvest.submission;
+package de.gerdiproject.harvest.submission.impl;
 
 
 import java.net.MalformedURLException;
@@ -33,6 +33,7 @@ import de.gerdiproject.harvest.IDocument;
 import de.gerdiproject.harvest.MainContext;
 import de.gerdiproject.harvest.config.Configuration;
 import de.gerdiproject.harvest.config.constants.ConfigurationConstants;
+import de.gerdiproject.harvest.submission.AbstractSubmitter;
 import de.gerdiproject.harvest.utils.HttpRequester;
 import de.gerdiproject.harvest.utils.HttpRequester.RestRequestType;
 import de.gerdiproject.json.GsonUtils;
@@ -71,7 +72,7 @@ public class ElasticSearchSubmitter extends AbstractSubmitter
 
 
     @Override
-    protected String submit(List<IDocument> documents, URL submissionUrl, String credentials)
+    protected String submitBatch(List<IDocument> documents, URL submissionUrl, String credentials)
     {
         final Configuration config = MainContext.getConfiguration();
 

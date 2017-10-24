@@ -16,25 +16,38 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package de.gerdiproject.harvest.event.impl;
+package de.gerdiproject.harvest.state.events;
 
-import de.gerdiproject.harvest.config.parameters.AbstractParameter;
+import de.gerdiproject.harvest.event.IEvent;
+import de.gerdiproject.harvest.state.StateMachine;
+import de.gerdiproject.harvest.state.IState;
 
 /**
- * This event signifies a harvester parameter value change.
+ * This event causes a state transition of the {@linkplain StateMachine}.
  *
  * @author Robin Weiss
  */
-public class HarvesterParameterChangedEvent extends GlobalParameterChangedEvent
+public class ChangeStateEvent implements IEvent
 {
+    private final IState state;
+
     /**
      * Simple Constructor.
      *
-     * @param state the parameter that was changed
-     * @param oldValue the old value of the changed parameter
+     * @param state the state that is to be loaded by the {@linkplain StateMachine}
      */
-    public HarvesterParameterChangedEvent(AbstractParameter<?> param, Object oldValue)
+    public ChangeStateEvent(IState state)
     {
-        super(param, oldValue);
+        this.state = state;
+    }
+
+    /**
+     * Returns the state that is to be loaded by the {@linkplain StateMachine}.
+     *
+     * @return the state that is to be loaded
+     */
+    public IState getState()
+    {
+        return state;
     }
 }

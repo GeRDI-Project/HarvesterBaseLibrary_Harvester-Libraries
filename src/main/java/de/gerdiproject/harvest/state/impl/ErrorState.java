@@ -23,10 +23,10 @@ import java.util.List;
 import java.util.function.Consumer;
 
 import de.gerdiproject.harvest.event.EventSystem;
-import de.gerdiproject.harvest.event.impl.ChangeStateEvent;
-import de.gerdiproject.harvest.event.impl.HarvesterInitializedEvent;
+import de.gerdiproject.harvest.harvester.events.HarvesterInitializedEvent;
 import de.gerdiproject.harvest.state.IState;
 import de.gerdiproject.harvest.state.constants.StateConstants;
+import de.gerdiproject.harvest.state.events.ChangeStateEvent;
 
 /**
  * This state indicates it is waiting for a harvest to start.

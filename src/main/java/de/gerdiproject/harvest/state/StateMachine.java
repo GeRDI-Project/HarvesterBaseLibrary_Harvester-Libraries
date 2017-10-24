@@ -19,7 +19,7 @@
 package de.gerdiproject.harvest.state;
 
 import de.gerdiproject.harvest.event.EventSystem;
-import de.gerdiproject.harvest.event.impl.ChangeStateEvent;
+import de.gerdiproject.harvest.state.events.ChangeStateEvent;
 import de.gerdiproject.harvest.state.impl.InitializationState;
 
 public class StateMachine

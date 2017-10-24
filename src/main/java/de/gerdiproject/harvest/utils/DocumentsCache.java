@@ -19,40 +19,29 @@
 package de.gerdiproject.harvest.utils;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.util.Date;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.concurrent.Callable;
 import java.util.function.Consumer;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.gson.Gson;
-import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
 
 import de.gerdiproject.harvest.IDocument;
 import de.gerdiproject.harvest.MainContext;
-import de.gerdiproject.harvest.config.Configuration;
-import de.gerdiproject.harvest.config.constants.ConfigurationConstants;
 import de.gerdiproject.harvest.event.EventSystem;
-import de.gerdiproject.harvest.event.impl.DocumentHarvestedEvent;
-import de.gerdiproject.harvest.event.impl.HarvestFinishedEvent;
-import de.gerdiproject.harvest.event.impl.HarvestStartedEvent;
-import de.gerdiproject.harvest.event.impl.SaveFinishedEvent;
-import de.gerdiproject.harvest.event.impl.SaveStartedEvent;
-import de.gerdiproject.harvest.event.impl.StartSaveEvent;
-import de.gerdiproject.harvest.event.impl.StartSubmissionEvent;
+import de.gerdiproject.harvest.harvester.events.DocumentHarvestedEvent;
+import de.gerdiproject.harvest.harvester.events.HarvestFinishedEvent;
+import de.gerdiproject.harvest.harvester.events.HarvestStartedEvent;
+import de.gerdiproject.harvest.save.HarvestSaver;
+import de.gerdiproject.harvest.save.events.StartSaveEvent;
 import de.gerdiproject.harvest.submission.AbstractSubmitter;
+import de.gerdiproject.harvest.submission.events.StartSubmissionEvent;
 import de.gerdiproject.harvest.utils.constants.DocumentsCacheConstants;
 import de.gerdiproject.json.GsonUtils;
-import de.gerdiproject.json.datacite.DataCiteJson;
 
 public class DocumentsCache
 {
@@ -88,12 +77,12 @@ public class DocumentsCache
 
 
     private Consumer<StartSubmissionEvent> onStartSubmitting = (StartSubmissionEvent e) -> {
-        submitDocuments();
+        submitter.submit(cacheFile);
     };
 
 
     private Consumer<StartSaveEvent> onStartSaving = (StartSaveEvent e) -> {
-        saveDocumentsToDisk();
+        HarvestSaver.save(cacheFile, startTimeStamp, finishTimeStamp, documentHash);
     };
 
 
@@ -180,168 +169,4 @@ public class DocumentsCache
             documentCount++;
         }
     }
-
-
-    /**
-     * Saves the harvested documents to disk and logs if the operation was
-     * successful or not.
-     *
-     * @return A status message describing whether the save succeeded or not
-     * @throws
-     */
-    private void saveDocumentsToDisk()
-    {
-        boolean isSuccessful = true;
-        EventSystem.sendEvent(new SaveStartedEvent());
-
-        final Gson gson = GsonUtils.getGson();
-        final Configuration config = MainContext.getConfiguration();
-
-        // get harvesting range
-        int from = config.getParameterValue(ConfigurationConstants.HARVEST_START_INDEX, Integer.class);
-        int to = config.getParameterValue(ConfigurationConstants.HARVEST_END_INDEX, Integer.class);
-
-        // assemble file name
-        String fileName;
-
-        if (from > 0 || to != Integer.MAX_VALUE) {
-
-            fileName = String.format(
-                           DocumentsCacheConstants.SAVE_FILE_NAME_PARTIAL,
-                           MainContext.getModuleName(),
-                           from,
-                           to,
-                           startTimeStamp);
-        } else {
-            fileName = String.format(
-                           DocumentsCacheConstants.SAVE_FILE_NAME,
-                           MainContext.getModuleName(),
-                           startTimeStamp);
-        }
-
-        // create file and directories
-        File saveFile = new File(fileName);
-        boolean isDirectoryCreated = saveFile.getParentFile().exists() || saveFile.getParentFile().mkdirs();
-
-        if (!isDirectoryCreated) {
-            LOGGER.error(DocumentsCacheConstants.SAVE_FAILED_DIRECTORY);
-            isSuccessful = false;
-        } else {
-            try {
-                // prepare json writer for the save file
-                JsonWriter writer = new JsonWriter(
-                    new OutputStreamWriter(
-                        new FileOutputStream(saveFile),
-                        MainContext.getCharset()));
-
-                // prepare json reader for the cached document list
-                JsonReader reader = new JsonReader(
-                    new InputStreamReader(
-                        new FileInputStream(cacheFile),
-                        MainContext.getCharset()));
-
-
-                writer.beginObject();
-                writer.name("harvestDate");
-                writer.value(startTimeStamp);
-
-                writer.name("durationInSeconds");
-                writer.value((finishTimeStamp - startTimeStamp) / 1000l);
-
-                writer.name("wasHarvestedFromDisk");
-                writer.value(config.getParameterValue(ConfigurationConstants.READ_HTTP_FROM_DISK, Boolean.class));
-
-                writer.name("hash");
-                writer.value(documentHash);
-
-                writer.name("data");
-                writer.beginArray();
-
-                // iterate through cached array
-                reader.beginArray();
-
-                while (reader.hasNext()) {
-                    // read a document from the array
-                    gson.toJson(gson.fromJson(reader, DataCiteJson.class), writer);
-                }
-
-                // close reader
-                reader.endArray();
-                reader.close();
-
-                // close writer
-                writer.endArray();
-                writer.endObject();
-                writer.close();
-            } catch (IOException e) {
-                LOGGER.error(DocumentsCacheConstants.SAVE_FAILED_ERROR, e);
-                isSuccessful = false;
-            }
-        }
-
-        EventSystem.sendEvent(new SaveFinishedEvent(isSuccessful));
-    }
-
-
-    /**
-     * Reads the cached documents and passes them onto an {@linkplain AbstractSubmitter}.
-     */
-    private void submitDocuments()
-    {
-        // start asynchronous submission
-        CancelableFuture<Boolean> asyncSubmission = new CancelableFuture<>(submissionProcess);
-
-        // exception handler
-        asyncSubmission.exceptionally(throwable -> {
-            submitter.endSubmission();
-            return false;
-        });
-    }
-
-    /**
-     * Sends all harvested documents in fixed chunks to the {@linkplain AbstractSubmitter}.
-     */
-    private final Callable<Boolean> submissionProcess = () -> {
-
-        boolean areAllSubmissionsSuccessful = true;
-
-        // prepare variables
-        final Gson gson = GsonUtils.getGson();
-        final int maxDocs = MainContext.getConfiguration().getParameterValue(ConfigurationConstants.SUBMISSION_SIZE, Integer.class);
-        List<IDocument> documentList = new LinkedList<IDocument>();
-
-        // prepare json reader for the cached document list
-        JsonReader reader = new JsonReader(
-            new InputStreamReader(
-                new FileInputStream(cacheFile),
-                MainContext.getCharset()));
-
-        // iterate through cached array
-        reader.beginArray();
-
-        while (reader.hasNext())
-        {
-            // read a document from the array
-            documentList.add(gson.fromJson(reader, DataCiteJson.class));
-
-            // send documents in chunks of a configurable size
-            if (documentList.size() == maxDocs) {
-                areAllSubmissionsSuccessful &= submitter.submit(documentList);
-                documentList.clear();
-            }
-        }
-
-        // close reader
-        reader.endArray();
-        reader.close();
-
-        // send remainder of documents
-        if (documentList.size() > 0)
-        {
-            submitter.submit(documentList);
-            documentList.clear();
-        }
-
-        return areAllSubmissionsSuccessful;
-    };
 }

@@ -16,15 +16,37 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package de.gerdiproject.harvest.event.impl;
+package de.gerdiproject.harvest.harvester.events;
 
+import de.gerdiproject.harvest.IDocument;
 import de.gerdiproject.harvest.event.IEvent;
 
 /**
- * This event indicates that a document has been processed when writing to disk.
+ * This event signifies that a document was harvested and successfully cached.
  *
  * @author Robin Weiss
  */
-public class DocumentSavedEvent implements IEvent
+public class DocumentHarvestedEvent implements IEvent
 {
+    private final IDocument document;
+
+    /**
+     * Simple constructor providing the harvested document.
+     *
+     * @param doc the document that was harvested
+     */
+    public DocumentHarvestedEvent(IDocument doc)
+    {
+        document = doc;
+    }
+
+
+    /**
+     * Returns the harvested document.
+     * @return the document that was harvested
+     */
+    public IDocument getDocument()
+    {
+        return document;
+    }
 }

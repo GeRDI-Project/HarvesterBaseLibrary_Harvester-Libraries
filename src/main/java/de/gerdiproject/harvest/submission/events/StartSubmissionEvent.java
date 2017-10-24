@@ -16,16 +16,16 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package de.gerdiproject.harvest.event.impl;
+package de.gerdiproject.harvest.submission.events;
 
 
 import de.gerdiproject.harvest.event.IEvent;
 
 /**
- * This event signifies that a process was successfully aborted.
+ * This event aims to send all harvested documents to be processed and submitted.
  *
  * @author Robin Weiss
  */
-public class AbortingFinishedEvent implements IEvent
+public class StartSubmissionEvent implements IEvent
 {
 }

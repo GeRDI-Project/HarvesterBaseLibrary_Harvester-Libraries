@@ -24,14 +24,14 @@ import java.util.function.Consumer;
 
 import de.gerdiproject.harvest.config.constants.ConfigurationConstants;
 import de.gerdiproject.harvest.event.EventSystem;
-import de.gerdiproject.harvest.event.impl.ChangeStateEvent;
-import de.gerdiproject.harvest.event.impl.DocumentHarvestedEvent;
-import de.gerdiproject.harvest.event.impl.HarvestFinishedEvent;
-import de.gerdiproject.harvest.event.impl.SaveStartedEvent;
-import de.gerdiproject.harvest.event.impl.SubmissionStartedEvent;
+import de.gerdiproject.harvest.harvester.events.DocumentHarvestedEvent;
+import de.gerdiproject.harvest.harvester.events.HarvestFinishedEvent;
+import de.gerdiproject.harvest.save.events.SaveStartedEvent;
 import de.gerdiproject.harvest.state.AbstractProgressHarvestState;
 import de.gerdiproject.harvest.state.constants.StateConstants;
 import de.gerdiproject.harvest.state.constants.StateEventHandlerConstants;
+import de.gerdiproject.harvest.state.events.ChangeStateEvent;
+import de.gerdiproject.harvest.submission.events.SubmissionStartedEvent;
 
 public class HarvestingState extends AbstractProgressHarvestState
 {

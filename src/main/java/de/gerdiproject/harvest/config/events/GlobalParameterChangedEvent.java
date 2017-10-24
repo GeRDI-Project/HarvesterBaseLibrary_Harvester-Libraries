@@ -16,48 +16,52 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package de.gerdiproject.harvest.event.impl;
+package de.gerdiproject.harvest.config.events;
 
+import de.gerdiproject.harvest.config.parameters.AbstractParameter;
 import de.gerdiproject.harvest.event.IEvent;
 
 /**
- * This event signifies that a harvest has been completed.
+ * This event signifies a global parameter value change.
  *
  * @author Robin Weiss
  */
-public class HarvestFinishedEvent implements IEvent
+public class GlobalParameterChangedEvent implements IEvent
 {
-    private final boolean isSuccessful;
-    private final String documentChecksum;
+    private final Object oldValue;
+    private final AbstractParameter<?> param;
 
     /**
      * Simple Constructor.
      *
-     * @param isSuccessful true if the harvest finished successfully
-     * @param documentChecksum a hash value over all harvested documents
+     * @param state the parameter that was changed
+     * @param oldValue the old value of the changed parameter
      */
-    public HarvestFinishedEvent(boolean isSuccessful, String documentChecksum)
+    public GlobalParameterChangedEvent(AbstractParameter<?> param, Object oldValue)
     {
-        this.isSuccessful = isSuccessful;
-        this.documentChecksum = documentChecksum;
+        this.param = param;
+        this.oldValue = oldValue;
     }
 
     /**
-     * Returns true if the harvest finished successfully.
+     * Returns the parameter that was changed.
      *
-     * @return true if the harvest finished successfully
+     * @return the parameter that was changed
      */
-    public boolean isSuccessful()
+    public AbstractParameter<?> getParameter()
     {
-        return isSuccessful;
+        return param;
     }
 
     /**
-     * Returns a hash value over all harvested documents.
-     * @return a hash value over all harvested documents
+     * Returns the old value of the changed parameter.
+     *
+     * @return the old value of the changed parameter
      */
-    public String getDocumentChecksum()
+    public Object getOldValue()
     {
-        return documentChecksum;
+        return oldValue;
     }
+
+
 }

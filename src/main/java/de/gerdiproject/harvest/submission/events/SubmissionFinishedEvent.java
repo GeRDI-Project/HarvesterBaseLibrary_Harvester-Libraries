@@ -16,34 +16,34 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package de.gerdiproject.harvest.event.impl;
+package de.gerdiproject.harvest.submission.events;
 
 
 import de.gerdiproject.harvest.event.IEvent;
 
 /**
- * This event signifies that the process of saving all documents to disk was finished.
+ * This event signifies that a document submission has finished.
  *
  * @author Robin Weiss
  */
-public class SaveFinishedEvent implements IEvent
+public class SubmissionFinishedEvent implements IEvent
 {
     private final boolean isSuccessful;
 
     /**
      * Simple Constructor.
      *
-     * @param isSuccessful true if the saving process finished successfully
+     * @param isSuccessful true if the submission finished successfully
      */
-    public SaveFinishedEvent(boolean isSuccessful)
+    public SubmissionFinishedEvent(boolean isSuccessful)
     {
         this.isSuccessful = isSuccessful;
     }
 
     /**
-     * Returns true if the saving process finished successfully.
+     * Returns true if the submission finished successfully.
      *
-     * @return true if the saving process finished successfully
+     * @return true if the submission finished successfully
      */
     public boolean isSuccessful()
     {

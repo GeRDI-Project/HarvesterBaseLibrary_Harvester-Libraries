@@ -16,38 +16,16 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package de.gerdiproject.harvest.event.impl;
+package de.gerdiproject.harvest.save.events;
+
 
 import de.gerdiproject.harvest.event.IEvent;
-import de.gerdiproject.harvest.state.StateMachine;
-import de.gerdiproject.harvest.state.IState;
 
 /**
- * This event causes a state transition of the {@linkplain StateMachine}.
+ * This event signifies that the process of saving all documents to disk was started.
  *
  * @author Robin Weiss
  */
-public class ChangeStateEvent implements IEvent
+public class SaveStartedEvent implements IEvent
 {
-    private final IState state;
-
-    /**
-     * Simple Constructor.
-     *
-     * @param state the state that is to be loaded by the {@linkplain StateMachine}
-     */
-    public ChangeStateEvent(IState state)
-    {
-        this.state = state;
-    }
-
-    /**
-     * Returns the state that is to be loaded by the {@linkplain StateMachine}.
-     *
-     * @return the state that is to be loaded
-     */
-    public IState getState()
-    {
-        return state;
-    }
 }

@@ -24,9 +24,9 @@ import java.util.function.Consumer;
 
 import de.gerdiproject.harvest.config.constants.ConfigurationConstants;
 import de.gerdiproject.harvest.event.EventSystem;
-import de.gerdiproject.harvest.event.impl.DocumentsSubmittedEvent;
 import de.gerdiproject.harvest.state.AbstractProgressHarvestState;
 import de.gerdiproject.harvest.state.constants.StateConstants;
+import de.gerdiproject.harvest.submission.events.DocumentsSubmittedEvent;
 
 /**
  * This state represents the initialization of harvesters at the beginning of the server start.

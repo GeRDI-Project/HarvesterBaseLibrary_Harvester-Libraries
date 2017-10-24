@@ -16,16 +16,25 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package de.gerdiproject.harvest.event.impl;
+package de.gerdiproject.harvest.config.events;
 
-
-import de.gerdiproject.harvest.event.IEvent;
+import de.gerdiproject.harvest.config.parameters.AbstractParameter;
 
 /**
- * This event aims to send all harvested documents to be processed and submitted.
+ * This event signifies a harvester parameter value change.
  *
  * @author Robin Weiss
  */
-public class StartSubmissionEvent implements IEvent
+public class HarvesterParameterChangedEvent extends GlobalParameterChangedEvent
 {
+    /**
+     * Simple Constructor.
+     *
+     * @param state the parameter that was changed
+     * @param oldValue the old value of the changed parameter
+     */
+    public HarvesterParameterChangedEvent(AbstractParameter<?> param, Object oldValue)
+    {
+        super(param, oldValue);
+    }
 }

@@ -16,52 +16,50 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package de.gerdiproject.harvest.event.impl;
+package de.gerdiproject.harvest.harvester.events;
 
-import de.gerdiproject.harvest.config.parameters.AbstractParameter;
 import de.gerdiproject.harvest.event.IEvent;
 
 /**
- * This event signifies a global parameter value change.
+ * This event signifies that a harvest has been started.
  *
  * @author Robin Weiss
  */
-public class GlobalParameterChangedEvent implements IEvent
+public class HarvestStartedEvent implements IEvent
 {
-    private final Object oldValue;
-    private final AbstractParameter<?> param;
+    private final int startIndex;
+    private final int endIndex;
+
 
     /**
-     * Simple Constructor.
+     * Simple constructor that requires the harvesting range.
      *
-     * @param state the parameter that was changed
-     * @param oldValue the old value of the changed parameter
+     * @param startIndex the index of the first document to be harvested
+     * @param endIndex the index of the last document that is to be harvested + 1
      */
-    public GlobalParameterChangedEvent(AbstractParameter<?> param, Object oldValue)
+    public HarvestStartedEvent(int startIndex, int endIndex)
     {
-        this.param = param;
-        this.oldValue = oldValue;
-    }
-
-    /**
-     * Returns the parameter that was changed.
-     *
-     * @return the parameter that was changed
-     */
-    public AbstractParameter<?> getParameter()
-    {
-        return param;
-    }
-
-    /**
-     * Returns the old value of the changed parameter.
-     *
-     * @return the old value of the changed parameter
-     */
-    public Object getOldValue()
-    {
-        return oldValue;
+        this.startIndex = startIndex;
+        this.endIndex = endIndex;
     }
 
 
+    /**
+     * Returns the index of the first document to be harvested.
+     * @return the index of the first document to be harvested
+     */
+    public int getStartIndex()
+    {
+        return startIndex;
+    }
+
+
+    /**
+     * Returns the index of the last document that is to be harvested + 1.
+     * @return the index of the last document that is to be harvested + 1
+     */
+    public int getEndIndex()
+    {
+        return endIndex;
+    }
 }

@@ -24,10 +24,10 @@ import java.util.function.Consumer;
 
 import de.gerdiproject.harvest.config.constants.ConfigurationConstants;
 import de.gerdiproject.harvest.event.EventSystem;
-import de.gerdiproject.harvest.event.impl.ChangeStateEvent;
-import de.gerdiproject.harvest.event.impl.HarvesterInitializedEvent;
+import de.gerdiproject.harvest.harvester.events.HarvesterInitializedEvent;
 import de.gerdiproject.harvest.state.IState;
 import de.gerdiproject.harvest.state.constants.StateConstants;
+import de.gerdiproject.harvest.state.events.ChangeStateEvent;
 
 /**
  * This state represents the initialization of harvesters at the beginning of the server start.

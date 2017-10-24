@@ -16,37 +16,48 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package de.gerdiproject.harvest.event.impl;
-
+package de.gerdiproject.harvest.harvester.events;
 
 import de.gerdiproject.harvest.event.IEvent;
 
 /**
- * This event signifies that a document submission has finished.
+ * This event signifies that a harvest has been completed.
  *
  * @author Robin Weiss
  */
-public class SubmissionFinishedEvent implements IEvent
+public class HarvestFinishedEvent implements IEvent
 {
     private final boolean isSuccessful;
+    private final String documentChecksum;
 
     /**
      * Simple Constructor.
      *
-     * @param isSuccessful true if the submission finished successfully
+     * @param isSuccessful true if the harvest finished successfully
+     * @param documentChecksum a hash value over all harvested documents
      */
-    public SubmissionFinishedEvent(boolean isSuccessful)
+    public HarvestFinishedEvent(boolean isSuccessful, String documentChecksum)
     {
         this.isSuccessful = isSuccessful;
+        this.documentChecksum = documentChecksum;
     }
 
     /**
-     * Returns true if the submission finished successfully.
+     * Returns true if the harvest finished successfully.
      *
-     * @return true if the submission finished successfully
+     * @return true if the harvest finished successfully
      */
     public boolean isSuccessful()
     {
         return isSuccessful;
+    }
+
+    /**
+     * Returns a hash value over all harvested documents.
+     * @return a hash value over all harvested documents
+     */
+    public String getDocumentChecksum()
+    {
+        return documentChecksum;
     }
 }

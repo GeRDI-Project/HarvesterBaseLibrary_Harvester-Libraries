@@ -25,12 +25,12 @@ import java.util.function.Consumer;
 import de.gerdiproject.harvest.MainContext;
 import de.gerdiproject.harvest.config.constants.ConfigurationConstants;
 import de.gerdiproject.harvest.event.EventSystem;
-import de.gerdiproject.harvest.event.impl.ChangeStateEvent;
-import de.gerdiproject.harvest.event.impl.DocumentSavedEvent;
-import de.gerdiproject.harvest.event.impl.SaveFinishedEvent;
+import de.gerdiproject.harvest.save.events.DocumentSavedEvent;
+import de.gerdiproject.harvest.save.events.SaveFinishedEvent;
 import de.gerdiproject.harvest.state.AbstractProgressHarvestState;
 import de.gerdiproject.harvest.state.IState;
 import de.gerdiproject.harvest.state.constants.StateConstants;
+import de.gerdiproject.harvest.state.events.ChangeStateEvent;
 
 /**
  * This state represents the process of permanently saving the harvested documents to disk.

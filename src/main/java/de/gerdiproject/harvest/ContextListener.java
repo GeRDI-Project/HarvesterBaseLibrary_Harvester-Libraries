@@ -23,7 +23,7 @@ import de.gerdiproject.harvest.config.parameters.AbstractParameter;
 import de.gerdiproject.harvest.harvester.AbstractHarvester;
 import de.gerdiproject.harvest.state.StateMachine;
 import de.gerdiproject.harvest.submission.AbstractSubmitter;
-import de.gerdiproject.harvest.submission.ElasticSearchSubmitter;
+import de.gerdiproject.harvest.submission.impl.ElasticSearchSubmitter;
 import de.gerdiproject.harvest.utils.DocumentsCache;
 import de.gerdiproject.json.GsonUtils;
 

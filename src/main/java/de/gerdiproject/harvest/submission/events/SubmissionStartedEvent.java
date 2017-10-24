@@ -16,16 +16,16 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package de.gerdiproject.harvest.event.impl;
+package de.gerdiproject.harvest.submission.events;
 
 
 import de.gerdiproject.harvest.event.IEvent;
 
 /**
- * This event signifies that an aborting process has started.
+ * This event signifies that a document submission has started.
  *
  * @author Robin Weiss
  */
-public class AbortingStartedEvent implements IEvent
+public class SubmissionStartedEvent implements IEvent
 {
 }

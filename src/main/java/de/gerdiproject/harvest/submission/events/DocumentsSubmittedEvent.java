@@ -16,16 +16,37 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package de.gerdiproject.harvest.event.impl;
-
+package de.gerdiproject.harvest.submission.events;
 
 import de.gerdiproject.harvest.event.IEvent;
 
 /**
- * This event aborts the current process, if it is abortable.
+ * This event indicates that somedocuments have been submitted successfully.
  *
  * @author Robin Weiss
  */
-public class StartAbortingEvent implements IEvent
+public class DocumentsSubmittedEvent implements IEvent
 {
+
+    private final int numberOfSubmittedDocs;
+
+    /**
+     * Simple Constructor.
+     *
+     * @param numberOfSubmittedDocs the number of documents that have been sent
+     */
+    public DocumentsSubmittedEvent(int numberOfSubmittedDocs)
+    {
+        this.numberOfSubmittedDocs = numberOfSubmittedDocs;
+    }
+
+    /**
+     * Returns the number of documents that have been sent.
+     *
+     * @return the number of documents that have been sent
+     */
+    public int getNumberOfSubmittedDocuments()
+    {
+        return numberOfSubmittedDocs;
+    }
 }

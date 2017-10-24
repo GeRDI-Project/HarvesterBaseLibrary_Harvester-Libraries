@@ -16,36 +16,16 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package de.gerdiproject.harvest.event.impl;
+package de.gerdiproject.harvest.state.events;
+
 
 import de.gerdiproject.harvest.event.IEvent;
 
 /**
- * This event signifies that the harvester initialization process is over.
+ * This event signifies that a process was successfully aborted.
  *
  * @author Robin Weiss
  */
-public class HarvesterInitializedEvent implements IEvent
+public class AbortingFinishedEvent implements IEvent
 {
-    private final boolean isSuccessful;
-
-    /**
-     * Simple Constructor.
-     *
-     * @param isSuccessful if true, the harvester was initialized and is ready to go
-     */
-    public HarvesterInitializedEvent(boolean isSuccessful)
-    {
-        this.isSuccessful = isSuccessful;
-    }
-
-    /**
-     * Returns true, if the harvester was initialized and is ready to go.
-     *
-     * @return true, if the harvester was initialized successfully
-     */
-    public boolean isSuccessful()
-    {
-        return isSuccessful;
-    }
 }

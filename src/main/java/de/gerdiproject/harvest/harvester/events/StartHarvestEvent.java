@@ -16,16 +16,15 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package de.gerdiproject.harvest.event.impl;
-
+package de.gerdiproject.harvest.harvester.events;
 
 import de.gerdiproject.harvest.event.IEvent;
 
 /**
- * This event signifies that the process of saving all documents to disk was started.
+ * This event aims to start a harvest.
  *
  * @author Robin Weiss
  */
-public class SaveStartedEvent implements IEvent
+public class StartHarvestEvent implements IEvent
 {
 }

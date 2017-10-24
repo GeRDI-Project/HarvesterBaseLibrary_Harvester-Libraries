@@ -27,18 +27,18 @@ import de.gerdiproject.harvest.MainContext;
 import de.gerdiproject.harvest.config.Configuration;
 import de.gerdiproject.harvest.config.constants.ConfigurationConstants;
 import de.gerdiproject.harvest.event.EventSystem;
-import de.gerdiproject.harvest.event.impl.ChangeStateEvent;
-import de.gerdiproject.harvest.event.impl.HarvestFinishedEvent;
-import de.gerdiproject.harvest.event.impl.HarvestStartedEvent;
-import de.gerdiproject.harvest.event.impl.SaveStartedEvent;
-import de.gerdiproject.harvest.event.impl.StartSaveEvent;
-import de.gerdiproject.harvest.event.impl.StartSubmissionEvent;
-import de.gerdiproject.harvest.event.impl.SubmissionStartedEvent;
+import de.gerdiproject.harvest.harvester.events.HarvestFinishedEvent;
+import de.gerdiproject.harvest.harvester.events.HarvestStartedEvent;
+import de.gerdiproject.harvest.save.events.SaveStartedEvent;
+import de.gerdiproject.harvest.save.events.StartSaveEvent;
 import de.gerdiproject.harvest.state.StateMachine;
+import de.gerdiproject.harvest.state.events.ChangeStateEvent;
 import de.gerdiproject.harvest.state.impl.HarvestingState;
 import de.gerdiproject.harvest.state.impl.IdleState;
 import de.gerdiproject.harvest.state.impl.SavingState;
 import de.gerdiproject.harvest.state.impl.SubmittingState;
+import de.gerdiproject.harvest.submission.events.StartSubmissionEvent;
+import de.gerdiproject.harvest.submission.events.SubmissionStartedEvent;
 
 
 /**

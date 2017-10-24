@@ -28,16 +28,16 @@ import org.slf4j.LoggerFactory;
 import de.gerdiproject.harvest.MainContext;
 import de.gerdiproject.harvest.config.constants.ConfigurationConstants;
 import de.gerdiproject.harvest.event.EventSystem;
-import de.gerdiproject.harvest.event.impl.HarvestStartedEvent;
-import de.gerdiproject.harvest.event.impl.SaveStartedEvent;
-import de.gerdiproject.harvest.event.impl.StartSaveEvent;
-import de.gerdiproject.harvest.event.impl.StartHarvestEvent;
-import de.gerdiproject.harvest.event.impl.StartSubmissionEvent;
-import de.gerdiproject.harvest.event.impl.SubmissionStartedEvent;
+import de.gerdiproject.harvest.harvester.events.HarvestStartedEvent;
+import de.gerdiproject.harvest.harvester.events.StartHarvestEvent;
+import de.gerdiproject.harvest.save.events.SaveStartedEvent;
+import de.gerdiproject.harvest.save.events.StartSaveEvent;
 import de.gerdiproject.harvest.state.StateMachine;
 import de.gerdiproject.harvest.state.IState;
 import de.gerdiproject.harvest.state.constants.StateConstants;
 import de.gerdiproject.harvest.state.constants.StateEventHandlerConstants;
+import de.gerdiproject.harvest.submission.events.StartSubmissionEvent;
+import de.gerdiproject.harvest.submission.events.SubmissionStartedEvent;
 
 /**
  * This state indicates it is waiting for a harvest to start.
