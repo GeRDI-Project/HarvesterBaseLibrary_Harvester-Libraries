@@ -32,6 +32,7 @@ import de.gerdiproject.harvest.harvester.events.HarvestStartedEvent;
 import de.gerdiproject.harvest.save.events.SaveStartedEvent;
 import de.gerdiproject.harvest.save.events.StartSaveEvent;
 import de.gerdiproject.harvest.state.StateMachine;
+import de.gerdiproject.harvest.state.events.AbortingFinishedEvent;
 import de.gerdiproject.harvest.state.events.ChangeStateEvent;
 import de.gerdiproject.harvest.state.impl.HarvestingState;
 import de.gerdiproject.harvest.state.impl.IdleState;
@@ -104,7 +105,7 @@ public class StateEventHandlerConstants
     public static final Consumer<SubmissionStartedEvent> ON_SUBMISSION_STARTED =
     (SubmissionStartedEvent e) -> {
 
-        SubmittingState nextState = new SubmittingState();
+        SubmittingState nextState = new SubmittingState(e.getNumberOfDocuments());
         EventSystem.sendEvent(new ChangeStateEvent(nextState));
     };
 
@@ -115,7 +116,17 @@ public class StateEventHandlerConstants
     public static final Consumer<SaveStartedEvent> ON_SAVE_STARTED =
     (SaveStartedEvent e) -> {
 
-        SavingState nextState = new SavingState(false);
+        SavingState nextState = new SavingState(e.getNumberOfDocuments(), false);
+        EventSystem.sendEvent(new ChangeStateEvent(nextState));
+    };
+
+    /**
+     * Switches the state to {@linkplain IdleState} when an aborting-process finishes.
+     */
+    public static final Consumer<AbortingFinishedEvent> ON_ABORTING_FINISHED =
+    (AbortingFinishedEvent e) -> {
+
+        IdleState nextState = new IdleState();
         EventSystem.sendEvent(new ChangeStateEvent(nextState));
     };
 }

@@ -70,10 +70,11 @@ public class HarvestSaver
      * @param startTimestamp the UNIX Timestamp of the beginning of the harvest
      * @param finishTimestamp the UNIX Timestamp of the end of the harvest
      * @param sourceHash a String used for version checks of the source data that was harvested
+     * @param numberOfDocs the amount of documents that are to be saved
      */
-    public static void save(File cachedDocuments, long startTimestamp, long finishTimestamp, String sourceHash)
+    public static void save(File cachedDocuments, long startTimestamp, long finishTimestamp, String sourceHash, int numberOfDocs)
     {
-        EventSystem.sendEvent(new SaveStartedEvent());
+        EventSystem.sendEvent(new SaveStartedEvent(numberOfDocs));
 
         // start asynchronous save
         CancelableFuture<Boolean> asyncSave = new CancelableFuture<>(

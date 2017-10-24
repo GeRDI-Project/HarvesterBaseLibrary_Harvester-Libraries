@@ -62,6 +62,4 @@ public class GlobalParameterChangedEvent implements IEvent
     {
         return oldValue;
     }
-
-
 }

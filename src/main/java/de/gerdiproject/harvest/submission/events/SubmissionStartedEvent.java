@@ -28,4 +28,26 @@ import de.gerdiproject.harvest.event.IEvent;
  */
 public class SubmissionStartedEvent implements IEvent
 {
+    private final int numberOfDocs;
+
+    /**
+     * Simple Constructor.
+     *
+     * @param numberOfDocs the number of documents that are to be submitted
+     */
+    public SubmissionStartedEvent(int numberOfDocs)
+    {
+        this.numberOfDocs = numberOfDocs;
+    }
+
+
+    /**
+     * Returns the number of documents that are to be submitted.
+     *
+     * @return the number of documents that are to be submitted
+     */
+    public int getNumberOfDocuments()
+    {
+        return numberOfDocs;
+    }
 }

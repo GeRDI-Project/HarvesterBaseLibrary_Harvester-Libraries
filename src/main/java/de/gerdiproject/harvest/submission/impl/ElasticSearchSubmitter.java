@@ -34,6 +34,7 @@ import de.gerdiproject.harvest.MainContext;
 import de.gerdiproject.harvest.config.Configuration;
 import de.gerdiproject.harvest.config.constants.ConfigurationConstants;
 import de.gerdiproject.harvest.submission.AbstractSubmitter;
+import de.gerdiproject.harvest.submission.constants.ElasticSearchConstants;
 import de.gerdiproject.harvest.utils.HttpRequester;
 import de.gerdiproject.harvest.utils.HttpRequester.RestRequestType;
 import de.gerdiproject.json.GsonUtils;
@@ -48,29 +49,6 @@ import de.gerdiproject.json.GsonUtils;
  */
 public class ElasticSearchSubmitter extends AbstractSubmitter
 {
-    private static final String NO_MAPPINGS_ERROR = "Could not create mappings. Is the Elastic Search URL correct and is the server up and running?";
-
-    private static final String MAPPINGS_URL = "%s://%s/%s?pretty";
-    private static final String MAPPINGS_URL_WITH_PORT = "%s://%s:%d/%s?pretty";
-    private static final String BASIC_MAPPING = "{\"mappings\":{\"%s\":{\"properties\":{}}}}";
-
-    private static final String BATCH_POST_INSTRUCTION = "{\"index\":{\"_id\":\"%s\"}}%n%s%n";
-    private static final String BULK_SUBMISSION_URL_SUFFIX = "_bulk";
-
-    private static final String SUBMIT_ERROR_INDICATOR = "\"status\" : 400";
-    private static final String SUBMIT_PARTIAL_FAILED_FORMAT = "%n\t%s of document '%s': %s - %s'";
-
-    private static final String ID_JSON = "_id";
-    private static final String INDEX_JSON = "index";
-    private static final String ITEMS_JSON = "items";
-    private static final String ERROR_JSON = "error";
-    private static final String REASON_JSON = "reason";
-    private static final String CAUSED_BY_JSON = "caused_by";
-    private static final String TYPE_JSON = "type";
-
-    private static final String NULL_JSON = "null";
-
-
     @Override
     protected String submitBatch(List<IDocument> documents, URL submissionUrl, String credentials)
     {
@@ -81,7 +59,7 @@ public class ElasticSearchSubmitter extends AbstractSubmitter
 
         // if no mappings were created, abort
         if (!hasMappings)
-            return NO_MAPPINGS_ERROR;
+            return ElasticSearchConstants.NO_MAPPINGS_ERROR;
 
         // build a string for bulk-posting to Elastic search
         StringBuilder bulkRequestBuilder = new StringBuilder();
@@ -92,7 +70,7 @@ public class ElasticSearchSubmitter extends AbstractSubmitter
                 IDocument doc = documents.get(i);
                 String id = doc.getElasticSearchId();
 
-                bulkRequestBuilder.append(String.format(BATCH_POST_INSTRUCTION, id, GsonUtils.getGson().toJson(doc)));
+                bulkRequestBuilder.append(String.format(ElasticSearchConstants.BATCH_POST_INSTRUCTION, id, GsonUtils.getGson().toJson(doc)));
             }
 
             // send POST request to Elastic search
@@ -121,7 +99,7 @@ public class ElasticSearchSubmitter extends AbstractSubmitter
         String bulkSubmitUrl = elasticSearchUrl.toString();
 
         // check if the URL already is a bulk submission URL
-        if (!path[path.length - 1].equals(BULK_SUBMISSION_URL_SUFFIX)) {
+        if (!path[path.length - 1].equals(ElasticSearchConstants.BULK_SUBMISSION_URL_SUFFIX)) {
             // extract URL without Query, add a slash if necessary
             bulkSubmitUrl = bulkSubmitUrl.substring(0, bulkSubmitUrl.indexOf('?'));
 
@@ -129,7 +107,7 @@ public class ElasticSearchSubmitter extends AbstractSubmitter
                 bulkSubmitUrl += "/";
 
             // add bulk suffix
-            bulkSubmitUrl += BULK_SUBMISSION_URL_SUFFIX;
+            bulkSubmitUrl += ElasticSearchConstants.BULK_SUBMISSION_URL_SUFFIX;
         }
 
         try {
@@ -161,13 +139,13 @@ public class ElasticSearchSubmitter extends AbstractSubmitter
         // assemble mappings URL
         if (elasticSearchUrl.getPort() == -1)
             mappingsUrl = String.format(
-                              MAPPINGS_URL,
+                              ElasticSearchConstants.MAPPINGS_URL,
                               elasticSearchUrl.getProtocol(),
                               elasticSearchUrl.getHost(),
                               index);
         else
             mappingsUrl = String.format(
-                              MAPPINGS_URL_WITH_PORT,
+                              ElasticSearchConstants.MAPPINGS_URL_WITH_PORT,
                               elasticSearchUrl.getProtocol(),
                               elasticSearchUrl.getHost(),
                               elasticSearchUrl.getPort(),
@@ -190,7 +168,7 @@ public class ElasticSearchSubmitter extends AbstractSubmitter
                 httpRequester.getRestResponse(
                     RestRequestType.PUT,
                     mappingsUrl,
-                    String.format(BASIC_MAPPING, type),
+                    String.format(ElasticSearchConstants.BASIC_MAPPING, type),
                     null);
                 hasMapping = true;
 
@@ -216,7 +194,7 @@ public class ElasticSearchSubmitter extends AbstractSubmitter
 
         // parse a json object from the response string
         JsonObject responseObj = GsonUtils.getGson().fromJson(response, JsonObject.class);
-        JsonArray responseArray = responseObj.get(ITEMS_JSON).getAsJsonArray();
+        JsonArray responseArray = responseObj.get(ElasticSearchConstants.ITEMS_JSON).getAsJsonArray();
 
         // if the server response is not JSON, it's probably an error
         if (responseArray == null)
@@ -224,17 +202,17 @@ public class ElasticSearchSubmitter extends AbstractSubmitter
 
         // if the server response is JSON and does not contain "status: 400",
         // there are no errors
-        if (response.indexOf(SUBMIT_ERROR_INDICATOR) != -1) {
+        if (response.indexOf(ElasticSearchConstants.SUBMIT_ERROR_INDICATOR) != -1) {
 
             StringBuilder errorBuilder = new StringBuilder();
 
             // collect failed documents
             for (JsonElement r : responseArray) {
                 // get the json object that holds the response to a single document
-                JsonObject singleDocResponse = r.getAsJsonObject().get(INDEX_JSON).getAsJsonObject();
+                JsonObject singleDocResponse = r.getAsJsonObject().get(ElasticSearchConstants.INDEX_JSON).getAsJsonObject();
 
                 // if document was transmitted successfully, check the next one
-                if (singleDocResponse.get(ERROR_JSON) != null) {
+                if (singleDocResponse.get(ElasticSearchConstants.ERROR_JSON) != null) {
                     // append the error message
                     errorBuilder.append(formatSubmissionError(singleDocResponse));
                 }
@@ -258,27 +236,27 @@ public class ElasticSearchSubmitter extends AbstractSubmitter
      */
     private String formatSubmissionError(JsonObject elasticSearchResponse)
     {
-        JsonObject errorObject = elasticSearchResponse.get(ERROR_JSON).getAsJsonObject();
-        final String documentId = elasticSearchResponse.get(ID_JSON).getAsString();
+        JsonObject errorObject = elasticSearchResponse.get(ElasticSearchConstants.ERROR_JSON).getAsJsonObject();
+        final String documentId = elasticSearchResponse.get(ElasticSearchConstants.ID_JSON).getAsString();
 
         // get the reason of the submission failure
-        final String submitFailedReason = errorObject.has(REASON_JSON)
-                                          ? errorObject.get(REASON_JSON).getAsString()
-                                          : NULL_JSON;
+        final String submitFailedReason = errorObject.has(ElasticSearchConstants.REASON_JSON)
+                                          ? errorObject.get(ElasticSearchConstants.REASON_JSON).getAsString()
+                                          : ElasticSearchConstants.NULL_JSON;
 
-        final JsonObject cause = errorObject.get(CAUSED_BY_JSON).getAsJsonObject();
+        final JsonObject cause = errorObject.get(ElasticSearchConstants.CAUSED_BY_JSON).getAsJsonObject();
 
-        final String exceptionType = cause.has(TYPE_JSON)
-                                     ? cause.get(TYPE_JSON).getAsString()
-                                     : NULL_JSON;
+        final String exceptionType = cause.has(ElasticSearchConstants.TYPE_JSON)
+                                     ? cause.get(ElasticSearchConstants.TYPE_JSON).getAsString()
+                                     : ElasticSearchConstants.NULL_JSON;
 
-        final String exceptionReason = cause.has(REASON_JSON)
-                                       ? cause.get(REASON_JSON).getAsString()
-                                       : NULL_JSON;
+        final String exceptionReason = cause.has(ElasticSearchConstants.REASON_JSON)
+                                       ? cause.get(ElasticSearchConstants.REASON_JSON).getAsString()
+                                       : ElasticSearchConstants.NULL_JSON;
 
         // append document failure to error log
         return String.format(
-                   SUBMIT_PARTIAL_FAILED_FORMAT,
+                   ElasticSearchConstants.SUBMIT_PARTIAL_FAILED_FORMAT,
                    submitFailedReason,
                    documentId,
                    exceptionType,

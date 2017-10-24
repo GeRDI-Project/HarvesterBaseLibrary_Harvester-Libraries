@@ -26,6 +26,7 @@ import java.util.Base64;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CancellationException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,6 +39,8 @@ import de.gerdiproject.harvest.MainContext;
 import de.gerdiproject.harvest.config.Configuration;
 import de.gerdiproject.harvest.config.constants.ConfigurationConstants;
 import de.gerdiproject.harvest.event.EventSystem;
+import de.gerdiproject.harvest.state.events.AbortingFinishedEvent;
+import de.gerdiproject.harvest.submission.constants.SubmissionConstants;
 import de.gerdiproject.harvest.submission.events.DocumentsSubmittedEvent;
 import de.gerdiproject.harvest.submission.events.SubmissionFinishedEvent;
 import de.gerdiproject.harvest.submission.events.SubmissionStartedEvent;
@@ -52,21 +55,14 @@ import de.gerdiproject.json.datacite.DataCiteJson;
  */
 public abstract class AbstractSubmitter
 {
-    private static final String SUBMISSION_START = "Submitting documents to: %s";
-    private static final String SUBMISSION_DONE_ALL_OK = "Submission done! All documents were submitted!";
-    private static final String SUBMISSION_DONE_SOME_FAILED = "Submission done! Failed to submit %d documents!";
-    private static final String SUBMIT_PARTIAL_OK = " Submitted documents %d to %d.";
-    private static final String SUBMIT_PARTIAL_FAILED = "Error submitting documents %s to %s: %s";
-    private static final String UNKNOWN_DOCUMENT_COUNT = "???";
-
-    private static final String NO_URL_ERROR = "Cannot submit documents: You need to set up a valid submission URL!";
-    private static final String NO_DOCS_ERROR = "There are no documents to submit!";
-
     protected final Logger logger; // NOPMD - we want to retrieve the type of the inheriting class
 
     private int submittedDocumentCount;
     private int failedDocumentCount;
 
+    /**
+     * Constructor that initializes the {@linkplain Logger}.
+     */
     public AbstractSubmitter()
     {
         logger = LoggerFactory.getLogger(getClass());
@@ -77,9 +73,13 @@ public abstract class AbstractSubmitter
      * Reads the cached documents and passes them onto an {@linkplain AbstractSubmitter}.
      *
      * @param cachedDocuments the file in which the cached documents are stored as a JSON array
+     * @param numberOfDocuments the number of documents that are to be submitted
      */
-    public void submit(File cachedDocuments)
+    public void submit(File cachedDocuments, int numberOfDocuments)
     {
+        // send event
+        EventSystem.sendEvent(new SubmissionStartedEvent(numberOfDocuments));
+
         final Configuration config = MainContext.getConfiguration();
         URL submissionUrl = getSubmissionUrl(config);
         String credentials = getCredentials(config);
@@ -93,11 +93,14 @@ public abstract class AbstractSubmitter
 
         // finished handler
         asyncSubmission.thenApply((isSuccessful) -> {
-            endSubmission();
+            onSubmissionFinished();
             return isSuccessful;
         })
         .exceptionally(throwable -> {
-            endSubmission();
+            if (throwable instanceof CancellationException || throwable.getCause() instanceof CancellationException)
+                onSubmissionAborted();
+            else
+                onSubmissionFinished();
             return false;
         });
     }
@@ -181,7 +184,7 @@ public abstract class AbstractSubmitter
     protected boolean startSubmission(URL submissionUrl)
     {
         if (submissionUrl == null) {
-            logger.error(NO_URL_ERROR);
+            logger.error(SubmissionConstants.NO_URL_ERROR);
             return false;
         }
 
@@ -189,10 +192,8 @@ public abstract class AbstractSubmitter
         failedDocumentCount = 0;
 
         // log the beginning of the submission
-        logger.info(String.format(SUBMISSION_START, submissionUrl.toString()));
+        logger.info(String.format(SubmissionConstants.SUBMISSION_START, submissionUrl.toString()));
 
-        // send event
-        EventSystem.sendEvent(new SubmissionStartedEvent());
 
         return true;
     }
@@ -201,13 +202,13 @@ public abstract class AbstractSubmitter
     /**
      * Marks the submission as finished, logging a brief summary and sending an event.
      */
-    protected void endSubmission()
+    protected void onSubmissionFinished()
     {
         // log the end of the submission
         if (failedDocumentCount == 0)
-            logger.info(SUBMISSION_DONE_ALL_OK);
+            logger.info(SubmissionConstants.SUBMISSION_DONE_ALL_OK);
         else
-            logger.info(String.format(SUBMISSION_DONE_SOME_FAILED, failedDocumentCount));
+            logger.info(String.format(SubmissionConstants.SUBMISSION_DONE_SOME_FAILED, failedDocumentCount));
 
         EventSystem.sendEvent(new SubmissionFinishedEvent(failedDocumentCount == 0));
     }
@@ -226,10 +227,10 @@ public abstract class AbstractSubmitter
     {
         if (documents == null || documents.isEmpty()) {
             logger.warn(String.format(
-                            SUBMIT_PARTIAL_FAILED,
+                            SubmissionConstants.SUBMIT_PARTIAL_FAILED,
                             String.valueOf(submittedDocumentCount),
-                            UNKNOWN_DOCUMENT_COUNT,
-                            NO_DOCS_ERROR));
+                            SubmissionConstants.UNKNOWN_DOCUMENT_COUNT,
+                            SubmissionConstants.NO_DOCS_ERROR));
             return false;
         }
 
@@ -238,12 +239,12 @@ public abstract class AbstractSubmitter
         int numberOfDocs = documents.size();
 
         if (isSuccessful) {
-            logger.info(String.format(SUBMIT_PARTIAL_OK, submittedDocumentCount, submittedDocumentCount + numberOfDocs));
+            logger.info(String.format(SubmissionConstants.SUBMIT_PARTIAL_OK, submittedDocumentCount, submittedDocumentCount + numberOfDocs));
             EventSystem.sendEvent(new DocumentsSubmittedEvent(numberOfDocs));
         } else {
             failedDocumentCount += numberOfDocs;
             logger.warn(String.format(
-                            SUBMIT_PARTIAL_FAILED,
+                            SubmissionConstants.SUBMIT_PARTIAL_FAILED,
                             String.valueOf(submittedDocumentCount),
                             String.valueOf(submittedDocumentCount + numberOfDocs),
                             errorMessage));
@@ -287,5 +288,15 @@ public abstract class AbstractSubmitter
     {
         URL submissionUrl = config.getParameterValue(ConfigurationConstants.SUBMISSION_URL, URL.class);
         return submissionUrl;
+    }
+
+
+    /**
+     * This function is called after the submission process was stopped due to
+     * being aborted.
+     */
+    protected void onSubmissionAborted()
+    {
+        EventSystem.sendEvent(new AbortingFinishedEvent());
     }
 }

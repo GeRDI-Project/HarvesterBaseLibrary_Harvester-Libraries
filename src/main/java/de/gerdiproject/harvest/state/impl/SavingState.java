@@ -27,7 +27,7 @@ import de.gerdiproject.harvest.config.constants.ConfigurationConstants;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.save.events.DocumentSavedEvent;
 import de.gerdiproject.harvest.save.events.SaveFinishedEvent;
-import de.gerdiproject.harvest.state.AbstractProgressHarvestState;
+import de.gerdiproject.harvest.state.AbstractProgressingState;
 import de.gerdiproject.harvest.state.IState;
 import de.gerdiproject.harvest.state.constants.StateConstants;
 import de.gerdiproject.harvest.state.events.ChangeStateEvent;
@@ -37,7 +37,7 @@ import de.gerdiproject.harvest.state.events.ChangeStateEvent;
  *
  * @author Robin Weiss
  */
-public class SavingState extends AbstractProgressHarvestState
+public class SavingState extends AbstractProgressingState
 {
     /**
      * If a document is saved, add 1 to the progress.
@@ -51,15 +51,22 @@ public class SavingState extends AbstractProgressHarvestState
     private final Consumer<SaveFinishedEvent> onSaveFinished;
 
 
-    public SavingState(boolean isAutoTriggered)
+    /**
+     * Constructor for the saving state.
+     *
+     * @param numberOfDocsToBeSaved the number of documents that are to be saved
+     * @param isAutoTriggered if true, this state was not triggered via REST
+     */
+    public SavingState(int numberOfDocsToBeSaved, boolean isAutoTriggered)
     {
-        super();
+        super(numberOfDocsToBeSaved);
+
         this.onSaveFinished =
         (SaveFinishedEvent e) -> {
             IState nextState;
 
             if (isAutoTriggered && MainContext.getConfiguration().getParameterValue(ConfigurationConstants.AUTO_SUBMIT, Boolean.class))
-                nextState = new SubmittingState();
+                nextState = new SubmittingState(numberOfDocsToBeSaved);
             else
                 nextState = new IdleState();
 

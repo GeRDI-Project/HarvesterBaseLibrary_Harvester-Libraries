@@ -24,7 +24,7 @@ import java.util.function.Consumer;
 
 import de.gerdiproject.harvest.config.constants.ConfigurationConstants;
 import de.gerdiproject.harvest.event.EventSystem;
-import de.gerdiproject.harvest.state.AbstractProgressHarvestState;
+import de.gerdiproject.harvest.state.AbstractProgressingState;
 import de.gerdiproject.harvest.state.constants.StateConstants;
 import de.gerdiproject.harvest.submission.events.DocumentsSubmittedEvent;
 
@@ -33,9 +33,20 @@ import de.gerdiproject.harvest.submission.events.DocumentsSubmittedEvent;
  *
  * @author Robin Weiss
  */
-public class SubmittingState extends AbstractProgressHarvestState
+public class SubmittingState extends AbstractProgressingState
 {
     private Consumer<DocumentsSubmittedEvent> onDocumentsSubmitted = (DocumentsSubmittedEvent e) -> addProgress(e.getNumberOfSubmittedDocuments());;
+
+
+    /**
+     * Constructor that requires the number of documents that are to be submitted.
+     *
+     * @param numberOfDocsToBeSubmitted the number of documents that are to be submitted
+     */
+    public SubmittingState(int numberOfDocsToBeSubmitted)
+    {
+        super(numberOfDocsToBeSubmitted);
+    }
 
 
     @Override
@@ -48,6 +59,7 @@ public class SubmittingState extends AbstractProgressHarvestState
     @Override
     public void onStateEnter()
     {
+        super.onStateEnter();
         EventSystem.addListener(DocumentsSubmittedEvent.class, onDocumentsSubmitted);
     }
 
@@ -55,6 +67,7 @@ public class SubmittingState extends AbstractProgressHarvestState
     @Override
     public void onStateLeave()
     {
+        super.onStateLeave();
         EventSystem.removeListener(DocumentsSubmittedEvent.class, onDocumentsSubmitted);
     }
 
@@ -63,16 +76,6 @@ public class SubmittingState extends AbstractProgressHarvestState
     public String startHarvest()
     {
         return StateConstants.CANNOT_START_PREFIX + StateConstants.SUBMIT_IN_PROGRESS;
-    }
-
-
-    @Override
-    public String abort()
-    {
-        // TODO implement abort
-        return String.format(
-                   StateConstants.CANNOT_ABORT_PREFIX + StateConstants.SUBMIT_IN_PROGRESS,
-                   StateConstants.INIT_PROCESS);
     }
 
 

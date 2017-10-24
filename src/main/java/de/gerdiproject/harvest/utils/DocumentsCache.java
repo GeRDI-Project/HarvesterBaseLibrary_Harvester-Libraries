@@ -77,12 +77,12 @@ public class DocumentsCache
 
 
     private Consumer<StartSubmissionEvent> onStartSubmitting = (StartSubmissionEvent e) -> {
-        submitter.submit(cacheFile);
+        submitter.submit(cacheFile, documentCount);
     };
 
 
     private Consumer<StartSaveEvent> onStartSaving = (StartSaveEvent e) -> {
-        HarvestSaver.save(cacheFile, startTimeStamp, finishTimeStamp, documentHash);
+        HarvestSaver.save(cacheFile, startTimeStamp, finishTimeStamp, documentHash, documentCount);
     };
 
 

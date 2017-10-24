@@ -19,45 +19,81 @@
 package de.gerdiproject.harvest.state;
 
 import java.util.Date;
+import java.util.function.Consumer;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public abstract class AbstractProgressHarvestState implements IState
-{
-    private static final int UNKNOWN_NUMBER = -1;
-    private static final String TIME_UNKNOWN = "unknown";
-    private static final String DAYS_HOURS = "%dd %dh";
-    private static final String HOURS_MINUTES = "%dh %dm";
-    private static final String MINUTES_SECONDS = "%dm %ds";
-    private static final String SECONDS = "%ds";
+import de.gerdiproject.harvest.event.EventSystem;
+import de.gerdiproject.harvest.state.constants.StateConstants;
+import de.gerdiproject.harvest.state.events.AbortingStartedEvent;
+import de.gerdiproject.harvest.state.events.ChangeStateEvent;
+import de.gerdiproject.harvest.state.events.StartAbortingEvent;
+import de.gerdiproject.harvest.state.impl.AbortingState;
 
-    private static final String PROGESS_TEXT = "%s: %3d%% (%d / %d)";
-    private static final String PROGESS_TEXT_DETAILED = "%s %d / %d (%.2f%%)  Remaining Time: %s";
+public abstract class AbstractProgressingState implements IState
+{
     protected static final Logger LOGGER = LoggerFactory.getLogger(StateMachine.class);
 
     protected int currentProgress;
-    protected int maxProgress;
+    protected final int maxProgress;
     protected long startTimeStamp;
+
+    /**
+     * Event callback for the start of the aborting process.
+     */
+    private final Consumer<AbortingStartedEvent> onAbortingStarted =
+    (AbortingStartedEvent e) -> {
+        AbortingState nextState = new AbortingState(getName());
+        EventSystem.sendEvent(new ChangeStateEvent(nextState));
+    };
+
+
+    /**
+     * Constructor that requires the progress limit.
+     * @param maxProgress the progress limit
+     */
+    public AbstractProgressingState(int maxProgress)
+    {
+        this.maxProgress = maxProgress;
+    }
 
 
     @Override
     public void onStateEnter()
     {
         startTimeStamp = new Date().getTime();
+
+        EventSystem.addListener(AbortingStartedEvent.class, onAbortingStarted);
     }
+
+
+    @Override
+    public void onStateLeave()
+    {
+        EventSystem.removeListener(AbortingStartedEvent.class, onAbortingStarted);
+    }
+
+
 
 
     @Override
     public String getProgressString()
     {
         return String.format(
-                   PROGESS_TEXT_DETAILED,
+                   StateConstants.PROGESS_TEXT_DETAILED,
                    getName(),
                    currentProgress,
                    maxProgress,
                    getProgressInPercent(),
                    getDurationText(estimateRemainingSeconds()));
+    }
+
+    @Override
+    public String abort()
+    {
+        EventSystem.sendEvent(new StartAbortingEvent());
+        return String.format(StateConstants.ABORT_STATUS, getName());
     }
 
 
@@ -81,7 +117,7 @@ public abstract class AbstractProgressHarvestState implements IState
             return (milliSecondsTotal - milliSecondsUntilNow) / 1000l;
         }
 
-        return UNKNOWN_NUMBER;
+        return StateConstants.UNKNOWN_NUMBER;
     }
 
 
@@ -108,26 +144,26 @@ public abstract class AbstractProgressHarvestState implements IState
     {
         String durationText;
 
-        if (durationInSeconds == UNKNOWN_NUMBER)
-            durationText = TIME_UNKNOWN;
+        if (durationInSeconds == StateConstants.UNKNOWN_NUMBER)
+            durationText = StateConstants.TIME_UNKNOWN;
 
         else if (durationInSeconds <= 60)
-            durationText = String.format(SECONDS, durationInSeconds);
+            durationText = String.format(StateConstants.SECONDS, durationInSeconds);
 
         else if (durationInSeconds <= 3600) {
             long minutes = durationInSeconds / 60;
             long seconds = durationInSeconds - minutes * 60;
-            durationText = String.format(MINUTES_SECONDS, minutes, seconds);
+            durationText = String.format(StateConstants.MINUTES_SECONDS, minutes, seconds);
 
         } else if (durationInSeconds <= 86400) {
             long hours = durationInSeconds / 3600;
             long minutes = durationInSeconds / 60 - hours * 60;
-            durationText = String.format(HOURS_MINUTES, hours, minutes);
+            durationText = String.format(StateConstants.HOURS_MINUTES, hours, minutes);
 
         } else {
             long days = durationInSeconds / 86400;
             long hours = durationInSeconds / 3600 - days * 24;
-            durationText = String.format(DAYS_HOURS, days, hours);
+            durationText = String.format(StateConstants.DAYS_HOURS, days, hours);
         }
 
         return durationText;
@@ -148,7 +184,7 @@ public abstract class AbstractProgressHarvestState implements IState
         // log updated progress in percent
         if (newProgressInPercent != oldProgressInPercent) {
             LOGGER.debug(String.format(
-                             PROGESS_TEXT,
+                             StateConstants.PROGESS_TEXT,
                              getName(),
                              newProgressInPercent,
                              currentProgress,

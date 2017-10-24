@@ -27,17 +27,16 @@ import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.harvester.events.DocumentHarvestedEvent;
 import de.gerdiproject.harvest.harvester.events.HarvestFinishedEvent;
 import de.gerdiproject.harvest.save.events.SaveStartedEvent;
-import de.gerdiproject.harvest.state.AbstractProgressHarvestState;
+import de.gerdiproject.harvest.state.AbstractProgressingState;
 import de.gerdiproject.harvest.state.constants.StateConstants;
 import de.gerdiproject.harvest.state.constants.StateEventHandlerConstants;
-import de.gerdiproject.harvest.state.events.ChangeStateEvent;
 import de.gerdiproject.harvest.submission.events.SubmissionStartedEvent;
 
-public class HarvestingState extends AbstractProgressHarvestState
+public class HarvestingState extends AbstractProgressingState
 {
     public HarvestingState(int maxNumberOfHarvestedDocuments)
     {
-        super.maxProgress = maxNumberOfHarvestedDocuments;
+        super(maxNumberOfHarvestedDocuments);
     }
 
     /**
@@ -61,6 +60,7 @@ public class HarvestingState extends AbstractProgressHarvestState
     @Override
     public void onStateLeave()
     {
+        super.onStateLeave();
         EventSystem.removeListener(DocumentHarvestedEvent.class, onDocumentHarvested);
         EventSystem.removeListener(HarvestFinishedEvent.class, StateEventHandlerConstants.ON_HARVEST_FINISHED);
         EventSystem.removeListener(SubmissionStartedEvent.class, StateEventHandlerConstants.ON_SUBMISSION_STARTED);
@@ -79,14 +79,6 @@ public class HarvestingState extends AbstractProgressHarvestState
     public String startHarvest()
     {
         return StateConstants.CANNOT_START_PREFIX + StateConstants.HARVEST_IN_PROGRESS;
-    }
-
-
-    @Override
-    public String abort()
-    {
-        EventSystem.sendEvent(new ChangeStateEvent(new AbortingState(StateConstants.HARVESTING_PROCESS)));
-        return String.format(StateConstants.ABORT_STATUS, StateConstants.HARVESTING_PROCESS);
     }
 
 

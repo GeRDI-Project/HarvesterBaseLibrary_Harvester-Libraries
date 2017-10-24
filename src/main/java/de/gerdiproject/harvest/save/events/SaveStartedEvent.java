@@ -28,4 +28,26 @@ import de.gerdiproject.harvest.event.IEvent;
  */
 public class SaveStartedEvent implements IEvent
 {
+    private final int numberOfDocs;
+
+    /**
+     * Simple Constructor.
+     *
+     * @param numberOfDocs the number of documents that are to be saved
+     */
+    public SaveStartedEvent(int numberOfDocs)
+    {
+        this.numberOfDocs = numberOfDocs;
+    }
+
+
+    /**
+     * Returns the number of documents that are to be saved.
+     *
+     * @return the number of documents that are to be saved
+     */
+    public int getNumberOfDocuments()
+    {
+        return numberOfDocs;
+    }
 }
