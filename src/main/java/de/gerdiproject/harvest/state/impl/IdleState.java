@@ -18,7 +18,6 @@
  */
 package de.gerdiproject.harvest.state.impl;
 
-import java.io.File;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;

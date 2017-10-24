@@ -18,13 +18,10 @@
  */
 package de.gerdiproject.harvest.state.impl;
 
-import java.io.File;
 import java.util.Arrays;
 import java.util.List;
 import java.util.function.Consumer;
 
-import de.gerdiproject.harvest.MainContext;
-import de.gerdiproject.harvest.config.Configuration;
 import de.gerdiproject.harvest.config.constants.ConfigurationConstants;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.event.impl.ChangeStateEvent;
@@ -33,7 +30,6 @@ import de.gerdiproject.harvest.event.impl.HarvestFinishedEvent;
 import de.gerdiproject.harvest.event.impl.SaveStartedEvent;
 import de.gerdiproject.harvest.event.impl.SubmissionStartedEvent;
 import de.gerdiproject.harvest.state.AbstractProgressHarvestState;
-import de.gerdiproject.harvest.state.IState;
 import de.gerdiproject.harvest.state.constants.StateConstants;
 import de.gerdiproject.harvest.state.constants.StateEventHandlerConstants;
 

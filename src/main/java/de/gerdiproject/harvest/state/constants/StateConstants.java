@@ -47,6 +47,7 @@ public class StateConstants
     public static final String CANNOT_SAVE_PREFIX = "Cannot save documents: ";
 
     public static final String INIT_IN_PROGRESS = "Please wait for the harvester to be initialized!";
+    public static final String SUBMIT_IN_PROGRESS = "Please wait for all documents to be submitted!";
     public static final String HARVEST_IN_PROGRESS = "Please wait for the harvest to finish!";
     public static final String SAVE_IN_PROGRESS = "Please wait for the search index to be saved to disk!";
     public static final String NO_HARVEST_IN_PROGRESS = "No harvest is running!";

@@ -56,7 +56,7 @@ import de.gerdiproject.json.datacite.DataCiteJson;
 
 public class DocumentsCache
 {
-    private static final String NO_HARVEST = "Cannot save: Nothing was harvested yet!";
+    //private static final String NO_HARVEST = "Cannot save: Nothing was harvested yet!";
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DocumentsCache.class);
     public static final DocumentsCache instance = new DocumentsCache();

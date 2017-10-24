@@ -62,15 +62,16 @@ public class SubmittingState extends AbstractProgressHarvestState
     @Override
     public String startHarvest()
     {
-        return StateConstants.CANNOT_START_PREFIX + StateConstants.INIT_IN_PROGRESS;
+        return StateConstants.CANNOT_START_PREFIX + StateConstants.SUBMIT_IN_PROGRESS;
     }
 
 
     @Override
     public String abort()
     {
+        // TODO implement abort
         return String.format(
-                   StateConstants.CANNOT_ABORT_PREFIX + StateConstants.INIT_IN_PROGRESS,
+                   StateConstants.CANNOT_ABORT_PREFIX + StateConstants.SUBMIT_IN_PROGRESS,
                    StateConstants.INIT_PROCESS);
     }
 
@@ -79,7 +80,7 @@ public class SubmittingState extends AbstractProgressHarvestState
     public String pause()
     {
         return String.format(
-                   StateConstants.CANNOT_PAUSE_PREFIX + StateConstants.INIT_IN_PROGRESS,
+                   StateConstants.CANNOT_PAUSE_PREFIX + StateConstants.SUBMIT_IN_PROGRESS,
                    StateConstants.INIT_PROCESS);
     }
 
@@ -88,7 +89,7 @@ public class SubmittingState extends AbstractProgressHarvestState
     public String resume()
     {
         return String.format(
-                   StateConstants.CANNOT_RESUME_PREFIX + StateConstants.INIT_IN_PROGRESS,
+                   StateConstants.CANNOT_RESUME_PREFIX + StateConstants.SUBMIT_IN_PROGRESS,
                    StateConstants.INIT_PROCESS);
     }
 
@@ -108,14 +109,14 @@ public class SubmittingState extends AbstractProgressHarvestState
     @Override
     public String submit()
     {
-        return StateConstants.CANNOT_SUBMIT_PREFIX + StateConstants.INIT_IN_PROGRESS;
+        return StateConstants.CANNOT_SUBMIT_PREFIX + StateConstants.SUBMIT_IN_PROGRESS;
     }
 
 
     @Override
     public String save()
     {
-        return StateConstants.CANNOT_SAVE_PREFIX + StateConstants.INIT_IN_PROGRESS;
+        return StateConstants.CANNOT_SAVE_PREFIX + StateConstants.SUBMIT_IN_PROGRESS;
     }
 
 
