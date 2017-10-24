@@ -51,6 +51,8 @@ public class DocumentsCache
     public static final DocumentsCache instance = new DocumentsCache();
 
     private AbstractSubmitter submitter;
+    private HarvestSaver saver;
+
     private long startTimeStamp;
     private long finishTimeStamp;
     private int documentCount;
@@ -82,7 +84,7 @@ public class DocumentsCache
 
 
     private Consumer<StartSaveEvent> onStartSaving = (StartSaveEvent e) -> {
-        HarvestSaver.save(cacheFile, startTimeStamp, finishTimeStamp, documentHash, documentCount);
+        saver.save(cacheFile, startTimeStamp, finishTimeStamp, documentHash, documentCount);
     };
 
 
@@ -101,6 +103,7 @@ public class DocumentsCache
     public static void init(AbstractSubmitter submitter)
     {
         instance.submitter = submitter;
+        instance.saver = new HarvestSaver();
 
         EventSystem.addListener(DocumentHarvestedEvent.class, instance.onDocumentHarvested);
         EventSystem.addListener(HarvestStartedEvent.class, instance.onHarvestStarted);

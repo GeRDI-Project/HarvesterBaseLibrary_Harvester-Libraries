@@ -27,6 +27,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
+import java.util.function.Consumer;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,6 +41,7 @@ import de.gerdiproject.harvest.config.Configuration;
 import de.gerdiproject.harvest.config.constants.ConfigurationConstants;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.state.events.AbortingFinishedEvent;
+import de.gerdiproject.harvest.state.events.StartAbortingEvent;
 import de.gerdiproject.harvest.submission.constants.SubmissionConstants;
 import de.gerdiproject.harvest.submission.events.DocumentsSubmittedEvent;
 import de.gerdiproject.harvest.submission.events.SubmissionFinishedEvent;
@@ -55,10 +57,22 @@ import de.gerdiproject.json.datacite.DataCiteJson;
  */
 public abstract class AbstractSubmitter
 {
+    /**
+     * Event listener for aborting the submitter.
+     */
+    private final Consumer<StartAbortingEvent> onStartAborting = (StartAbortingEvent e) -> {
+        isAborting = true;
+        EventSystem.removeListener(StartAbortingEvent.class, this.onStartAborting);
+    };
+
+
     protected final Logger logger; // NOPMD - we want to retrieve the type of the inheriting class
 
     private int submittedDocumentCount;
     private int failedDocumentCount;
+    protected boolean isAborting;
+
+    private CancelableFuture<Boolean> currentSubmissionProcess;
 
     /**
      * Constructor that initializes the {@linkplain Logger}.
@@ -77,6 +91,8 @@ public abstract class AbstractSubmitter
      */
     public void submit(File cachedDocuments, int numberOfDocuments)
     {
+        isAborting = false;
+
         // send event
         EventSystem.sendEvent(new SubmissionStartedEvent(numberOfDocuments));
 
@@ -88,14 +104,15 @@ public abstract class AbstractSubmitter
         startSubmission(submissionUrl);
 
         // start asynchronous submission
-        CancelableFuture<Boolean> asyncSubmission = new CancelableFuture<>(
+        currentSubmissionProcess = new CancelableFuture<>(
             createSubmissionProcess(cachedDocuments, submissionUrl, credentials, batchSize));
 
         // finished handler
-        asyncSubmission.thenApply((isSuccessful) -> {
+        currentSubmissionProcess.thenApply((isSuccessful) -> {
             onSubmissionFinished();
             return isSuccessful;
         })
+        // exception handler
         .exceptionally(throwable -> {
             if (throwable instanceof CancellationException || throwable.getCause() instanceof CancellationException)
                 onSubmissionAborted();
@@ -104,6 +121,7 @@ public abstract class AbstractSubmitter
             return false;
         });
     }
+
 
 
     /**
@@ -136,6 +154,13 @@ public abstract class AbstractSubmitter
 
             while (reader.hasNext())
             {
+                // abort submission if the flag is set
+                if (isAborting) {
+                    areAllSubmissionsSuccessful = false;
+                    documentList.clear();
+                    break;
+                }
+
                 // read a document from the array
                 documentList.add(gson.fromJson(reader, DataCiteJson.class));
 
@@ -156,6 +181,10 @@ public abstract class AbstractSubmitter
                 areAllSubmissionsSuccessful &= trySubmitBatch(documentList, submissionUrl, credentials);
                 documentList.clear();
             }
+
+            // cancel the asynchronous process
+            if (isAborting)
+                currentSubmissionProcess.cancel(false);
 
             return areAllSubmissionsSuccessful;
         };
@@ -188,12 +217,14 @@ public abstract class AbstractSubmitter
             return false;
         }
 
+        // listen to abort requests
+        EventSystem.addListener(StartAbortingEvent.class, onStartAborting);
+
         submittedDocumentCount = 0;
         failedDocumentCount = 0;
 
         // log the beginning of the submission
         logger.info(String.format(SubmissionConstants.SUBMISSION_START, submissionUrl.toString()));
-
 
         return true;
     }
@@ -204,6 +235,9 @@ public abstract class AbstractSubmitter
      */
     protected void onSubmissionFinished()
     {
+        currentSubmissionProcess = null;
+        EventSystem.removeListener(StartAbortingEvent.class, onStartAborting);
+
         // log the end of the submission
         if (failedDocumentCount == 0)
             logger.info(SubmissionConstants.SUBMISSION_DONE_ALL_OK);
@@ -211,6 +245,17 @@ public abstract class AbstractSubmitter
             logger.info(String.format(SubmissionConstants.SUBMISSION_DONE_SOME_FAILED, failedDocumentCount));
 
         EventSystem.sendEvent(new SubmissionFinishedEvent(failedDocumentCount == 0));
+    }
+
+
+    /**
+     * This function is called after the submission process was stopped due to
+     * being aborted.
+     */
+    protected void onSubmissionAborted()
+    {
+        currentSubmissionProcess = null;
+        EventSystem.sendEvent(new AbortingFinishedEvent());
     }
 
 
@@ -288,15 +333,5 @@ public abstract class AbstractSubmitter
     {
         URL submissionUrl = config.getParameterValue(ConfigurationConstants.SUBMISSION_URL, URL.class);
         return submissionUrl;
-    }
-
-
-    /**
-     * This function is called after the submission process was stopped due to
-     * being aborted.
-     */
-    protected void onSubmissionAborted()
-    {
-        EventSystem.sendEvent(new AbortingFinishedEvent());
     }
 }

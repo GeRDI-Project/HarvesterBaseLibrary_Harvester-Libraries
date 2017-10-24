@@ -115,14 +115,6 @@ public class SavingState extends AbstractProgressingState
 
 
     @Override
-    public String abort()
-    {
-        EventSystem.sendEvent(new ChangeStateEvent(new AbortingState(StateConstants.SAVE_PROCESS)));
-        return String.format(StateConstants.ABORT_STATUS, StateConstants.SAVE_PROCESS);
-    }
-
-
-    @Override
     public String pause()
     {
         // TODO implement pause

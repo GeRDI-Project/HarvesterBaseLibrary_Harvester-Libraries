@@ -25,6 +25,8 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CancellationException;
+import java.util.function.Consumer;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,6 +42,8 @@ import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.save.events.DocumentSavedEvent;
 import de.gerdiproject.harvest.save.events.SaveFinishedEvent;
 import de.gerdiproject.harvest.save.events.SaveStartedEvent;
+import de.gerdiproject.harvest.state.events.AbortingFinishedEvent;
+import de.gerdiproject.harvest.state.events.StartAbortingEvent;
 import de.gerdiproject.harvest.utils.CancelableFuture;
 import de.gerdiproject.harvest.utils.constants.DocumentsCacheConstants;
 import de.gerdiproject.json.GsonUtils;
@@ -55,12 +59,15 @@ public class HarvestSaver
     private static Logger LOGGER = LoggerFactory.getLogger(HarvestSaver.class);
 
     /**
-     * Private constructor, because this class does not have to be instantiated.
+     * Event listener for aborting the submitter.
      */
-    private HarvestSaver()
-    {
+    private final Consumer<StartAbortingEvent> onStartAborting = (StartAbortingEvent e) -> {
+        isAborting = true;
+        EventSystem.removeListener(StartAbortingEvent.class, this.onStartAborting);
+    };
 
-    }
+    private CancelableFuture<Boolean> currentSavingProcess;
+    private boolean isAborting;
 
 
     /**
@@ -72,23 +79,57 @@ public class HarvestSaver
      * @param sourceHash a String used for version checks of the source data that was harvested
      * @param numberOfDocs the amount of documents that are to be saved
      */
-    public static void save(File cachedDocuments, long startTimestamp, long finishTimestamp, String sourceHash, int numberOfDocs)
+    public void save(File cachedDocuments, long startTimestamp, long finishTimestamp, String sourceHash, int numberOfDocs)
     {
         EventSystem.sendEvent(new SaveStartedEvent(numberOfDocs));
 
+        // listen to abort requests
+        isAborting = false;
+        EventSystem.addListener(StartAbortingEvent.class, onStartAborting);
+
         // start asynchronous save
-        CancelableFuture<Boolean> asyncSave = new CancelableFuture<>(
+        currentSavingProcess = new CancelableFuture<>(
             createSaveProcess(cachedDocuments, startTimestamp, finishTimestamp, sourceHash));
 
         // exception handler
-        asyncSave.thenApply((isSuccessful) -> {
-            EventSystem.sendEvent(new SaveFinishedEvent(isSuccessful));
+        currentSavingProcess.thenApply((isSuccessful) -> {
+            onSaveFinishedSuccessfully(isSuccessful);
             return isSuccessful;
         })
         .exceptionally(throwable -> {
-            EventSystem.sendEvent(new SaveFinishedEvent(false));
+            onSaveFailed(throwable);
             return false;
         });
+    }
+
+
+    /**
+     * This function is executed after the saving process.
+     *
+     * @param isSuccessful if true, the save was successful
+     */
+    private void onSaveFinishedSuccessfully(boolean isSuccessful)
+    {
+        currentSavingProcess = null;
+        EventSystem.removeListener(StartAbortingEvent.class, onStartAborting);
+        EventSystem.sendEvent(new SaveFinishedEvent(isSuccessful));
+    }
+
+
+    /**
+     * This function is executed if the saving process is interrupted due to an exception.
+     *
+     * @param reason the exception that caused the saving to be interrupted
+     */
+    private void onSaveFailed(Throwable reason)
+    {
+        currentSavingProcess = null;
+        EventSystem.removeListener(StartAbortingEvent.class, onStartAborting);
+
+        if (reason instanceof CancellationException || reason.getCause() instanceof CancellationException)
+            EventSystem.sendEvent(new AbortingFinishedEvent());
+        else
+            EventSystem.sendEvent(new SaveFinishedEvent(false));
     }
 
 
@@ -102,7 +143,7 @@ public class HarvestSaver
      *
      * @return true, if the file was saved successfully
      */
-    private static Callable<Boolean> createSaveProcess(File cachedDocuments, long startTimestamp, long finishTimestamp, String sourceHash)
+    private Callable<Boolean> createSaveProcess(File cachedDocuments, long startTimestamp, long finishTimestamp, String sourceHash)
     {
         return () -> {
             // create file
@@ -153,7 +194,7 @@ public class HarvestSaver
      *
      * @return a file, if the path could be resolved or created, or null if not
      */
-    private static File createTargetFile(Configuration config, long startTimestamp)
+    private File createTargetFile(Configuration config, long startTimestamp)
     {
         // get harvesting range
         int from = config.getParameterValue(ConfigurationConstants.HARVEST_START_INDEX, Integer.class);
@@ -202,7 +243,7 @@ public class HarvestSaver
      *
      * @throws IOException thrown by either the cacheReader or the writer
      */
-    private static void writeDocuments(JsonReader cacheReader, JsonWriter writer, long startTimestamp, long finishTimestamp, String sourceHash, boolean readFromDisk) throws IOException
+    private void writeDocuments(JsonReader cacheReader, JsonWriter writer, long startTimestamp, long finishTimestamp, String sourceHash, boolean readFromDisk) throws IOException
     {
         // this event holds no unique data, we can resubmit it as often as we want
         DocumentSavedEvent savedEvent = new DocumentSavedEvent();
@@ -228,6 +269,9 @@ public class HarvestSaver
         cacheReader.beginArray();
 
         while (cacheReader.hasNext()) {
+            if (isAborting)
+                break;
+
             // read a document from the array
             gson.toJson(gson.fromJson(cacheReader, DataCiteJson.class), writer);
             EventSystem.sendEvent(savedEvent);
@@ -241,5 +285,10 @@ public class HarvestSaver
         writer.endArray();
         writer.endObject();
         writer.close();
+
+
+        // cancel the asynchronous process
+        if (isAborting)
+            currentSavingProcess.cancel(false);
     }
 }

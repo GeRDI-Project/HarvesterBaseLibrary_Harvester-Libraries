@@ -80,6 +80,16 @@ public abstract class AbstractHarvester
             setProperty(key, e.getParameter().getValue().toString());
     };
 
+
+    /**
+     * Event listener for aborting the harvester.
+     */
+    private Consumer<StartAbortingEvent> onStartAborting = (StartAbortingEvent e) -> {
+        EventSystem.removeListener(StartAbortingEvent.class, this.onStartAborting);
+        abortHarvest();
+    };
+
+
     private final Map<String, String> properties;
 
     protected CancelableFuture<Boolean> currentHarvestingProcess;
@@ -195,7 +205,6 @@ public abstract class AbstractHarvester
         endIndex.set(maxHarvestableDocs);
 
         EventSystem.addListener(StartHarvestEvent.class, (StartHarvestEvent e) -> harvest());
-        EventSystem.addListener(StartAbortingEvent.class, (StartAbortingEvent e) -> abortHarvest());
     }
 
 
@@ -337,6 +346,7 @@ public abstract class AbstractHarvester
 
         harvestedDocumentCount.set(0);
 
+        EventSystem.addListener(StartAbortingEvent.class, onStartAborting);
         EventSystem.sendEvent(new HarvestStartedEvent(endIndex.get(), startIndex.get()));
 
         // start asynchronous harvest
@@ -361,6 +371,8 @@ public abstract class AbstractHarvester
      */
     protected void finishHarvestSuccessfully()
     {
+        EventSystem.removeListener(StartAbortingEvent.class, onStartAborting);
+
         currentHarvestingProcess = null;
         logger.info(String.format(HarvesterConstants.HARVESTER_END, name));
 
@@ -401,6 +413,8 @@ public abstract class AbstractHarvester
      */
     protected void onHarvestFailed(Throwable reason)
     {
+        EventSystem.removeListener(StartAbortingEvent.class, onStartAborting);
+
         // log the error
         logger.error(reason.getMessage(), reason);
 
