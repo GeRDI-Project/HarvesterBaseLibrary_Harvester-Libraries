@@ -62,9 +62,9 @@ public final class ParameterFactory
         params.put(autoSave.getKey(), autoSave);
         params.put(autoSubmit.getKey(), autoSubmit);
         params.put(submitUrl.getKey(), submitUrl);
-        params.put(submitSize.getKey(), submitSize);
         params.put(submitName.getKey(), submitName);
         params.put(submitPassword.getKey(), submitPassword);
+        params.put(submitSize.getKey(), submitSize);
         params.put(readFromDisk.getKey(), readFromDisk);
         params.put(writeToDisk.getKey(), writeToDisk);
 
