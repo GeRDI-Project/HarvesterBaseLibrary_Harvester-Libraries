@@ -34,10 +34,12 @@ import de.gerdiproject.harvest.state.IState;
  */
 public abstract class AbstractParameter<T>
 {
-    protected final String key;
     protected T value;
-    private final List<Class<? extends IState>> allowedStates;
-    private final String allowedValues;
+    protected final transient String key;
+
+    private final transient List<Class<? extends IState>> allowedStates;
+    private final transient String allowedValues;
+
 
     /**
      * Constructor that requires all fields.
