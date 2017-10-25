@@ -29,11 +29,13 @@ import de.gerdiproject.harvest.config.constants.ConfigurationConstants;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.harvester.events.HarvestFinishedEvent;
 import de.gerdiproject.harvest.harvester.events.HarvestStartedEvent;
+import de.gerdiproject.harvest.harvester.events.HarvesterInitializedEvent;
 import de.gerdiproject.harvest.save.events.SaveStartedEvent;
 import de.gerdiproject.harvest.save.events.StartSaveEvent;
 import de.gerdiproject.harvest.state.StateMachine;
 import de.gerdiproject.harvest.state.events.AbortingFinishedEvent;
 import de.gerdiproject.harvest.state.events.ChangeStateEvent;
+import de.gerdiproject.harvest.state.impl.ErrorState;
 import de.gerdiproject.harvest.state.impl.HarvestingState;
 import de.gerdiproject.harvest.state.impl.IdleState;
 import de.gerdiproject.harvest.state.impl.SavingState;
@@ -50,6 +52,7 @@ import de.gerdiproject.harvest.submission.events.SubmissionStartedEvent;
 public class StateEventHandlerConstants
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(StateMachine.class);
+
 
     /**
      * Private constructor, because this is a static class.
@@ -120,6 +123,7 @@ public class StateEventHandlerConstants
         EventSystem.sendEvent(new ChangeStateEvent(nextState));
     };
 
+
     /**
      * Switches the state to {@linkplain IdleState} when an aborting-process finishes.
      */
@@ -128,5 +132,18 @@ public class StateEventHandlerConstants
 
         IdleState nextState = new IdleState();
         EventSystem.sendEvent(new ChangeStateEvent(nextState));
+    };
+
+
+    /**
+     * Switches the state to {@linkplain IdleState} if the initialization was successful.
+     * Otherwise, the state is switched to the {@linkplain ErrorState}.
+     */
+    public static final Consumer<HarvesterInitializedEvent> ON_HARVESTER_INITIALIZED =
+    (HarvesterInitializedEvent e) -> {
+        if (e.isSuccessful())
+            EventSystem.sendEvent(new ChangeStateEvent(new IdleState()));
+        else
+            EventSystem.sendEvent(new ChangeStateEvent(new ErrorState()));
     };
 }

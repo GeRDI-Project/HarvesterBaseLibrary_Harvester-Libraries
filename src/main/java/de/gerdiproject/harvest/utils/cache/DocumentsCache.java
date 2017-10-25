@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package de.gerdiproject.harvest.utils;
+package de.gerdiproject.harvest.utils.cache;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -40,7 +40,7 @@ import de.gerdiproject.harvest.save.HarvestSaver;
 import de.gerdiproject.harvest.save.events.StartSaveEvent;
 import de.gerdiproject.harvest.submission.AbstractSubmitter;
 import de.gerdiproject.harvest.submission.events.StartSubmissionEvent;
-import de.gerdiproject.harvest.utils.constants.DocumentsCacheConstants;
+import de.gerdiproject.harvest.utils.cache.constants.DocumentsCacheConstants;
 import de.gerdiproject.json.GsonUtils;
 
 public class DocumentsCache
@@ -53,8 +53,6 @@ public class DocumentsCache
     private AbstractSubmitter submitter;
     private HarvestSaver saver;
 
-    private long startTimeStamp;
-    private long finishTimeStamp;
     private int documentCount;
     private JsonWriter cacheWriter;
     private File cacheFile;
@@ -62,13 +60,11 @@ public class DocumentsCache
 
 
     private Consumer<HarvestStartedEvent> onHarvestStarted = (HarvestStartedEvent e) -> {
-        startTimeStamp = new Date().getTime();
         clear();
         startCaching();
     };
 
     private Consumer<HarvestFinishedEvent> onHarvestFinished = (HarvestFinishedEvent e) -> {
-        finishTimeStamp = new Date().getTime();
         documentHash = e.getDocumentChecksum();
         finishCaching();
     };
@@ -84,7 +80,7 @@ public class DocumentsCache
 
 
     private Consumer<StartSaveEvent> onStartSaving = (StartSaveEvent e) -> {
-        saver.save(cacheFile, startTimeStamp, finishTimeStamp, documentHash, documentCount);
+        saver.save(cacheFile, documentHash, documentCount);
     };
 
 

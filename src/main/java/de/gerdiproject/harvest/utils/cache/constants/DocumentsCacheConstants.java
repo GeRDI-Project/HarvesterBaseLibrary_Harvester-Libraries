@@ -16,10 +16,10 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package de.gerdiproject.harvest.utils.constants;
+package de.gerdiproject.harvest.utils.cache.constants;
 
 
-import de.gerdiproject.harvest.utils.DocumentsCache;
+import de.gerdiproject.harvest.utils.cache.DocumentsCache;
 
 /**
  * This static class is a collection of constants, used by the {@linkplain DocumentsCache}.

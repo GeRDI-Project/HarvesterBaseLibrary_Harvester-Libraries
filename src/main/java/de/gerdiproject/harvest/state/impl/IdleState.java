@@ -1,5 +1,5 @@
 /*
- *  Licensed to the Apache Software Foundation (ASF) under one
+  *  Licensed to the Apache Software Foundation (ASF) under one
  *  or more contributor license agreements.  See the NOTICE file
  *  distributed with this work for additional information
  *  regarding copyright ownership.  The ASF licenses this file
@@ -38,6 +38,7 @@ import de.gerdiproject.harvest.state.constants.StateConstants;
 import de.gerdiproject.harvest.state.constants.StateEventHandlerConstants;
 import de.gerdiproject.harvest.submission.events.StartSubmissionEvent;
 import de.gerdiproject.harvest.submission.events.SubmissionStartedEvent;
+import de.gerdiproject.harvest.utils.time.HarvestTimeKeeper;
 
 /**
  * This state indicates it is waiting for a harvest to start.
@@ -47,33 +48,6 @@ import de.gerdiproject.harvest.submission.events.SubmissionStartedEvent;
 public class IdleState implements IState
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(StateMachine.class);
-
-    private final Date harvestFinishedDate;
-    private final Date docsSavedDate;
-    private final Date docsSubmittedDate;
-
-
-    /**
-     * Constructor that represents an idle state before harvesting.
-     */
-    public IdleState()
-    {
-        this(null, null, null);
-    }
-
-
-    /**
-     * Constructor that represents an idle state after a harvest.
-     * @param harvestFinishedDate the date at which the harvest was concluded, or null if no harvest finished yet
-     * @param docsSavedDate the date at which the harvested documents were saved to disk, or null if nothing was saved
-     * @param docsSubmittedDate the date at which the harvest was sent to an external database, or null if nothing was submitted
-     */
-    public IdleState(Date harvestFinishedDate, Date docsSavedDate, Date docsSubmittedDate)
-    {
-        this.harvestFinishedDate = harvestFinishedDate;
-        this.docsSavedDate = docsSavedDate;
-        this.docsSubmittedDate = docsSubmittedDate;
-    }
 
 
     @Override
@@ -99,21 +73,13 @@ public class IdleState implements IState
     @Override
     public String getProgressString()
     {
-        StringBuilder statusBuilder = new StringBuilder();
-
-        if (harvestFinishedDate != null)
-            statusBuilder.append(String.format(StateConstants.HARVEST_FINISHED_AT, harvestFinishedDate.toString()));
-
-        if (docsSavedDate != null)
-            statusBuilder.append(String.format(StateConstants.HARVEST_SAVED_AT, docsSavedDate.toString()));
-
-        if (docsSubmittedDate != null)
-            statusBuilder.append(String.format(StateConstants.HARVEST_SUBMITTED_AT, docsSubmittedDate.toString()));
-
-        if (statusBuilder.length() == 0)
-            statusBuilder.append(StateConstants.HARVEST_NOT_STARTED);
-
-        return statusBuilder.toString();
+        HarvestTimeKeeper timeKeeper = MainContext.getTimeKeeper();
+        return String.format(
+                   StateConstants.IDLE_STATUS,
+                   timeKeeper.getHarvestMeasure().toString(),
+                   timeKeeper.getSaveMeasure().toString(),
+                   timeKeeper.getSubmissionMeasure().toString()
+               );
     }
 
 

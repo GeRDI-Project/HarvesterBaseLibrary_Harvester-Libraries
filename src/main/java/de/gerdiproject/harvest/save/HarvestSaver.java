@@ -45,7 +45,7 @@ import de.gerdiproject.harvest.save.events.SaveStartedEvent;
 import de.gerdiproject.harvest.state.events.AbortingFinishedEvent;
 import de.gerdiproject.harvest.state.events.StartAbortingEvent;
 import de.gerdiproject.harvest.utils.CancelableFuture;
-import de.gerdiproject.harvest.utils.constants.DocumentsCacheConstants;
+import de.gerdiproject.harvest.utils.cache.constants.DocumentsCacheConstants;
 import de.gerdiproject.json.GsonUtils;
 import de.gerdiproject.json.datacite.DataCiteJson;
 
@@ -56,7 +56,7 @@ import de.gerdiproject.json.datacite.DataCiteJson;
  */
 public class HarvestSaver
 {
-    private static Logger LOGGER = LoggerFactory.getLogger(HarvestSaver.class);
+    private final static Logger LOGGER = LoggerFactory.getLogger(HarvestSaver.class);
 
     /**
      * Event listener for aborting the submitter.
@@ -79,13 +79,17 @@ public class HarvestSaver
      * @param sourceHash a String used for version checks of the source data that was harvested
      * @param numberOfDocs the amount of documents that are to be saved
      */
-    public void save(File cachedDocuments, long startTimestamp, long finishTimestamp, String sourceHash, int numberOfDocs)
+    public void save(File cachedDocuments, String sourceHash, int numberOfDocs)
     {
         EventSystem.sendEvent(new SaveStartedEvent(numberOfDocs));
 
         // listen to abort requests
         isAborting = false;
         EventSystem.addListener(StartAbortingEvent.class, onStartAborting);
+
+        // get timestamps
+        long startTimestamp = MainContext.getTimeKeeper().getHarvestMeasure().getStartTimestamp();
+        long finishTimestamp = MainContext.getTimeKeeper().getHarvestMeasure().getEndTimestamp();
 
         // start asynchronous save
         currentSavingProcess = new CancelableFuture<>(

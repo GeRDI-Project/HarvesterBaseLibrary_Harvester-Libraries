@@ -19,17 +19,15 @@
 package de.gerdiproject.harvest.save.events;
 
 
-import de.gerdiproject.harvest.event.IEvent;
+import de.gerdiproject.harvest.event.AbstractSucceededOrFailedEvent;
 
 /**
  * This event signifies that the process of saving all documents to disk was finished.
  *
  * @author Robin Weiss
  */
-public class SaveFinishedEvent implements IEvent
+public class SaveFinishedEvent extends AbstractSucceededOrFailedEvent
 {
-    private final boolean isSuccessful;
-
     /**
      * Simple Constructor.
      *
@@ -37,16 +35,6 @@ public class SaveFinishedEvent implements IEvent
      */
     public SaveFinishedEvent(boolean isSuccessful)
     {
-        this.isSuccessful = isSuccessful;
-    }
-
-    /**
-     * Returns true if the saving process finished successfully.
-     *
-     * @return true if the saving process finished successfully
-     */
-    public boolean isSuccessful()
-    {
-        return isSuccessful;
+        super(isSuccessful);
     }
 }

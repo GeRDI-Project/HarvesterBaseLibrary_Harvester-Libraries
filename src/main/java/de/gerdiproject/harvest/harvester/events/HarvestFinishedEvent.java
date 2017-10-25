@@ -18,16 +18,15 @@
  */
 package de.gerdiproject.harvest.harvester.events;
 
-import de.gerdiproject.harvest.event.IEvent;
+import de.gerdiproject.harvest.event.AbstractSucceededOrFailedEvent;
 
 /**
  * This event signifies that a harvest has been completed.
  *
  * @author Robin Weiss
  */
-public class HarvestFinishedEvent implements IEvent
+public class HarvestFinishedEvent extends AbstractSucceededOrFailedEvent
 {
-    private final boolean isSuccessful;
     private final String documentChecksum;
 
     /**
@@ -38,18 +37,8 @@ public class HarvestFinishedEvent implements IEvent
      */
     public HarvestFinishedEvent(boolean isSuccessful, String documentChecksum)
     {
-        this.isSuccessful = isSuccessful;
+        super(isSuccessful);
         this.documentChecksum = documentChecksum;
-    }
-
-    /**
-     * Returns true if the harvest finished successfully.
-     *
-     * @return true if the harvest finished successfully
-     */
-    public boolean isSuccessful()
-    {
-        return isSuccessful;
     }
 
     /**

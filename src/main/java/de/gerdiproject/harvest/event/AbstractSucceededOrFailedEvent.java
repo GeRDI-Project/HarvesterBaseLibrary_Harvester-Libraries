@@ -16,25 +16,34 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package de.gerdiproject.harvest.submission.events;
-
-
-import de.gerdiproject.harvest.event.AbstractSucceededOrFailedEvent;
+package de.gerdiproject.harvest.event;
 
 /**
- * This event signifies that a document submission has finished.
+ * This event marks something that can either succeed or fail.
  *
  * @author Robin Weiss
  */
-public class SubmissionFinishedEvent extends AbstractSucceededOrFailedEvent
+public abstract class AbstractSucceededOrFailedEvent implements IEvent
 {
+    private final boolean isSuccessful;
+
     /**
      * Simple Constructor.
      *
-     * @param isSuccessful true if the submission finished successfully
+     * @param isSuccessful true if the event marks something that succeeded
      */
-    public SubmissionFinishedEvent(boolean isSuccessful)
+    public AbstractSucceededOrFailedEvent(boolean isSuccessful)
     {
-        super(isSuccessful);
+        this.isSuccessful = isSuccessful;
+    }
+
+    /**
+     * Returns true if the event marks something that succeeded.
+     *
+     * @return true if the event marks something that succeeded
+     */
+    public boolean isSuccessful()
+    {
+        return isSuccessful;
     }
 }

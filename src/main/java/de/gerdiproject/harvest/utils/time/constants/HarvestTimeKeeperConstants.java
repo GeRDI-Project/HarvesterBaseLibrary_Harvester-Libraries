@@ -16,25 +16,25 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package de.gerdiproject.harvest.submission.events;
+package de.gerdiproject.harvest.utils.time.constants;
 
 
-import de.gerdiproject.harvest.event.AbstractSucceededOrFailedEvent;
+import de.gerdiproject.harvest.utils.time.HarvestTimeKeeper;
 
 /**
- * This event signifies that a document submission has finished.
+ * This static class is a collection of constants, used by the {@linkplain HarvestTimeKeeper}.
  *
  * @author Robin Weiss
  */
-public class SubmissionFinishedEvent extends AbstractSucceededOrFailedEvent
+public class HarvestTimeKeeperConstants
 {
+    public static final String STATUS_FORMAT = "%s at %s";
+
     /**
-     * Simple Constructor.
-     *
-     * @param isSuccessful true if the submission finished successfully
+     * Private constructor, because this is a static class.
      */
-    public SubmissionFinishedEvent(boolean isSuccessful)
+    private HarvestTimeKeeperConstants()
     {
-        super(isSuccessful);
+
     }
 }

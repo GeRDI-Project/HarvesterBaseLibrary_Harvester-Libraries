@@ -154,11 +154,10 @@ public class Configuration
     public <T> T getParameterValue(String key, Class<T> parameterType)
     {
         AbstractParameter<?> param = globalParameters.get(key);
-        Object value = param.getValue();
 
         // check if the parameter exists and if the value matches the parameterType
-        if (param != null && value.getClass().equals(parameterType))
-            return (T) value;
+        if (param != null && param.getValue().getClass().equals(parameterType))
+            return (T) param.getValue();
         else
             return null;
     }

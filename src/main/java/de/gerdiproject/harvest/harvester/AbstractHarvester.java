@@ -84,7 +84,7 @@ public abstract class AbstractHarvester
     /**
      * Event listener for aborting the harvester.
      */
-    private Consumer<StartAbortingEvent> onStartAborting = (StartAbortingEvent e) -> {
+    private final Consumer<StartAbortingEvent> onStartAborting = (StartAbortingEvent e) -> {
         EventSystem.removeListener(StartAbortingEvent.class, this.onStartAborting);
         abortHarvest();
     };
@@ -92,14 +92,13 @@ public abstract class AbstractHarvester
 
     private final Map<String, String> properties;
 
-    protected CancelableFuture<Boolean> currentHarvestingProcess;
-
     private final AtomicInteger maxDocumentCount;
     private final AtomicInteger harvestedDocumentCount;
 
     private final AtomicInteger startIndex;
     private final AtomicInteger endIndex;
 
+    protected CancelableFuture<Boolean> currentHarvestingProcess;
     protected boolean isMainHarvester;
     protected String name;
     protected String hash;

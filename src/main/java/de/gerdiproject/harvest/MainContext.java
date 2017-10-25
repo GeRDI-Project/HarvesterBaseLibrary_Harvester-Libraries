@@ -32,6 +32,7 @@ import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.harvester.AbstractHarvester;
 import de.gerdiproject.harvest.harvester.events.HarvesterInitializedEvent;
 import de.gerdiproject.harvest.utils.CancelableFuture;
+import de.gerdiproject.harvest.utils.time.HarvestTimeKeeper;
 
 
 /**
@@ -50,6 +51,7 @@ public class MainContext
 
     private static final Logger LOGGER = LoggerFactory.getLogger(MainContext.class);
 
+    private final HarvestTimeKeeper timeKeeper;
     private AbstractHarvester harvester;
     private Charset charset;
     private Configuration configuration;
@@ -62,6 +64,7 @@ public class MainContext
      */
     private MainContext()
     {
+        timeKeeper = new HarvestTimeKeeper();
     }
 
 
@@ -91,9 +94,21 @@ public class MainContext
      *
      * @return the harvester configuration
      */
-    public static  Configuration getConfiguration()
+    public static Configuration getConfiguration()
     {
         return instance.configuration;
+    }
+
+
+
+    /**
+     * Retrieves a timekeeper that measures certain processes.
+     *
+     * @return a timekeeper that measures certain processes
+     */
+    public static HarvestTimeKeeper getTimeKeeper()
+    {
+        return instance.timeKeeper;
     }
 
 

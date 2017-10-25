@@ -95,6 +95,7 @@ public class HarvestingState extends AbstractProgressingState
     {
         return String.format(
                    StateConstants.CANNOT_RESUME_PREFIX + StateConstants.RESUME_IN_PROGRESS,
+                   StateConstants.HARVESTING_PROCESS,
                    StateConstants.HARVESTING_PROCESS);
     }
 

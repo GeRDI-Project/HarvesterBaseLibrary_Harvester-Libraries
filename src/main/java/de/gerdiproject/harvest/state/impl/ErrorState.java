@@ -20,13 +20,12 @@ package de.gerdiproject.harvest.state.impl;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.function.Consumer;
 
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.harvester.events.HarvesterInitializedEvent;
 import de.gerdiproject.harvest.state.IState;
 import de.gerdiproject.harvest.state.constants.StateConstants;
-import de.gerdiproject.harvest.state.events.ChangeStateEvent;
+import de.gerdiproject.harvest.state.constants.StateEventHandlerConstants;
 
 /**
  * This state indicates it is waiting for a harvest to start.
@@ -35,18 +34,6 @@ import de.gerdiproject.harvest.state.events.ChangeStateEvent;
  */
 public class ErrorState implements IState
 {
-    /**
-     * Switches the state to {@linkplain IdleState} if the initialization was successful.
-     * Otherwise, the state is switched to the {@linkplain ErrorState}
-     */
-    private static final Consumer<HarvesterInitializedEvent> ON_HARVESTER_INITIALIZED =
-    (HarvesterInitializedEvent e) -> {
-
-        if (e.isSuccessful())
-            EventSystem.sendEvent(new ChangeStateEvent(new IdleState()));
-    };
-
-
     @Override
     public String getProgressString()
     {
@@ -57,14 +44,14 @@ public class ErrorState implements IState
     @Override
     public void onStateEnter()
     {
-        EventSystem.addListener(HarvesterInitializedEvent.class, ON_HARVESTER_INITIALIZED);
+        EventSystem.addListener(HarvesterInitializedEvent.class, StateEventHandlerConstants.ON_HARVESTER_INITIALIZED);
     }
 
 
     @Override
     public void onStateLeave()
     {
-        EventSystem.removeListener(HarvesterInitializedEvent.class, ON_HARVESTER_INITIALIZED);
+        EventSystem.removeListener(HarvesterInitializedEvent.class, StateEventHandlerConstants.ON_HARVESTER_INITIALIZED);
     }
 
 
