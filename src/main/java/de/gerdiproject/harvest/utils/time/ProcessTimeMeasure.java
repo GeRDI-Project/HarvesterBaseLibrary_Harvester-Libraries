@@ -51,6 +51,8 @@ public class ProcessTimeMeasure
     public <R extends IEvent, T extends AbstractSucceededOrFailedEvent>ProcessTimeMeasure(Class<R> startEvent, Class<T> endEvent)
     {
         this.status = ProcessStatus.NotStarted;
+        this.startTimestamp = -1;
+        this.endTimestamp = -1;
 
         // create process started event callback
         Consumer<R> onProcessStarted = (R event) -> start();

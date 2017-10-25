@@ -23,6 +23,7 @@ import de.gerdiproject.harvest.state.StateMachine;
 import de.gerdiproject.harvest.MainContext;
 import de.gerdiproject.harvest.config.Configuration;
 import de.gerdiproject.harvest.config.constants.ConfigurationConstants;
+import de.gerdiproject.harvest.harvester.constants.HarvesterConstants;
 
 import javax.ws.rs.Produces;
 import javax.ws.rs.GET;
@@ -43,11 +44,6 @@ import javax.ws.rs.core.MultivaluedMap;
 @Path("harvest")
 public class HarvesterFacade
 {
-    private static final String INFO = "- %s -%n%nStatus:\t\t%s%n%nRange:\t\t%s-%s%n%n"
-                                       + "POST\t\t\tStarts the harvest%n"
-                                       + "POST/abort\t\tAborts an ongoing harvest%n"
-                                       + "POST/submit\t\tSubmits harvested documents to a DataBase%n"
-                                       + "POST/save\t\tSaves harvested documents to disk";
 
     /**
      * Starts a harvest using the harvester that is registered in the
@@ -91,7 +87,7 @@ public class HarvesterFacade
         // get harvester name
         String name = MainContext.getModuleName();
 
-        return String.format(INFO, name, status, from, to);
+        return String.format(HarvesterConstants.REST_INFO, name, status, from, to);
     }
 
 
