@@ -95,7 +95,7 @@ public abstract class AbstractParameter<T>
      */
     public String getStringValue()
     {
-        return value.toString();
+        return value != null ? value.toString() : "";
     }
 
 

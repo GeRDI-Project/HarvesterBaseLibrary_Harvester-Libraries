@@ -32,6 +32,7 @@ public class StateMachine
     private StateMachine()
     {
         currentState = new InitializationState();
+        currentState.onStateEnter();
     }
 
     /**
