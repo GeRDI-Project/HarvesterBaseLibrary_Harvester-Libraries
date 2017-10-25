@@ -45,6 +45,8 @@ public class ProcessTimeMeasure
      *
      * @param startEvent the class of an Event that marks the beginning of the time measurement
      * @param endEvent the class of an Event that marks the end of the time measurement
+     * @param <R> the type of the start event
+     * @param <T> the type of the end event
      */
     public <R extends IEvent, T extends AbstractSucceededOrFailedEvent>ProcessTimeMeasure(Class<R> startEvent, Class<T> endEvent)
     {

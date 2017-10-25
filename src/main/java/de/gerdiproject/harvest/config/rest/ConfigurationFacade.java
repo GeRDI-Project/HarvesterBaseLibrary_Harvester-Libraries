@@ -75,7 +75,11 @@ public class ConfigurationFacade
     }
 
     /**
-     * Changes development options.
+     * Changes parameters of the configuration.
+     *
+     * @param formParams a key value map where the keys represent the parameter names and the values the new values
+     *
+     * @return a feedback text about parameter changes or failures to do so
      */
     @PUT
     @Produces({

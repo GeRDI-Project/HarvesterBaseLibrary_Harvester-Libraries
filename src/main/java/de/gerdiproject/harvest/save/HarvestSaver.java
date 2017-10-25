@@ -74,8 +74,6 @@ public class HarvestSaver
      * Saves cached harvested documents to disk.
      *
      * @param cachedDocuments the file in which the cached documents are stored as a JSON array
-     * @param startTimestamp the UNIX Timestamp of the beginning of the harvest
-     * @param finishTimestamp the UNIX Timestamp of the end of the harvest
      * @param sourceHash a String used for version checks of the source data that was harvested
      * @param numberOfDocs the amount of documents that are to be saved
      */

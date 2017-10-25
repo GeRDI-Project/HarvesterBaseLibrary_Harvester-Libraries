@@ -50,6 +50,7 @@ public class EventSystem
      *
      * @param eventClass the class of the event
      * @param callback the callback function that is executed when the event is dispatched
+     * @param <T> the type of the event
      */
     public static <T extends IEvent> void addListener(Class<T> eventClass, Consumer<T> callback)
     {
@@ -71,6 +72,7 @@ public class EventSystem
      *
      * @param eventClass the class of the event
      * @param callback the callback function that is to be removed from the event
+     * @param <T> the type of the event
      */
     public static <T extends IEvent> void removeListener(Class<T> eventClass, Consumer<T> callback)
     {
@@ -86,6 +88,7 @@ public class EventSystem
      * Removes all event listeners of a specified event.
      *
      * @param eventClass the class of the event
+     * @param <T> the type of the event
      */
     public static <T extends IEvent> void removeAllListeners(Class<T> eventClass)
     {
@@ -97,6 +100,7 @@ public class EventSystem
      * Dispatches a specified event, calling all functions that were added to it via the addListener() function.
      *
      * @param event the event that is dispatched
+     * @param <T> the type of the dispatched event
      */
     @SuppressWarnings("unchecked") // this warning is suppressed, because the public functions guarantee that the consumer consumes events of the same class as the corresponding key
     public static <T extends IEvent> void sendEvent(T event)

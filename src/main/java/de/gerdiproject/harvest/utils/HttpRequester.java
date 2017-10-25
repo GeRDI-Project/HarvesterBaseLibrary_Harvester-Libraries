@@ -19,6 +19,7 @@
 package de.gerdiproject.harvest.utils;
 
 
+import de.gerdiproject.harvest.ContextListener;
 import de.gerdiproject.harvest.MainContext;
 import de.gerdiproject.harvest.config.Configuration;
 import de.gerdiproject.harvest.config.constants.ConfigurationConstants;

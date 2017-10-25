@@ -153,7 +153,7 @@ public class Configuration
      * @param key the key of the parameter
      * @param parameterType the class of the parameter value
      *
-     * @param for <T> the value type of the parameter
+     * @param <T> the value type of the parameter
      *
      * @return the value of the parameter with the specified key
      */
