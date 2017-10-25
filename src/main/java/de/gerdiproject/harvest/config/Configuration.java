@@ -49,9 +49,9 @@ public class Configuration
     private static final String LOAD_OK = "Loaded configuration from '%s'.";
     private static final String LOAD_FAILED = "Could not load configuration from '%s': %s";
     private static final String NO_EXISTS = "No configuration exists!";
-    private static final String INFO = "%s Configuration:%n%s%n%n"
-                                       + "POST\t\tSaves the current configuration to disk.%n"
-                                       + "PUT \t\t\tSets x-www-form-urlencoded parameters for the harvester. Valid values: %s.%n";
+    private static final String REST_INFO = "%s Configuration:%n%s%n"
+                                            + "POST\t\tSaves the current configuration to disk.%n"
+                                            + "PUT \t\t\tSets x-www-form-urlencoded parameters for the harvester. Valid values: %s.%n";
 
     private static final Logger LOGGER = LoggerFactory.getLogger(Configuration.class);
 
@@ -101,7 +101,7 @@ public class Configuration
         String validValues = harvesterParamKeys + ", " + globalParamKeys;
 
         // return assembled string
-        return String.format(INFO, modName, parameters, validValues);
+        return String.format(REST_INFO, modName, parameters, validValues);
     }
 
 
@@ -235,13 +235,13 @@ public class Configuration
         final StringBuilder harvesterBuilder = new StringBuilder();
         harvesterParameters.forEach(
             (String key, AbstractParameter<?> param) ->
-            harvesterBuilder.append(param)
+            harvesterBuilder.append(param).append('\n')
         );
 
         final StringBuilder globalBuilder = new StringBuilder();
         globalParameters.forEach(
             (String key, AbstractParameter<?> param) ->
-            globalBuilder.append(param)
+            globalBuilder.append(param).append('\n')
         );
 
 

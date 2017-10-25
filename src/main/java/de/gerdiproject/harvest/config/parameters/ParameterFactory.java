@@ -19,7 +19,7 @@
 package de.gerdiproject.harvest.config.parameters;
 
 import java.util.Arrays;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -48,7 +48,7 @@ public final class ParameterFactory
      */
     public static Map<String, AbstractParameter<?>> createDefaultParameters()
     {
-        Map<String, AbstractParameter<?>> params = new HashMap<>();
+        Map<String, AbstractParameter<?>> params = new LinkedHashMap<>();
 
         AbstractParameter<?> autoSave = createAutoSave();
         AbstractParameter<?> autoSubmit = createAutoSubmit();
@@ -61,12 +61,12 @@ public final class ParameterFactory
 
         params.put(autoSave.getKey(), autoSave);
         params.put(autoSubmit.getKey(), autoSubmit);
-        params.put(readFromDisk.getKey(), readFromDisk);
-        params.put(writeToDisk.getKey(), writeToDisk);
         params.put(submitUrl.getKey(), submitUrl);
         params.put(submitSize.getKey(), submitSize);
         params.put(submitName.getKey(), submitName);
         params.put(submitPassword.getKey(), submitPassword);
+        params.put(readFromDisk.getKey(), readFromDisk);
+        params.put(writeToDisk.getKey(), writeToDisk);
 
         return params;
     }
@@ -80,7 +80,7 @@ public final class ParameterFactory
     public static Map<String, AbstractParameter<?>> createHarvesterParameters(
         List<AbstractParameter<?>> harvesterParams)
     {
-        Map<String, AbstractParameter<?>> params = new HashMap<>();
+        Map<String, AbstractParameter<?>> params = new LinkedHashMap<>();
 
         // create start-and end-index
         AbstractParameter<?> harvestStartIndex = createHarvestStartIndex();
