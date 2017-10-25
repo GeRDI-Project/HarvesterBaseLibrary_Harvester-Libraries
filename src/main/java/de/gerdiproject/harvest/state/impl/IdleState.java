@@ -19,7 +19,6 @@
 package de.gerdiproject.harvest.state.impl;
 
 import java.util.Arrays;
-import java.util.Date;
 import java.util.List;
 
 import org.slf4j.Logger;
