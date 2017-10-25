@@ -30,7 +30,7 @@ public class HarvesterParameterChangedEvent extends GlobalParameterChangedEvent
     /**
      * Simple Constructor.
      *
-     * @param state the parameter that was changed
+     * @param param the parameter that was changed
      * @param oldValue the old value of the changed parameter
      */
     public HarvesterParameterChangedEvent(AbstractParameter<?> param, Object oldValue)

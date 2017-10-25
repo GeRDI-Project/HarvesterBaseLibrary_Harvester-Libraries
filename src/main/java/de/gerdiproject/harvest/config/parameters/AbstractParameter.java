@@ -55,6 +55,18 @@ public abstract class AbstractParameter<T>
 
 
     /**
+     * This function attempts to convert a String value to the actual Type of the parameter.
+     * @param value a String representation of the new value
+     *
+     * @return a converted value
+     *
+     * @throws ClassCastException this exception is thrown when the String value cannot be cast to the target value
+     * @throws ParseException this exception is thrown when the conversion failed for a different reason
+     */
+    public abstract T stringToValue(String value) throws ParseException, ClassCastException;
+
+
+    /**
      * Returns the unique key of the parameter, which is used to change it via REST.
      *
      * @return the unique key of the parameter, which is used to change it via REST
@@ -116,15 +128,9 @@ public abstract class AbstractParameter<T>
         return returnMessage;
     }
 
-
-    /**
-     * This function attempts to convert a String value to the actual Type of the parameter.
-     * @param value a String representation of the new value
-     *
-     * @return a converted value
-     *
-     * @throws ClassCastException this exception is thrown when the String value cannot be cast to the target value
-     * @throws ParseException this exception is thrown when the conversion failed for a different reason
-     */
-    public abstract T stringToValue(String value) throws ParseException, ClassCastException;
+    @Override
+    public String toString()
+    {
+        return key + ":\t" + getStringValue();
+    }
 }

@@ -56,6 +56,8 @@ public class ConfigurationConstants
 
     public static final String STRING_VALID_VALUES_TEXT = "<anything>";
     public static final String URL_VALID_VALUES_TEXT = "<a valid URL>";
+    public static final String CONFIG_PARAMETERS = "Harvester Parameters:%n%s%n%nGlobal Parameters:%n%s";
+    public static final String NOT_AVAILABLE = "n/a";
 
 
     /**

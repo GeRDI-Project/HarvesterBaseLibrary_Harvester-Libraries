@@ -34,7 +34,7 @@ public class GlobalParameterChangedEvent implements IEvent
     /**
      * Simple Constructor.
      *
-     * @param state the parameter that was changed
+     * @param param the parameter that was changed
      * @param oldValue the old value of the changed parameter
      */
     public GlobalParameterChangedEvent(AbstractParameter<?> param, Object oldValue)

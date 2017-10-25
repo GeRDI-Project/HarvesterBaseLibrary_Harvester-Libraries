@@ -58,6 +58,11 @@ public class Configuration
     private Map<String, AbstractParameter<?>> harvesterParameters;
 
 
+    /**
+     * Constructor that requires a map of harvester specific parameters.
+     *
+     * @param harvesterParams a map of harvester specific parameters
+     */
     public Configuration(Map<String, AbstractParameter<?>> harvesterParams)
     {
         this.globalParameters = ParameterFactory.createDefaultParameters();
@@ -73,7 +78,7 @@ public class Configuration
     public String getInfoString()
     {
         String modName = MainContext.getModuleName();
-        String parameters = GsonUtils.getPrettyGson().toJson(this);
+        String parameters = this.toString();
         String globalParamKeys = globalParameters.keySet().toString();
 
         // remove brackets of the string representation
@@ -146,7 +151,9 @@ public class Configuration
      * Returns the value of the parameter with a specified key.
      *
      * @param key the key of the parameter
-     * @param parameterType the type of the parameter value
+     * @param parameterType the class of the parameter value
+     *
+     * @param for <T> the value type of the parameter
      *
      * @return the value of the parameter with the specified key
      */
@@ -166,7 +173,6 @@ public class Configuration
      * Returns the human readable value of the parameter with a specified key.
      *
      * @param key the key of the parameter
-     * @param parameterType the type of the parameter value
      *
      * @return the human readable value of the parameter with a specified key
      */
@@ -216,5 +222,33 @@ public class Configuration
 
             return message;
         }
+    }
+
+
+    @Override
+    public String toString()
+    {
+        final StringBuilder harvesterBuilder = new StringBuilder();
+
+        if (harvesterParameters != null)
+            harvesterParameters.forEach(
+                (String key, AbstractParameter<?> param) ->
+                harvesterBuilder.append(param)
+            );
+
+        if (harvesterBuilder.length() == 0)
+            harvesterBuilder.append(ConfigurationConstants.NOT_AVAILABLE);
+
+        final StringBuilder globalBuilder = new StringBuilder();
+        globalParameters.forEach(
+            (String key, AbstractParameter<?> param) ->
+            globalBuilder.append(param)
+        );
+
+
+        return String.format(
+                   ConfigurationConstants.CONFIG_PARAMETERS,
+                   harvesterBuilder.toString(),
+                   globalBuilder.toString());
     }
 }
