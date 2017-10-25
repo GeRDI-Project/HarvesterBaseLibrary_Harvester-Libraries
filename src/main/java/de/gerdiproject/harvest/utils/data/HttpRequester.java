@@ -107,8 +107,11 @@ public class HttpRequester
     public HttpRequester(Charset httpCharset, boolean suppressWarnings)
     {
         Configuration config = MainContext.getConfiguration();
-        readFromDisk = config.getParameterValue(ConfigurationConstants.READ_HTTP_FROM_DISK, Boolean.class);
-        writeToDisk = config.getParameterValue(ConfigurationConstants.WRITE_HTTP_TO_DISK, Boolean.class);
+
+        if (config != null) {
+            this.readFromDisk = config.getParameterValue(ConfigurationConstants.READ_HTTP_FROM_DISK, Boolean.class);
+            this.writeToDisk = config.getParameterValue(ConfigurationConstants.WRITE_HTTP_TO_DISK, Boolean.class);
+        }
 
         this.httpCharset = httpCharset;
         this.suppressWarnings = suppressWarnings;
