@@ -35,8 +35,8 @@ import de.gerdiproject.harvest.config.Configuration;
 import de.gerdiproject.harvest.config.constants.ConfigurationConstants;
 import de.gerdiproject.harvest.submission.AbstractSubmitter;
 import de.gerdiproject.harvest.submission.constants.ElasticSearchConstants;
-import de.gerdiproject.harvest.utils.HttpRequester;
-import de.gerdiproject.harvest.utils.HttpRequester.RestRequestType;
+import de.gerdiproject.harvest.utils.data.HttpRequester;
+import de.gerdiproject.harvest.utils.data.HttpRequester.RestRequestType;
 import de.gerdiproject.json.GsonUtils;
 
 

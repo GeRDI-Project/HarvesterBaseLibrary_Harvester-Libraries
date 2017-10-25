@@ -35,7 +35,7 @@ import de.gerdiproject.harvest.state.events.AbortingFinishedEvent;
 import de.gerdiproject.harvest.state.events.StartAbortingEvent;
 import de.gerdiproject.harvest.submission.impl.ElasticSearchSubmitter;
 import de.gerdiproject.harvest.utils.CancelableFuture;
-import de.gerdiproject.harvest.utils.HttpRequester;
+import de.gerdiproject.harvest.utils.data.HttpRequester;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;

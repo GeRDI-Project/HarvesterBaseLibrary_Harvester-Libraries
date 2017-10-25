@@ -35,6 +35,7 @@ import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
 
 import de.gerdiproject.harvest.MainContext;
+import de.gerdiproject.harvest.utils.data.constants.DataOperationConstants;
 import de.gerdiproject.json.GsonUtils;
 
 /**
@@ -44,7 +45,6 @@ import de.gerdiproject.json.GsonUtils;
  */
 public class WebDataRetriever implements IDataRetriever
 {
-    private static final String ERROR_JSON = "Could not load and parse '%s': %s";
     private static final Logger LOGGER = LoggerFactory.getLogger(DiskIO.class);
 
 
@@ -83,7 +83,7 @@ public class WebDataRetriever implements IDataRetriever
             reader.close();
 
         } catch (Exception e) {
-            LOGGER.warn(String.format(ERROR_JSON, url, e.toString()));
+            LOGGER.warn(String.format(DataOperationConstants.WEB_ERROR_JSON, url, e.toString()));
         }
 
         return responseText;
@@ -106,7 +106,7 @@ public class WebDataRetriever implements IDataRetriever
             reader.close();
 
         } catch (Exception e) {
-            LOGGER.warn(String.format(ERROR_JSON, url, e.toString()));
+            LOGGER.warn(String.format(DataOperationConstants.WEB_ERROR_JSON, url, e.toString()));
         }
 
         return jsonResponse;
@@ -125,7 +125,7 @@ public class WebDataRetriever implements IDataRetriever
             reader.close();
 
         } catch (IOException | IllegalStateException | JsonIOException | JsonSyntaxException e) {
-            LOGGER.warn(String.format(ERROR_JSON, url, e.toString()));
+            LOGGER.warn(String.format(DataOperationConstants.WEB_ERROR_JSON, url, e.toString()));
         }
 
         return object;
@@ -146,7 +146,7 @@ public class WebDataRetriever implements IDataRetriever
             response.close();
 
         } catch (Exception e) {
-            LOGGER.warn(String.format(ERROR_JSON, url, e.toString()));
+            LOGGER.warn(String.format(DataOperationConstants.WEB_ERROR_JSON, url, e.toString()));
         }
 
         return htmlResponse;
