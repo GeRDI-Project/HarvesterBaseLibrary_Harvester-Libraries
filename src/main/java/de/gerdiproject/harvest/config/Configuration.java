@@ -28,7 +28,6 @@ import de.gerdiproject.harvest.config.parameters.ParameterFactory;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.state.StateMachine;
 import de.gerdiproject.harvest.utils.data.DiskIO;
-import de.gerdiproject.json.GsonUtils;
 
 import java.util.List;
 import java.util.Map;
@@ -139,7 +138,7 @@ public class Configuration
         String path = getConfigFilePath();
 
         // write to disk
-        return  new DiskIO().writeObjectToFile(path, GsonUtils.getGson().toJson(this));
+        return  new DiskIO().writeObjectToFile(path, this);
     }
 
 
