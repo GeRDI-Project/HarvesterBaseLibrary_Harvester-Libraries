@@ -22,6 +22,13 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+import de.gerdiproject.harvest.state.IState;
+import de.gerdiproject.harvest.state.impl.ErrorState;
+import de.gerdiproject.harvest.state.impl.IdleState;
+import de.gerdiproject.harvest.state.impl.InitializationState;
+import de.gerdiproject.harvest.state.impl.SavingState;
+import de.gerdiproject.harvest.state.impl.SubmittingState;
+
 /**
  * This static class is a collection of constants, commonly used for dealing with configuration.
  *
@@ -56,9 +63,17 @@ public class ConfigurationConstants
 
     public static final String STRING_VALID_VALUES_TEXT = "<anything>";
     public static final String URL_VALID_VALUES_TEXT = "<a valid URL>";
-    public static final String CONFIG_PARAMETERS = "Harvester Parameters:%n%s%n%nGlobal Parameters:%n%s";
-    public static final String NOT_AVAILABLE = "n/a";
 
+    public static final String CONFIG_PARAMETERS = "Harvester Parameters:%n%s%n%nGlobal Parameters:%n%s";
+
+    public static final List<Class<? extends IState>> HARVESTER_PARAM_ALLOWED_STATES =
+        Collections.unmodifiableList(Arrays.asList(
+                                         InitializationState.class,
+                                         ErrorState.class,
+                                         IdleState.class,
+                                         SavingState.class,
+                                         SubmittingState.class
+                                     ));
 
     /**
      * Private constructor, because this is a static class.

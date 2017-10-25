@@ -30,7 +30,7 @@ import de.gerdiproject.json.GsonUtils;
 import java.lang.reflect.ParameterizedType;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.util.Map;
+import java.util.List;
 
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
@@ -103,9 +103,9 @@ public class ContextListener<T extends AbstractHarvester> implements ServletCont
     /**
      * Returns additional parameters that are specific to the harvester implementation.
      *
-     * @return a map of key to parameters, or null, if no additional parameters are needed
+     * @return a list of parameters, or null, if no additional parameters are needed
      */
-    protected Map<String, AbstractParameter<?>> getHarvesterSpecificParameters()
+    protected List<AbstractParameter<?>> getHarvesterSpecificParameters()
     {
         return null;
     }

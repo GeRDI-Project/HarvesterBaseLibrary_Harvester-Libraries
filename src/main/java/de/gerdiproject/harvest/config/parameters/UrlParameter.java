@@ -47,6 +47,19 @@ public class UrlParameter extends AbstractParameter<URL>
     }
 
 
+    /**
+     * Constructor for harvester parameters, that only forbid changes during harvesting.
+     *
+     * @param key the unique key of the parameter, which is used to change it via REST
+     * @param defaultValue the value with which the state is initialized
+     */
+    public UrlParameter(String key, URL defaultValue)
+    {
+        super(key, ConfigurationConstants.HARVESTER_PARAM_ALLOWED_STATES, ConfigurationConstants.URL_VALID_VALUES_TEXT);
+        value = defaultValue;
+    }
+
+
     @Override
     public URL stringToValue(String value) throws ParseException, ClassCastException
     {

@@ -44,6 +44,19 @@ public class StringParameter extends AbstractParameter<String>
         value = defaultValue;
     }
 
+    /**
+     * Constructor for harvester parameters, that only forbid changes during harvesting.
+     *
+     * @param key the unique key of the parameter, which is used to change it via REST
+     * @param defaultValue the value with which the state is initialized
+     */
+    public StringParameter(String key, String defaultValue)
+    {
+        super(key, ConfigurationConstants.HARVESTER_PARAM_ALLOWED_STATES, ConfigurationConstants.STRING_VALID_VALUES_TEXT);
+        value = defaultValue;
+    }
+
+
     @Override
     public String stringToValue(String value) throws ParseException, ClassCastException
     {

@@ -45,6 +45,19 @@ public class IntegerParameter extends AbstractParameter<Integer>
     }
 
 
+    /**
+     * Constructor for harvester parameters that only forbid changes during harvesting.
+     *
+     * @param key the unique key of the parameter, which is used to change it via REST
+     * @param defaultValue the value with which the state is initialized
+     */
+    public IntegerParameter(String key, int defaultValue)
+    {
+        super(key, ConfigurationConstants.HARVESTER_PARAM_ALLOWED_STATES, ConfigurationConstants.INTEGER_VALID_VALUES_TEXT);
+        value = defaultValue;
+    }
+
+
     @Override
     public String getStringValue()
     {

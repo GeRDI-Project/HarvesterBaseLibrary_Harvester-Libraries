@@ -35,7 +35,6 @@ import de.gerdiproject.harvest.state.events.AbortingFinishedEvent;
 import de.gerdiproject.harvest.state.events.StartAbortingEvent;
 import de.gerdiproject.harvest.submission.impl.ElasticSearchSubmitter;
 import de.gerdiproject.harvest.utils.CancelableFuture;
-import de.gerdiproject.harvest.utils.HarvesterStringUtils;
 import de.gerdiproject.harvest.utils.HttpRequester;
 
 import java.security.MessageDigest;
@@ -261,15 +260,7 @@ public abstract class AbstractHarvester
             EventSystem.sendEvent(new DocumentHarvestedEvent(document));
         }
 
-        // increment harvest count
-        final int harvestedDocs = harvestedDocumentCount.incrementAndGet();
-        final int from = startIndex.get();
-
-        // log progress
-        logger.info(HarvesterStringUtils.formatProgress(
-                        name,
-                        from + harvestedDocs,
-                        endIndex.get()));
+        harvestedDocumentCount.incrementAndGet();
     }
 
 
@@ -305,12 +296,8 @@ public abstract class AbstractHarvester
      */
     protected void setStartIndex(int from)
     {
-        if (from >= maxDocumentCount.get())
-            startIndex.set(maxDocumentCount.get());
-
-        else if (from <= 0)
+        if (from <= 0)
             startIndex.set(0);
-
         else
             startIndex.set(from);
     }
@@ -324,12 +311,8 @@ public abstract class AbstractHarvester
      */
     protected void setEndIndex(int to)
     {
-        if (to >= maxDocumentCount.get())
-            endIndex.set(maxDocumentCount.get());
-
-        else if (to <= 0)
+        if (to <= 0)
             endIndex.set(0);
-
         else
             endIndex.set(to);
     }
@@ -345,12 +328,16 @@ public abstract class AbstractHarvester
 
         harvestedDocumentCount.set(0);
 
+        // convert max value to what is actually possible
+        final int from = startIndex.get() == Integer.MAX_VALUE ? maxDocumentCount.get() : startIndex.get();
+        final int to = endIndex.get() == Integer.MAX_VALUE ? maxDocumentCount.get() : endIndex.get();
+
         EventSystem.addListener(StartAbortingEvent.class, onStartAborting);
-        EventSystem.sendEvent(new HarvestStartedEvent(endIndex.get(), startIndex.get()));
+        EventSystem.sendEvent(new HarvestStartedEvent(from, to));
 
         // start asynchronous harvest
         currentHarvestingProcess = new CancelableFuture<>(
-            () -> harvestInternal(startIndex.get(), endIndex.get()));
+            () -> harvestInternal(from, to));
 
         // success handler
         currentHarvestingProcess.thenApply((isSuccessful) -> {

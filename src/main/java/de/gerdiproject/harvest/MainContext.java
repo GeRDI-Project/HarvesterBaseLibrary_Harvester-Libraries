@@ -20,7 +20,7 @@ package de.gerdiproject.harvest;
 
 
 import java.nio.charset.Charset;
-import java.util.Map;
+import java.util.List;
 import java.util.function.Function;
 
 import org.slf4j.Logger;
@@ -123,14 +123,8 @@ public class MainContext
      *
      * @see de.gerdiproject.harvest.harvester.AbstractHarvester
      */
-    public static <T extends AbstractHarvester> void init(String moduleName, Class<T> harvesterClass, Charset charset, Map<String, AbstractParameter<?>> harvesterParams)
+    public static <T extends AbstractHarvester> void init(String moduleName, Class<T> harvesterClass, Charset charset, List<AbstractParameter<?>> harvesterParams)
     {
-        // try to load configuration
-        instance.configuration = Configuration.loadFromDisk();
-
-        if (instance.configuration == null)
-            instance.configuration = new Configuration(harvesterParams);
-
         // set global parameters
         instance.moduleName = moduleName;
         instance.charset = charset;
@@ -140,6 +134,14 @@ public class MainContext
             LOGGER.info(INIT_START);
             instance.harvester = harvesterClass.newInstance();
             instance.harvester.setAsMainHarvester();
+
+            // load the configuration
+            instance.configuration = Configuration.createFromDisk();
+
+            if (instance.configuration == null)
+                instance.configuration = new Configuration(harvesterParams);
+
+            // initialize the harvester properly
             instance.harvester.init();
             return true;
         });

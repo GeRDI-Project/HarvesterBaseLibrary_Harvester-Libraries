@@ -52,8 +52,6 @@ public final class ParameterFactory
 
         AbstractParameter<?> autoSave = createAutoSave();
         AbstractParameter<?> autoSubmit = createAutoSubmit();
-        AbstractParameter<?> harvestStartIndex = createHarvestStartIndex();
-        AbstractParameter<?> harvestEndIndex = createHarvestEndIndex();
         AbstractParameter<?> readFromDisk = createReadFromDisk();
         AbstractParameter<?> writeToDisk = createWriteToDisk();
         AbstractParameter<?> submitUrl = createSubmissionUrl();
@@ -63,14 +61,39 @@ public final class ParameterFactory
 
         params.put(autoSave.getKey(), autoSave);
         params.put(autoSubmit.getKey(), autoSubmit);
-        params.put(harvestStartIndex.getKey(), harvestStartIndex);
-        params.put(harvestEndIndex.getKey(), harvestEndIndex);
         params.put(readFromDisk.getKey(), readFromDisk);
         params.put(writeToDisk.getKey(), writeToDisk);
         params.put(submitUrl.getKey(), submitUrl);
         params.put(submitSize.getKey(), submitSize);
         params.put(submitName.getKey(), submitName);
         params.put(submitPassword.getKey(), submitPassword);
+
+        return params;
+    }
+
+    /**
+     * Creates a map of harvester specific parameters.
+     * @param harvesterParams a list of harvester specific parameters
+     *
+     * @return a map of harvester specific parameters
+     */
+    public static Map<String, AbstractParameter<?>> createHarvesterParameters(
+        List<AbstractParameter<?>> harvesterParams)
+    {
+        Map<String, AbstractParameter<?>> params = new HashMap<>();
+
+        // create start-and end-index
+        AbstractParameter<?> harvestStartIndex = createHarvestStartIndex();
+        AbstractParameter<?> harvestEndIndex = createHarvestEndIndex();
+
+        // add indices to parameters
+        params.put(harvestStartIndex.getKey(), harvestStartIndex);
+        params.put(harvestEndIndex.getKey(), harvestEndIndex);
+
+        if (harvesterParams != null) {
+            for (AbstractParameter<?> hParam : harvesterParams)
+                params.put(hParam.getKey(), hParam);
+        }
 
         return params;
     }
@@ -226,14 +249,10 @@ public final class ParameterFactory
      */
     public static IntegerParameter createHarvestStartIndex()
     {
-        final List<Class<? extends IState>> allowedStates = Arrays.asList(
-                                                                InitializationState.class,
-                                                                ErrorState.class,
-                                                                IdleState.class,
-                                                                SavingState.class,
-                                                                SubmittingState.class
-                                                            );
-        return new IntegerParameter(ConfigurationConstants.HARVEST_START_INDEX, allowedStates, 0);
+        return new IntegerParameter(
+                   ConfigurationConstants.HARVEST_START_INDEX,
+                   ConfigurationConstants.HARVESTER_PARAM_ALLOWED_STATES,
+                   0);
     }
 
 
@@ -244,14 +263,10 @@ public final class ParameterFactory
      */
     public static IntegerParameter createHarvestEndIndex()
     {
-        final List<Class<? extends IState>> allowedStates = Arrays.asList(
-                                                                InitializationState.class,
-                                                                ErrorState.class,
-                                                                IdleState.class,
-                                                                SavingState.class,
-                                                                SubmittingState.class
-                                                            );
-        return new IntegerParameter(ConfigurationConstants.HARVEST_END_INDEX, allowedStates, Integer.MAX_VALUE);
+        return new IntegerParameter(
+                   ConfigurationConstants.HARVEST_END_INDEX,
+                   ConfigurationConstants.HARVESTER_PARAM_ALLOWED_STATES,
+                   Integer.MAX_VALUE);
     }
 
 

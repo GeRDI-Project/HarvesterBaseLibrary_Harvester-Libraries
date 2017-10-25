@@ -30,6 +30,7 @@ import de.gerdiproject.harvest.state.StateMachine;
 import de.gerdiproject.harvest.utils.data.DiskIO;
 import de.gerdiproject.json.GsonUtils;
 
+import java.util.List;
 import java.util.Map;
 
 import org.slf4j.Logger;
@@ -61,12 +62,20 @@ public class Configuration
     /**
      * Constructor that requires a map of harvester specific parameters.
      *
-     * @param harvesterParams a map of harvester specific parameters
+     * @param harvesterParams a list of harvester specific parameters
      */
-    public Configuration(Map<String, AbstractParameter<?>> harvesterParams)
+    public Configuration(List<AbstractParameter<?>> harvesterParams)
     {
         this.globalParameters = ParameterFactory.createDefaultParameters();
-        this.harvesterParameters = harvesterParams;
+        this.harvesterParameters = ParameterFactory.createHarvesterParameters(harvesterParams);
+
+        globalParameters.forEach((String key, AbstractParameter<?> param) ->
+                                 EventSystem.sendEvent(new GlobalParameterChangedEvent(param, null))
+                                );
+
+        harvesterParameters.forEach((String key, AbstractParameter<?> param) ->
+                                    EventSystem.sendEvent(new HarvesterParameterChangedEvent(param, null))
+                                   );
     }
 
 
@@ -84,17 +93,12 @@ public class Configuration
         // remove brackets of the string representation
         globalParamKeys = globalParamKeys.substring(1, globalParamKeys.length() - 1);
 
-        String validValues;
+        String harvesterParamKeys = harvesterParameters.keySet().toString();
 
-        if (harvesterParameters != null) {
-            String harvesterParamKeys = harvesterParameters.keySet().toString();
+        // remove brackets of the string representation
+        harvesterParamKeys = harvesterParamKeys.substring(1, harvesterParamKeys.length() - 1);
 
-            // remove brackets of the string representation
-            harvesterParamKeys = harvesterParamKeys.substring(1, harvesterParamKeys.length() - 1);
-
-            validValues = harvesterParamKeys + ", " + globalParamKeys;
-        } else
-            validValues = globalParamKeys;
+        String validValues = harvesterParamKeys + ", " + globalParamKeys;
 
         // return assembled string
         return String.format(INFO, modName, parameters, validValues);
@@ -106,7 +110,7 @@ public class Configuration
      *
      * @return a configuration that was loaded from disk, or null if no config exists
      */
-    public static Configuration loadFromDisk()
+    public static Configuration createFromDisk()
     {
         String path = getConfigFilePath();
         Configuration config = new DiskIO().getObject(path, Configuration.class);
@@ -203,7 +207,7 @@ public class Configuration
         AbstractParameter<?> param = globalParameters.get(key);
 
         // if no global parameter with the specific name exists, look in the harvester parameters
-        if (param == null && harvesterParameters != null) {
+        if (param == null) {
             param = harvesterParameters.get(key);
             isHarvesterParam = true;
         }
@@ -229,15 +233,10 @@ public class Configuration
     public String toString()
     {
         final StringBuilder harvesterBuilder = new StringBuilder();
-
-        if (harvesterParameters != null)
-            harvesterParameters.forEach(
-                (String key, AbstractParameter<?> param) ->
-                harvesterBuilder.append(param)
-            );
-
-        if (harvesterBuilder.length() == 0)
-            harvesterBuilder.append(ConfigurationConstants.NOT_AVAILABLE);
+        harvesterParameters.forEach(
+            (String key, AbstractParameter<?> param) ->
+            harvesterBuilder.append(param)
+        );
 
         final StringBuilder globalBuilder = new StringBuilder();
         globalParameters.forEach(

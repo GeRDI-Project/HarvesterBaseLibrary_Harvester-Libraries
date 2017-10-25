@@ -44,6 +44,18 @@ public class BooleanParameter extends AbstractParameter<Boolean>
         value = defaultValue;
     }
 
+    /**
+     * Constructor for harvester parameters that only forbid changes during harvesting.
+     *
+     * @param key the unique key of the parameter, which is used to change it via REST
+     * @param defaultValue the value with which the state is initialized
+     */
+    public BooleanParameter(String key, boolean defaultValue)
+    {
+        super(key, ConfigurationConstants.HARVESTER_PARAM_ALLOWED_STATES, ConfigurationConstants.BOOLEAN_VALID_VALUES_TEXT);
+        value = defaultValue;
+    }
+
     @Override
     public Boolean stringToValue(String value) throws ParseException, ClassCastException
     {
