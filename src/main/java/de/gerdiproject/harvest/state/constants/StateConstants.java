@@ -65,7 +65,7 @@ public class StateConstants
     public static final String HARVEST_SUBMITTED_AT = ", submitted at %s";
     public static final String HARVEST_NOT_STARTED = "Ready to harvest";
 
-    public static final String IDLE_STATUS = "Harvest:\t\t%s"
+    public static final String IDLE_STATUS = "Harvest:\t%s"
                                              + "%nSave to disk:\t%s"
                                              + "%nSubmit to DB:\t%s";
 

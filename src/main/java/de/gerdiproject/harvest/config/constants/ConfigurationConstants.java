@@ -64,7 +64,14 @@ public class ConfigurationConstants
     public static final String STRING_VALID_VALUES_TEXT = "<anything>";
     public static final String URL_VALID_VALUES_TEXT = "<a valid URL>";
 
-    public static final String CONFIG_PARAMETERS = "Harvester Parameters:%n%s%n%nGlobal Parameters:%n%s";
+    public static final String CONFIG_PARAMETERS = "Harvester Parameters:%n%s%nGlobal Parameters:%n%s";
+    public static final String CONFIG_PATH = "config/%sConfig.json";
+    public static final String LOAD_OK = "Loaded configuration from '%s'.";
+    public static final String LOAD_FAILED = "Could not load configuration from '%s': %s";
+    public static final String NO_EXISTS = "No configuration exists!";
+    public static final String REST_INFO = "- %s Configuration -%n%n%s%n"
+                                           + "POST\t\tSaves the current configuration to disk.%n"
+                                           + "PUT \t\t\tSets x-www-form-urlencoded parameters for the harvester. Valid values: %s.%n";
 
     public static final List<Class<? extends IState>> HARVESTER_PARAM_ALLOWED_STATES =
         Collections.unmodifiableList(Arrays.asList(

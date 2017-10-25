@@ -45,14 +45,6 @@ import org.slf4j.LoggerFactory;
  */
 public class Configuration
 {
-    private static final String CONFIG_PATH = "config/%sConfig.json";
-    private static final String LOAD_OK = "Loaded configuration from '%s'.";
-    private static final String LOAD_FAILED = "Could not load configuration from '%s': %s";
-    private static final String NO_EXISTS = "No configuration exists!";
-    private static final String REST_INFO = "%s Configuration:%n%s%n"
-                                            + "POST\t\tSaves the current configuration to disk.%n"
-                                            + "PUT \t\t\tSets x-www-form-urlencoded parameters for the harvester. Valid values: %s.%n";
-
     private static final Logger LOGGER = LoggerFactory.getLogger(Configuration.class);
 
     private Map<String, AbstractParameter<?>> globalParameters;
@@ -101,7 +93,7 @@ public class Configuration
         String validValues = harvesterParamKeys + ", " + globalParamKeys;
 
         // return assembled string
-        return String.format(REST_INFO, modName, parameters, validValues);
+        return String.format(ConfigurationConstants.REST_INFO, modName, parameters, validValues);
     }
 
 
@@ -116,10 +108,10 @@ public class Configuration
         Configuration config = new DiskIO().getObject(path, Configuration.class);
 
         if (config == null)
-            LOGGER.error(String.format(LOAD_FAILED, path, NO_EXISTS));
+            LOGGER.error(String.format(ConfigurationConstants.LOAD_FAILED, path, ConfigurationConstants.NO_EXISTS));
 
         else
-            LOGGER.info(String.format(LOAD_OK, path));
+            LOGGER.info(String.format(ConfigurationConstants.LOAD_OK, path));
 
         return config;
     }
@@ -132,7 +124,7 @@ public class Configuration
      */
     private static String getConfigFilePath()
     {
-        return String.format(CONFIG_PATH, MainContext.getModuleName());
+        return String.format(ConfigurationConstants.CONFIG_PATH, MainContext.getModuleName());
     }
 
 
@@ -166,6 +158,10 @@ public class Configuration
     {
         AbstractParameter<?> param = globalParameters.get(key);
 
+        // if no global parameter with the specific name exists, look in the harvester parameters
+        if (param == null)
+            param = harvesterParameters.get(key);
+
         // check if the parameter exists and if the value matches the parameterType
         if (param != null && param.getValue().getClass().equals(parameterType))
             return (T) param.getValue();
@@ -183,6 +179,10 @@ public class Configuration
     public String getParameterStringValue(String key)
     {
         AbstractParameter<?> param = globalParameters.get(key);
+
+        // if no global parameter with the specific name exists, look in the harvester parameters
+        if (param == null)
+            param = harvesterParameters.get(key);
 
         // check if the parameter exists
         if (param != null)
@@ -235,13 +235,13 @@ public class Configuration
         final StringBuilder harvesterBuilder = new StringBuilder();
         harvesterParameters.forEach(
             (String key, AbstractParameter<?> param) ->
-            harvesterBuilder.append(param).append('\n')
+            harvesterBuilder.append("  ").append(param).append('\n')
         );
 
         final StringBuilder globalBuilder = new StringBuilder();
         globalParameters.forEach(
             (String key, AbstractParameter<?> param) ->
-            globalBuilder.append(param).append('\n')
+            globalBuilder.append("  ").append(param).append('\n')
         );
 
 

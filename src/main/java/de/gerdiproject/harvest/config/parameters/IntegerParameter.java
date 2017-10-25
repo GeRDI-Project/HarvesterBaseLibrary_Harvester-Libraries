@@ -68,7 +68,7 @@ public class IntegerParameter extends AbstractParameter<Integer>
             return ConfigurationConstants.INTEGER_VALUE_MIN;
 
         else
-            return value.toString();
+            return String.valueOf(value);
     }
 
 
