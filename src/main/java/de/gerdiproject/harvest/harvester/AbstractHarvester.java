@@ -32,6 +32,7 @@ import de.gerdiproject.harvest.harvester.events.HarvestStartedEvent;
 import de.gerdiproject.harvest.harvester.events.StartHarvestEvent;
 import de.gerdiproject.harvest.harvester.rest.HarvesterFacade;
 import de.gerdiproject.harvest.state.events.AbortingFinishedEvent;
+import de.gerdiproject.harvest.state.events.AbortingStartedEvent;
 import de.gerdiproject.harvest.state.events.StartAbortingEvent;
 import de.gerdiproject.harvest.submission.impl.ElasticSearchSubmitter;
 import de.gerdiproject.harvest.utils.CancelableFuture;
@@ -85,6 +86,7 @@ public abstract class AbstractHarvester
      */
     private final Consumer<StartAbortingEvent> onStartAborting = (StartAbortingEvent e) -> {
         EventSystem.removeListener(StartAbortingEvent.class, this.onStartAborting);
+        EventSystem.sendEvent(new AbortingStartedEvent());
         abortHarvest();
     };
 
