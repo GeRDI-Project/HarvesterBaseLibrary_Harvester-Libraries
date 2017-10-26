@@ -169,8 +169,6 @@ public abstract class AbstractHarvester
         startIndex = new AtomicInteger(0);
         endIndex = new AtomicInteger(0);
         this.harvestedDocuments = Collections.synchronizedList(new LinkedList<>());
-
-        init();
     }
 
 
