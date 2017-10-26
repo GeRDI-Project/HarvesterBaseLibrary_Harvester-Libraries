@@ -18,7 +18,6 @@
  */
 package de.gerdiproject.harvest.state;
 
-import java.util.List;
 
 /**
  * An interface for states of the {@linkplain StateMachine}.
@@ -36,7 +35,6 @@ public interface IState
     String abort();
     String pause();
     String resume();
-    List<String> getAllowedParameters();
     String submit();
     String save();
 }

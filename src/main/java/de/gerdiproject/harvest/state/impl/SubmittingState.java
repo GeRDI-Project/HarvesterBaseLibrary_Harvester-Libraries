@@ -18,12 +18,9 @@
  */
 package de.gerdiproject.harvest.state.impl;
 
-import java.util.Arrays;
-import java.util.List;
 import java.util.function.Consumer;
 
 import de.gerdiproject.harvest.MainContext;
-import de.gerdiproject.harvest.config.constants.ConfigurationConstants;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.state.AbstractProgressingState;
 import de.gerdiproject.harvest.state.constants.StateConstants;
@@ -109,18 +106,6 @@ public class SubmittingState extends AbstractProgressingState
         return String.format(
                    StateConstants.CANNOT_RESUME_PREFIX + StateConstants.SUBMIT_IN_PROGRESS,
                    StateConstants.INIT_PROCESS);
-    }
-
-    @Override
-    public List<String> getAllowedParameters()
-    {
-        return Arrays.asList(ConfigurationConstants.AUTO_SAVE,
-                             ConfigurationConstants.AUTO_SUBMIT,
-                             ConfigurationConstants.WRITE_HTTP_TO_DISK,
-                             ConfigurationConstants.READ_HTTP_FROM_DISK,
-                             ConfigurationConstants.HARVEST_START_INDEX,
-                             ConfigurationConstants.HARVEST_END_INDEX
-                            );
     }
 
 

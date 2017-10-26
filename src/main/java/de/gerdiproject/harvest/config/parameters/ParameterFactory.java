@@ -74,7 +74,7 @@ public final class ParameterFactory
     }
 
 
-	/**
+    /**
      * Creates a map of harvester specific parameters.
      * @param harvesterParams a list of harvester specific parameters
      *
@@ -180,18 +180,18 @@ public final class ParameterFactory
      * @return a flag-parameter for whether cached documents should be retained after a new harvest
      */
     public static AbstractParameter<?> createKeepCachedDocs()
-	{
+    {
         final List<Class<? extends IState>> allowedStates = Arrays.asList(
-                InitializationState.class,
-                ErrorState.class,
-                IdleState.class,
-                HarvestingState.class,
-                SavingState.class,
-                SubmittingState.class
-            );
-return new BooleanParameter(ConfigurationConstants.KEEP_CACHE, allowedStates, false);
-	}
-    
+                                                                InitializationState.class,
+                                                                ErrorState.class,
+                                                                IdleState.class,
+                                                                HarvestingState.class,
+                                                                SavingState.class,
+                                                                SubmittingState.class
+                                                            );
+        return new BooleanParameter(ConfigurationConstants.KEEP_CACHE, allowedStates, false);
+    }
+
     /**
      * Creates a parameter for changing the URL to which the harvested documents are being posted.
      *

@@ -18,9 +18,6 @@
  */
 package de.gerdiproject.harvest.state.impl;
 
-import java.util.Arrays;
-import java.util.List;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -106,11 +103,6 @@ public class AbortingState implements IState
         return String.format(StateConstants.ABORT_DETAILED, processName);
     }
 
-    @Override
-    public List<String> getAllowedParameters()
-    {
-        return Arrays.asList();
-    }
 
     @Override
     public String submit()

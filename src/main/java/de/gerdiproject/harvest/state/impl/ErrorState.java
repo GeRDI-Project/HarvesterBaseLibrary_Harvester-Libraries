@@ -18,9 +18,6 @@
  */
 package de.gerdiproject.harvest.state.impl;
 
-import java.util.Arrays;
-import java.util.List;
-
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.harvester.events.HarvesterInitializedEvent;
 import de.gerdiproject.harvest.state.IState;
@@ -80,13 +77,6 @@ public class ErrorState implements IState
     public String resume()
     {
         return StateConstants.ERROR_DETAILED;
-    }
-
-
-    @Override
-    public List<String> getAllowedParameters()
-    {
-        return Arrays.asList();
     }
 
 

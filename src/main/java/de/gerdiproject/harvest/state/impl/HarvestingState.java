@@ -18,12 +18,9 @@
  */
 package de.gerdiproject.harvest.state.impl;
 
-import java.util.Arrays;
-import java.util.List;
 import java.util.function.Consumer;
 
 import de.gerdiproject.harvest.MainContext;
-import de.gerdiproject.harvest.config.constants.ConfigurationConstants;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.harvester.events.DocumentHarvestedEvent;
 import de.gerdiproject.harvest.harvester.events.HarvestFinishedEvent;
@@ -113,19 +110,6 @@ public class HarvestingState extends AbstractProgressingState
                    StateConstants.CANNOT_RESUME_PREFIX + StateConstants.RESUME_IN_PROGRESS,
                    StateConstants.HARVESTING_PROCESS,
                    StateConstants.HARVESTING_PROCESS);
-    }
-
-
-    @Override
-    public List<String> getAllowedParameters()
-    {
-        return Arrays.asList(ConfigurationConstants.AUTO_SAVE,
-                             ConfigurationConstants.AUTO_SUBMIT,
-                             ConfigurationConstants.SUBMISSION_URL,
-                             ConfigurationConstants.SUBMISSION_USER_NAME,
-                             ConfigurationConstants.SUBMISSION_PASSWORD,
-                             ConfigurationConstants.SUBMISSION_SIZE
-                            );
     }
 
 
