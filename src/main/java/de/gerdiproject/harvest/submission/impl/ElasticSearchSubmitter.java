@@ -94,27 +94,33 @@ public class ElasticSearchSubmitter extends AbstractSubmitter
     protected URL getSubmissionUrl(Configuration config)
     {
         URL elasticSearchUrl = super.getSubmissionUrl(config);
+        URL bulkSubmissionUrl = null;
 
-        String[] path = elasticSearchUrl.getPath().substring(1).split("/");
-        String bulkSubmitUrl = elasticSearchUrl.toString();
+        if (elasticSearchUrl != null) {
+            String[] path = elasticSearchUrl.getPath().substring(1).split("/");
+            String bulkSubmitUrl = elasticSearchUrl.toString();
 
-        // check if the URL already is a bulk submission URL
-        if (!path[path.length - 1].equals(ElasticSearchConstants.BULK_SUBMISSION_URL_SUFFIX)) {
-            // extract URL without Query, add a slash if necessary
-            bulkSubmitUrl = bulkSubmitUrl.substring(0, bulkSubmitUrl.indexOf('?'));
+            // check if the URL already is a bulk submission URL
+            if (!path[path.length - 1].equals(ElasticSearchConstants.BULK_SUBMISSION_URL_SUFFIX)) {
+                // extract URL without Query, add a slash if necessary
+                bulkSubmitUrl = bulkSubmitUrl.substring(0, bulkSubmitUrl.indexOf('?'));
 
-            if (bulkSubmitUrl.charAt(bulkSubmitUrl.length() - 1) != '/')
-                bulkSubmitUrl += "/";
+                if (bulkSubmitUrl.charAt(bulkSubmitUrl.length() - 1) != '/')
+                    bulkSubmitUrl += "/";
 
-            // add bulk suffix
-            bulkSubmitUrl += ElasticSearchConstants.BULK_SUBMISSION_URL_SUFFIX;
+                // add bulk suffix
+                bulkSubmitUrl += ElasticSearchConstants.BULK_SUBMISSION_URL_SUFFIX;
+            }
+
+            try {
+                // check if the URL is valid
+                bulkSubmissionUrl = new URL(bulkSubmitUrl);
+            } catch (MalformedURLException e) {
+                bulkSubmissionUrl = null;
+            }
         }
 
-        try {
-            return new URL(bulkSubmitUrl);
-        } catch (MalformedURLException e) {
-            return null;
-        }
+        return bulkSubmissionUrl;
     }
 
 
