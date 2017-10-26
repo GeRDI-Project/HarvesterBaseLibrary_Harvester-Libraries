@@ -279,7 +279,7 @@ public class HarvestSaver
                 break;
 
             // read a document from the array
-            gson.toJson(gson.fromJson(cacheReader, DataCiteJson.class), writer);
+            gson.toJson(gson.fromJson(cacheReader, DataCiteJson.class), DataCiteJson.class, writer);
             EventSystem.sendEvent(savedEvent);
         }
 
