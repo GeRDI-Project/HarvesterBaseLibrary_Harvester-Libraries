@@ -41,6 +41,7 @@ import de.gerdiproject.harvest.state.impl.IdleState;
 import de.gerdiproject.harvest.state.impl.SavingState;
 import de.gerdiproject.harvest.state.impl.SubmittingState;
 import de.gerdiproject.harvest.submission.events.StartSubmissionEvent;
+import de.gerdiproject.harvest.submission.events.SubmissionFinishedEvent;
 import de.gerdiproject.harvest.submission.events.SubmissionStartedEvent;
 
 
@@ -146,4 +147,10 @@ public class StateEventHandlerConstants
         else
             EventSystem.sendEvent(new ChangeStateEvent(new ErrorState()));
     };
+
+    /**
+     * Switches the state to {@linkplain IdleState} when a submission-process finishes.
+     */
+    public static final Consumer<SubmissionFinishedEvent> ON_SUBMISSION_FINISHED =
+        (SubmissionFinishedEvent e) -> EventSystem.sendEvent(new ChangeStateEvent(new IdleState()));
 }

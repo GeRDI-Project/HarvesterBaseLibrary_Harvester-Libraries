@@ -27,7 +27,9 @@ import de.gerdiproject.harvest.config.constants.ConfigurationConstants;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.state.AbstractProgressingState;
 import de.gerdiproject.harvest.state.constants.StateConstants;
+import de.gerdiproject.harvest.state.constants.StateEventHandlerConstants;
 import de.gerdiproject.harvest.submission.events.DocumentsSubmittedEvent;
+import de.gerdiproject.harvest.submission.events.SubmissionFinishedEvent;
 import de.gerdiproject.harvest.utils.time.HarvestTimeKeeper;
 
 /**
@@ -37,7 +39,10 @@ import de.gerdiproject.harvest.utils.time.HarvestTimeKeeper;
  */
 public class SubmittingState extends AbstractProgressingState
 {
-    private Consumer<DocumentsSubmittedEvent> onDocumentsSubmitted = (DocumentsSubmittedEvent e) -> addProgress(e.getNumberOfSubmittedDocuments());;
+    /**
+     * Event callback that is called when some documents are submitted.
+     */
+    private final Consumer<DocumentsSubmittedEvent> onDocumentsSubmitted = (DocumentsSubmittedEvent e) -> addProgress(e.getNumberOfSubmittedDocuments());
 
 
     /**
@@ -69,6 +74,7 @@ public class SubmittingState extends AbstractProgressingState
     {
         super.onStateEnter();
         EventSystem.addListener(DocumentsSubmittedEvent.class, onDocumentsSubmitted);
+        EventSystem.addListener(SubmissionFinishedEvent.class, StateEventHandlerConstants.ON_SUBMISSION_FINISHED);
     }
 
 
@@ -77,6 +83,7 @@ public class SubmittingState extends AbstractProgressingState
     {
         super.onStateLeave();
         EventSystem.removeListener(DocumentsSubmittedEvent.class, onDocumentsSubmitted);
+        EventSystem.removeListener(SubmissionFinishedEvent.class, StateEventHandlerConstants.ON_SUBMISSION_FINISHED);
     }
 
 

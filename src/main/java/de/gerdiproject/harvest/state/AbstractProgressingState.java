@@ -18,7 +18,6 @@
  */
 package de.gerdiproject.harvest.state;
 
-import java.util.Date;
 import java.util.function.Consumer;
 
 import org.slf4j.Logger;
@@ -62,7 +61,7 @@ public abstract class AbstractProgressingState implements IState
     @Override
     public void onStateEnter()
     {
-        startTimeStamp = new Date().getTime();
+        startTimeStamp = System.currentTimeMillis();
         EventSystem.addListener(AbortingStartedEvent.class, onAbortingStarted);
     }
 
@@ -107,10 +106,10 @@ public abstract class AbstractProgressingState implements IState
         if (currentProgress > 0) {
 
             // calculate how many milliseconds the harvest has been going on
-            long milliSecondsUntilNow = new Date().getTime() - startTimeStamp;
+            long milliSecondsUntilNow = System.currentTimeMillis() - startTimeStamp;
 
             // estimate how many milliseconds the state will take
-            long milliSecondsTotal = milliSecondsUntilNow * (maxProgress / currentProgress);
+            long milliSecondsTotal = (milliSecondsUntilNow * maxProgress) / currentProgress;
 
             return (milliSecondsTotal - milliSecondsUntilNow) / 1000l;
         }
