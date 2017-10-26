@@ -105,14 +105,30 @@ public class DocumentsCache
         File cacheDir = new File(cacheDirPath);
 
         if (cacheDir.exists() && cacheDir.isDirectory()) {
-            final File[] oldCacheFiles = cacheDir.listFiles(new CacheFilenameFilter(cacheFile));
+            File[] oldCacheFiles;
 
-            for (File oldCache : oldCacheFiles) {
-                try {
-                    oldCache.delete();
-                    LOGGER.info(String.format(CacheConstants.DELETE_FILE_SUCCESS, oldCache.getName()));
-                } catch (SecurityException e) {
-                    LOGGER.error(String.format(CacheConstants.DELETE_FILE_FAILED, oldCache.getName()), e);
+            // try to get all cache files in the folder
+            try {
+                oldCacheFiles = cacheDir.listFiles(new CacheFilenameFilter(cacheFile));
+            } catch (SecurityException e) {
+                oldCacheFiles = null;
+            }
+
+            // only continue if there are files
+            if (oldCacheFiles != null) {
+                for (File oldCache : oldCacheFiles) {
+                    boolean deleteSuccess;
+
+                    try {
+                        deleteSuccess = oldCache.delete();
+                    } catch (SecurityException e) {
+                        deleteSuccess = false;
+                    }
+
+                    if (deleteSuccess)
+                        LOGGER.info(String.format(CacheConstants.DELETE_FILE_SUCCESS, oldCache.getName()));
+                    else
+                        LOGGER.error(String.format(CacheConstants.DELETE_FILE_FAILED, oldCache.getName()));
                 }
             }
         }
