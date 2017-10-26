@@ -32,6 +32,7 @@ import com.google.gson.stream.JsonWriter;
 
 import de.gerdiproject.harvest.IDocument;
 import de.gerdiproject.harvest.MainContext;
+import de.gerdiproject.harvest.config.constants.ConfigurationConstants;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.harvester.events.DocumentHarvestedEvent;
 import de.gerdiproject.harvest.harvester.events.HarvestFinishedEvent;
@@ -40,7 +41,7 @@ import de.gerdiproject.harvest.save.HarvestSaver;
 import de.gerdiproject.harvest.save.events.StartSaveEvent;
 import de.gerdiproject.harvest.submission.AbstractSubmitter;
 import de.gerdiproject.harvest.submission.events.StartSubmissionEvent;
-import de.gerdiproject.harvest.utils.cache.constants.DocumentsCacheConstants;
+import de.gerdiproject.harvest.utils.cache.constants.CacheConstants;
 import de.gerdiproject.json.GsonUtils;
 
 public class DocumentsCache
@@ -60,7 +61,6 @@ public class DocumentsCache
 
 
     private Consumer<HarvestStartedEvent> onHarvestStarted = (HarvestStartedEvent e) -> {
-        clear();
         startCaching();
     };
 
@@ -89,10 +89,33 @@ public class DocumentsCache
         this.documentCount = 0;
         this.cacheFile = new File(
             String.format(
-                DocumentsCacheConstants.CACHE_FILE_PATH,
+                CacheConstants.CACHE_FILE_PATH,
                 MainContext.getModuleName(),
                 new Date().getTime()
             ));
+    }
+
+
+    /**
+     * Removes all cache files for this harvester, that are no longer in use.
+     */
+    private void clearOldCacheFiles()
+    {
+        String cacheDirPath = String.format(CacheConstants.CACHE_FOLDER_PATH, MainContext.getModuleName());
+        File cacheDir = new File(cacheDirPath);
+
+        if (cacheDir.exists() && cacheDir.isDirectory()) {
+            final File[] oldCacheFiles = cacheDir.listFiles(new CacheFilenameFilter(cacheFile));
+
+            for (File oldCache : oldCacheFiles) {
+                try {
+                    oldCache.delete();
+                    LOGGER.info(String.format(CacheConstants.DELETE_FILE_SUCCESS, oldCache.getName()));
+                } catch (SecurityException e) {
+                    LOGGER.error(String.format(CacheConstants.DELETE_FILE_FAILED, oldCache.getName()), e);
+                }
+            }
+        }
     }
 
 
@@ -114,13 +137,18 @@ public class DocumentsCache
         if (documentCount > 0)
             finishCaching();
 
+        // should we delete old cache files?
+        if (!MainContext.getConfiguration().getParameterValue(ConfigurationConstants.KEEP_CACHE, Boolean.class))
+            clearOldCacheFiles();
+
         documentCount = 0;
         cacheWriter = null;
     }
 
+
     private boolean startCaching()
     {
-        documentCount = 0;
+        clear();
 
         // create directories
         boolean isDirectoryCreated = cacheFile.getParentFile().exists() || cacheFile.getParentFile().mkdirs();
@@ -135,7 +163,7 @@ public class DocumentsCache
 
                 return true;
             } catch (IOException e) {
-                LOGGER.error(DocumentsCacheConstants.START_CACHE_ERROR, e);
+                LOGGER.error(CacheConstants.START_CACHE_ERROR, e);
             }
         }
 
@@ -152,21 +180,14 @@ public class DocumentsCache
                 cacheWriter = null;
             }
         } catch (IOException e) {
-            LOGGER.error(DocumentsCacheConstants.FINISH_CACHE_ERROR, e);
+            LOGGER.error(CacheConstants.FINISH_CACHE_ERROR, e);
         }
     }
 
 
     private void addDocument(IDocument doc)
     {
-        boolean isInitialized = true;
-
-        if (documentCount == 0)
-            isInitialized = startCaching();
-
-        if (isInitialized) {
-            GsonUtils.getGson().toJson(doc, doc.getClass(), cacheWriter);
-            documentCount++;
-        }
+        GsonUtils.getGson().toJson(doc, doc.getClass(), cacheWriter);
+        documentCount++;
     }
 }

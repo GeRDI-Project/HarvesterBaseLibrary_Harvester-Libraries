@@ -19,6 +19,7 @@
 package de.gerdiproject.harvest.utils.cache.constants;
 
 
+
 import de.gerdiproject.harvest.utils.cache.DocumentsCache;
 
 /**
@@ -26,21 +27,28 @@ import de.gerdiproject.harvest.utils.cache.DocumentsCache;
  *
  * @author Robin Weiss
  */
-public class DocumentsCacheConstants
+public class CacheConstants
 {
     public static final String SAVE_FILE_NAME = "harvestedIndices/%s_result_%d.json";
     public static final String SAVE_FILE_NAME_PARTIAL = "harvestedIndices/%s_partialResult_%d-%d_%d.json";
     public static final String SAVE_FAILED_DIRECTORY = "Could not save documents: Unable to create directories!";
     public static final String SAVE_FAILED_ERROR = "Could not save harvested documents!";
-    public static final String CACHE_FILE_PATH = "cachedIndex/%s/cachedDocuments_%d.json";
     public static final String START_CACHE_ERROR = "Error starting the cache writer";
     public static final String FINISH_CACHE_ERROR = "Error closing the cache writer";
+
+    public static final String CACHE_FOLDER_PATH = "cachedIndex/%s/";
+    public static final String CACHE_FILE_PATH = CACHE_FOLDER_PATH + "cachedDocuments_%d.json";
+    public static final String CACHE_FILE_REGEX = "cachedDocuments_\\d+\\.json";
+
+    public static final String DELETE_FILE_SUCCESS = "Deleted old cache file '%s'.";
+    public static final String DELETE_FILE_FAILED = "Could not deleted old cache file '%s'!";
+
 
 
     /**
      * Private constructor, because this is a static class.
      */
-    private DocumentsCacheConstants()
+    private CacheConstants()
     {
 
     }
