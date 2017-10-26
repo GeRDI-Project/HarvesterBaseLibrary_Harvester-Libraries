@@ -18,6 +18,8 @@
  */
 package de.gerdiproject.harvest.utils.data;
 
+import java.lang.reflect.Type;
+
 import org.jsoup.nodes.Document;
 
 import com.google.gson.JsonElement;
@@ -58,6 +60,18 @@ public interface IDataRetriever
      * @return an object, or null if the file could not be parsed
      */
     <T> T getObject(String path, Class<T> targetClass);
+
+    /**
+     * Tries to parse the content from a specified path as a
+     * JSON object.
+     *
+     * @param path the path to a JSON file
+     * @param targetType the type of the object that is read from disc
+     * @param <T> the type of the object that is to be read
+     *
+     * @return an object, or null if the file could not be parsed
+     */
+    <T> T getObject(String path, Type targetType);
 
     /**
      * Tries to parse the content from a specified path as a
