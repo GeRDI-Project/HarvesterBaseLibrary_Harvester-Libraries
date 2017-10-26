@@ -56,7 +56,10 @@ public class ConfigurationFacade
     })
     public String getInfo()
     {
-        return MainContext.getConfiguration().getInfoString();
+        if (MainContext.getConfiguration() == null)
+            return ConfigurationConstants.REST_INFO_FAILED;
+        else
+            return MainContext.getConfiguration().getInfoString();
     }
 
 
@@ -71,7 +74,10 @@ public class ConfigurationFacade
     })
     public String saveToDisk()
     {
-        return MainContext.getConfiguration().saveToDisk();
+        if (MainContext.getConfiguration() == null)
+            return ConfigurationConstants.REST_INFO_FAILED;
+        else
+            return MainContext.getConfiguration().saveToDisk();
     }
 
     /**
@@ -91,6 +97,10 @@ public class ConfigurationFacade
     public String setParameters(final MultivaluedMap<String, String> formParams)
     {
         final Configuration config = MainContext.getConfiguration();
+
+        if (config == null)
+            return ConfigurationConstants.REST_INFO_FAILED;
+
         final StringBuilder sb = new StringBuilder();
 
         for (Entry<String, List<String>> entry : formParams.entrySet()) {
