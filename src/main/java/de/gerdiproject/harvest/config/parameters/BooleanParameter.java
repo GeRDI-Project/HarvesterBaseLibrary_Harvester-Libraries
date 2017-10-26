@@ -59,8 +59,12 @@ public class BooleanParameter extends AbstractParameter<Boolean>
     @Override
     public Boolean stringToValue(String value) throws ParseException, ClassCastException
     {
-        if (ConfigurationConstants.BOOLEAN_VALID_VALUES_LIST.contains(value))
+        if (value == null)
+            return false;
+
+        else if (ConfigurationConstants.BOOLEAN_VALID_VALUES_LIST.contains(value))
             return value.equals(ConfigurationConstants.BOOLEAN_VALID_VALUES_LIST.get(0)) || Boolean.parseBoolean(value);
+
         else
             throw new ClassCastException();
     }

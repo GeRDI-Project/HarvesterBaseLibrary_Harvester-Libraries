@@ -63,10 +63,14 @@ public class UrlParameter extends AbstractParameter<URL>
     @Override
     public URL stringToValue(String value) throws ParseException, ClassCastException
     {
-        try {
-            return new URL(value);
-        } catch (MalformedURLException e) {
-            throw new ParseException(String.format(ConfigurationConstants.CANNOT_CHANGE_PARAM_INVALID_URL, key, value), 0);
+        if (value == null)
+            return null;
+        else {
+            try {
+                return new URL(value);
+            } catch (MalformedURLException e) {
+                throw new ParseException(String.format(ConfigurationConstants.CANNOT_CHANGE_PARAM_INVALID_URL, key, value), 0);
+            }
         }
     }
 

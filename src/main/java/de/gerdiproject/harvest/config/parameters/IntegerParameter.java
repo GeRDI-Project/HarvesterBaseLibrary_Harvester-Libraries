@@ -75,11 +75,15 @@ public class IntegerParameter extends AbstractParameter<Integer>
     @Override
     public Integer stringToValue(String value) throws ParseException, ClassCastException
     {
-        if (value.equals(ConfigurationConstants.INTEGER_VALUE_MAX))
+        if (value == null)
+            return 0;
+
+        else if (value.equals(ConfigurationConstants.INTEGER_VALUE_MAX))
             return Integer.MAX_VALUE;
 
         else if (value.equals(ConfigurationConstants.INTEGER_VALUE_MIN))
             return Integer.MIN_VALUE;
+
         else {
             try {
                 // try to parse the integer

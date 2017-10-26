@@ -119,7 +119,7 @@ public abstract class AbstractParameter<T>
         else {
             try {
                 this.value = stringToValue(value);
-                returnMessage = String.format(ConfigurationConstants.CHANGED_PARAM, key, this.value.toString());
+                returnMessage = String.format(ConfigurationConstants.CHANGED_PARAM, key, getStringValue());
             } catch (ClassCastException e) {
                 returnMessage = String.format(ConfigurationConstants.CANNOT_CHANGE_PARAM_INVALID_VALUE, key, value, allowedValues);
             } catch (ParseException e) {
