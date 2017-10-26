@@ -54,6 +54,7 @@ public final class ParameterFactory
         AbstractParameter<?> autoSubmit = createAutoSubmit();
         AbstractParameter<?> readFromDisk = createReadFromDisk();
         AbstractParameter<?> writeToDisk = createWriteToDisk();
+        AbstractParameter<?> keepCache = createKeepCachedDocs();
         AbstractParameter<?> submitUrl = createSubmissionUrl();
         AbstractParameter<?> submitSize = createSubmissionSize();
         AbstractParameter<?> submitName = createSubmissionUserName();
@@ -67,11 +68,13 @@ public final class ParameterFactory
         params.put(submitSize.getKey(), submitSize);
         params.put(readFromDisk.getKey(), readFromDisk);
         params.put(writeToDisk.getKey(), writeToDisk);
+        params.put(keepCache.getKey(), keepCache);
 
         return params;
     }
 
-    /**
+
+	/**
      * Creates a map of harvester specific parameters.
      * @param harvesterParams a list of harvester specific parameters
      *
@@ -171,6 +174,24 @@ public final class ParameterFactory
     }
 
 
+    /**
+     * Creates a flag-parameter for changing whether cached documents should be retained after a new harvest.
+     *
+     * @return a flag-parameter for whether cached documents should be retained after a new harvest
+     */
+    public static AbstractParameter<?> createKeepCachedDocs()
+	{
+        final List<Class<? extends IState>> allowedStates = Arrays.asList(
+                InitializationState.class,
+                ErrorState.class,
+                IdleState.class,
+                HarvestingState.class,
+                SavingState.class,
+                SubmittingState.class
+            );
+return new BooleanParameter(ConfigurationConstants.KEEP_CACHE, allowedStates, false);
+	}
+    
     /**
      * Creates a parameter for changing the URL to which the harvested documents are being posted.
      *
