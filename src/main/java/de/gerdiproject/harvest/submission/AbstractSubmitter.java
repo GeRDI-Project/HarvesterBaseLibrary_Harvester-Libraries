@@ -94,6 +94,8 @@ public abstract class AbstractSubmitter
     public void submit(File cachedDocuments, int numberOfDocuments)
     {
         isAborting = false;
+        submittedDocumentCount = 0;
+        failedDocumentCount = numberOfDocuments;
 
         // send event
         EventSystem.sendEvent(new SubmissionStartedEvent(numberOfDocuments));
@@ -127,7 +129,8 @@ public abstract class AbstractSubmitter
                 }
                 return false;
             });
-        }
+        } else // fail the submission
+            onSubmissionFinished();
     }
 
 
@@ -228,9 +231,6 @@ public abstract class AbstractSubmitter
         // listen to abort requests
         EventSystem.addListener(StartAbortingEvent.class, onStartAborting);
 
-        submittedDocumentCount = 0;
-        failedDocumentCount = 0;
-
         // log the beginning of the submission
         logger.info(String.format(SubmissionConstants.SUBMISSION_START, submissionUrl.toString()));
 
@@ -249,8 +249,12 @@ public abstract class AbstractSubmitter
         // log the end of the submission
         if (failedDocumentCount == 0)
             logger.info(SubmissionConstants.SUBMISSION_DONE_ALL_OK);
+
+        else if (failedDocumentCount == submittedDocumentCount || submittedDocumentCount == 0)
+            logger.warn(SubmissionConstants.SUBMISSION_DONE_ALL_FAILED);
+
         else
-            logger.info(String.format(SubmissionConstants.SUBMISSION_DONE_SOME_FAILED, failedDocumentCount));
+            logger.warn(String.format(SubmissionConstants.SUBMISSION_DONE_SOME_FAILED, failedDocumentCount));
 
         EventSystem.sendEvent(new SubmissionFinishedEvent(failedDocumentCount == 0));
     }
@@ -294,8 +298,8 @@ public abstract class AbstractSubmitter
         if (isSuccessful) {
             logger.info(String.format(SubmissionConstants.SUBMIT_PARTIAL_OK, submittedDocumentCount, submittedDocumentCount + numberOfDocs));
             EventSystem.sendEvent(new DocumentsSubmittedEvent(numberOfDocs));
+            failedDocumentCount -= numberOfDocs;
         } else {
-            failedDocumentCount += numberOfDocs;
             logger.warn(String.format(
                             SubmissionConstants.SUBMIT_PARTIAL_FAILED,
                             String.valueOf(submittedDocumentCount),
