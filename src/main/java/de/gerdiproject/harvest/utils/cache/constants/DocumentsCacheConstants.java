@@ -31,7 +31,7 @@ public class DocumentsCacheConstants
     public static final String SAVE_FILE_NAME = "harvestedIndices/%s_result_%d.json";
     public static final String SAVE_FILE_NAME_PARTIAL = "harvestedIndices/%s_partialResult_%d-%d_%d.json";
     public static final String SAVE_FAILED_DIRECTORY = "Could not save documents: Unable to create directories!";
-    public static final String SAVE_FAILED_ERROR = "Could not save documents: %s";
+    public static final String SAVE_FAILED_ERROR = "Could not save harvested documents!";
     public static final String CACHE_FILE_PATH = "cachedIndex/%s/cachedDocuments_%d.json";
     public static final String START_CACHE_ERROR = "Error starting the cache writer";
     public static final String FINISH_CACHE_ERROR = "Error closing the cache writer";

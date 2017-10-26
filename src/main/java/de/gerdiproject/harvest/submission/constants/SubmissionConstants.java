@@ -28,6 +28,9 @@ public class SubmissionConstants
     public static final String SUBMISSION_START = "Submitting documents to: %s";
     public static final String SUBMISSION_DONE_ALL_OK = "Submission done! All documents were submitted!";
     public static final String SUBMISSION_DONE_SOME_FAILED = "Submission done! Failed to submit %d documents!";
+    public static final String SUBMISSION_INTERRUPTED = "Submission interrupted unexpectedly!";
+
+
     public static final String SUBMIT_PARTIAL_OK = " Submitted documents %d to %d.";
     public static final String SUBMIT_PARTIAL_FAILED = "Error submitting documents %s to %s: %s";
     public static final String UNKNOWN_DOCUMENT_COUNT = "???";

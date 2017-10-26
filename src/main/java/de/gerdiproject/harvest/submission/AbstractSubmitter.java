@@ -119,7 +119,8 @@ public abstract class AbstractSubmitter
             if (throwable instanceof CancellationException || throwable.getCause() instanceof CancellationException)
                 onSubmissionAborted();
             else
-                onSubmissionFinished();
+                logger.error(SubmissionConstants.SUBMISSION_INTERRUPTED, throwable);
+            onSubmissionFinished();
             return false;
         });
     }

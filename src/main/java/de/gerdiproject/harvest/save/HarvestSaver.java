@@ -133,7 +133,9 @@ public class HarvestSaver
         if (reason instanceof CancellationException || reason.getCause() instanceof CancellationException)
             EventSystem.sendEvent(new AbortingFinishedEvent());
         else
-            EventSystem.sendEvent(new SaveFinishedEvent(false));
+            LOGGER.error(DocumentsCacheConstants.SAVE_FAILED_ERROR, reason);
+
+        EventSystem.sendEvent(new SaveFinishedEvent(false));
     }
 
 
