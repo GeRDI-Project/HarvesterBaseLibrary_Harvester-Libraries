@@ -127,25 +127,25 @@ public class Configuration
      */
     public static Configuration createFromDisk()
     {
+        Configuration config = null;
+
         // read JSON from disk
         String path = getConfigFilePath();
         String configJson = new DiskIO().getString(path);
 
-        // deserialize JSON string
-        Configuration config;
 
-        try {
-            config = ConfigurationAdapter.getGson().fromJson(configJson, Configuration.class);
-        } catch (JsonParseException e) {
-            LOGGER.error(e.getMessage(), e);
-            config = null;
-        }
-
-        if (config == null)
+        if (configJson == null)
             LOGGER.error(String.format(ConfigurationConstants.LOAD_FAILED, path, ConfigurationConstants.NO_EXISTS));
+        else {
+            // deserialize JSON string
+            try {
+                config = ConfigurationAdapter.getGson().fromJson(configJson, Configuration.class);
+                LOGGER.info(String.format(ConfigurationConstants.LOAD_OK, path));
 
-        else
-            LOGGER.info(String.format(ConfigurationConstants.LOAD_OK, path));
+            } catch (JsonParseException e) {
+                LOGGER.error(String.format(ConfigurationConstants.LOAD_FAILED, path, e.toString()));
+            }
+        }
 
         return config;
     }
