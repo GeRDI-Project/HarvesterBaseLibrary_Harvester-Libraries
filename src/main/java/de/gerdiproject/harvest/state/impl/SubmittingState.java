@@ -22,11 +22,13 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.function.Consumer;
 
+import de.gerdiproject.harvest.MainContext;
 import de.gerdiproject.harvest.config.constants.ConfigurationConstants;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.state.AbstractProgressingState;
 import de.gerdiproject.harvest.state.constants.StateConstants;
 import de.gerdiproject.harvest.submission.events.DocumentsSubmittedEvent;
+import de.gerdiproject.harvest.utils.time.HarvestTimeKeeper;
 
 /**
  * This state represents the initialization of harvesters at the beginning of the server start.
@@ -52,7 +54,13 @@ public class SubmittingState extends AbstractProgressingState
     @Override
     public String getProgressString()
     {
-        return StateConstants.INIT_STATUS;
+        HarvestTimeKeeper timeKeeper = MainContext.getTimeKeeper();
+        return String.format(
+                   StateConstants.IDLE_STATUS,
+                   timeKeeper.getHarvestMeasure().toString(),
+                   timeKeeper.getSaveMeasure().toString(),
+                   super.getProgressString()
+               );
     }
 
 
@@ -82,15 +90,15 @@ public class SubmittingState extends AbstractProgressingState
     @Override
     public String pause()
     {
-        return String.format(
-                   StateConstants.CANNOT_PAUSE_PREFIX + StateConstants.SUBMIT_IN_PROGRESS,
-                   StateConstants.INIT_PROCESS);
+        // TODO implement pause
+        return null;
     }
 
 
     @Override
     public String resume()
     {
+        // TODO implement pause
         return String.format(
                    StateConstants.CANNOT_RESUME_PREFIX + StateConstants.SUBMIT_IN_PROGRESS,
                    StateConstants.INIT_PROCESS);

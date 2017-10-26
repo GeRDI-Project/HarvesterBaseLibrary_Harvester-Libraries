@@ -22,6 +22,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.function.Consumer;
 
+import de.gerdiproject.harvest.MainContext;
 import de.gerdiproject.harvest.config.constants.ConfigurationConstants;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.harvester.events.DocumentHarvestedEvent;
@@ -31,6 +32,7 @@ import de.gerdiproject.harvest.state.AbstractProgressingState;
 import de.gerdiproject.harvest.state.constants.StateConstants;
 import de.gerdiproject.harvest.state.constants.StateEventHandlerConstants;
 import de.gerdiproject.harvest.submission.events.SubmissionStartedEvent;
+import de.gerdiproject.harvest.utils.time.HarvestTimeKeeper;
 
 public class HarvestingState extends AbstractProgressingState
 {
@@ -76,6 +78,19 @@ public class HarvestingState extends AbstractProgressingState
 
 
     @Override
+    public String getProgressString()
+    {
+        HarvestTimeKeeper timeKeeper = MainContext.getTimeKeeper();
+        return String.format(
+                   StateConstants.IDLE_STATUS,
+                   super.getProgressString(),
+                   timeKeeper.getSaveMeasure().toString(),
+                   timeKeeper.getSubmissionMeasure().toString()
+               );
+    }
+
+
+    @Override
     public String startHarvest()
     {
         return StateConstants.CANNOT_START_PREFIX + StateConstants.HARVEST_IN_PROGRESS;
@@ -93,6 +108,7 @@ public class HarvestingState extends AbstractProgressingState
     @Override
     public String resume()
     {
+        // TODO implement pause
         return String.format(
                    StateConstants.CANNOT_RESUME_PREFIX + StateConstants.RESUME_IN_PROGRESS,
                    StateConstants.HARVESTING_PROCESS,

@@ -81,7 +81,6 @@ public abstract class AbstractProgressingState implements IState
     {
         return String.format(
                    StateConstants.PROGESS_TEXT_DETAILED,
-                   getName(),
                    currentProgress,
                    maxProgress,
                    getProgressInPercent(),
