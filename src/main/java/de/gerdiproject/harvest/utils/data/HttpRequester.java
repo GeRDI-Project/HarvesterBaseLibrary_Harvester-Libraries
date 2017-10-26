@@ -251,8 +251,8 @@ public class HttpRequester
         boolean isResponseReadFromWeb = false;
 
         // read json file from disk, if the option is enabled
-        if (devTools.isReadingHttpFromDisk())
-            targetObject = diskIO.getObject(urlToFilePath(url, FILE_ENDING_JSON), targetType);
+        if (readFromDisk)
+            targetObject = diskIO.getObject(urlToFilePath(url, DataOperationConstants.FILE_ENDING_JSON), targetType);
 
         // request json from web, if it has not been read from disk already
         if (targetObject == null) {
@@ -261,10 +261,10 @@ public class HttpRequester
         }
 
         // write whole response to disk, if the option is enabled
-        if (isResponseReadFromWeb && devTools.isWritingHttpToDisk()) {
+        if (isResponseReadFromWeb && writeToDisk) {
             // deliberately write an empty object to disk, if the response could
             // not be retrieved
-            diskIO.writeObjectToFile(urlToFilePath(url, FILE_ENDING_JSON), targetObject);
+            diskIO.writeObjectToFile(urlToFilePath(url, DataOperationConstants.FILE_ENDING_JSON), targetObject);
         }
 
         return targetObject;

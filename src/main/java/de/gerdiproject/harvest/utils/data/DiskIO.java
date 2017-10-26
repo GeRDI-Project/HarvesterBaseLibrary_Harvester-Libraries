@@ -202,7 +202,7 @@ public class DiskIO implements IDataRetriever
             reader.close();
 
         } catch (IOException | IllegalStateException | JsonIOException | JsonSyntaxException e) {
-            LOGGER.warn(String.format(LOAD_FAILED, filePath, e.toString()));
+            LOGGER.warn(String.format(DataOperationConstants.LOAD_FAILED, filePath, e.toString()));
         }
 
         return object;

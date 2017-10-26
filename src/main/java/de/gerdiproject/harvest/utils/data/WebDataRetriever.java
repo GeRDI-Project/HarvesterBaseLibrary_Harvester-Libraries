@@ -145,7 +145,7 @@ public class WebDataRetriever implements IDataRetriever
             reader.close();
 
         } catch (IOException | IllegalStateException | JsonIOException | JsonSyntaxException e) {
-            LOGGER.warn(String.format(ERROR_JSON, url, e.toString()));
+            LOGGER.warn(String.format(DataOperationConstants.WEB_ERROR_JSON, url, e.toString()));
         }
 
         return object;
