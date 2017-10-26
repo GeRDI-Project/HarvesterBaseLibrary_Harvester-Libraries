@@ -103,7 +103,10 @@ public class ElasticSearchSubmitter extends AbstractSubmitter
             // check if the URL already is a bulk submission URL
             if (!path[path.length - 1].equals(ElasticSearchConstants.BULK_SUBMISSION_URL_SUFFIX)) {
                 // extract URL without Query, add a slash if necessary
-                bulkSubmitUrl = bulkSubmitUrl.substring(0, bulkSubmitUrl.indexOf('?'));
+                int queryIndex = bulkSubmitUrl.indexOf('?');
+
+                if (queryIndex != -1)
+                    bulkSubmitUrl = bulkSubmitUrl.substring(0, queryIndex);
 
                 if (bulkSubmitUrl.charAt(bulkSubmitUrl.length() - 1) != '/')
                     bulkSubmitUrl += "/";
