@@ -63,7 +63,6 @@ public abstract class AbstractProgressingState implements IState
     public void onStateEnter()
     {
         startTimeStamp = new Date().getTime();
-
         EventSystem.addListener(AbortingStartedEvent.class, onAbortingStarted);
     }
 

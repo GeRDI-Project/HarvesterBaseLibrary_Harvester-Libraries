@@ -43,6 +43,7 @@ import de.gerdiproject.harvest.save.events.DocumentSavedEvent;
 import de.gerdiproject.harvest.save.events.SaveFinishedEvent;
 import de.gerdiproject.harvest.save.events.SaveStartedEvent;
 import de.gerdiproject.harvest.state.events.AbortingFinishedEvent;
+import de.gerdiproject.harvest.state.events.AbortingStartedEvent;
 import de.gerdiproject.harvest.state.events.StartAbortingEvent;
 import de.gerdiproject.harvest.utils.CancelableFuture;
 import de.gerdiproject.harvest.utils.cache.constants.DocumentsCacheConstants;
@@ -64,6 +65,7 @@ public class HarvestSaver
     private final Consumer<StartAbortingEvent> onStartAborting = (StartAbortingEvent e) -> {
         isAborting = true;
         EventSystem.removeListener(StartAbortingEvent.class, this.onStartAborting);
+        EventSystem.sendEvent(new AbortingStartedEvent());
     };
 
     private CancelableFuture<Boolean> currentSavingProcess;

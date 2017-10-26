@@ -1,5 +1,5 @@
 /*
- *  Licensed to the Apache Software Foundation (ASF) under one
+# *  Licensed to the Apache Software Foundation (ASF) under one
  *  or more contributor license agreements.  See the NOTICE file
  *  distributed with this work for additional information
  *  regarding copyright ownership.  The ASF licenses this file
@@ -41,6 +41,7 @@ import de.gerdiproject.harvest.config.Configuration;
 import de.gerdiproject.harvest.config.constants.ConfigurationConstants;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.state.events.AbortingFinishedEvent;
+import de.gerdiproject.harvest.state.events.AbortingStartedEvent;
 import de.gerdiproject.harvest.state.events.StartAbortingEvent;
 import de.gerdiproject.harvest.submission.constants.SubmissionConstants;
 import de.gerdiproject.harvest.submission.events.DocumentsSubmittedEvent;
@@ -63,6 +64,7 @@ public abstract class AbstractSubmitter
     private final Consumer<StartAbortingEvent> onStartAborting = (StartAbortingEvent e) -> {
         isAborting = true;
         EventSystem.removeListener(StartAbortingEvent.class, this.onStartAborting);
+        EventSystem.sendEvent(new AbortingStartedEvent());
     };
 
 
