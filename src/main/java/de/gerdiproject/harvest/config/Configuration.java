@@ -200,7 +200,7 @@ public class Configuration
             param = harvesterParameters.get(key);
 
         // check if the parameter exists and if the value matches the parameterType
-        if (param != null && param.getValue().getClass().equals(parameterType))
+        if (param != null && param.getValue() != null && param.getValue().getClass().equals(parameterType))
             return (T) param.getValue();
         else
             return null;
