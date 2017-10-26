@@ -78,7 +78,7 @@ public class ElasticSearchSubmitter extends AbstractSubmitter
                                   RestRequestType.POST,
                                   submissionUrl.toString(),
                                   bulkRequestBuilder.toString(),
-                                  getCredentials(config)
+                                  credentials
                               );
             // log response
             String errorMessage = handleSubmissionResponse(response);
@@ -164,7 +164,7 @@ public class ElasticSearchSubmitter extends AbstractSubmitter
         boolean hasMapping;
 
         try {
-            httpRequester.getRestResponse(RestRequestType.GET, mappingsUrl, null);
+            httpRequester.getRestResponse(RestRequestType.GET, mappingsUrl, getCredentials(config));
             hasMapping = true;
 
         } catch (HTTPException e) {
