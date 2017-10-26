@@ -136,13 +136,7 @@ public class MainContext
             instance.harvester.setAsMainHarvester();
 
             // try to load the configuration from disk
-            try
-            {
-                instance.configuration = Configuration.createFromDisk();
-            } catch (Exception e)
-            {
-                instance.configuration = null;
-            }
+            instance.configuration = Configuration.createFromDisk();
 
             // create a new configuration
             if (instance.configuration == null)

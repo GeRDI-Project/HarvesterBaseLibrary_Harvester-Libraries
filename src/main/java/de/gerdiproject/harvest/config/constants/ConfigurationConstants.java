@@ -71,7 +71,7 @@ public class ConfigurationConstants
     public static final String NO_EXISTS = "No configuration exists!";
     public static final String REST_INFO = "- %s Configuration -%n%n%s%n"
                                            + "POST\t\tSaves the current configuration to disk.%n"
-                                           + "PUT \t\tSets x-www-form-urlencoded parameters for the harvester.%n\t\t\tValid values: %s.%n";
+                                           + "PUT \t\tSets x-www-form-urlencoded parameters for the harvester.%n\t\tValid values: %s.%n";
 
     public static final String PARSE_ERROR = "Could not read configuration parameter value '%s' from key '%s'!";
 

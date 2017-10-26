@@ -36,6 +36,8 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.gson.JsonParseException;
+
 
 
 /**
@@ -130,7 +132,14 @@ public class Configuration
         String configJson = new DiskIO().getString(path);
 
         // deserialize JSON string
-        Configuration config = ConfigurationAdapter.getGson().fromJson(configJson, Configuration.class);
+        Configuration config;
+
+        try {
+            config = ConfigurationAdapter.getGson().fromJson(configJson, Configuration.class);
+        } catch (JsonParseException e) {
+            LOGGER.error(e.getMessage(), e);
+            config = null;
+        }
 
         if (config == null)
             LOGGER.error(String.format(ConfigurationConstants.LOAD_FAILED, path, ConfigurationConstants.NO_EXISTS));
