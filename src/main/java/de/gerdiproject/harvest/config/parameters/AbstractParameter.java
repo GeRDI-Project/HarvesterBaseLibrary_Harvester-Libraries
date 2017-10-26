@@ -114,7 +114,7 @@ public abstract class AbstractParameter<T>
     {
         String returnMessage;
 
-        if (!allowedStates.contains(currentState.getClass()))
+        if (currentState != null && !allowedStates.contains(currentState.getClass()))
             returnMessage = String.format(ConfigurationConstants.CANNOT_CHANGE_PARAM_INVALID_STATE, key, currentState.getName());
         else {
             try {

@@ -20,6 +20,7 @@ package de.gerdiproject.harvest.config;
 
 
 import de.gerdiproject.harvest.MainContext;
+import de.gerdiproject.harvest.config.adapter.ConfigurationAdapter;
 import de.gerdiproject.harvest.config.constants.ConfigurationConstants;
 import de.gerdiproject.harvest.config.events.GlobalParameterChangedEvent;
 import de.gerdiproject.harvest.config.events.HarvesterParameterChangedEvent;
@@ -28,7 +29,7 @@ import de.gerdiproject.harvest.config.parameters.ParameterFactory;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.state.StateMachine;
 import de.gerdiproject.harvest.utils.data.DiskIO;
-
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -48,6 +49,27 @@ public class Configuration
 
     private Map<String, AbstractParameter<?>> globalParameters;
     private Map<String, AbstractParameter<?>> harvesterParameters;
+
+
+    /**
+     * This constructor is used by the JSON deserialization (see {@linkplain ConfigurationAdapter}.
+     *
+     * @param globalParameters a map of global parameters
+     * @param harvesterParameters a map of harvester specific parameters
+     */
+    public Configuration(Map<String, AbstractParameter<?>> globalParameters, Map<String, AbstractParameter<?>> harvesterParameters)
+    {
+        this.globalParameters = globalParameters;
+        this.harvesterParameters = harvesterParameters;
+
+        globalParameters.forEach((String key, AbstractParameter<?> param) ->
+                                 EventSystem.sendEvent(new GlobalParameterChangedEvent(param, null))
+                                );
+
+        harvesterParameters.forEach((String key, AbstractParameter<?> param) ->
+                                    EventSystem.sendEvent(new HarvesterParameterChangedEvent(param, null))
+                                   );
+    }
 
 
     /**
@@ -103,8 +125,12 @@ public class Configuration
      */
     public static Configuration createFromDisk()
     {
+        // read JSON from disk
         String path = getConfigFilePath();
-        Configuration config = new DiskIO().getObject(path, Configuration.class);
+        String configJson = new DiskIO().getString(path);
+
+        // deserialize JSON string
+        Configuration config = ConfigurationAdapter.getGson().fromJson(configJson, Configuration.class);
 
         if (config == null)
             LOGGER.error(String.format(ConfigurationConstants.LOAD_FAILED, path, ConfigurationConstants.NO_EXISTS));
@@ -113,17 +139,6 @@ public class Configuration
             LOGGER.info(String.format(ConfigurationConstants.LOAD_OK, path));
 
         return config;
-    }
-
-
-    /**
-     * Returns the path to the configurationFile of this service.
-     *
-     * @return the path to the configurationFile of this service
-     */
-    private static String getConfigFilePath()
-    {
-        return String.format(ConfigurationConstants.CONFIG_PATH, MainContext.getModuleName());
     }
 
 
@@ -137,8 +152,22 @@ public class Configuration
         // assemble path
         String path = getConfigFilePath();
 
+        // serialize config
+        String configJson = ConfigurationAdapter.getGson().toJson(this);
+
         // write to disk
-        return  new DiskIO().writeObjectToFile(path, this);
+        return  new DiskIO().writeStringToFile(path, configJson);
+    }
+
+
+    /**
+     * Returns the path to the configurationFile of this service.
+     *
+     * @return the path to the configurationFile of this service
+     */
+    private static String getConfigFilePath()
+    {
+        return String.format(ConfigurationConstants.CONFIG_PATH, MainContext.getModuleName());
     }
 
 
@@ -248,5 +277,27 @@ public class Configuration
                    ConfigurationConstants.CONFIG_PARAMETERS,
                    harvesterBuilder.toString(),
                    globalBuilder.toString());
+    }
+
+
+    /**
+     * Returns read-only access of all global parameters.
+     *
+     * @return a read-only map of all global parameters
+     */
+    public Map<String, AbstractParameter<?>> getGlobalParameters()
+    {
+        return Collections.unmodifiableMap(globalParameters);
+    }
+
+
+    /**
+     * Returns read-only access of all harvester specific parameters.
+     *
+     * @return a read-only map of all harvester specific parameters
+     */
+    public Map<String, AbstractParameter<?>> getHarvesterParameters()
+    {
+        return Collections.unmodifiableMap(harvesterParameters);
     }
 }

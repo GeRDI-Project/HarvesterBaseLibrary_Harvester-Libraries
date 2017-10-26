@@ -80,9 +80,15 @@ public class HarvesterFacade
         String status = StateMachine.getCurrentState().getProgressString();
 
         // get harvesting range
+
+        String from = "???";
+        String to = "???";
         Configuration config = MainContext.getConfiguration();
-        String from = config.getParameterStringValue(ConfigurationConstants.HARVEST_START_INDEX);
-        String to = config.getParameterStringValue(ConfigurationConstants.HARVEST_END_INDEX);
+
+        if (config != null) {
+            from = config.getParameterStringValue(ConfigurationConstants.HARVEST_START_INDEX);
+            to = config.getParameterStringValue(ConfigurationConstants.HARVEST_END_INDEX);
+        }
 
         // get harvester name
         String name = MainContext.getModuleName();

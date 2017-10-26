@@ -149,6 +149,7 @@ public class DocumentsCache
             if (cacheWriter != null) {
                 cacheWriter.endArray();
                 cacheWriter.close();
+                cacheWriter = null;
             }
         } catch (IOException e) {
             LOGGER.error(DocumentsCacheConstants.FINISH_CACHE_ERROR, e);

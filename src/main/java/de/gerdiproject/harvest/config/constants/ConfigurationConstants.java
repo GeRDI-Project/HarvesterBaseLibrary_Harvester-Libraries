@@ -73,6 +73,8 @@ public class ConfigurationConstants
                                            + "POST\t\tSaves the current configuration to disk.%n"
                                            + "PUT \t\tSets x-www-form-urlencoded parameters for the harvester.%n\t\t\tValid values: %s.%n";
 
+    public static final String PARSE_ERROR = "Could not read configuration parameter value '%s' from key '%s'!";
+
     public static final List<Class<? extends IState>> HARVESTER_PARAM_ALLOWED_STATES =
         Collections.unmodifiableList(Arrays.asList(
                                          InitializationState.class,
