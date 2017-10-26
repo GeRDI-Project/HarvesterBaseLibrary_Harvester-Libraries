@@ -103,28 +103,31 @@ public abstract class AbstractSubmitter
         String credentials = getCredentials(config);
         int batchSize = config.getParameterValue(ConfigurationConstants.SUBMISSION_SIZE, Integer.class);
 
-        startSubmission(submissionUrl);
+        // prepare stuff and check if we can submit
+        boolean canSubmit = startSubmission(submissionUrl);
 
-        // start asynchronous submission
-        currentSubmissionProcess = new CancelableFuture<>(
-            createSubmissionProcess(cachedDocuments, submissionUrl, credentials, batchSize));
+        if (canSubmit) {
+            // start asynchronous submission
+            currentSubmissionProcess = new CancelableFuture<>(
+                createSubmissionProcess(cachedDocuments, submissionUrl, credentials, batchSize));
 
-        // finished handler
-        currentSubmissionProcess.thenApply((isSuccessful) -> {
-            onSubmissionFinished();
-            return isSuccessful;
-        })
-        // exception handler
-        .exceptionally(throwable -> {
-            if (throwable instanceof CancellationException || throwable.getCause() instanceof CancellationException)
-                onSubmissionAborted();
-            else
-            {
-                logger.error(SubmissionConstants.SUBMISSION_INTERRUPTED, throwable);
+            // finished handler
+            currentSubmissionProcess.thenApply((isSuccessful) -> {
                 onSubmissionFinished();
-            }
-            return false;
-        });
+                return isSuccessful;
+            })
+            // exception handler
+            .exceptionally(throwable -> {
+                if (throwable instanceof CancellationException || throwable.getCause() instanceof CancellationException)
+                    onSubmissionAborted();
+                else
+                {
+                    logger.error(SubmissionConstants.SUBMISSION_INTERRUPTED, throwable);
+                    onSubmissionFinished();
+                }
+                return false;
+            });
+        }
     }
 
 
