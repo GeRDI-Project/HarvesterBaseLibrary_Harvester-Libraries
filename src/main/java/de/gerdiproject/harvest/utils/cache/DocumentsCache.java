@@ -201,7 +201,7 @@ public class DocumentsCache
     }
 
 
-    private void addDocument(IDocument doc)
+    private synchronized void addDocument(IDocument doc)
     {
         GsonUtils.getGson().toJson(doc, doc.getClass(), cacheWriter);
         documentCount++;
