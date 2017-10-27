@@ -79,14 +79,20 @@ public abstract class AbstractCompositeHarvester extends AbstractHarvester
     @Override
     protected void setStartIndex(int startIndex)
     {
-        updateRangeIndex(startIndex, (AbstractHarvester h, Integer index) -> h.setStartIndex(index));
+        updateRangeIndex(startIndex, (AbstractHarvester h, Integer index) -> {
+            h.setStartIndex(index);
+            logger.info("Set startIndex of '" + h.name + "' to: " + index);
+        });
     }
 
 
     @Override
     protected void setEndIndex(int endIndex)
     {
-        updateRangeIndex(endIndex, (AbstractHarvester h, Integer index) -> h.setEndIndex(index));
+        updateRangeIndex(endIndex, (AbstractHarvester h, Integer index) -> {
+            h.setEndIndex(index);
+            logger.info("Set endIndex of '" + h.name + "' to: " + index);
+        });
     }
 
 
