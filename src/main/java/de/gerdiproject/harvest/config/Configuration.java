@@ -64,13 +64,7 @@ public class Configuration
         this.globalParameters = globalParameters;
         this.harvesterParameters = harvesterParameters;
 
-        globalParameters.forEach((String key, AbstractParameter<?> param) ->
-                                 EventSystem.sendEvent(new GlobalParameterChangedEvent(param, null))
-                                );
-
-        harvesterParameters.forEach((String key, AbstractParameter<?> param) ->
-                                    EventSystem.sendEvent(new HarvesterParameterChangedEvent(param, null))
-                                   );
+        updateAllParameters();
     }
 
 
@@ -84,13 +78,7 @@ public class Configuration
         this.globalParameters = ParameterFactory.createDefaultParameters();
         this.harvesterParameters = ParameterFactory.createHarvesterParameters(harvesterParams);
 
-        globalParameters.forEach((String key, AbstractParameter<?> param) ->
-                                 EventSystem.sendEvent(new GlobalParameterChangedEvent(param, null))
-                                );
-
-        harvesterParameters.forEach((String key, AbstractParameter<?> param) ->
-                                    EventSystem.sendEvent(new HarvesterParameterChangedEvent(param, null))
-                                   );
+        updateAllParameters();
     }
 
 
@@ -238,10 +226,9 @@ public class Configuration
      */
     public String setParameter(String key, String value)
     {
-        boolean isHarvesterParam = false;
-
         // look up the key in the global parameters
         AbstractParameter<?> param = globalParameters.get(key);
+        boolean isHarvesterParam = false;
 
         // if no global parameter with the specific name exists, look in the harvester parameters
         if (param == null) {
@@ -263,6 +250,46 @@ public class Configuration
 
             return message;
         }
+    }
+
+    /**
+     * Sends out a parameter changed event for a specified parameter.
+     * @param key the key of the parameter
+     */
+    public void updateParameter(String key)
+    {
+        // look up the key in the global parameters
+        AbstractParameter<?> param = globalParameters.get(key);
+        boolean isHarvesterParam = false;
+
+        // if no global parameter with the specific name exists, look in the harvester parameters
+        if (param == null) {
+            param = harvesterParameters.get(key);
+            isHarvesterParam = true;
+        }
+
+        if (param != null) {
+            if (isHarvesterParam)
+                EventSystem.sendEvent(new HarvesterParameterChangedEvent(param, null));
+            else
+                EventSystem.sendEvent(new GlobalParameterChangedEvent(param, null));
+        }
+    }
+
+
+    /**
+     * Sends out a parameter changed events for all parameters.
+     */
+    public void updateAllParameters()
+    {
+        globalParameters.forEach((String key, AbstractParameter<?> param) ->
+                                 EventSystem.sendEvent(new GlobalParameterChangedEvent(param, null))
+                                );
+
+        harvesterParameters.forEach((String key, AbstractParameter<?> param) ->
+                                    EventSystem.sendEvent(new HarvesterParameterChangedEvent(param, null))
+                                   );
+
     }
 
 

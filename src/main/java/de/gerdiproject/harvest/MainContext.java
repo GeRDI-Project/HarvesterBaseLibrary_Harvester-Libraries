@@ -27,6 +27,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import de.gerdiproject.harvest.config.Configuration;
+import de.gerdiproject.harvest.config.constants.ConfigurationConstants;
 import de.gerdiproject.harvest.config.parameters.AbstractParameter;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.harvester.AbstractHarvester;
@@ -136,16 +137,24 @@ public class MainContext
             instance.harvester.setAsMainHarvester();
 
             // try to load the configuration from disk
-            instance.configuration = Configuration.createFromDisk();
+            Configuration config = Configuration.createFromDisk();
 
             // create a new configuration
-            if (instance.configuration == null)
-                instance.configuration = new Configuration(harvesterParams);
+            if (config == null)
+                config = new Configuration(harvesterParams);
 
-            // initialize the harvester properly
+            instance.configuration = config;
+
+            // initialize the harvester properly (relies on the configuration)
             instance.harvester.init();
+
+            // update the harvesting range
+            config.updateParameter(ConfigurationConstants.HARVEST_START_INDEX);
+            config.updateParameter(ConfigurationConstants.HARVEST_END_INDEX);
+
             return true;
         });
+
         initProcess.thenApply(onHarvesterInitializedSuccess)
         .exceptionally(onHarvesterInitializedFailed);
     }
