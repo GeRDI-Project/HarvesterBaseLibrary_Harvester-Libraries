@@ -170,6 +170,8 @@ public class ElasticSearchSubmitter extends AbstractSubmitter
         } catch (HTTPException e) {
             hasMapping = false;
         }
+        
+        logger.debug( "MAPPINGS-URL: '" + mappingsUrl +"'");
 
         if (!hasMapping) {
             try {
