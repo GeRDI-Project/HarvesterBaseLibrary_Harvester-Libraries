@@ -79,10 +79,8 @@ public abstract class AbstractCompositeHarvester extends AbstractHarvester
     @Override
     protected void setStartIndex(int startIndex)
     {
-        logger.info("setting startIndex to: " + startIndex);
         updateRangeIndex(startIndex, (AbstractHarvester h, Integer index) -> {
             h.setStartIndex(index);
-            logger.info("Set startIndex of '" + h.name + "' to: " + index);
         });
     }
 
@@ -92,7 +90,6 @@ public abstract class AbstractCompositeHarvester extends AbstractHarvester
     {
         updateRangeIndex(endIndex, (AbstractHarvester h, Integer index) -> {
             h.setEndIndex(index);
-            logger.info("Set endIndex of '" + h.name + "' to: " + index);
         });
     }
 
@@ -112,8 +109,6 @@ public abstract class AbstractCompositeHarvester extends AbstractHarvester
             int previouslyProcessedDocs = numberOfProcessedDocs;
             numberOfProcessedDocs += numberOfSubDocs;
             int subValue;
-
-            logger.info(subHarvester.name + "- index: " + index + ", docs: " + numberOfProcessedDocs);
 
             // index comes after this sub-harvester
             if (index >= numberOfProcessedDocs)

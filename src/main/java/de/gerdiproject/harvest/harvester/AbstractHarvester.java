@@ -181,7 +181,9 @@ public abstract class AbstractHarvester
         startIndex = new AtomicInteger(0);
         endIndex = new AtomicInteger(0);
 
-        EventSystem.addListener(HarvesterParameterChangedEvent.class, onParameterChanged);
+        // only the main harvester needs parameter changes. It can transport them to the respective sub-harvesters
+        if (isMainHarvester)
+            EventSystem.addListener(HarvesterParameterChangedEvent.class, onParameterChanged);
     }
 
 
@@ -204,7 +206,9 @@ public abstract class AbstractHarvester
         maxDocumentCount.set(maxHarvestableDocs);
         endIndex.set(maxHarvestableDocs);
 
-        EventSystem.addListener(StartHarvestEvent.class, (StartHarvestEvent e) -> harvest());
+        // only listen to events if this is the main harvester. sub-harvesters are handled by their composite harvester
+        if (isMainHarvester)
+            EventSystem.addListener(StartHarvestEvent.class, (StartHarvestEvent e) -> harvest());
     }
 
 
@@ -334,8 +338,11 @@ public abstract class AbstractHarvester
         final int from = startIndex.get() == Integer.MAX_VALUE ? maxDocumentCount.get() : startIndex.get();
         final int to = endIndex.get() == Integer.MAX_VALUE ? maxDocumentCount.get() : endIndex.get();
 
-        EventSystem.addListener(StartAbortingEvent.class, onStartAborting);
-        EventSystem.sendEvent(new HarvestStartedEvent(from, to));
+        // only send events from the main harvester
+        if (isMainHarvester) {
+            EventSystem.addListener(StartAbortingEvent.class, onStartAborting);
+            EventSystem.sendEvent(new HarvestStartedEvent(from, to));
+        }
 
         // start asynchronous harvest
         currentHarvestingProcess = new CancelableFuture<>(
@@ -359,14 +366,14 @@ public abstract class AbstractHarvester
      */
     protected void finishHarvestSuccessfully()
     {
-        EventSystem.removeListener(StartAbortingEvent.class, onStartAborting);
-
         currentHarvestingProcess = null;
         logger.info(String.format(HarvesterConstants.HARVESTER_END, name));
 
         // do some things, only if this is the main harvester
-        if (isMainHarvester)
+        if (isMainHarvester) {
+            EventSystem.removeListener(StartAbortingEvent.class, onStartAborting);
             EventSystem.sendEvent(new HarvestFinishedEvent(true, getHash(false)));
+        }
     }
 
 
@@ -401,7 +408,6 @@ public abstract class AbstractHarvester
      */
     protected void onHarvestFailed(Throwable reason)
     {
-        EventSystem.removeListener(StartAbortingEvent.class, onStartAborting);
 
         // log the error
         logger.error(reason.getMessage(), reason);
@@ -409,8 +415,10 @@ public abstract class AbstractHarvester
         // log failure
         logger.warn(String.format(HarvesterConstants.HARVESTER_FAILED, name));
 
-        if (isMainHarvester)
+        if (isMainHarvester) {
             EventSystem.sendEvent(new HarvestFinishedEvent(false, getHash(false)));
+            EventSystem.removeListener(StartAbortingEvent.class, onStartAborting);
+        }
     }
 
 
@@ -420,7 +428,9 @@ public abstract class AbstractHarvester
      */
     protected void onHarvestAborted()
     {
-        EventSystem.sendEvent(new AbortingFinishedEvent());
+        if (isMainHarvester)
+            EventSystem.sendEvent(new AbortingFinishedEvent());
+
         logger.warn(String.format(HarvesterConstants.HARVESTER_ABORTED, name));
     }
 
