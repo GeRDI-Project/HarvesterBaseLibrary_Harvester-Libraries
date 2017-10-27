@@ -86,6 +86,8 @@ public class ConfigurationConstants
                                          SubmittingState.class
                                      ));
 
+    public static final String URL_PREFIX = "%URL_PARAMETER%";
+
     /**
      * Private constructor, because this is a static class.
      */

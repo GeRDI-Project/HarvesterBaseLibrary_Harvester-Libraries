@@ -51,12 +51,12 @@ public class UrlParameter extends AbstractParameter<URL>
      * Constructor for harvester parameters, that only forbid changes during harvesting.
      *
      * @param key the unique key of the parameter, which is used to change it via REST
-     * @param defaultValue the value with which the state is initialized
+     * @param defaultUrlString the string-value with which the state is initialized
      */
-    public UrlParameter(String key, URL defaultValue)
+    public UrlParameter(String key, String defaultUrlString)
     {
         super(key, ConfigurationConstants.HARVESTER_PARAM_ALLOWED_STATES, ConfigurationConstants.URL_VALID_VALUES_TEXT);
-        value = defaultValue;
+        setValue(defaultUrlString, null);
     }
 
 
@@ -66,6 +66,10 @@ public class UrlParameter extends AbstractParameter<URL>
         if (value == null)
             return null;
         else {
+            // remove URL-PREFIX if it exists. This is added to distinguish saved URLs from Strings
+            if (value.startsWith(ConfigurationConstants.URL_PREFIX))
+                value = value.substring(ConfigurationConstants.URL_PREFIX.length());
+
             try {
                 return new URL(value);
             } catch (MalformedURLException e) {

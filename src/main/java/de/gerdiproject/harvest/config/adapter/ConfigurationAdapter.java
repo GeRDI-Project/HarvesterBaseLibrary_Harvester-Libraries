@@ -1,6 +1,7 @@
 package de.gerdiproject.harvest.config.adapter;
 
 import java.lang.reflect.Type;
+import java.net.URL;
 import java.util.Map.Entry;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -24,6 +25,7 @@ import de.gerdiproject.harvest.config.parameters.BooleanParameter;
 import de.gerdiproject.harvest.config.parameters.IntegerParameter;
 import de.gerdiproject.harvest.config.parameters.ParameterFactory;
 import de.gerdiproject.harvest.config.parameters.StringParameter;
+import de.gerdiproject.harvest.config.parameters.UrlParameter;
 import de.gerdiproject.json.GsonUtils;
 
 /**
@@ -82,8 +84,13 @@ public class ConfigurationAdapter implements JsonDeserializer<Configuration>, Js
                 param = new IntegerParameter(key, valueJson.getAsInt());
 
             // string parameter
-            else if (valueJson.isString())
-                param = new StringParameter(key, valueJson.getAsString());
+            else if (valueJson.isString()) {
+                if (valueJson.getAsString().startsWith(ConfigurationConstants.URL_PREFIX))
+                    param = new UrlParameter(key, valueJson.getAsString());
+                else
+                    param = new StringParameter(key, valueJson.getAsString());
+
+            }
 
             // if parameter cannot be parsed, abort!
             if (param != null)
@@ -118,6 +125,9 @@ public class ConfigurationAdapter implements JsonDeserializer<Configuration>, Js
 
             else if (param instanceof StringParameter)
                 globalParamsJson.addProperty(key, (String) param.getValue());
+
+            else if (param instanceof UrlParameter)
+                globalParamsJson.addProperty(key, ConfigurationConstants.URL_PREFIX + (String) param.getValue());
         });
 
         harvesterParameters.forEach((String key, AbstractParameter<?> param) -> {
@@ -130,6 +140,9 @@ public class ConfigurationAdapter implements JsonDeserializer<Configuration>, Js
 
             else if (param instanceof StringParameter)
                 harvesterParamsJson.addProperty(key, (String) param.getValue());
+
+            else if (param instanceof UrlParameter)
+                globalParamsJson.addProperty(key, ConfigurationConstants.URL_PREFIX + (String) param.getValue());
         });
 
         // assemble config JSON file
