@@ -1,7 +1,6 @@
 package de.gerdiproject.harvest.config.adapter;
 
 import java.lang.reflect.Type;
-import java.net.URL;
 import java.util.Map.Entry;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -62,12 +61,13 @@ public class ConfigurationAdapter implements JsonDeserializer<Configuration>, Js
 
             if (valueJson != null)
             {
-            	System.out.println(globalParameters.get(key).setValue(valueJson.toString(), null));
-                //globalParameters.get(key).setValue(valueJson.toString(), null);
-            }
-            else
-            	System.out.println(globalParameters.get(key).setValue(null, null));
-                //globalParameters.get(key).setValue(null, null);
+                if (valueJson.getAsJsonPrimitive().isString())
+                    System.out.println(globalParameters.get(key).setValue(valueJson.getAsString(), null));
+
+                else
+                    System.out.println(globalParameters.get(key).setValue(valueJson.toString(), null));
+            } else
+                globalParameters.get(key).setValue(null, null);
         });
 
         // fill harvester parameters
