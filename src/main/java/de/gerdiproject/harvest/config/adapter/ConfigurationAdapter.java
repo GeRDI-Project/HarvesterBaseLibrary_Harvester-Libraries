@@ -62,10 +62,10 @@ public class ConfigurationAdapter implements JsonDeserializer<Configuration>, Js
             if (valueJson != null)
             {
                 if (valueJson.getAsJsonPrimitive().isString())
-                    System.out.println(globalParameters.get(key).setValue(valueJson.getAsString(), null));
+                    globalParameters.get(key).setValue(valueJson.getAsString(), null);
 
                 else
-                    System.out.println(globalParameters.get(key).setValue(valueJson.toString(), null));
+                    globalParameters.get(key).setValue(valueJson.toString(), null);
             } else
                 globalParameters.get(key).setValue(null, null);
         });
