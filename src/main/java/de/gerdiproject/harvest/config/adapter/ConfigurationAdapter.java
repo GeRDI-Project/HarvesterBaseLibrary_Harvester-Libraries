@@ -61,9 +61,13 @@ public class ConfigurationAdapter implements JsonDeserializer<Configuration>, Js
             JsonElement valueJson = globalParamsJson.get(key);
 
             if (valueJson != null)
-                globalParameters.get(key).setValue(valueJson.toString(), null);
+            {
+            	System.out.println(globalParameters.get(key).setValue(valueJson.toString(), null));
+                //globalParameters.get(key).setValue(valueJson.toString(), null);
+            }
             else
-                globalParameters.get(key).setValue(null, null);
+            	System.out.println(globalParameters.get(key).setValue(null, null));
+                //globalParameters.get(key).setValue(null, null);
         });
 
         // fill harvester parameters
