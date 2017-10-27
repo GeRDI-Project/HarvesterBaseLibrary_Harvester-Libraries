@@ -26,9 +26,11 @@ import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.save.events.DocumentSavedEvent;
 import de.gerdiproject.harvest.save.events.SaveFinishedEvent;
 import de.gerdiproject.harvest.state.AbstractProgressingState;
-import de.gerdiproject.harvest.state.IState;
 import de.gerdiproject.harvest.state.constants.StateConstants;
+import de.gerdiproject.harvest.state.constants.StateEventHandlerConstants;
 import de.gerdiproject.harvest.state.events.ChangeStateEvent;
+import de.gerdiproject.harvest.submission.events.StartSubmissionEvent;
+import de.gerdiproject.harvest.submission.events.SubmissionStartedEvent;
 import de.gerdiproject.harvest.utils.time.HarvestTimeKeeper;
 
 /**
@@ -62,14 +64,10 @@ public class SavingState extends AbstractProgressingState
 
         this.onSaveFinished =
         (SaveFinishedEvent e) -> {
-            IState nextState;
-
             if (isAutoTriggered && MainContext.getConfiguration().getParameterValue(ConfigurationConstants.AUTO_SUBMIT, Boolean.class))
-                nextState = new SubmittingState(numberOfDocsToBeSaved);
+                EventSystem.sendEvent(new StartSubmissionEvent());
             else
-                nextState = new IdleState();
-
-            EventSystem.sendEvent(new ChangeStateEvent(nextState));
+                EventSystem.sendEvent(new ChangeStateEvent(new IdleState()));
         };
     }
 
@@ -80,6 +78,7 @@ public class SavingState extends AbstractProgressingState
         super.onStateEnter();
         EventSystem.addListener(DocumentSavedEvent.class, onDocumentSaved);
         EventSystem.addListener(SaveFinishedEvent.class, onSaveFinished);
+        EventSystem.addListener(SubmissionStartedEvent.class, StateEventHandlerConstants.ON_SUBMISSION_STARTED);
 
     }
 
@@ -89,6 +88,7 @@ public class SavingState extends AbstractProgressingState
     {
         EventSystem.removeListener(DocumentSavedEvent.class, onDocumentSaved);
         EventSystem.removeListener(SaveFinishedEvent.class, onSaveFinished);
+        EventSystem.removeListener(SubmissionStartedEvent.class, StateEventHandlerConstants.ON_SUBMISSION_STARTED);
     }
 
 
