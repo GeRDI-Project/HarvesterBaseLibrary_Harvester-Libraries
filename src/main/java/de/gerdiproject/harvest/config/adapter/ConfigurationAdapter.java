@@ -127,7 +127,7 @@ public class ConfigurationAdapter implements JsonDeserializer<Configuration>, Js
                 globalParamsJson.addProperty(key, (String) param.getValue());
 
             else if (param instanceof UrlParameter)
-                globalParamsJson.addProperty(key, ConfigurationConstants.URL_PREFIX + (String) param.getValue());
+                globalParamsJson.addProperty(key, ConfigurationConstants.URL_PREFIX + param.getValue().toString());
         });
 
         harvesterParameters.forEach((String key, AbstractParameter<?> param) -> {
@@ -142,7 +142,7 @@ public class ConfigurationAdapter implements JsonDeserializer<Configuration>, Js
                 harvesterParamsJson.addProperty(key, (String) param.getValue());
 
             else if (param instanceof UrlParameter)
-                globalParamsJson.addProperty(key, ConfigurationConstants.URL_PREFIX + (String) param.getValue());
+                globalParamsJson.addProperty(key, ConfigurationConstants.URL_PREFIX + param.getValue().toString());
         });
 
         // assemble config JSON file
