@@ -180,10 +180,6 @@ public abstract class AbstractHarvester
 
         startIndex = new AtomicInteger(0);
         endIndex = new AtomicInteger(0);
-
-        // only the main harvester needs parameter changes. It can transport them to the respective sub-harvesters
-        if (isMainHarvester)
-            EventSystem.addListener(HarvesterParameterChangedEvent.class, onParameterChanged);
     }
 
 
@@ -205,10 +201,6 @@ public abstract class AbstractHarvester
         int maxHarvestableDocs = initMaxNumberOfDocuments();
         maxDocumentCount.set(maxHarvestableDocs);
         endIndex.set(maxHarvestableDocs);
-
-        // only listen to events if this is the main harvester. sub-harvesters are handled by their composite harvester
-        if (isMainHarvester)
-            EventSystem.addListener(StartHarvestEvent.class, (StartHarvestEvent e) -> harvest());
     }
 
 
@@ -219,6 +211,10 @@ public abstract class AbstractHarvester
     public void setAsMainHarvester()
     {
         isMainHarvester = true;
+
+        // only the main harvester needs event interactions. if it is composite, it calls its subharvesters accordingly
+        EventSystem.addListener(HarvesterParameterChangedEvent.class, onParameterChanged);
+        EventSystem.addListener(StartHarvestEvent.class, (StartHarvestEvent e) -> harvest());
     }
 
 
