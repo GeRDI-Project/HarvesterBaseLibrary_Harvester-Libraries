@@ -38,6 +38,11 @@ public class DataOperationConstants
 
     public static final String WEB_ERROR_JSON = "Could not load and parse '%s': %s";
 
+    public static final String WEB_ERROR_HEADER = "Could retrieve %s-request header from URL '%s'.";
+    public static final String WEB_ERROR_REST_RESPONSE = "%s-request error for URL '%s' with body '%s'.";
+    public static final String WEB_ERROR_REST_HTTP = "%s-request for URL '%s' with body '%s' returned HTTP Status-Code %d.";
+    public static final String REQUEST_PROPERTY_CHARSET = "charset";
+
     /**
      * Private constructor, because this is a static class.
      */

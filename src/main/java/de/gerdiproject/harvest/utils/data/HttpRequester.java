@@ -197,6 +197,7 @@ public class HttpRequester
         return htmlResponse;
     }
 
+
     /**
      * Sends a GET request to a specified URL and tries to retrieve the JSON
      * response, mapping it to a Java object. If the development option is enabled,
@@ -313,11 +314,12 @@ public class HttpRequester
      * @param url the URL to which the request is being sent
      * @param body the plain-text body of the request
      *
-     * @throws HTTPException thrown if the response code is neither 200 nor 202
+     * @throws HTTPException thrown if the response code is not 2xx
+     * @throws IOException thrown if the response output stream could not be created
      *
      * @return the HTTP response as plain text
      */
-    public String getRestResponse(RestRequestType method, String url, String body) throws HTTPException
+    public String getRestResponse(RestRequestType method, String url, String body) throws HTTPException, IOException
     {
         return getRestResponse(method, url, body, null);
     }
@@ -333,11 +335,12 @@ public class HttpRequester
      * @param authorization the base-64-encoded username and password, or null if no
      *                       authorization is required
      *
-     * @throws HTTPException thrown if the response code is neither 200 nor 202
+     * @throws HTTPException thrown if the response code is not 2xx
+     * @throws IOException thrown if the response output stream could not be created
      *
      * @return the HTTP response as plain text
      */
-    public String getRestResponse(RestRequestType method, String url, String body, String authorization) throws HTTPException
+    public String getRestResponse(RestRequestType method, String url, String body, String authorization) throws HTTPException, IOException
     {
         try {
             HttpURLConnection connection = sendRestRequest(method, url, body, authorization);
@@ -372,8 +375,9 @@ public class HttpRequester
             // combine the read lines to a single string
             return responseText;
         } catch (IOException e) {
-            LOGGER.warn(e.getMessage());
-            return e.getMessage();
+
+
+            throw e;
         }
     }
 
@@ -386,11 +390,12 @@ public class HttpRequester
      * @param url the URL to which the request is being sent
      * @param body the plain-text body of the request
      *
-     * @throws HTTPException thrown if the response code is neither 200 nor 202
+     * @throws HTTPException thrown if the response code is not 2xx
+     * @throws IOException thrown if the response output stream could not be created
      *
      * @return the response header fields, or null if the response could not be parsed
      */
-    public Map<String, List<String>> getRestHeader(RestRequestType method, String url, String body) throws HTTPException
+    public Map<String, List<String>> getRestHeader(RestRequestType method, String url, String body) throws HTTPException, IOException
     {
         return getRestHeader(method, url, body, null);
     }
@@ -406,22 +411,18 @@ public class HttpRequester
      * @param authorization the base-64-encoded username and password, or null if no
      *                       authorization is required
      *
-     * @throws HTTPException thrown if the response code is neither 200 nor 202
+     * @throws HTTPException thrown if the response code is not 2xx
+     * @throws IOException thrown if the response output stream could not be created
      *
      * @return the response header fields, or null if the response could not be parsed
      */
     public Map<String, List<String>> getRestHeader(RestRequestType method, String url, String body,
-                                                   String authorization) throws HTTPException
+                                                   String authorization) throws HTTPException, IOException
     {
         Map<String, List<String>> headerFields = null;
 
-        try {
-            HttpURLConnection connection = sendRestRequest(method, url, body, authorization);
-            headerFields = connection.getHeaderFields();
-
-        } catch (IOException e) {
-            LOGGER.warn(e.getMessage());
-        }
+        HttpURLConnection connection = sendRestRequest(method, url, body, authorization);
+        headerFields = connection.getHeaderFields();
 
         return headerFields;
     }
@@ -436,7 +437,7 @@ public class HttpRequester
      * @param authorization the base-64-encoded username and password, or null if no
      *                           authorization is required
      *
-     * @throws HTTPException thrown if the response code is neither 200 nor 202
+     * @throws HTTPException thrown if the response code is not 2xx
      * @throws IOException thrown if the response output stream could not be created
      *
      * @return the connection to the host
@@ -444,40 +445,58 @@ public class HttpRequester
     private HttpURLConnection sendRestRequest(RestRequestType method, String url, String body, String authorization)
     throws IOException, HTTPException
     {
-        // generate a URL and open a connection
-        HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
+        try {
+            // generate a URL and open a connection
+            HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
 
-        // set request properties
-        connection.setDoOutput(true);
-        connection.setInstanceFollowRedirects(false);
-        connection.setUseCaches(false);
-        connection.setRequestMethod(method.toString());
-        connection.setRequestProperty(HttpHeaders.CONTENT_TYPE, MediaType.TEXT_PLAIN);
-        connection.setRequestProperty("charset", httpCharset.displayName());
+            // set request properties
+            connection.setDoOutput(true);
+            connection.setInstanceFollowRedirects(false);
+            connection.setUseCaches(false);
+            connection.setRequestMethod(method.toString());
+            connection.setRequestProperty(HttpHeaders.CONTENT_TYPE, MediaType.TEXT_PLAIN);
+            connection.setRequestProperty(DataOperationConstants.REQUEST_PROPERTY_CHARSET, httpCharset.displayName());
 
-        // set authentication
-        if (authorization != null)
-            connection.setRequestProperty(HttpHeaders.AUTHORIZATION, authorization);
+            // set authentication
+            if (authorization != null)
+                connection.setRequestProperty(HttpHeaders.AUTHORIZATION, authorization);
 
-        // only send date if it is specified
-        if (body != null) {
-            // convert body string to bytes
-            byte[] bodyBytes = body.getBytes(httpCharset);
-            connection.setRequestProperty(HttpHeaders.CONTENT_LENGTH, Integer.toString(bodyBytes.length));
+            // only send date if it is specified
+            if (body != null) {
+                // convert body string to bytes
+                byte[] bodyBytes = body.getBytes(httpCharset);
+                connection.setRequestProperty(HttpHeaders.CONTENT_LENGTH, Integer.toString(bodyBytes.length));
 
-            // try to send body
-            DataOutputStream wr = new DataOutputStream(connection.getOutputStream());
-            wr.write(bodyBytes);
-            wr.close();
+                // try to send body
+                DataOutputStream wr = new DataOutputStream(connection.getOutputStream());
+                wr.write(bodyBytes);
+                wr.close();
+            }
+
+            // check if we got an erroneous response
+            int responseCode = connection.getResponseCode();
+
+            if (responseCode < 200 || responseCode >= 300) {
+                if (!suppressWarnings)
+                    LOGGER.warn(String.format(
+                                    DataOperationConstants.WEB_ERROR_REST_HTTP,
+                                    method.toString(),
+                                    url,
+                                    body,
+                                    responseCode
+                                ));
+
+                throw new HTTPException(connection.getResponseCode());
+            }
+
+            return connection;
+        } catch (IOException e) {
+            if (!suppressWarnings)
+                LOGGER.error(String.format(DataOperationConstants.WEB_ERROR_REST_RESPONSE, method.toString(), url, body), e);
+
+            throw e;
         }
 
-        // check if we got an erroneous response
-        int responseCode = connection.getResponseCode();
-
-        if (responseCode < 200 || responseCode >= 300)
-            throw new HTTPException(connection.getResponseCode());
-
-        return connection;
     }
 
     /**

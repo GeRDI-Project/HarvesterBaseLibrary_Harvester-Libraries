@@ -19,6 +19,7 @@
 package de.gerdiproject.harvest.submission.impl;
 
 
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.rmi.ServerException;
@@ -60,7 +61,7 @@ public class ElasticSearchSubmitter extends AbstractSubmitter
 
         // if no mappings were created, abort
         if (!hasMappings)
-            throw new IllegalStateException(ElasticSearchConstants.NO_MAPPINGS_ERROR);
+            throw new IllegalStateException(ElasticSearchConstants.NO_MAPPING_ERROR);
 
         // build a string for bulk-posting to Elastic search
         StringBuilder bulkRequestBuilder = new StringBuilder();
@@ -70,7 +71,7 @@ public class ElasticSearchSubmitter extends AbstractSubmitter
             IDocument doc = documents.get(i);
             String id = doc.getElasticSearchId();
 
-            bulkRequestBuilder.append(String.format(ElasticSearchConstants.BATCH_POST_INSTRUCTION, id, GsonUtils.getGson().toJson(doc)));
+            bulkRequestBuilder.append(String.format(ElasticSearchConstants.BATCH_POST_INSTRUCTION, id, GsonUtils.getGson().toJson(doc, doc.getClass())));
         }
 
         // send POST request to Elastic search
@@ -180,9 +181,9 @@ public class ElasticSearchSubmitter extends AbstractSubmitter
             httpRequester.getRestResponse(RestRequestType.GET, mappingsUrl, getCredentials(config));
             hasMapping = true;
 
-        } catch (HTTPException e) {
+        } catch (HTTPException | IOException e) {
             hasMapping = false;
-            logger.error(String.format(ElasticSearchConstants.NO_MAPPING_WARNING, mappingsUrl, e.getStatusCode()));
+            logger.error(String.format(ElasticSearchConstants.NO_MAPPING_WARNING, index), e);
         }
 
         if (!hasMapping) {
@@ -196,9 +197,9 @@ public class ElasticSearchSubmitter extends AbstractSubmitter
                 hasMapping = true;
                 logger.info(String.format(ElasticSearchConstants.MAPPING_CREATE_SUCCESS, mappingsUrl, type));
 
-            } catch (HTTPException e) {
+            } catch (HTTPException | IOException e) {
                 hasMapping = false;
-                logger.error(String.format(ElasticSearchConstants.MAPPING_CREATE_FAILURE, mappingsUrl, type, e.getStatusCode()));
+                logger.error(String.format(ElasticSearchConstants.MAPPING_CREATE_FAILURE, mappingsUrl, type), e);
             }
         }
 
