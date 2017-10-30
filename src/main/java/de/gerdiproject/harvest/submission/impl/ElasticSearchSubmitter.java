@@ -174,11 +174,12 @@ public class ElasticSearchSubmitter extends AbstractSubmitter
                               elasticSearchUrl.getPort(),
                               index);
 
+        String credentials = getCredentials(config);
         HttpRequester httpRequester = new HttpRequester();
         boolean hasMapping;
 
         try {
-            httpRequester.getRestResponse(RestRequestType.GET, mappingsUrl, getCredentials(config));
+            httpRequester.getRestResponse(RestRequestType.GET, mappingsUrl, null, credentials);
             hasMapping = true;
 
         } catch (HTTPException | IOException e) {
@@ -193,7 +194,8 @@ public class ElasticSearchSubmitter extends AbstractSubmitter
                     RestRequestType.PUT,
                     mappingsUrl,
                     String.format(ElasticSearchConstants.BASIC_MAPPING, type),
-                    null);
+                    credentials);
+
                 hasMapping = true;
                 logger.info(String.format(ElasticSearchConstants.MAPPING_CREATE_SUCCESS, mappingsUrl, type));
 

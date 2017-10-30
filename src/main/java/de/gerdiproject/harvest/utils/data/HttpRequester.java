@@ -445,58 +445,50 @@ public class HttpRequester
     private HttpURLConnection sendRestRequest(RestRequestType method, String url, String body, String authorization)
     throws IOException, HTTPException
     {
-        try {
-            // generate a URL and open a connection
-            HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
+        // generate a URL and open a connection
+        HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
 
-            // set request properties
-            connection.setDoOutput(true);
-            connection.setInstanceFollowRedirects(false);
-            connection.setUseCaches(false);
-            connection.setRequestMethod(method.toString());
-            connection.setRequestProperty(HttpHeaders.CONTENT_TYPE, MediaType.TEXT_PLAIN);
-            connection.setRequestProperty(DataOperationConstants.REQUEST_PROPERTY_CHARSET, httpCharset.displayName());
+        // set request properties
+        connection.setDoOutput(true);
+        connection.setInstanceFollowRedirects(false);
+        connection.setUseCaches(false);
+        connection.setRequestMethod(method.toString());
+        connection.setRequestProperty(HttpHeaders.CONTENT_TYPE, MediaType.TEXT_PLAIN);
+        connection.setRequestProperty(DataOperationConstants.REQUEST_PROPERTY_CHARSET, httpCharset.displayName());
 
-            // set authentication
-            if (authorization != null)
-                connection.setRequestProperty(HttpHeaders.AUTHORIZATION, authorization);
+        // set authentication
+        if (authorization != null)
+            connection.setRequestProperty(HttpHeaders.AUTHORIZATION, authorization);
 
-            // only send date if it is specified
-            if (body != null) {
-                // convert body string to bytes
-                byte[] bodyBytes = body.getBytes(httpCharset);
-                connection.setRequestProperty(HttpHeaders.CONTENT_LENGTH, Integer.toString(bodyBytes.length));
+        // only send date if it is specified
+        if (body != null) {
+            // convert body string to bytes
+            byte[] bodyBytes = body.getBytes(httpCharset);
+            connection.setRequestProperty(HttpHeaders.CONTENT_LENGTH, Integer.toString(bodyBytes.length));
 
-                // try to send body
-                DataOutputStream wr = new DataOutputStream(connection.getOutputStream());
-                wr.write(bodyBytes);
-                wr.close();
-            }
-
-            // check if we got an erroneous response
-            int responseCode = connection.getResponseCode();
-
-            if (responseCode < 200 || responseCode >= 300) {
-                if (!suppressWarnings)
-                    LOGGER.warn(String.format(
-                                    DataOperationConstants.WEB_ERROR_REST_HTTP,
-                                    method.toString(),
-                                    url,
-                                    body,
-                                    responseCode
-                                ));
-
-                throw new HTTPException(connection.getResponseCode());
-            }
-
-            return connection;
-        } catch (IOException e) {
-            if (!suppressWarnings)
-                LOGGER.error(String.format(DataOperationConstants.WEB_ERROR_REST_RESPONSE, method.toString(), url, body), e);
-
-            throw e;
+            // try to send body
+            DataOutputStream wr = new DataOutputStream(connection.getOutputStream());
+            wr.write(bodyBytes);
+            wr.close();
         }
 
+        // check if we got an erroneous response
+        int responseCode = connection.getResponseCode();
+
+        if (responseCode < 200 || responseCode >= 300) {
+            if (!suppressWarnings)
+                LOGGER.warn(String.format(
+                                DataOperationConstants.WEB_ERROR_REST_HTTP,
+                                method.toString(),
+                                url,
+                                body,
+                                responseCode
+                            ));
+
+            throw new HTTPException(connection.getResponseCode());
+        }
+
+        return connection;
     }
 
     /**
