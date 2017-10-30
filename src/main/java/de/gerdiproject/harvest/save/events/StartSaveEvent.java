@@ -27,4 +27,26 @@ import de.gerdiproject.harvest.event.IEvent;
  */
 public class StartSaveEvent implements IEvent
 {
+    private final boolean isAutoTriggered;
+
+
+    /**
+     * Simple Constructor.
+     *
+     * @param isAutoTriggered true if the event was not explicitly triggered via a REST call
+     */
+    public StartSaveEvent(boolean isAutoTriggered)
+    {
+        this.isAutoTriggered = isAutoTriggered;
+    }
+
+
+    /**
+     * Returns true if the event was not explicitly triggered via a REST call.
+     * @return true if the event was not explicitly triggered via a REST call
+     */
+    public boolean isAutoTriggered()
+    {
+        return isAutoTriggered;
+    }
 }

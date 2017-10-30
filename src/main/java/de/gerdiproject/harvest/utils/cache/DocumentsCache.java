@@ -80,7 +80,7 @@ public class DocumentsCache
 
 
     private Consumer<StartSaveEvent> onStartSaving = (StartSaveEvent e) -> {
-        saver.save(cacheFile, documentHash, documentCount);
+        saver.save(cacheFile, documentHash, documentCount, e.isAutoTriggered());
     };
 
 

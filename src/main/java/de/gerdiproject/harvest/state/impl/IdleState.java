@@ -124,7 +124,7 @@ public class IdleState implements IState
     @Override
     public String save()
     {
-        EventSystem.sendEvent(new StartSaveEvent());
+        EventSystem.sendEvent(new StartSaveEvent(false));
         return StateConstants.SAVING_STATUS;
     }
 

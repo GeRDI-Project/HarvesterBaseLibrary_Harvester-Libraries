@@ -88,7 +88,7 @@ public class StateEventHandlerConstants
             final Configuration config = MainContext.getConfiguration();
 
             if (config.getParameterValue(ConfigurationConstants.AUTO_SAVE, Boolean.class)) {
-                EventSystem.sendEvent(new StartSaveEvent());
+                EventSystem.sendEvent(new StartSaveEvent(true));
                 return;
             }
 
@@ -120,7 +120,7 @@ public class StateEventHandlerConstants
     public static final Consumer<SaveStartedEvent> ON_SAVE_STARTED =
     (SaveStartedEvent e) -> {
 
-        SavingState nextState = new SavingState(e.getNumberOfDocuments(), false);
+        SavingState nextState = new SavingState(e.getNumberOfDocuments(), e.isAutoTriggered());
         EventSystem.sendEvent(new ChangeStateEvent(nextState));
     };
 

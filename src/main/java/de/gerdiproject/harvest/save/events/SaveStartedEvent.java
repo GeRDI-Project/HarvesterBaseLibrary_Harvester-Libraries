@@ -29,14 +29,18 @@ import de.gerdiproject.harvest.event.IEvent;
 public class SaveStartedEvent implements IEvent
 {
     private final int numberOfDocs;
+    private final boolean isAutoTriggered;
+
 
     /**
      * Simple Constructor.
      *
+     * @param isAutoTriggered true if the event was not explicitly triggered via a REST call
      * @param numberOfDocs the number of documents that are to be saved
      */
-    public SaveStartedEvent(int numberOfDocs)
+    public SaveStartedEvent(boolean isAutoTriggered, int numberOfDocs)
     {
+        this.isAutoTriggered = isAutoTriggered;
         this.numberOfDocs = numberOfDocs;
     }
 
@@ -49,5 +53,15 @@ public class SaveStartedEvent implements IEvent
     public int getNumberOfDocuments()
     {
         return numberOfDocs;
+    }
+
+
+    /**
+     * Returns true if the event was not explicitly triggered via a REST call.
+     * @return true if the event was not explicitly triggered via a REST call
+     */
+    public boolean isAutoTriggered()
+    {
+        return isAutoTriggered;
     }
 }

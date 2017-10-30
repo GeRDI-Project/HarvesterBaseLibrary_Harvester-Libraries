@@ -78,10 +78,11 @@ public class HarvestSaver
      * @param cachedDocuments the file in which the cached documents are stored as a JSON array
      * @param sourceHash a String used for version checks of the source data that was harvested
      * @param numberOfDocs the amount of documents that are to be saved
+     * @param isAutoTriggered true if the save was not explicitly triggered via a REST call
      */
-    public void save(File cachedDocuments, String sourceHash, int numberOfDocs)
+    public void save(File cachedDocuments, String sourceHash, int numberOfDocs, boolean isAutoTriggered)
     {
-        EventSystem.sendEvent(new SaveStartedEvent(numberOfDocs));
+        EventSystem.sendEvent(new SaveStartedEvent(isAutoTriggered, numberOfDocs));
 
         // listen to abort requests
         isAborting = false;
