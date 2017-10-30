@@ -69,15 +69,19 @@ public abstract class AbstractHarvester
      */
     private final Consumer<HarvesterParameterChangedEvent> onParameterChanged = (HarvesterParameterChangedEvent e) -> {
         String key = e.getParameter().getKey();
+        Object value = e.getParameter().getValue();
 
         if (key.equals(ConfigurationConstants.HARVEST_START_INDEX))
-            setStartIndex((Integer) e.getParameter().getValue());
+            setStartIndex((Integer) value);
 
         else if (key.equals(ConfigurationConstants.HARVEST_END_INDEX))
-            setEndIndex((Integer) e.getParameter().getValue());
+            setEndIndex((Integer) value);
+
+        else if (value != null)
+            setProperty(key, value.toString());
 
         else
-            setProperty(key, e.getParameter().getValue().toString());
+            setProperty(key, null);
     };
 
 
