@@ -25,7 +25,10 @@ package de.gerdiproject.harvest.submission.constants;
  */
 public class ElasticSearchConstants
 {
-    public static final String NO_MAPPINGS_ERROR = "Could not create mappings. Is the Elastic Search URL correct and is the server up and running?";
+    public static final String NO_MAPPINGS_ERROR = "No Mappings exist or could be created.\nIs the Elastic Search URL correct and is the server available?";
+    public static final String NO_MAPPING_WARNING = "Elastic-Search Mapping for index '%s' does NOT exist: HTTP Status-Code %d";
+    public static final String MAPPING_CREATE_SUCCESS = "Created Elastic-Search Mapping for index '%s' and type '%s'.";
+    public static final String MAPPING_CREATE_FAILURE = "Could not create Elastic-Search Mapping for index '%s' and type '%s': HTTP Status-Code %d";
 
     public static final String MAPPINGS_URL = "%s://%s/%s?pretty";
     public static final String MAPPINGS_URL_WITH_PORT = "%s://%s:%d/%s?pretty";

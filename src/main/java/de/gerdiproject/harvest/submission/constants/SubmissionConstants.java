@@ -33,7 +33,7 @@ public class SubmissionConstants
 
 
     public static final String SUBMIT_PARTIAL_OK = " Submitted documents %d to %d.";
-    public static final String SUBMIT_PARTIAL_FAILED = "Error submitting documents %s to %s: %s";
+    public static final String SUBMIT_PARTIAL_FAILED = "Error submitting documents %s to %s.";
     public static final String UNKNOWN_DOCUMENT_COUNT = "???";
 
     public static final String NO_URL_ERROR = "Cannot submit documents: You need to set up a valid submission URL!";

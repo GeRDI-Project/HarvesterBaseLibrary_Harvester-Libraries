@@ -209,9 +209,9 @@ public abstract class AbstractSubmitter
      * @param submissionUrl the URL to which the documents are to be submitted
      * @param credentials user credentials or null, if they do not exist
      *
-     * @return an error message if the submission failed, or null if it was successful
+     * @throws Exception any kind of exception that can be thrown by the submission process
      */
-    protected abstract String submitBatch(List<IDocument> documents, URL submissionUrl, String credentials);
+    protected abstract void submitBatch(List<IDocument> documents, URL submissionUrl, String credentials) throws Exception; // NOPMD - Exception is explicitly thrown, because it is up to the implementation which Exception causes the submission to fail
 
 
     /**
@@ -283,31 +283,39 @@ public abstract class AbstractSubmitter
     protected boolean trySubmitBatch(List<IDocument> documents, URL submissionUrl, String credentials)
     {
         if (documents == null || documents.isEmpty()) {
-            logger.warn(String.format(
-                            SubmissionConstants.SUBMIT_PARTIAL_FAILED,
-                            String.valueOf(submittedDocumentCount),
-                            SubmissionConstants.UNKNOWN_DOCUMENT_COUNT,
-                            SubmissionConstants.NO_DOCS_ERROR));
+            logger.error(String.format(
+                             SubmissionConstants.SUBMIT_PARTIAL_FAILED,
+                             String.valueOf(submittedDocumentCount),
+                             SubmissionConstants.UNKNOWN_DOCUMENT_COUNT)
+                         + SubmissionConstants.NO_DOCS_ERROR);
             return false;
         }
 
-        String errorMessage = submitBatch(documents, submissionUrl, credentials);
-        boolean isSuccessful = errorMessage == null;
         int numberOfDocs = documents.size();
+        boolean isSuccessful;
 
-        if (isSuccessful) {
+        try {
+            // attempt to submit the batch
+            submitBatch(documents, submissionUrl, credentials);
+
+            // log success and send an event
             logger.info(String.format(SubmissionConstants.SUBMIT_PARTIAL_OK, submittedDocumentCount, submittedDocumentCount + numberOfDocs));
-            EventSystem.sendEvent(new DocumentsSubmittedEvent(numberOfDocs));
             failedDocumentCount -= numberOfDocs;
-        } else {
-            logger.warn(String.format(
-                            SubmissionConstants.SUBMIT_PARTIAL_FAILED,
-                            String.valueOf(submittedDocumentCount),
-                            String.valueOf(submittedDocumentCount + numberOfDocs),
-                            errorMessage));
+            isSuccessful = true;
+        } catch (Exception e) {
+            // log the failure
+            logger.error(String.format(
+                             SubmissionConstants.SUBMIT_PARTIAL_FAILED,
+                             String.valueOf(submittedDocumentCount),
+                             String.valueOf(submittedDocumentCount + numberOfDocs)),
+                         e);
+            isSuccessful = false;
         }
 
+        // send event
+        EventSystem.sendEvent(new DocumentsSubmittedEvent(isSuccessful, numberOfDocs));
         submittedDocumentCount += numberOfDocs;
+
         return isSuccessful;
     }
 

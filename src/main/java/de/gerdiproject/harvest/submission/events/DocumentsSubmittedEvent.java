@@ -18,14 +18,14 @@
  */
 package de.gerdiproject.harvest.submission.events;
 
-import de.gerdiproject.harvest.event.IEvent;
+import de.gerdiproject.harvest.event.AbstractSucceededOrFailedEvent;
 
 /**
- * This event indicates that somedocuments have been submitted successfully.
+ * This event indicates that some documents have been submitted.
  *
  * @author Robin Weiss
  */
-public class DocumentsSubmittedEvent implements IEvent
+public class DocumentsSubmittedEvent extends AbstractSucceededOrFailedEvent
 {
 
     private final int numberOfSubmittedDocs;
@@ -33,10 +33,12 @@ public class DocumentsSubmittedEvent implements IEvent
     /**
      * Simple Constructor.
      *
+     * @param isSuccessful if true, the submission was successful
      * @param numberOfSubmittedDocs the number of documents that have been sent
      */
-    public DocumentsSubmittedEvent(int numberOfSubmittedDocs)
+    public DocumentsSubmittedEvent(boolean isSuccessful, int numberOfSubmittedDocs)
     {
+        super(isSuccessful);
         this.numberOfSubmittedDocs = numberOfSubmittedDocs;
     }
 

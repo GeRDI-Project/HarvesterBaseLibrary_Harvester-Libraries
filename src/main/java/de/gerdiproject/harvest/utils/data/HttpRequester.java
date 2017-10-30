@@ -474,8 +474,7 @@ public class HttpRequester
         // check if we got an erroneous response
         int responseCode = connection.getResponseCode();
 
-        if (responseCode != HttpURLConnection.HTTP_ACCEPTED
-            && responseCode != HttpURLConnection.HTTP_OK)
+        if (responseCode < 200 || responseCode >= 300)
             throw new HTTPException(connection.getResponseCode());
 
         return connection;

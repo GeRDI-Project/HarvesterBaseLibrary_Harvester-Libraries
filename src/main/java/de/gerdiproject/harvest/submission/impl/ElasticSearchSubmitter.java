@@ -21,6 +21,7 @@ package de.gerdiproject.harvest.submission.impl;
 
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.rmi.ServerException;
 import java.util.List;
 
 import javax.xml.ws.http.HTTPException;
@@ -50,7 +51,7 @@ import de.gerdiproject.json.GsonUtils;
 public class ElasticSearchSubmitter extends AbstractSubmitter
 {
     @Override
-    protected String submitBatch(List<IDocument> documents, URL submissionUrl, String credentials)
+    protected void submitBatch(List<IDocument> documents, URL submissionUrl, String credentials) throws Exception // NOPMD - Exception is explicitly thrown, because it is up to the implementation which Exception causes the submission to fail
     {
         final Configuration config = MainContext.getConfiguration();
 
@@ -59,34 +60,32 @@ public class ElasticSearchSubmitter extends AbstractSubmitter
 
         // if no mappings were created, abort
         if (!hasMappings)
-            return ElasticSearchConstants.NO_MAPPINGS_ERROR;
+            throw new IllegalStateException(ElasticSearchConstants.NO_MAPPINGS_ERROR);
 
         // build a string for bulk-posting to Elastic search
         StringBuilder bulkRequestBuilder = new StringBuilder();
         HttpRequester httpRequester = new HttpRequester();
 
-        try {
-            for (int i = 0, len = documents.size(); i < len; i++) {
-                IDocument doc = documents.get(i);
-                String id = doc.getElasticSearchId();
+        for (int i = 0, len = documents.size(); i < len; i++) {
+            IDocument doc = documents.get(i);
+            String id = doc.getElasticSearchId();
 
-                bulkRequestBuilder.append(String.format(ElasticSearchConstants.BATCH_POST_INSTRUCTION, id, GsonUtils.getGson().toJson(doc)));
-            }
-
-            // send POST request to Elastic search
-            String response = httpRequester.getRestResponse(
-                                  RestRequestType.POST,
-                                  submissionUrl.toString(),
-                                  bulkRequestBuilder.toString(),
-                                  credentials
-                              );
-            // log response
-            String errorMessage = handleSubmissionResponse(response);
-            return errorMessage;
-
-        } catch (Exception e) {
-            return e.toString();
+            bulkRequestBuilder.append(String.format(ElasticSearchConstants.BATCH_POST_INSTRUCTION, id, GsonUtils.getGson().toJson(doc)));
         }
+
+        // send POST request to Elastic search
+        String response = httpRequester.getRestResponse(
+                              RestRequestType.POST,
+                              submissionUrl.toString(),
+                              bulkRequestBuilder.toString(),
+                              credentials
+                          );
+        // log response
+        String errorMessage = handleSubmissionResponse(response);
+
+        // throw error if the server responds in an unexpected way
+        if (errorMessage != null)
+            throw new ServerException(errorMessage);
     }
 
 
@@ -141,22 +140,36 @@ public class ElasticSearchSubmitter extends AbstractSubmitter
 
         // extract index and type from URL
         String[] path = elasticSearchUrl.getPath().substring(1).split("/");
-        String index = path[0].toLowerCase();
-        String type = path[1].toLowerCase();
+
+        // we need at least 2 path parts, one for the index and one for the type
+        if (path.length < 2)
+            return false;
+
+        String index = path[path.length - 2].toLowerCase();
+        String type = path[path.length - 1].toLowerCase();
         String mappingsUrl;
+
+        // assemble all that comes before the index path
+        StringBuilder hostBuilder = new StringBuilder(elasticSearchUrl.getHost());
+        int i = 0;
+
+        while (i < path.length - 2) {
+            hostBuilder.append('/').append(path[i]);
+            i++;
+        }
 
         // assemble mappings URL
         if (elasticSearchUrl.getPort() == -1)
             mappingsUrl = String.format(
                               ElasticSearchConstants.MAPPINGS_URL,
                               elasticSearchUrl.getProtocol(),
-                              elasticSearchUrl.getHost(),
+                              hostBuilder.toString(),
                               index);
         else
             mappingsUrl = String.format(
                               ElasticSearchConstants.MAPPINGS_URL_WITH_PORT,
                               elasticSearchUrl.getProtocol(),
-                              elasticSearchUrl.getHost(),
+                              hostBuilder.toString(),
                               elasticSearchUrl.getPort(),
                               index);
 
@@ -169,6 +182,7 @@ public class ElasticSearchSubmitter extends AbstractSubmitter
 
         } catch (HTTPException e) {
             hasMapping = false;
+            logger.error(String.format(ElasticSearchConstants.NO_MAPPING_WARNING, mappingsUrl, e.getStatusCode()));
         }
 
         if (!hasMapping) {
@@ -180,9 +194,11 @@ public class ElasticSearchSubmitter extends AbstractSubmitter
                     String.format(ElasticSearchConstants.BASIC_MAPPING, type),
                     null);
                 hasMapping = true;
+                logger.info(String.format(ElasticSearchConstants.MAPPING_CREATE_SUCCESS, mappingsUrl, type));
 
             } catch (HTTPException e) {
                 hasMapping = false;
+                logger.error(String.format(ElasticSearchConstants.MAPPING_CREATE_FAILURE, mappingsUrl, type, e.getStatusCode()));
             }
         }
 
