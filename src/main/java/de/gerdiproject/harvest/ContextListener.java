@@ -42,7 +42,7 @@ import com.google.gson.JsonSerializer;
 
 /**
  * This class registers a Logger and Harvester when the server is started. A
- * subclass with the @WebListener annotation must be defined.
+ * sub-class with the @WebListener annotation must be implemented in order for the harvester micro service to work.
  *
  * @param <T> an AbstractHarvester sub-class
  *

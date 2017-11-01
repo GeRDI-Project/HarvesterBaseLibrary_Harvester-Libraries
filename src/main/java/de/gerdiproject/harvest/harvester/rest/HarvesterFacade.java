@@ -77,7 +77,7 @@ public class HarvesterFacade
     })
     public String getInfo()
     {
-        String status = StateMachine.getCurrentState().getProgressString();
+        String status = StateMachine.getCurrentState().getStatusString();
 
         // get harvesting range
 
@@ -98,9 +98,9 @@ public class HarvesterFacade
 
 
     /**
-     * Displays the search index or an empty object if nothing was harvested.
+     * Aborts an ongoing process, such as harvesting, submitting, or saving.
      *
-     * @return the search index or an empty object if nothing was harvested
+     * @return a status message describing if the abort could be started or not
      */
     @POST
     @Path("abort")
@@ -114,9 +114,9 @@ public class HarvesterFacade
 
 
     /**
-     * Displays the search index or an empty object if nothing was harvested.
+     * Saves harvested documents to disk.
      *
-     * @return the search index or an empty object if nothing was harvested
+     * @return a status message describing if the saving could be started or not
      */
     @POST
     @Path("save")
@@ -130,9 +130,9 @@ public class HarvesterFacade
 
 
     /**
-     * Displays the search index or an empty object if nothing was harvested.
+     * Submits harvested documents.
      *
-     * @return the search index or an empty object if nothing was harvested
+     * @return a status message describing if the submission could be started or not
      */
     @POST
     @Path("submit")

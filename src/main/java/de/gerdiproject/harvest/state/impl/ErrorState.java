@@ -25,14 +25,14 @@ import de.gerdiproject.harvest.state.constants.StateConstants;
 import de.gerdiproject.harvest.state.constants.StateEventHandlerConstants;
 
 /**
- * This state indicates it is waiting for a harvest to start.
+ * This state is a dead-end that occurs when the harvester cannot be initialized.
  *
  * @author Robin Weiss
  */
 public class ErrorState implements IState
 {
     @Override
-    public String getProgressString()
+    public String getStatusString()
     {
         return StateConstants.ERROR_STATUS;
     }

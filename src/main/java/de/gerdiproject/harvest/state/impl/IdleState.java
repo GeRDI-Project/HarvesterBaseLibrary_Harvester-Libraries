@@ -36,7 +36,7 @@ import de.gerdiproject.harvest.submission.events.SubmissionStartedEvent;
 import de.gerdiproject.harvest.utils.time.HarvestTimeKeeper;
 
 /**
- * This state indicates it is waiting for a harvest to start.
+ * This state indicates it is waiting for user input.
  *
  * @author Robin Weiss
  */
@@ -66,7 +66,7 @@ public class IdleState implements IState
 
 
     @Override
-    public String getProgressString()
+    public String getStatusString()
     {
         HarvestTimeKeeper timeKeeper = MainContext.getTimeKeeper();
         return String.format(
@@ -134,6 +134,4 @@ public class IdleState implements IState
     {
         return StateConstants.IDLE_PROCESS;
     }
-
-
 }

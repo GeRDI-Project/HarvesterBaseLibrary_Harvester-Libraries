@@ -30,6 +30,7 @@ public class HarvestTimeKeeperConstants
 {
     public static final String STATUS_FORMAT = "%s at %s";
 
+
     /**
      * Private constructor, because this is a static class.
      */

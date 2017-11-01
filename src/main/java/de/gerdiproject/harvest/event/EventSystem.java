@@ -25,7 +25,7 @@ import java.util.Map;
 import java.util.function.Consumer;
 
 /**
- * This singleton class provides a means to dispatch and listen to events.
+ * This singleton class provides a means to dispatch and listen to {@linkplain IEvent}s.
  *
  * @author Robin Weiss
  */

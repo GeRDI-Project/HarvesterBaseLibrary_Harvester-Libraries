@@ -19,7 +19,7 @@
 package de.gerdiproject.harvest.submission.constants;
 
 /**
- * This static class is a collection of constants that relate to the submission of documents to ElasticSearcg.
+ * This static class is a collection of constants that relate to the submission of documents to ElasticSearch.
  *
  * @author Robin Weiss
  */

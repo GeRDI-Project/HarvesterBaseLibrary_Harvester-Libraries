@@ -30,12 +30,12 @@ import java.util.function.BiConsumer;
 
 import de.gerdiproject.harvest.MainContext;
 import de.gerdiproject.harvest.harvester.constants.HarvesterConstants;
+import de.gerdiproject.harvest.utils.cache.DocumentsCache;
 
 
 /**
  * This harvester manages a set of sub-harvesters. When the harvest is started,
- * all sub-harvesters are started concurrently, but write to a single list of
- * documents.
+ * all sub-harvesters are started concurrently, but write to a shared {@linkplain DocumentsCache}.
  *
  * @author Robin Weiss
  */
@@ -49,11 +49,9 @@ public abstract class AbstractCompositeHarvester extends AbstractHarvester
      * Constructor that requires an Iterable of sub-harvesters and the harvester
      * name.
      *
-     * @param harvesterName
-     *            a unique name of the harvester
-     * @param subHarvesters
-     *            the harvesters that are executed concurrently when the
-     *            composite harvester is started
+     * @param harvesterName a unique name of the harvester
+     * @param subHarvesters the harvesters that are executed concurrently when the
+     *         composite harvester is started
      */
     public AbstractCompositeHarvester(String harvesterName, Iterable<AbstractHarvester> subHarvesters)
     {

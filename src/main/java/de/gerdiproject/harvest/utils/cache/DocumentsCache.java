@@ -44,46 +44,70 @@ import de.gerdiproject.harvest.submission.events.StartSubmissionEvent;
 import de.gerdiproject.harvest.utils.cache.constants.CacheConstants;
 import de.gerdiproject.json.GsonUtils;
 
+/**
+ * This singleton class is a wrapper for a JSON file writer that writes harvested documents as a JSON-array to a cache-file.
+ * The cached documents can be saved to disk along with harvesting related metadata using the {@linkplain HarvestSaver}, or submitted to a Database
+ * via an {@linkplain AbstractSubmitter}.
+ *
+ * @author Robin Weiss
+ */
 public class DocumentsCache
 {
-    //private static final String NO_HARVEST = "Cannot save: Nothing was harvested yet!";
-
     private static final Logger LOGGER = LoggerFactory.getLogger(DocumentsCache.class);
-    public static final DocumentsCache instance = new DocumentsCache();
+    private static final DocumentsCache instance = new DocumentsCache();
 
     private AbstractSubmitter submitter;
     private HarvestSaver saver;
-
     private int documentCount;
     private JsonWriter cacheWriter;
     private File cacheFile;
     private String documentHash;
 
 
+    /**
+     * Event callback: When a harvest starts, the cache writer is opened.
+     */
     private Consumer<HarvestStartedEvent> onHarvestStarted = (HarvestStartedEvent e) -> {
         startCaching();
     };
 
+
+    /**
+     * Event callback: When a harvest finishes, the cache writer is closed.
+     */
     private Consumer<HarvestFinishedEvent> onHarvestFinished = (HarvestFinishedEvent e) -> {
         documentHash = e.getDocumentChecksum();
         finishCaching();
     };
 
+
+    /**
+     * Event callback: When a document is harvested, write it to the cache file.
+     */
     private Consumer<DocumentHarvestedEvent> onDocumentHarvested = (DocumentHarvestedEvent e) -> {
         addDocument(e.getDocument());
     };
 
 
+    /**
+     * Event callback: When a submission starts, submit the cache file via the {@linkplain AbstractSubmitter}.
+     */
     private Consumer<StartSubmissionEvent> onStartSubmitting = (StartSubmissionEvent e) -> {
         submitter.submit(cacheFile, documentCount);
     };
 
 
+    /**
+     * Event callback: When a save starts, save the cache file via the {@linkplain HarvestSaver}.
+     */
     private Consumer<StartSaveEvent> onStartSaving = (StartSaveEvent e) -> {
         saver.save(cacheFile, documentHash, documentCount, e.isAutoTriggered());
     };
 
 
+    /**
+     * Private constructor for the singleton instance.
+     */
     private DocumentsCache()
     {
         this.documentCount = 0;
@@ -97,7 +121,7 @@ public class DocumentsCache
 
 
     /**
-     * Removes all cache files for this harvester, that are no longer in use.
+     * Removes all cache files that are no longer in use by this harvester.
      */
     private void clearOldCacheFiles()
     {
@@ -135,6 +159,11 @@ public class DocumentsCache
     }
 
 
+    /**
+     * Initializes the singleton instance.
+     *
+     * @param submitter the submitter that is used for sending away harvested documents
+     */
     public static void init(AbstractSubmitter submitter)
     {
         instance.submitter = submitter;
@@ -148,6 +177,10 @@ public class DocumentsCache
     }
 
 
+    /**
+     * Finishes the potentially open cache writer, clears old files and resets the writer and
+     * number of cached documents.
+     */
     private void clear()
     {
         if (documentCount > 0)
@@ -162,6 +195,11 @@ public class DocumentsCache
     }
 
 
+    /**
+     * Clears the old data, creates directories for the cache file and opens the cache writer.
+     *
+     * @return true if the writer could be opened successfully and the cache file was created
+     */
     private boolean startCaching()
     {
         clear();
@@ -187,6 +225,9 @@ public class DocumentsCache
     }
 
 
+    /**
+     * Closes the cache writer.
+     */
     private void finishCaching()
     {
         try {
@@ -201,6 +242,11 @@ public class DocumentsCache
     }
 
 
+    /**
+     * Writes a document to the cache file.
+     *
+     * @param doc the document that is to be written to the cache
+     */
     private synchronized void addDocument(IDocument doc)
     {
         GsonUtils.getGson().toJson(doc, doc.getClass(), cacheWriter);

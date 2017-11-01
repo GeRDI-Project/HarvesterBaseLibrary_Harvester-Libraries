@@ -21,7 +21,7 @@ package de.gerdiproject.harvest.submission.events;
 import de.gerdiproject.harvest.event.AbstractSucceededOrFailedEvent;
 
 /**
- * This event indicates that some documents have been submitted.
+ * This event indicates that a subset of documents have been submitted.
  *
  * @author Robin Weiss
  */

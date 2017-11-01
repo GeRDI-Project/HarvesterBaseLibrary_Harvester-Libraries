@@ -62,6 +62,14 @@ public class HttpRequester
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(HttpRequester.class);
 
+    public boolean suppressWarnings;
+
+    private final Charset httpCharset;
+    private final DiskIO diskIO;
+    private final WebDataRetriever webDataRetriever;
+    private boolean readFromDisk;
+    private boolean writeToDisk;
+
 
     /**
      * Event callback for global parameter changes. Changes the readFromDisk and writeToDisk fields.
@@ -77,14 +85,6 @@ public class HttpRequester
         if (param.getKey().equals(ConfigurationConstants.WRITE_HTTP_TO_DISK))
             writeToDisk = (Boolean) param.getValue();
     };
-
-    public boolean suppressWarnings;
-
-    private final Charset httpCharset;
-    private final DiskIO diskIO;
-    private final WebDataRetriever webDataRetriever;
-    private boolean readFromDisk;
-    private boolean writeToDisk;
 
 
     /**
@@ -490,6 +490,7 @@ public class HttpRequester
 
         return connection;
     }
+
 
     /**
      * The type of REST requests that can be sent via the {@link HttpRequester}.

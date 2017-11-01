@@ -43,6 +43,7 @@ public class StartSaveEvent implements IEvent
 
     /**
      * Returns true if the event was not explicitly triggered via a REST call.
+     *
      * @return true if the event was not explicitly triggered via a REST call
      */
     public boolean isAutoTriggered()

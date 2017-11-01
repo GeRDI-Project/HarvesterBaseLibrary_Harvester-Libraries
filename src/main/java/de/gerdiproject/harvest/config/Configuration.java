@@ -41,7 +41,8 @@ import com.google.gson.JsonParseException;
 
 
 /**
- * This class manages all application parameters.
+ * This class manages all application {@linkplain AbstractParameter}s.
+ * It is stored by the {@linkplain MainContext}.
  *
  * @author Robin Weiss
  */
@@ -194,6 +195,7 @@ public class Configuration
             return null;
     }
 
+
     /**
      * Returns the human readable value of the parameter with a specified key.
      *
@@ -215,6 +217,7 @@ public class Configuration
         else
             return null;
     }
+
 
     /**
      * Changes a configuration parameter, returning a status message about the change.
@@ -251,6 +254,7 @@ public class Configuration
             return message;
         }
     }
+
 
     /**
      * Sends out a parameter changed event for a specified parameter.
@@ -289,7 +293,6 @@ public class Configuration
         harvesterParameters.forEach((String key, AbstractParameter<?> param) ->
                                     EventSystem.sendEvent(new HarvesterParameterChangedEvent(param, null))
                                    );
-
     }
 
 

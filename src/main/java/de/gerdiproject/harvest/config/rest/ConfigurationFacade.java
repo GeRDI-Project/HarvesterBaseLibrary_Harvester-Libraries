@@ -37,8 +37,7 @@ import javax.ws.rs.core.MultivaluedMap;
 
 
 /**
- * Provides the option to save all configuration of the harvester service to
- * disk.
+ * This facade serves as an interface between REST and the {@linkplain Configuration}.
  *
  * @author Robin Weiss
  */

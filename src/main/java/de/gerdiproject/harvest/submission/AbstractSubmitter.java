@@ -58,6 +58,15 @@ import de.gerdiproject.json.datacite.DataCiteJson;
  */
 public abstract class AbstractSubmitter
 {
+    protected final Logger logger; // NOPMD - we want to retrieve the type of the inheriting class
+
+    private int submittedDocumentCount;
+    private int failedDocumentCount;
+    protected boolean isAborting;
+
+    private CancelableFuture<Boolean> currentSubmissionProcess;
+
+
     /**
      * Event listener for aborting the submitter.
      */
@@ -67,14 +76,6 @@ public abstract class AbstractSubmitter
         EventSystem.sendEvent(new AbortingStartedEvent());
     };
 
-
-    protected final Logger logger; // NOPMD - we want to retrieve the type of the inheriting class
-
-    private int submittedDocumentCount;
-    private int failedDocumentCount;
-    protected boolean isAborting;
-
-    private CancelableFuture<Boolean> currentSubmissionProcess;
 
     /**
      * Constructor that initializes the {@linkplain Logger}.
@@ -86,7 +87,7 @@ public abstract class AbstractSubmitter
 
 
     /**
-     * Reads the cached documents and passes them onto an {@linkplain AbstractSubmitter}.
+     * Reads cached documents and submits them.
      *
      * @param cachedDocuments the file in which the cached documents are stored as a JSON array
      * @param numberOfDocuments the number of documents that are to be submitted
@@ -136,7 +137,7 @@ public abstract class AbstractSubmitter
 
 
     /**
-     * Creates a callable function that sequentially submits all harvested documents in fixed chunks.
+     * Creates a callable function that sequentially submits all harvested documents in subsets of adjustable size.
      *
      * @param cachedDocuments the file in which the cached documents are stored as a JSON array
      * @param submissionUrl the URL to which the documents are to be submitted

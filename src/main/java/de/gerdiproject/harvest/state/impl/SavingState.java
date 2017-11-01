@@ -34,7 +34,7 @@ import de.gerdiproject.harvest.submission.events.SubmissionStartedEvent;
 import de.gerdiproject.harvest.utils.time.HarvestTimeKeeper;
 
 /**
- * This state represents the process of permanently saving the harvested documents to disk.
+ * This state represents the process of saving the harvested documents to disk.
  *
  * @author Robin Weiss
  */
@@ -44,6 +44,7 @@ public class SavingState extends AbstractProgressingState
      * If a document is saved, add 1 to the progress.
      */
     private final Consumer<DocumentSavedEvent> onDocumentSaved = (DocumentSavedEvent e) -> addProgress(1);
+
 
     /**
      * If all documents were saved, change the state to {@linkplain IdleState},
@@ -93,13 +94,13 @@ public class SavingState extends AbstractProgressingState
 
 
     @Override
-    public String getProgressString()
+    public String getStatusString()
     {
         HarvestTimeKeeper timeKeeper = MainContext.getTimeKeeper();
         return String.format(
                    StateConstants.IDLE_STATUS,
                    timeKeeper.getHarvestMeasure().toString(),
-                   super.getProgressString(),
+                   super.getStatusString(),
                    timeKeeper.getSubmissionMeasure().toString()
 
                );

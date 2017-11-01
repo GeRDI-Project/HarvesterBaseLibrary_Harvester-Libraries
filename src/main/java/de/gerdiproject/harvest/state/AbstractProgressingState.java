@@ -30,6 +30,12 @@ import de.gerdiproject.harvest.state.events.ChangeStateEvent;
 import de.gerdiproject.harvest.state.events.StartAbortingEvent;
 import de.gerdiproject.harvest.state.impl.AbortingState;
 
+/**
+ * This abstract class is a state that has a clearly defined start and end time.
+ * This allows for an estimation of remaining time and thus, for more information to the user.
+ *
+ * @author Robin Weiss
+ */
 public abstract class AbstractProgressingState implements IState
 {
     protected static final Logger LOGGER = LoggerFactory.getLogger(StateMachine.class);
@@ -37,6 +43,7 @@ public abstract class AbstractProgressingState implements IState
     protected int currentProgress;
     protected final int maxProgress;
     protected long startTimeStamp;
+
 
     /**
      * Event callback for the start of the aborting process.
@@ -73,10 +80,8 @@ public abstract class AbstractProgressingState implements IState
     }
 
 
-
-
     @Override
-    public String getProgressString()
+    public String getStatusString()
     {
         return String.format(
                    StateConstants.PROGESS_TEXT_DETAILED,
@@ -85,6 +90,7 @@ public abstract class AbstractProgressingState implements IState
                    getProgressInPercent(),
                    getDurationText(estimateRemainingSeconds()));
     }
+
 
     @Override
     public String abort()
@@ -96,7 +102,7 @@ public abstract class AbstractProgressingState implements IState
 
     /**
      * Estimates the remaining seconds of the state by regarding the
-     * already passed time in accordance with the progress.
+     * already passed time in relation to the progress.
      *
      * @return the remaining seconds or -1, if the time cannot be estimated
      */

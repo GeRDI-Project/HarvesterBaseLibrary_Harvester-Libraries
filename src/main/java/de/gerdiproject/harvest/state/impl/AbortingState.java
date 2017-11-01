@@ -29,7 +29,7 @@ import de.gerdiproject.harvest.state.constants.StateEventHandlerConstants;
 import de.gerdiproject.harvest.state.events.AbortingFinishedEvent;
 
 /**
- * This state indicates it is waiting for a harvest to start.
+ * This state indicates some process is aborting.
  *
  * @author Robin Weiss
  */
@@ -70,7 +70,7 @@ public class AbortingState implements IState
 
 
     @Override
-    public String getProgressString()
+    public String getStatusString()
     {
         return String.format(StateConstants.ABORT_STATUS, processName);
     }

@@ -25,7 +25,7 @@ import de.gerdiproject.harvest.config.constants.ConfigurationConstants;
 import de.gerdiproject.harvest.state.IState;
 
 /**
- * This parameter holds a non-negative integer value.
+ * This parameter holds an integer value.
  *
  * @author Robin Weiss
  */

@@ -63,6 +63,23 @@ import org.slf4j.LoggerFactory;
  */
 public abstract class AbstractHarvester
 {
+    private final Map<String, String> properties;
+
+    private final AtomicInteger maxDocumentCount;
+    private final AtomicInteger harvestedDocumentCount;
+
+    private final AtomicInteger startIndex;
+    private final AtomicInteger endIndex;
+
+    protected CancelableFuture<Boolean> currentHarvestingProcess;
+    protected boolean isMainHarvester;
+    protected String name;
+    protected String hash;
+    protected final HttpRequester httpRequester;
+
+    protected final Logger logger; // NOPMD - we want to retrieve the type of the inheriting class
+
+
     /**
      * Event listener for harvester parameter changes. Parameters include the harvesting range, as well as
      * any implementation specific properties.
@@ -95,23 +112,6 @@ public abstract class AbstractHarvester
     };
 
 
-    private final Map<String, String> properties;
-
-    private final AtomicInteger maxDocumentCount;
-    private final AtomicInteger harvestedDocumentCount;
-
-    private final AtomicInteger startIndex;
-    private final AtomicInteger endIndex;
-
-    protected CancelableFuture<Boolean> currentHarvestingProcess;
-    protected boolean isMainHarvester;
-    protected String name;
-    protected String hash;
-    protected final HttpRequester httpRequester;
-
-    protected final Logger logger; // NOPMD - we want to retrieve the type of the inheriting class
-
-
     /**
      * The main harvesting method. The overridden implementation should add
      * documents to the search index by calling addDocumentToIndex().
@@ -134,6 +134,7 @@ public abstract class AbstractHarvester
      * @return the total number of documents that are to be harvested
      */
     abstract protected int initMaxNumberOfDocuments();
+
 
     /**
      * Computes a hash value of the files that are to be harvested, which is
@@ -165,8 +166,7 @@ public abstract class AbstractHarvester
     /**
      * Constructor that initializes helper classes and fields.
      *
-     * @param harvesterName
-     *            a unique name that describes the harvester
+     * @param harvesterName a unique name that describes the harvester
      */
     public AbstractHarvester(String harvesterName)
     {

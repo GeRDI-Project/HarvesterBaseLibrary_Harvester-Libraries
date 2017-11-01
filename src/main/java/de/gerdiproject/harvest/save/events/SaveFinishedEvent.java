@@ -22,7 +22,7 @@ package de.gerdiproject.harvest.save.events;
 import de.gerdiproject.harvest.event.AbstractSucceededOrFailedEvent;
 
 /**
- * This event signifies that the process of saving all documents to disk was finished.
+ * This event signifies that the process of saving all documents to disk has finished.
  *
  * @author Robin Weiss
  */

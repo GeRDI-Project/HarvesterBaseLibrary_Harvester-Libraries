@@ -44,7 +44,6 @@ public class CacheConstants
     public static final String DELETE_FILE_FAILED = "Could not deleted old cache file '%s'!";
 
 
-
     /**
      * Private constructor, because this is a static class.
      */

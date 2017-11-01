@@ -22,6 +22,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+import de.gerdiproject.harvest.config.Configuration;
 import de.gerdiproject.harvest.state.IState;
 import de.gerdiproject.harvest.state.impl.ErrorState;
 import de.gerdiproject.harvest.state.impl.IdleState;
@@ -30,7 +31,7 @@ import de.gerdiproject.harvest.state.impl.SavingState;
 import de.gerdiproject.harvest.state.impl.SubmittingState;
 
 /**
- * This static class is a collection of constants, commonly used for dealing with configuration.
+ * This static class is a collection of constants, commonly used for classes that deal with the {@linkplain Configuration}.
  *
  * @author Robin Weiss
  */
@@ -87,6 +88,8 @@ public class ConfigurationConstants
                                      ));
 
     public static final String URL_PREFIX = "%URL_PARAMETER%";
+    public static final String GLOBAL_PARAMETERS_JSON = "globalParameters";
+    public static final String HARVESTER_PARAMETERS_JSON = "harvesterParameters";
 
     /**
      * Private constructor, because this is a static class.

@@ -39,6 +39,7 @@ import de.gerdiproject.harvest.MainContext;
 import de.gerdiproject.harvest.config.Configuration;
 import de.gerdiproject.harvest.config.constants.ConfigurationConstants;
 import de.gerdiproject.harvest.event.EventSystem;
+import de.gerdiproject.harvest.save.constants.SaveConstants;
 import de.gerdiproject.harvest.save.events.DocumentSavedEvent;
 import de.gerdiproject.harvest.save.events.SaveFinishedEvent;
 import de.gerdiproject.harvest.save.events.SaveStartedEvent;
@@ -57,7 +58,11 @@ import de.gerdiproject.json.datacite.DataCiteJson;
  */
 public class HarvestSaver
 {
+    private CancelableFuture<Boolean> currentSavingProcess;
+    private boolean isAborting;
+
     private final static Logger LOGGER = LoggerFactory.getLogger(HarvestSaver.class);
+
 
     /**
      * Event listener for aborting the submitter.
@@ -67,9 +72,6 @@ public class HarvestSaver
         EventSystem.removeListener(StartAbortingEvent.class, this.onStartAborting);
         EventSystem.sendEvent(new AbortingStartedEvent());
     };
-
-    private CancelableFuture<Boolean> currentSavingProcess;
-    private boolean isAborting;
 
 
     /**
@@ -256,19 +258,19 @@ public class HarvestSaver
         DocumentSavedEvent savedEvent = new DocumentSavedEvent();
 
         writer.beginObject();
-        writer.name("harvestDate");
+        writer.name(SaveConstants.HARVEST_DATE_JSON);
         writer.value(startTimestamp);
 
-        writer.name("durationInSeconds");
+        writer.name(SaveConstants.DURATION_JSON);
         writer.value((finishTimestamp - startTimestamp) / 1000l);
 
-        writer.name("wasHarvestedFromDisk");
+        writer.name(SaveConstants.IS_FROM_DISK_JSON);
         writer.value(readFromDisk);
 
-        writer.name("hash");
+        writer.name(SaveConstants.HASH_JSON);
         writer.value(sourceHash);
 
-        writer.name("data");
+        writer.name(SaveConstants.DATA_JSON);
         writer.beginArray();
 
         // iterate through cached array
@@ -292,7 +294,6 @@ public class HarvestSaver
         writer.endArray();
         writer.endObject();
         writer.close();
-
 
         // cancel the asynchronous process
         if (isAborting)

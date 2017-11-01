@@ -37,8 +37,8 @@ import de.gerdiproject.harvest.utils.time.HarvestTimeKeeper;
 
 
 /**
- * This class provides static methods for retrieving the application name, the
- * dedicated harvester class and logger.
+ * This class provides static methods for retrieving application
+ * singleton utility and configuration classes.
  *
  * @author Robin Weiss
  */
@@ -79,6 +79,7 @@ public class MainContext
         return instance.moduleName;
     }
 
+
     /**
      * Retrieves the charset used for processing strings.
      *
@@ -99,7 +100,6 @@ public class MainContext
     {
         return instance.configuration;
     }
-
 
 
     /**

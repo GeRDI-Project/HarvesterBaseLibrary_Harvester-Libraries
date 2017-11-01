@@ -148,6 +148,7 @@ public class StateEventHandlerConstants
             EventSystem.sendEvent(new ChangeStateEvent(new ErrorState()));
     };
 
+
     /**
      * Switches the state to {@linkplain IdleState} when a submission-process finishes.
      */

@@ -46,7 +46,7 @@ public class InitializationState implements IState
 
 
     @Override
-    public String getProgressString()
+    public String getStatusString()
     {
         return StateConstants.INIT_STATUS;
     }

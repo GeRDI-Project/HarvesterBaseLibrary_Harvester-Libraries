@@ -40,7 +40,7 @@ public class HarvesterConstants
     public static final String ERROR_NO_ENTRIES = "Cannot harvest %s - The source entries are empty or could not be retrieved!";
     public static final String LOG_OUT_OF_RANGE = "Skipping %s - Document indices out of range.";
 
-
+    // REST
     public static final String REST_INFO = "- %s -%n%n%s%n%nRange:\t\t%s-%s%n%n"
                                            + "POST\t\t\tStarts the harvest%n"
                                            + "POST/abort\t\tAborts an ongoing harvest%n"

@@ -44,8 +44,7 @@ import de.gerdiproject.json.GsonUtils;
 
 /**
  * This class serves as a communicator for an Elastic Search node. An
- * URL and optionally a username and password must be set up first. Afterwards,
- * the harvested database can be uploaded.
+ * URL and optionally a username and password must be set up prior to the submission.
  *
  * @author Robin Weiss
  */

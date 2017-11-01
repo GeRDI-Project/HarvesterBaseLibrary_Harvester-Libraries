@@ -49,7 +49,6 @@ public class WebDataRetriever implements IDataRetriever
     private static final Logger LOGGER = LoggerFactory.getLogger(DiskIO.class);
 
 
-
     @Override
     public String getString(String url)
     {
@@ -90,6 +89,7 @@ public class WebDataRetriever implements IDataRetriever
         return responseText;
     }
 
+
     @Override
     public JsonElement getJson(String url)
     {
@@ -113,6 +113,7 @@ public class WebDataRetriever implements IDataRetriever
         return jsonResponse;
     }
 
+
     @Override
     public <T> T getObject(String url, Class<T> targetClass)
     {
@@ -132,6 +133,7 @@ public class WebDataRetriever implements IDataRetriever
         return object;
     }
 
+
     @Override
     public <T> T getObject(String url, Type targetType)
     {
@@ -150,6 +152,7 @@ public class WebDataRetriever implements IDataRetriever
 
         return object;
     }
+
 
     @Override
     public Document getHtml(String url)

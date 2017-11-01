@@ -31,15 +31,25 @@ import de.gerdiproject.harvest.state.constants.StateEventHandlerConstants;
 import de.gerdiproject.harvest.submission.events.SubmissionStartedEvent;
 import de.gerdiproject.harvest.utils.time.HarvestTimeKeeper;
 
+/**
+ * This state indicates that a harvest is currently in progress.
+ *
+ * @author Robin Weiss
+ */
 public class HarvestingState extends AbstractProgressingState
 {
+    /**
+     * Constructor that requires the maximum amount of harvestable documents.
+     *
+     * @param maxNumberOfHarvestedDocuments the maximum amount of harvestable documents
+     */
     public HarvestingState(int maxNumberOfHarvestedDocuments)
     {
         super(maxNumberOfHarvestedDocuments);
     }
 
     /**
-     * If a document is harvested, add 1 to the progress.
+     * Event callback: If a document is harvested, add 1 to the progress.
      */
     private final Consumer<DocumentHarvestedEvent> onDocumentHarvested = (DocumentHarvestedEvent e) -> addProgress(1);
 
@@ -75,12 +85,12 @@ public class HarvestingState extends AbstractProgressingState
 
 
     @Override
-    public String getProgressString()
+    public String getStatusString()
     {
         HarvestTimeKeeper timeKeeper = MainContext.getTimeKeeper();
         return String.format(
                    StateConstants.IDLE_STATUS,
-                   super.getProgressString(),
+                   super.getStatusString(),
                    timeKeeper.getSaveMeasure().toString(),
                    timeKeeper.getSubmissionMeasure().toString()
                );

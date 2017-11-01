@@ -27,11 +27,10 @@ import java.util.concurrent.Future;
 
 
 /**
- * An extension of CompletableFuture with the option to cancel a running task.
+ * An extension of {@linkplain CompletableFuture} with the option to cancel a running task.
  *
  * @author http://stackoverflow.com/users/4618331/sam
- * @param <T>
- *            the return type of the asynchronous task
+ * @param <T> the return type of the asynchronous task
  */
 public class CancelableFuture<T> extends CompletableFuture<T>
 {

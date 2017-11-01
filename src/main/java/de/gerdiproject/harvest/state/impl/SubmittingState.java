@@ -30,7 +30,7 @@ import de.gerdiproject.harvest.submission.events.SubmissionFinishedEvent;
 import de.gerdiproject.harvest.utils.time.HarvestTimeKeeper;
 
 /**
- * This state represents the initialization of harvesters at the beginning of the server start.
+ * This state represents the submission process of harvested documents.
  *
  * @author Robin Weiss
  */
@@ -54,14 +54,14 @@ public class SubmittingState extends AbstractProgressingState
 
 
     @Override
-    public String getProgressString()
+    public String getStatusString()
     {
         HarvestTimeKeeper timeKeeper = MainContext.getTimeKeeper();
         return String.format(
                    StateConstants.IDLE_STATUS,
                    timeKeeper.getHarvestMeasure().toString(),
                    timeKeeper.getSaveMeasure().toString(),
-                   super.getProgressString()
+                   super.getStatusString()
                );
     }
 

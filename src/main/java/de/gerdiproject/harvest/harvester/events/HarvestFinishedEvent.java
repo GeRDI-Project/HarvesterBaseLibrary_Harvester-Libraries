@@ -29,6 +29,7 @@ public class HarvestFinishedEvent extends AbstractSucceededOrFailedEvent
 {
     private final String documentChecksum;
 
+
     /**
      * Simple Constructor.
      *
@@ -40,6 +41,7 @@ public class HarvestFinishedEvent extends AbstractSucceededOrFailedEvent
         super(isSuccessful);
         this.documentChecksum = documentChecksum;
     }
+
 
     /**
      * Returns a hash value over all harvested documents.

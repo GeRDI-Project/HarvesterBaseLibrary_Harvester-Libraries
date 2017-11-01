@@ -21,7 +21,7 @@ package de.gerdiproject.harvest.save.events;
 import de.gerdiproject.harvest.event.IEvent;
 
 /**
- * This event indicates that a document has been processed when writing to disk.
+ * This event indicates that a document has been processed when saving cached documents to disk.
  *
  * @author Robin Weiss
  */

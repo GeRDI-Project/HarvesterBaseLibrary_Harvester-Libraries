@@ -21,7 +21,7 @@ package de.gerdiproject.harvest.utils.data.constants;
 import de.gerdiproject.harvest.utils.data.HttpRequester;
 
 /**
- * This static class contains constants for the {@linkplain HttpRequester}..
+ * This static class contains constants for the {@linkplain HttpRequester} and related classes.
  *
  * @author Robin Weiss
  */
@@ -42,6 +42,7 @@ public class DataOperationConstants
     public static final String WEB_ERROR_REST_RESPONSE = "%s-request error for URL '%s' with body '%s'.";
     public static final String WEB_ERROR_REST_HTTP = "%s-request for URL '%s' with body '%s' returned HTTP Status-Code %d.";
     public static final String REQUEST_PROPERTY_CHARSET = "charset";
+
 
     /**
      * Private constructor, because this is a static class.

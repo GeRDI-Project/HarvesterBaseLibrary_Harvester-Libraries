@@ -49,13 +49,14 @@ public class ConfigurationAdapter implements JsonDeserializer<Configuration>, Js
     public Configuration deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context)
     throws JsonParseException
     {
+        // initialize global parameters with default values
         Map<String, AbstractParameter<?>> globalParameters = ParameterFactory.createDefaultParameters();
         Map<String, AbstractParameter<?>> harvesterParameters = new LinkedHashMap<>();
 
         JsonObject configJson = json.getAsJsonObject();
 
         // fill global parameters
-        JsonObject globalParamsJson = configJson.get("globalParameters").getAsJsonObject();
+        JsonObject globalParamsJson = configJson.get(ConfigurationConstants.GLOBAL_PARAMETERS_JSON).getAsJsonObject();
         globalParameters.forEach((String key, AbstractParameter<?> value)-> {
             JsonElement valueJson = globalParamsJson.get(key);
 
@@ -71,7 +72,7 @@ public class ConfigurationAdapter implements JsonDeserializer<Configuration>, Js
         });
 
         // fill harvester parameters
-        Set<Entry<String, JsonElement>> harvesterParamsJson = configJson.get("harvesterParameters").getAsJsonObject().entrySet();
+        Set<Entry<String, JsonElement>> harvesterParamsJson = configJson.get(ConfigurationConstants.HARVESTER_PARAMETERS_JSON).getAsJsonObject().entrySet();
 
         for (Entry<String, JsonElement> paramJson : harvesterParamsJson) {
             String key = paramJson.getKey();
@@ -96,7 +97,7 @@ public class ConfigurationAdapter implements JsonDeserializer<Configuration>, Js
 
             }
 
-            // if parameter cannot be parsed, abort!
+            // if parameter cannot be parsed, abort the deserialization!
             if (param != null)
                 harvesterParameters.put(key, param);
             else
@@ -113,11 +114,9 @@ public class ConfigurationAdapter implements JsonDeserializer<Configuration>, Js
     @Override
     public JsonElement serialize(Configuration src, Type typeOfSrc, JsonSerializationContext context)
     {
+        // serialize global parameters
         Map<String, AbstractParameter<?>> globalParameters = src.getGlobalParameters();
-        Map<String, AbstractParameter<?>> harvesterParameters = src.getHarvesterParameters();
-
         JsonObject globalParamsJson = new JsonObject();
-        JsonObject harvesterParamsJson = new JsonObject();
 
         globalParameters.forEach((String key, AbstractParameter<?> param) -> {
 
@@ -133,6 +132,10 @@ public class ConfigurationAdapter implements JsonDeserializer<Configuration>, Js
             else if (param instanceof UrlParameter)
                 globalParamsJson.addProperty(key, ConfigurationConstants.URL_PREFIX + param.getValue().toString());
         });
+
+        // serialize harvester specific parameters
+        Map<String, AbstractParameter<?>> harvesterParameters = src.getHarvesterParameters();
+        JsonObject harvesterParamsJson = new JsonObject();
 
         harvesterParameters.forEach((String key, AbstractParameter<?> param) -> {
 
@@ -151,8 +154,8 @@ public class ConfigurationAdapter implements JsonDeserializer<Configuration>, Js
 
         // assemble config JSON file
         JsonObject configJson = new JsonObject();
-        configJson.add("globalParameters", globalParamsJson);
-        configJson.add("harvesterParameters", harvesterParamsJson);
+        configJson.add(ConfigurationConstants.GLOBAL_PARAMETERS_JSON, globalParamsJson);
+        configJson.add(ConfigurationConstants.HARVESTER_PARAMETERS_JSON, harvesterParamsJson);
 
         return configJson;
     }

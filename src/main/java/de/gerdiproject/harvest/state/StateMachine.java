@@ -22,6 +22,12 @@ import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.state.events.ChangeStateEvent;
 import de.gerdiproject.harvest.state.impl.InitializationState;
 
+/**
+ * This singleton state machine controls REST input by delegating it to the current state.
+ * Edge-case scenarios are more easily avoided this way, as operations during
+ *
+ * @author Robin Weiss
+ */
 public class StateMachine
 {
     private static final StateMachine instance = new StateMachine();
@@ -29,6 +35,10 @@ public class StateMachine
     private IState currentState;
 
 
+    /**
+     * Private constructor for the singleton instance.
+     * The default state is the {@linkplain InitializationState}.
+     */
     private StateMachine()
     {
         currentState = new InitializationState();
@@ -36,7 +46,7 @@ public class StateMachine
     }
 
     /**
-     * Init must be called explicitly, because this class must be referenced once, in order to work.
+     * Init must be called explicitly, because this class must be referenced once in order to work.
      */
     public static void init()
     {
@@ -45,6 +55,11 @@ public class StateMachine
     }
 
 
+    /**
+     * Changes the state.
+     *
+     * @param newState the new state
+     */
     private void setState(IState newState)
     {
         currentState.onStateLeave();
@@ -53,6 +68,11 @@ public class StateMachine
     }
 
 
+    /**
+     * Retrieves the currently active state.
+     *
+     * @return the currently active state
+     */
     public static IState getCurrentState()
     {
         return instance.currentState;

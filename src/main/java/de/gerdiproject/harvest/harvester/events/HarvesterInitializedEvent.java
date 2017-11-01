@@ -18,17 +18,15 @@
  */
 package de.gerdiproject.harvest.harvester.events;
 
-import de.gerdiproject.harvest.event.IEvent;
+import de.gerdiproject.harvest.event.AbstractSucceededOrFailedEvent;
 
 /**
  * This event signifies that the harvester initialization process is over.
  *
  * @author Robin Weiss
  */
-public class HarvesterInitializedEvent implements IEvent
+public class HarvesterInitializedEvent extends AbstractSucceededOrFailedEvent
 {
-    private final boolean isSuccessful;
-
     /**
      * Simple Constructor.
      *
@@ -36,16 +34,6 @@ public class HarvesterInitializedEvent implements IEvent
      */
     public HarvesterInitializedEvent(boolean isSuccessful)
     {
-        this.isSuccessful = isSuccessful;
-    }
-
-    /**
-     * Returns true, if the harvester was initialized and is ready to go.
-     *
-     * @return true, if the harvester was initialized successfully
-     */
-    public boolean isSuccessful()
-    {
-        return isSuccessful;
+        super(isSuccessful);
     }
 }
