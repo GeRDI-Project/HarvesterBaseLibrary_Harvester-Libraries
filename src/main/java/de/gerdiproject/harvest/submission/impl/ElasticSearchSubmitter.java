@@ -22,7 +22,9 @@ package de.gerdiproject.harvest.submission.impl;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.rmi.ServerException;
+import java.util.Base64;
 import java.util.List;
 
 import javax.xml.ws.http.HTTPException;
@@ -50,6 +52,8 @@ import de.gerdiproject.json.GsonUtils;
  */
 public class ElasticSearchSubmitter extends AbstractSubmitter
 {
+    private static final Base64.Encoder ENCODER = Base64.getEncoder();
+    
     @Override
     protected void submitBatch(List<IDocument> documents, URL submissionUrl, String credentials) throws Exception // NOPMD - Exception is explicitly thrown, because it is up to the implementation which Exception causes the submission to fail
     {
@@ -66,12 +70,8 @@ public class ElasticSearchSubmitter extends AbstractSubmitter
         StringBuilder bulkRequestBuilder = new StringBuilder();
         HttpRequester httpRequester = new HttpRequester();
 
-        for (int i = 0, len = documents.size(); i < len; i++) {
-            IDocument doc = documents.get(i);
-            String id = doc.getElasticSearchId();
-
-            bulkRequestBuilder.append(String.format(ElasticSearchConstants.BATCH_POST_INSTRUCTION, id, GsonUtils.getGson().toJson(doc, doc.getClass())));
-        }
+        for (int i = 0, len = documents.size(); i < len; i++)
+            bulkRequestBuilder.append(createBulkInstruction(documents.get(i)));
 
         // send POST request to Elastic search
         String response = httpRequester.getRestResponse(
@@ -86,6 +86,22 @@ public class ElasticSearchSubmitter extends AbstractSubmitter
         // throw error if the server responds in an unexpected way
         if (errorMessage != null)
             throw new ServerException(errorMessage);
+    }
+    
+    
+    /**
+     * Creates a single instruction for an ElasticSearch bulk-submission.
+     * 
+     * @param doc the document for which the instruction is created
+     * 
+     * @return a bulk-submission instruction for a single document
+     */
+    private String createBulkInstruction( IDocument doc)
+    {
+    	String jsonString = GsonUtils.getGson().toJson(doc, doc.getClass());
+    	String id = new String(ENCODER.encode(jsonString.getBytes(StandardCharsets.UTF_8)), StandardCharsets.UTF_8);
+        
+        return String.format(ElasticSearchConstants.BATCH_POST_INSTRUCTION, id, jsonString);
     }
 
 
