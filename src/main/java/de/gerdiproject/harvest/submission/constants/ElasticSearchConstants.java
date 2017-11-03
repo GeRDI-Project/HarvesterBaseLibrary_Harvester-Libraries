@@ -51,9 +51,9 @@ public class ElasticSearchConstants
     public static final String NULL_JSON = "null";
 
     /**
-     * public constructor, because this is a static class.
+     * Private constructor, because this is a static class.
      */
-    public ElasticSearchConstants()
+    private ElasticSearchConstants()
     {
     }
 }
