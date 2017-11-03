@@ -35,9 +35,6 @@ import java.util.List;
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonDeserializer;
 import com.google.gson.JsonSerializer;
@@ -56,11 +53,6 @@ import com.google.gson.JsonSerializer;
  */
 public class ContextListener<T extends AbstractHarvester> implements ServletContextListener
 {
-    private static final Logger LOGGER = LoggerFactory.getLogger(ContextListener.class);
-    private static final String START_SERVICE = "DEPLOYING %S...";
-    private static final String END_SERVICE = "%S UNDEPLOYED!";
-
-
     // this warning is suppressed, because the only generic Superclass MUST be T. The cast will always succeed.
     @SuppressWarnings("unchecked")
     private Class<T> harvesterClass =
@@ -141,7 +133,6 @@ public class ContextListener<T extends AbstractHarvester> implements ServletCont
     @Override
     public void contextInitialized(ServletContextEvent sce)
     {
-        LOGGER.info(String.format(START_SERVICE, getServiceName()));
         // init Json utilities
         GsonUtils.init(createGsonBuilder());
 
@@ -170,7 +161,6 @@ public class ContextListener<T extends AbstractHarvester> implements ServletCont
     @Override
     public void contextDestroyed(ServletContextEvent sce)
     {
-        LOGGER.info(String.format(END_SERVICE, getServiceName()));
     }
 
 }
