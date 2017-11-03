@@ -46,9 +46,6 @@
                 <version>${jar.plugin.version}</version>
 				<configuration>
 				  <outputDirectory>${project.build.directory}</outputDirectory>
-					<archive>  
-						<manifestFile>${project.build.directory}/../META-INF/MANIFEST.MF</manifestFile> 
-					</archive> 
 				</configuration>
             </plugin>
 			
