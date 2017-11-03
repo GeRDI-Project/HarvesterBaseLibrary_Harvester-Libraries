@@ -199,6 +199,8 @@ public abstract class AbstractCompositeHarvester extends AbstractHarvester
         for (byte b : digest)
             pw.printf(HarvesterConstants.OCTAT_FORMAT, b);
 
+        pw.close();
+        
         return buffer.toString();
     }
 
