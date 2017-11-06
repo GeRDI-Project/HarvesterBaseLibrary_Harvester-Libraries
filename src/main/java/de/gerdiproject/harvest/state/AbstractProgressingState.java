@@ -31,7 +31,7 @@ import de.gerdiproject.harvest.state.events.StartAbortingEvent;
 import de.gerdiproject.harvest.state.impl.AbortingState;
 
 /**
- * This abstract class is a state that has a clearly defined start and end time.
+ * This abstract class is a state representing a process that has a clearly defined start and end time.
  * This allows for an estimation of remaining time and thus, for more information to the user.
  *
  * @author Robin Weiss
