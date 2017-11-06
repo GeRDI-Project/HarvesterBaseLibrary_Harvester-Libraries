@@ -1,3 +1,21 @@
+/*
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
+ */
 package de.gerdiproject.harvest.utils.data;
 
 import java.io.BufferedReader;
@@ -25,21 +43,18 @@ import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
 
 import de.gerdiproject.harvest.MainContext;
+import de.gerdiproject.harvest.utils.data.constants.DataOperationConstants;
 import de.gerdiproject.json.GsonUtils;
 
 /**
  * This class provides methods for reading files from disk.
- * @author Robin Weiss
  *
+ * @author Robin Weiss
  */
 public class DiskIO implements IDataRetriever
 {
-    private static final String SAVE_OK = "Saved file: '%s'";
-    private static final String SAVE_FAILED = "Could not save file '%s': %s";
-    private static final String SAVE_FAILED_NO_FOLDERS = "Failed to create directories!";
-    private static final String LOAD_FAILED = "Could not load file '%s': %s";
-
     private static final Logger LOGGER = LoggerFactory.getLogger(DiskIO.class);
+
 
     /**
      * Writes a string to a file on disk.
@@ -62,7 +77,7 @@ public class DiskIO implements IDataRetriever
             boolean isDirectoryCreated = file.getParentFile().exists() || file.getParentFile().mkdirs();
 
             if (!isDirectoryCreated)
-                statusMessage = String.format(SAVE_FAILED, filePath, SAVE_FAILED_NO_FOLDERS);
+                statusMessage = String.format(DataOperationConstants.SAVE_FAILED, filePath, DataOperationConstants.SAVE_FAILED_NO_FOLDERS);
             else {
                 // write content to file
                 BufferedWriter writer = new BufferedWriter(
@@ -73,10 +88,10 @@ public class DiskIO implements IDataRetriever
 
                 // set status message
                 isSuccessful = true;
-                statusMessage = String.format(SAVE_OK, filePath);
+                statusMessage = String.format(DataOperationConstants.SAVE_OK, filePath);
             }
         } catch (IOException | SecurityException e) {
-            statusMessage = String.format(SAVE_FAILED, filePath, e.getMessage());
+            statusMessage = String.format(DataOperationConstants.SAVE_FAILED, filePath, e.getMessage());
         }
 
         // log the status
@@ -133,7 +148,7 @@ public class DiskIO implements IDataRetriever
 
             reader.close();
         } catch (IOException e) {
-            LOGGER.warn(String.format(LOAD_FAILED, filePath, e.toString()));
+            LOGGER.warn(String.format(DataOperationConstants.LOAD_FAILED, filePath, e.toString()));
         }
 
         return fileContent;
@@ -152,7 +167,7 @@ public class DiskIO implements IDataRetriever
             fileContent = parser.parse(reader);
             reader.close();
         } catch (IOException | IllegalStateException | JsonIOException | JsonSyntaxException e) {
-            LOGGER.warn(String.format(LOAD_FAILED, filePath, e.toString()));
+            LOGGER.warn(String.format(DataOperationConstants.LOAD_FAILED, filePath, e.toString()));
         }
 
         return fileContent;
@@ -170,7 +185,7 @@ public class DiskIO implements IDataRetriever
             reader.close();
 
         } catch (IOException | IllegalStateException | JsonIOException | JsonSyntaxException e) {
-            LOGGER.warn(String.format(LOAD_FAILED, filePath, e.toString()));
+            LOGGER.warn(String.format(DataOperationConstants.LOAD_FAILED, filePath, e.toString()));
         }
 
         return object;
@@ -188,7 +203,7 @@ public class DiskIO implements IDataRetriever
             reader.close();
 
         } catch (IOException | IllegalStateException | JsonIOException | JsonSyntaxException e) {
-            LOGGER.warn(String.format(LOAD_FAILED, filePath, e.toString()));
+            LOGGER.warn(String.format(DataOperationConstants.LOAD_FAILED, filePath, e.toString()));
         }
 
         return object;

@@ -19,13 +19,18 @@
 package de.gerdiproject.harvest;
 
 
-import de.gerdiproject.harvest.config.Configuration;
+import de.gerdiproject.harvest.config.parameters.AbstractParameter;
 import de.gerdiproject.harvest.harvester.AbstractHarvester;
+import de.gerdiproject.harvest.state.StateMachine;
+import de.gerdiproject.harvest.submission.AbstractSubmitter;
+import de.gerdiproject.harvest.submission.impl.ElasticSearchSubmitter;
+import de.gerdiproject.harvest.utils.cache.DocumentsCache;
 import de.gerdiproject.json.GsonUtils;
 
 import java.lang.reflect.ParameterizedType;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
@@ -37,7 +42,7 @@ import com.google.gson.JsonSerializer;
 
 /**
  * This class registers a Logger and Harvester when the server is started. A
- * subclass with the @WebListener annotation must be defined.
+ * sub-class with the @WebListener annotation must be implemented in order for the harvester micro service to work.
  *
  * @param <T> an AbstractHarvester sub-class
  *
@@ -95,6 +100,27 @@ public class ContextListener<T extends AbstractHarvester> implements ServletCont
         return new GsonBuilder();
     }
 
+    /**
+     * Returns additional parameters that are specific to the harvester implementation.
+     *
+     * @return a list of parameters, or null, if no additional parameters are needed
+     */
+    protected List<AbstractParameter<?>> getHarvesterSpecificParameters()
+    {
+        return null;
+    }
+
+
+    /**
+     * Creates a means to submit documents to any place.
+     *
+     * @return a harvested documents submitter
+     */
+    protected AbstractSubmitter createSubmitter()
+    {
+        return new ElasticSearchSubmitter();
+    }
+
 
     /**
      * This method is called when the server is set up. Creates a logger and
@@ -110,11 +136,19 @@ public class ContextListener<T extends AbstractHarvester> implements ServletCont
         // init Json utilities
         GsonUtils.init(createGsonBuilder());
 
-        // init main context
-        MainContext.init(getServiceName(), harvesterClass, getCharset());
+        // init state machine
+        StateMachine.init();
 
-        // try to load configuration
-        Configuration.loadFromDisk();
+        // init main context
+        MainContext.init(
+            getServiceName(),
+            harvesterClass,
+            getCharset(),
+            getHarvesterSpecificParameters()
+        );
+
+        // init documents cache and sender
+        DocumentsCache.init(createSubmitter());
     }
 
 

@@ -21,6 +21,8 @@ package de.gerdiproject.harvest.harvester;
 
 import de.gerdiproject.harvest.IDocument;
 import de.gerdiproject.harvest.MainContext;
+import de.gerdiproject.harvest.harvester.constants.HarvesterConstants;
+
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.security.MessageDigest;
@@ -37,9 +39,6 @@ import java.util.List;
  */
 public abstract class AbstractListHarvester<T> extends AbstractHarvester
 {
-    protected final static String ERROR_NO_ENTRIES = ": Could not harvest. The entries are empty or could not be retrieved";
-    protected final static String LOG_OUT_OF_RANGE = ": Harvesting indices out of range. Harvesting will be skipped";
-
     protected Collection<T> entries;
     protected final int numberOfDocumentsPerEntry;
     protected boolean isAborting;
@@ -97,11 +96,11 @@ public abstract class AbstractListHarvester<T> extends AbstractHarvester
     protected boolean harvestInternal(int from, int to) throws Exception // NOPMD - we want the inheriting class to be able to throw any exception
     {
         if (from == to) {
-            logger.warn(name + LOG_OUT_OF_RANGE);
+            logger.warn(String.format(HarvesterConstants.LOG_OUT_OF_RANGE, name));
             return true;
 
         } else if (entries == null || entries.isEmpty()) {
-            logger.error(name + ERROR_NO_ENTRIES);
+            logger.error(String.format(HarvesterConstants.ERROR_NO_ENTRIES, name));
             return false;
         }
 
@@ -173,26 +172,20 @@ public abstract class AbstractListHarvester<T> extends AbstractHarvester
 
 
     @Override
-    protected String initHash()
+    protected String initHash() throws NoSuchAlgorithmException, NullPointerException
     {
-        try {
-            final MessageDigest md = MessageDigest.getInstance(SHA_HASH_ALGORITHM);
-            md.update(entries.toString().getBytes(MainContext.getCharset()));
+        final MessageDigest md = MessageDigest.getInstance(HarvesterConstants.SHA_HASH_ALGORITHM);
+        md.update(entries.toString().getBytes(MainContext.getCharset()));
 
-            final byte[] digest = md.digest();
+        final byte[] digest = md.digest();
 
-            final StringWriter buffer = new StringWriter(digest.length * 2);
-            final PrintWriter pw = new PrintWriter(buffer);
+        final StringWriter buffer = new StringWriter(digest.length * 2);
+        final PrintWriter pw = new PrintWriter(buffer);
 
-            for (byte b : digest)
-                pw.printf(OCTAT_FORMAT, b);
+        for (byte b : digest)
+            pw.printf(HarvesterConstants.OCTAT_FORMAT, b);
 
-            return buffer.toString();
-
-        } catch (NoSuchAlgorithmException | NullPointerException e) {
-            logger.error(HASH_CREATE_FAILED);
-            return null;
-        }
+        return buffer.toString();
     }
 
 

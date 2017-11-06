@@ -22,22 +22,30 @@ package de.gerdiproject.harvest.harvester;
 import de.gerdiproject.harvest.ICleanable;
 import de.gerdiproject.harvest.IDocument;
 import de.gerdiproject.harvest.MainContext;
-import de.gerdiproject.harvest.development.DevelopmentTools;
-import de.gerdiproject.harvest.elasticsearch.ElasticSearchSender;
+import de.gerdiproject.harvest.config.constants.ConfigurationConstants;
+import de.gerdiproject.harvest.config.events.HarvesterParameterChangedEvent;
+import de.gerdiproject.harvest.event.EventSystem;
+import de.gerdiproject.harvest.harvester.constants.HarvesterConstants;
+import de.gerdiproject.harvest.harvester.events.DocumentHarvestedEvent;
+import de.gerdiproject.harvest.harvester.events.HarvestFinishedEvent;
+import de.gerdiproject.harvest.harvester.events.HarvestStartedEvent;
+import de.gerdiproject.harvest.harvester.events.StartHarvestEvent;
 import de.gerdiproject.harvest.harvester.rest.HarvesterFacade;
+import de.gerdiproject.harvest.state.events.AbortingFinishedEvent;
+import de.gerdiproject.harvest.state.events.AbortingStartedEvent;
+import de.gerdiproject.harvest.state.events.StartAbortingEvent;
+import de.gerdiproject.harvest.submission.impl.ElasticSearchSubmitter;
 import de.gerdiproject.harvest.utils.CancelableFuture;
-import de.gerdiproject.harvest.utils.HarvesterStringUtils;
-import de.gerdiproject.harvest.utils.HttpRequester;
-import de.gerdiproject.json.SearchIndexJson;
+import de.gerdiproject.harvest.utils.data.HttpRequester;
 
-import java.util.Collections;
-import java.util.Date;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,7 +54,7 @@ import org.slf4j.LoggerFactory;
 /**
  * AbstractHarvesters offer a skeleton for harvesting a data provider to
  * retrieve all of its metadata. The metadata can subsequently be submitted to
- * ElasticSearch via the {@link ElasticSearchSender}. This most basic Harvester
+ * ElasticSearch via the {@link ElasticSearchSubmitter}. This most basic Harvester
  * class offers functions that can be controlled via REST requests from the
  * {@link HarvesterFacade}, as well as some utility objects that are required by
  * all harvests. Subclasses must implement the concrete harvesting process.
@@ -55,25 +63,7 @@ import org.slf4j.LoggerFactory;
  */
 public abstract class AbstractHarvester
 {
-    protected static final String HASH_CREATE_FAILED = "Failed to create hash";
-    protected static final String OCTAT_FORMAT = "%02x";
-    protected static final String SHA_HASH_ALGORITHM = "SHA";
-
-    private final static String HARVESTER_START = "+++ Starting %s +++";
-    private final static String HARVESTER_END = "--- %s finished ---";
-    private final static String HARVESTER_FAILED = "!!! %s failed !!!";
-    private final static String HARVESTER_ABORTED = "!!! %s aborted !!!";
-    private static final String HARVEST_DONE = "HARVEST FINISHED!";
-    private static final String HARVEST_FAILED = "HARVEST FAILED!";
-
-    protected static final String HARVEST_ABORTED = "HARVEST ABORTED!";
-
     private final Map<String, String> properties;
-    protected List<IDocument> harvestedDocuments;
-
-    private Date startedDate;
-    private Date finishedDate;
-    protected CancelableFuture<Boolean> currentHarvestingProcess;
 
     private final AtomicInteger maxDocumentCount;
     private final AtomicInteger harvestedDocumentCount;
@@ -81,11 +71,45 @@ public abstract class AbstractHarvester
     private final AtomicInteger startIndex;
     private final AtomicInteger endIndex;
 
+    protected CancelableFuture<Boolean> currentHarvestingProcess;
+    protected boolean isMainHarvester;
     protected String name;
     protected String hash;
     protected final HttpRequester httpRequester;
 
     protected final Logger logger; // NOPMD - we want to retrieve the type of the inheriting class
+
+
+    /**
+     * Event listener for harvester parameter changes. Parameters include the harvesting range, as well as
+     * any implementation specific properties.
+     */
+    private final Consumer<HarvesterParameterChangedEvent> onParameterChanged = (HarvesterParameterChangedEvent e) -> {
+        String key = e.getParameter().getKey();
+        Object value = e.getParameter().getValue();
+
+        if (key.equals(ConfigurationConstants.HARVEST_START_INDEX))
+            setStartIndex((Integer) value);
+
+        else if (key.equals(ConfigurationConstants.HARVEST_END_INDEX))
+            setEndIndex((Integer) value);
+
+        else if (value != null)
+            setProperty(key, value.toString());
+
+        else
+            setProperty(key, null);
+    };
+
+
+    /**
+     * Event listener for aborting the harvester.
+     */
+    private final Consumer<StartAbortingEvent> onStartAborting = (StartAbortingEvent e) -> {
+        EventSystem.removeListener(StartAbortingEvent.class, this.onStartAborting);
+        EventSystem.sendEvent(new AbortingStartedEvent());
+        abortHarvest();
+    };
 
 
     /**
@@ -105,14 +129,6 @@ public abstract class AbstractHarvester
 
 
     /**
-     * Returns a list of properties that can be set.
-     *
-     * @return a list of properties that can be set via setProperty()
-     */
-    abstract public List<String> getValidProperties();
-
-
-    /**
      * Calculates the total number of harvested documents.
      *
      * @return the total number of documents that are to be harvested
@@ -125,14 +141,17 @@ public abstract class AbstractHarvester
      * used for checking if the files have changed.
      *
      * @return a hash as a checksum of the data which is to be harvested
+     *
+     * @throws NoSuchAlgorithmException occurs if an invalid algorithm is used for a {@linkplain MessageDigest}
+     * @throws NullPointerException occurs for several reasons, depending on the implementation
      */
-    abstract protected String initHash();
+    abstract protected String initHash() throws NoSuchAlgorithmException, NullPointerException;
 
 
     /**
      * Aborts the harvesting process, allowing a new harvest to be started.
      */
-    public abstract void abortHarvest();
+    abstract protected void abortHarvest();
 
 
     /**
@@ -147,8 +166,7 @@ public abstract class AbstractHarvester
     /**
      * Constructor that initializes helper classes and fields.
      *
-     * @param harvesterName
-     *            a unique name that describes the harvester
+     * @param harvesterName a unique name that describes the harvester
      */
     public AbstractHarvester(String harvesterName)
     {
@@ -161,15 +179,13 @@ public abstract class AbstractHarvester
         httpRequester = new HttpRequester();
 
         currentHarvestingProcess = null;
-        startedDate = null;
-        finishedDate = null;
         maxDocumentCount = new AtomicInteger();
         harvestedDocumentCount = new AtomicInteger();
 
         startIndex = new AtomicInteger(0);
         endIndex = new AtomicInteger(0);
-        this.harvestedDocuments = Collections.synchronizedList(new LinkedList<>());
     }
+
 
 
     /**
@@ -178,12 +194,31 @@ public abstract class AbstractHarvester
     public void init()
     {
         // calculate hash
-        hash = initHash();
+        try {
+            hash = initHash();
+        } catch (NoSuchAlgorithmException | NullPointerException e) {
+            logger.error(String.format(HarvesterConstants.HASH_CREATION_FAILED, name), e);
+            hash = null;
+        }
 
         // calculate number of documents
         int maxHarvestableDocs = initMaxNumberOfDocuments();
         maxDocumentCount.set(maxHarvestableDocs);
         endIndex.set(maxHarvestableDocs);
+    }
+
+
+    /**
+     * Marks this harvester as the main harvester.
+     * Warning: This should not be called manually! This is only called once by the {@linkplain MainContext}.
+     */
+    public void setAsMainHarvester()
+    {
+        isMainHarvester = true;
+
+        // only the main harvester needs event interactions. if it is composite, it calls its subharvesters accordingly
+        EventSystem.addListener(HarvesterParameterChangedEvent.class, onParameterChanged);
+        EventSystem.addListener(StartHarvestEvent.class, (StartHarvestEvent e) -> harvest());
     }
 
 
@@ -194,7 +229,7 @@ public abstract class AbstractHarvester
      *            the name of the property
      * @return the property value
      */
-    public String getProperty(String key)
+    protected String getProperty(String key)
     {
         return properties.get(key);
     }
@@ -208,77 +243,9 @@ public abstract class AbstractHarvester
      * @param value
      *            the new property value
      */
-    public void setProperty(String key, String value)
+    protected void setProperty(String key, String value)
     {
         properties.put(key, value);
-    }
-
-
-    /**
-     * Creates and returns the search index and some metadata as a JSON object.
-     *
-     * @return the JSON object that was harvested via harvestInternal(), or null
-     *         if no harvest has been finished successfully
-     */
-    public final SearchIndexJson createDetailedJson()
-    {
-        SearchIndexJson searchIndex = null;
-
-        if (startedDate != null && finishedDate != null) {
-            searchIndex = new SearchIndexJson(getHarvestedDocuments());
-
-            long harvestDuration = (finishedDate.getTime() - startedDate.getTime()) / 1000;
-            long harvestStartDate = startedDate.getTime();
-            boolean wasReadFromDisk = DevelopmentTools.instance().isReadingHttpFromDisk();
-
-            searchIndex.setHarvestDate(harvestStartDate);
-            searchIndex.setHash(hash);
-            searchIndex.setDurationInSeconds(harvestDuration);
-            searchIndex.setWasHarvestedFromDisk(wasReadFromDisk);
-        }
-
-        return searchIndex;
-    }
-
-
-    /**
-     * Returns an unmodifiable list of the harvested documents.
-     *
-     * @return an unmodifiable list of the harvested documents
-     */
-    public List<IDocument> getHarvestedDocuments()
-    {
-        return Collections.unmodifiableList(harvestedDocuments);
-    }
-
-
-    /**
-     * Returns the timestamp of the last successful harvest.
-     *
-     * @return the time and date at which the last harvest finished, or null if
-     *         no harvest has been finished successfully
-     */
-    public final Date getHarvestDate()
-    {
-        if (finishedDate != null)
-            return (Date) finishedDate.clone();
-        else
-            return null;
-    }
-
-
-    /**
-     * Returns the timestamp of the beginning of the last harvest.
-     *
-     * @return the time and date at which the last harvest started, or null if
-     *         no harvest has been started yet
-     */
-    public final Date getHarvestStartDate()
-    {
-        if (startedDate != null)
-            return (Date) startedDate.clone();
-        else
-            return null;
     }
 
 
@@ -296,18 +263,10 @@ public abstract class AbstractHarvester
             if (document instanceof ICleanable)
                 ((ICleanable) document).clean();
 
-            harvestedDocuments.add(document);
+            EventSystem.sendEvent(new DocumentHarvestedEvent(document));
         }
 
-        // increment harvest count
-        final int harvestedDocs = harvestedDocumentCount.incrementAndGet();
-        final int from = startIndex.get();
-
-        // log progress
-        logger.info(HarvesterStringUtils.formatProgress(
-                        name,
-                        from + harvestedDocs,
-                        endIndex.get()));
+        harvestedDocumentCount.incrementAndGet();
     }
 
 
@@ -330,101 +289,38 @@ public abstract class AbstractHarvester
      *
      * @return the total number of documents that can possibly be harvested
      */
-    public final int getMaxNumberOfDocuments()
+    protected final int getMaxNumberOfDocuments()
     {
         return maxDocumentCount.get();
     }
 
 
     /**
-     * Returns the index of the first document that is to be harvested.
+     * Sets the start index of the harvesting range.
      *
-     * @return the index of the first document that is to be harvested
+     * @param from  the index of the first document to be harvested
      */
-    public final int getStartIndex()
+    protected void setStartIndex(int from)
     {
-        return startIndex.get();
+        if (from <= 0)
+            startIndex.set(0);
+        else
+            startIndex.set(from);
     }
 
 
     /**
-     * Returns the index of the first document that is not to be harvested
-     * anymore.
+     * Sets the end index of the harvesting range.
      *
-     * @return the index of the first document that is not to be harvested
-     *         anymore
-     */
-    public final int getEndIndex()
-    {
-        return endIndex.get();
-    }
-
-
-    /**
-     * Sets the harvesting range.
-     *
-     * @param from
-     *            the index of the first document to be harvested
-     * @param to
-     *            the index of the first document that is not to be harvested
+     * @param to the index of the first document that is not to be harvested
      *            anymore
      */
-    public void setRange(int from, int to)
+    protected void setEndIndex(int to)
     {
-        startIndex.set(from);
-        endIndex.set(to);
-    }
-
-
-    /**
-     * Returns the number of harvested documents.
-     *
-     * @return the number of harvested documents
-     */
-    public int getNumberOfHarvestedDocuments()
-    {
-        return harvestedDocumentCount.get();
-    }
-
-
-    /**
-     * Returns true if a harvest is in progress.
-     *
-     * @return true if a harvest is in progress
-     */
-    public boolean isHarvesting()
-    {
-        return currentHarvestingProcess != null;
-    }
-
-
-    /**
-     * Estimates the completion date of an ongoing harvest by regarding the
-     * already passed time.
-     *
-     * @return a Date or null, if no harvest is in progress
-     */
-    public long estimateRemainingSeconds()
-    {
-        // get number of harvested documents
-        long documentCount = getNumberOfHarvestedDocuments();
-
-        // only estimate if some progress was made
-        if (isHarvesting() && documentCount > 0) {
-            Date now = new Date();
-
-            // calculate how many milliseconds the harvest has been going on
-            long milliSecondsUntilNow = now.getTime() - startedDate.getTime();
-
-            // estimate how many milliseconds the harvest will take
-            long milliSecondsTotal = milliSecondsUntilNow
-                                     * (endIndex.get() - startIndex.get())
-                                     / documentCount;
-
-            return (milliSecondsTotal - milliSecondsUntilNow) / 1000l;
-        }
-
-        return -1;
+        if (to <= 0)
+            endIndex.set(0);
+        else
+            endIndex.set(to);
     }
 
 
@@ -432,18 +328,25 @@ public abstract class AbstractHarvester
      * Starts an asynchronous harvest with the implemented harvestInternal()
      * method and saves the result and date for this session
      */
-    public final void harvest()
+    protected final void harvest()
     {
-        logger.info(String.format(HARVESTER_START, name));
-
-        harvestedDocuments.clear();
+        logger.info(String.format(HarvesterConstants.HARVESTER_START, name));
 
         harvestedDocumentCount.set(0);
-        startedDate = new Date();
+
+        // convert max value to what is actually possible
+        final int from = startIndex.get() == Integer.MAX_VALUE ? maxDocumentCount.get() : startIndex.get();
+        final int to = endIndex.get() == Integer.MAX_VALUE ? maxDocumentCount.get() : endIndex.get();
+
+        // only send events from the main harvester
+        if (isMainHarvester) {
+            EventSystem.addListener(StartAbortingEvent.class, onStartAborting);
+            EventSystem.sendEvent(new HarvestStartedEvent(from, to));
+        }
 
         // start asynchronous harvest
         currentHarvestingProcess = new CancelableFuture<>(
-            () -> harvestInternal(startIndex.get(), endIndex.get()));
+            () -> harvestInternal(from, to));
 
         // success handler
         currentHarvestingProcess.thenApply((isSuccessful) -> {
@@ -464,24 +367,12 @@ public abstract class AbstractHarvester
     protected void finishHarvestSuccessfully()
     {
         currentHarvestingProcess = null;
-        finishedDate = new Date();
-
-        logger.info(String.format(HARVESTER_END, name));
+        logger.info(String.format(HarvesterConstants.HARVESTER_END, name));
 
         // do some things, only if this is the main harvester
-        if (MainContext.getHarvester() == this) {
-            final DevelopmentTools devTools = DevelopmentTools.instance();
-
-            // save to disk if auto-save is enabled
-            if (devTools.isAutoSaving())
-                devTools.saveHarvestResultToDisk();
-
-            // log complete harvest end
-            logger.info(HARVEST_DONE);
-
-            // send to elastic search if auto-submission is enabled
-            if (devTools.isAutoSubmitting())
-                ElasticSearchSender.instance().sendToElasticSearch(getHarvestedDocuments());
+        if (isMainHarvester) {
+            EventSystem.removeListener(StartAbortingEvent.class, onStartAborting);
+            EventSystem.sendEvent(new HarvestFinishedEvent(true, getHash(false)));
         }
     }
 
@@ -517,21 +408,17 @@ public abstract class AbstractHarvester
      */
     protected void onHarvestFailed(Throwable reason)
     {
+
         // log the error
         logger.error(reason.getMessage(), reason);
 
-        // save to disk if auto-save is enabled
-        final DevelopmentTools devTools = DevelopmentTools.instance();
-
-        if (devTools.isAutoSaving() && MainContext.getHarvester() == this)
-            devTools.saveHarvestResultToDisk();
-
         // log failure
-        logger.warn(String.format(HARVESTER_FAILED, name));
+        logger.warn(String.format(HarvesterConstants.HARVESTER_FAILED, name));
 
-        // log failure for main harvester
-        if (MainContext.getHarvester() == this)
-            logger.error(HARVEST_FAILED);
+        if (isMainHarvester) {
+            EventSystem.sendEvent(new HarvestFinishedEvent(false, getHash(false)));
+            EventSystem.removeListener(StartAbortingEvent.class, onStartAborting);
+        }
     }
 
 
@@ -541,11 +428,10 @@ public abstract class AbstractHarvester
      */
     protected void onHarvestAborted()
     {
-        logger.warn(String.format(HARVESTER_ABORTED, name));
+        if (isMainHarvester)
+            EventSystem.sendEvent(new AbortingFinishedEvent());
 
-        // log abort for main harvester
-        if (MainContext.getHarvester() == this)
-            logger.error(HARVEST_ABORTED);
+        logger.warn(String.format(HarvesterConstants.HARVESTER_ABORTED, name));
     }
 
 
@@ -558,31 +444,14 @@ public abstract class AbstractHarvester
      */
     public String getHash(boolean recalculate)
     {
-        if (recalculate)
-            hash = initHash();
+        if (recalculate) {
+            try {
+                hash = initHash();
+            } catch (NoSuchAlgorithmException | NullPointerException e) {
+                logger.error(String.format(HarvesterConstants.HASH_CREATION_FAILED, name), e);
+            }
+        }
 
         return hash;
-    }
-
-
-    /**
-     * Returns a readable name of the harvester.
-     *
-     * @return the name of the harvester
-     */
-    public String getName()
-    {
-        return name;
-    }
-
-
-    /**
-     * Checks if a harvest has finished already.
-     *
-     * @return true if a harvest was completed
-     */
-    public boolean isFinished()
-    {
-        return !isHarvesting() && finishedDate != null;
     }
 }

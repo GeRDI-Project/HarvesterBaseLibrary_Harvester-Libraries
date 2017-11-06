@@ -20,17 +20,25 @@ package de.gerdiproject.harvest;
 
 
 import java.nio.charset.Charset;
+import java.util.List;
+import java.util.function.Function;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import de.gerdiproject.harvest.config.Configuration;
+import de.gerdiproject.harvest.config.constants.ConfigurationConstants;
+import de.gerdiproject.harvest.config.parameters.AbstractParameter;
+import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.harvester.AbstractHarvester;
+import de.gerdiproject.harvest.harvester.events.HarvesterInitializedEvent;
+import de.gerdiproject.harvest.utils.CancelableFuture;
+import de.gerdiproject.harvest.utils.time.HarvestTimeKeeper;
 
 
 /**
- * This class provides static methods for retrieving the application name, the
- * dedicated harvester class and logger.
- *
+ * This class provides static methods for retrieving application
+ * singleton utility and configuration classes.
  *
  * @author Robin Weiss
  */
@@ -38,16 +46,18 @@ public class MainContext
 {
     private String moduleName;
 
-    private static final String INIT_FINISHED = "%s is now ready!";
-    private static final String INIT_START = "Initializing %s...";
-    private static final String DONE = "done!";
-    private static final String FAILED = "FAILED!";
+    private static final String INIT_START = "Initializing Harvester...";
+    private static final String INIT_FAILED = "Could not initialize Harvester!";
+    private static final String INIT_SUCCESS = "%s initialized!";
+
     private static final Logger LOGGER = LoggerFactory.getLogger(MainContext.class);
 
+    private final HarvestTimeKeeper timeKeeper;
     private AbstractHarvester harvester;
     private Charset charset;
+    private Configuration configuration;
 
-    private static MainContext instance;
+    private static MainContext instance = new MainContext();
 
 
     /**
@@ -55,21 +65,7 @@ public class MainContext
      */
     private MainContext()
     {
-    }
-
-
-    /**
-     * Returns the harvester singleton instance of this application
-     *
-     * @return this application's harvester class
-     * @see de.gerdiproject.harvest.harvester.AbstractHarvester
-     */
-    public static AbstractHarvester getHarvester()
-    {
-        if (instance == null)
-            instance = new MainContext();
-
-        return instance.harvester;
+        timeKeeper = new HarvestTimeKeeper();
     }
 
 
@@ -80,62 +76,118 @@ public class MainContext
      */
     public static String getModuleName()
     {
-        if (instance == null)
-            instance = new MainContext();
-
         return instance.moduleName;
     }
 
+
     /**
      * Retrieves the charset used for processing strings.
+     *
      * @return the charset that is used for processing strings
      */
     public static Charset getCharset()
     {
-        if (instance == null)
-            instance = new MainContext();
-
         return instance.charset;
+    }
+
+
+    /**
+     * Retrieves the global configuration.
+     *
+     * @return the harvester configuration
+     */
+    public static Configuration getConfiguration()
+    {
+        return instance.configuration;
+    }
+
+
+    /**
+     * Retrieves a timekeeper that measures certain processes.
+     *
+     * @return a timekeeper that measures certain processes
+     */
+    public static HarvestTimeKeeper getTimeKeeper()
+    {
+        return instance.timeKeeper;
     }
 
 
     /**
      * Sets up global parameters and the harvester.
      *
-     * @param <T>
-     *            an AbstractHarvester subclass
-     * @param moduleName
-     *            name of this application
-     * @param harvesterClass
-     *            an AbstractHarvester subclass
-     * @param charset
-     *            the default charset for processing strings
+     * @param <T> an AbstractHarvester subclass
+     * @param moduleName name of this application
+     * @param harvesterClass an AbstractHarvester subclass
+     * @param charset the default charset for processing strings
+     * @param harvesterParams additional parameters, specific to the harvester, or null
+     *
      * @see de.gerdiproject.harvest.harvester.AbstractHarvester
      */
-    public static <T extends AbstractHarvester> void init(String moduleName, Class<T> harvesterClass, Charset charset)
+    public static <T extends AbstractHarvester> void init(String moduleName, Class<T> harvesterClass, Charset charset, List<AbstractParameter<?>> harvesterParams)
     {
-        if (instance == null)
-            instance = new MainContext();
-
-        // set parameters
+        // set global parameters
         instance.moduleName = moduleName;
         instance.charset = charset;
 
         // init harvester
-        try {
-            AbstractHarvester harvey = harvesterClass.newInstance();
+        CancelableFuture<Boolean> initProcess = new CancelableFuture<>(() -> {
+            LOGGER.info(INIT_START);
+            instance.harvester = harvesterClass.newInstance();
+            instance.harvester.setAsMainHarvester();
 
-            LOGGER.info(String.format(INIT_START, harvey.getName()));
-            harvey.init();
-            instance.harvester = harvey;
-            LOGGER.info(DONE);
-        } catch (InstantiationException | IllegalAccessException e) {
-            LOGGER.info(FAILED);
-            LOGGER.error(e.toString());
-            return;
-        }
+            // try to load the configuration from disk
+            Configuration config = Configuration.createFromDisk();
 
-        // log ready state
-        LOGGER.info(String.format(INIT_FINISHED, instance.moduleName));
+            // create a new configuration
+            if (config == null)
+                config = new Configuration(harvesterParams);
+
+            instance.configuration = config;
+
+            // initialize the harvester properly (relies on the configuration)
+            instance.harvester.init();
+
+            // update the harvesting range
+            config.updateParameter(ConfigurationConstants.HARVEST_START_INDEX);
+            config.updateParameter(ConfigurationConstants.HARVEST_END_INDEX);
+
+            return true;
+        });
+
+        initProcess.thenApply(onHarvesterInitializedSuccess)
+        .exceptionally(onHarvesterInitializedFailed);
     }
+
+
+    /**
+     * This function is called when the asynchronous harvester initialization completes successfully.
+     * It logs the success and changes the state machine's current state.
+     */
+    private static Function<Boolean, Boolean> onHarvesterInitializedSuccess = (Boolean state) -> {
+
+        // log sucess
+        LOGGER.info(String.format(INIT_SUCCESS, getModuleName()));
+
+        // change state
+        EventSystem.sendEvent(new HarvesterInitializedEvent(state));
+
+        return state;
+    };
+
+
+    /**
+     * This function is called when the asynchronous harvester fails to be initialized.
+     * It logs the exception that caused the failure and changes the state machine's current state.
+     */
+    private static Function<Throwable, Boolean> onHarvesterInitializedFailed = (Throwable reason) -> {
+
+        // log exception that caused the failure
+        LOGGER.error(INIT_FAILED, reason.getCause());
+
+        // change stage
+        EventSystem.sendEvent(new HarvesterInitializedEvent(false));
+
+        return false;
+    };
 }

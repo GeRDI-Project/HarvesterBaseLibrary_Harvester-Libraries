@@ -19,17 +19,25 @@
 package de.gerdiproject.harvest.config.rest;
 
 
+import de.gerdiproject.harvest.MainContext;
 import de.gerdiproject.harvest.config.Configuration;
+import de.gerdiproject.harvest.config.constants.ConfigurationConstants;
+
+import java.util.List;
+import java.util.Map.Entry;
+
+import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.MultivaluedMap;
 
 
 /**
- * Provides the option to save all configuration of the harvester service to
- * disk.
+ * This facade serves as an interface between REST and the {@linkplain Configuration}.
  *
  * @author Robin Weiss
  */
@@ -47,7 +55,10 @@ public class ConfigurationFacade
     })
     public String getInfo()
     {
-        return Configuration.getInfoString();
+        if (MainContext.getConfiguration() == null)
+            return ConfigurationConstants.REST_INFO_FAILED;
+        else
+            return MainContext.getConfiguration().getInfoString();
     }
 
 
@@ -62,6 +73,46 @@ public class ConfigurationFacade
     })
     public String saveToDisk()
     {
-        return Configuration.saveToDisk();
+        if (MainContext.getConfiguration() == null)
+            return ConfigurationConstants.REST_INFO_FAILED;
+        else
+            return MainContext.getConfiguration().saveToDisk();
+    }
+
+    /**
+     * Changes parameters of the configuration.
+     *
+     * @param formParams a key value map where the keys represent the parameter names and the values the new values
+     *
+     * @return a feedback text about parameter changes or failures to do so
+     */
+    @PUT
+    @Produces({
+        MediaType.TEXT_PLAIN
+    })
+    @Consumes({
+        MediaType.APPLICATION_FORM_URLENCODED
+    })
+    public String setParameters(final MultivaluedMap<String, String> formParams)
+    {
+        final Configuration config = MainContext.getConfiguration();
+
+        if (config == null)
+            return ConfigurationConstants.REST_INFO_FAILED;
+
+        final StringBuilder sb = new StringBuilder();
+
+        for (Entry<String, List<String>> entry : formParams.entrySet()) {
+            String key = entry.getKey();
+            List<String> values = entry.getValue();
+
+            values.forEach((String value) -> sb.append(config.setParameter(key, value)).append('\n'));
+        }
+
+        // if nothing was attempted to be changed, inform the user
+        if (sb.length() == 0)
+            sb.append(ConfigurationConstants.NO_CHANGES);
+
+        return sb.toString();
     }
 }
