@@ -19,7 +19,7 @@
 package de.gerdiproject.harvest.state.constants;
 
 /**
- * This static class is a collection of constants, commonly used within State classes.
+ * This static class is a collection of constants, mostly used within State classes.
  *
  * @author Robin Weiss
  */

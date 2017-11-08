@@ -24,7 +24,8 @@ import de.gerdiproject.harvest.state.impl.InitializationState;
 
 /**
  * This singleton state machine controls REST input by delegating it to the current state.
- * Edge-case scenarios are more easily avoided this way, as operations during
+ * Edge-case scenarios are more easily avoided this way, as all REST-triggered functions
+ * have a clearly defined behavior at any given state.
  *
  * @author Robin Weiss
  */
