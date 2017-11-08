@@ -60,9 +60,9 @@ public abstract class AbstractSubmitter
 {
     protected final Logger logger; // NOPMD - we want to retrieve the type of the inheriting class
 
-    private int submittedDocumentCount;
-    private int failedDocumentCount;
+    protected int submittedDocumentCount;
     protected boolean isAborting;
+    private int failedDocumentCount;
 
     private CancelableFuture<Boolean> currentSubmissionProcess;
 
