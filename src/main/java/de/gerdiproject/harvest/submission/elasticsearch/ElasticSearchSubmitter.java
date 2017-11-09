@@ -19,7 +19,6 @@
 package de.gerdiproject.harvest.submission.elasticsearch;
 
 
-import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.MalformedURLException;
@@ -29,12 +28,10 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.List;
 
-import javax.xml.ws.http.HTTPException;
 
 import de.gerdiproject.harvest.IDocument;
 import de.gerdiproject.harvest.MainContext;
 import de.gerdiproject.harvest.config.Configuration;
-import de.gerdiproject.harvest.config.constants.ConfigurationConstants;
 import de.gerdiproject.harvest.harvester.constants.HarvesterConstants;
 import de.gerdiproject.harvest.submission.AbstractSubmitter;
 import de.gerdiproject.harvest.submission.elasticsearch.constants.ElasticSearchConstants;
@@ -79,15 +76,6 @@ public class ElasticSearchSubmitter extends AbstractSubmitter
     @Override
     protected void submitBatch(List<IDocument> documents, URL submissionUrl, String credentials) throws Exception // NOPMD - Exception is explicitly thrown, because it is up to the implementation which Exception causes the submission to fail
     {
-        final Configuration config = MainContext.getConfiguration();
-
-        // if the type does not exist on ElasticSearch yet, initialize it
-        boolean hasMappings = validateAndCreateMappings(config);
-
-        // if no mappings were created, abort
-        if (!hasMappings)
-            throw new IllegalStateException(ElasticSearchConstants.NO_MAPPING_ERROR);
-
         // build a string for bulk-posting to Elastic search
         StringBuilder bulkRequestBuilder = new StringBuilder();
         HttpRequester httpRequester = new HttpRequester();
@@ -237,89 +225,6 @@ public class ElasticSearchSubmitter extends AbstractSubmitter
 
         return bulkSubmissionUrl;
     }
-
-
-    /**
-     * Checks if mappings exist for the index and type combination. If they do
-     * not, they are created on the ElasticSearch node.
-     *
-     * @param config the global configuration
-     *
-     * @return true, if a mapping exists or was just created
-     */
-    private boolean validateAndCreateMappings(Configuration config)
-    {
-        URL elasticSearchUrl = config.getParameterValue(ConfigurationConstants.SUBMISSION_URL, URL.class);
-
-        // extract index and type from URL
-        String[] path = elasticSearchUrl.getPath().substring(1).split("/");
-
-        // we need at least 2 path parts, one for the index and one for the type
-        if (path.length < 2)
-            return false;
-
-        String index = path[path.length - 2].toLowerCase();
-        String type = path[path.length - 1].toLowerCase();
-        String mappingsUrl;
-
-        // assemble all that comes before the index path
-        StringBuilder hostBuilder = new StringBuilder(elasticSearchUrl.getHost());
-        int i = 0;
-
-        while (i < path.length - 2) {
-            hostBuilder.append('/').append(path[i]);
-            i++;
-        }
-
-        // assemble mappings URL
-        if (elasticSearchUrl.getPort() == -1)
-            mappingsUrl = String.format(
-                              ElasticSearchConstants.MAPPINGS_URL,
-                              elasticSearchUrl.getProtocol(),
-                              hostBuilder.toString(),
-                              index);
-        else
-            mappingsUrl = String.format(
-                              ElasticSearchConstants.MAPPINGS_URL_WITH_PORT,
-                              elasticSearchUrl.getProtocol(),
-                              hostBuilder.toString(),
-                              elasticSearchUrl.getPort(),
-                              index);
-
-        String credentials = getCredentials(config);
-        HttpRequester httpRequester = new HttpRequester();
-        boolean hasMapping;
-
-        try {
-            httpRequester.getRestResponse(RestRequestType.GET, mappingsUrl, null, credentials);
-            hasMapping = true;
-
-        } catch (HTTPException | IOException e) {
-            hasMapping = false;
-            logger.error(String.format(ElasticSearchConstants.NO_MAPPING_WARNING, index), e);
-        }
-
-        if (!hasMapping) {
-            try {
-                // create mappings on ElasticSearch
-                httpRequester.getRestResponse(
-                    RestRequestType.PUT,
-                    mappingsUrl,
-                    String.format(ElasticSearchConstants.BASIC_MAPPING, type),
-                    credentials);
-
-                hasMapping = true;
-                logger.info(String.format(ElasticSearchConstants.MAPPING_CREATE_SUCCESS, mappingsUrl, type));
-
-            } catch (HTTPException | IOException e) {
-                hasMapping = false;
-                logger.error(String.format(ElasticSearchConstants.MAPPING_CREATE_FAILURE, mappingsUrl, type), e);
-            }
-        }
-
-        return hasMapping;
-    }
-
 
     @Override
     protected String getCredentials(Configuration config)
