@@ -41,7 +41,7 @@ import javax.ws.rs.core.MultivaluedMap;
  * @see de.gerdiproject.harvest.harvester.AbstractHarvester
  * @author Robin Weiss
  */
-@Path("harvest")
+@Path("")
 public class HarvesterFacade
 {
 

@@ -28,7 +28,7 @@ import javax.ws.rs.core.Application;
  *
  * @author Robin Weiss
  */
-@javax.ws.rs.ApplicationPath("resources")
+@javax.ws.rs.ApplicationPath("harvest")
 public class ApplicationConfig extends Application
 {
     @Override
