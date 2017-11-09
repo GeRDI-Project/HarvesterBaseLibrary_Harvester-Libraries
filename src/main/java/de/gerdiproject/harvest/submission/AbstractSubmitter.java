@@ -184,7 +184,9 @@ public abstract class AbstractSubmitter
             }
 
             // close reader
-            reader.endArray();
+            if (!isAborting)
+                reader.endArray();
+
             reader.close();
 
             // send remainder of documents

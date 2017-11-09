@@ -48,6 +48,7 @@ public class ConfigurationConstants
     public static final String SUBMISSION_PASSWORD = "submissionPassword";
     public static final String SUBMISSION_SIZE = "submissionSize";
     public static final String KEEP_CACHE = "keepCachedDocuments";
+    public static final String DELETE_UNFINISHED_SAVE = "deleteUnfinishedSaves";
 
     public static final String CHANGED_PARAM = "Set parameter '%s' to '%s'.";
     public static final String CANNOT_CHANGE_PARAM_INVALID_STATE = "Cannot change parameter '%s' during the %s-process.";

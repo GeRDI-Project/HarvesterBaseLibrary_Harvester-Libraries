@@ -25,7 +25,6 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.util.concurrent.Callable;
-import java.util.concurrent.CancellationException;
 import java.util.function.Consumer;
 
 import org.slf4j.Logger;
@@ -60,6 +59,7 @@ public class HarvestSaver
 {
     private CancelableFuture<Boolean> currentSavingProcess;
     private boolean isAborting;
+    private File saveFile;
 
     private final static Logger LOGGER = LoggerFactory.getLogger(HarvestSaver.class);
 
@@ -130,12 +130,30 @@ public class HarvestSaver
      */
     private void onSaveFailed(Throwable reason)
     {
+        // clean up unfinished save file
+        if (saveFile != null && saveFile.exists()
+            && MainContext.getConfiguration().getParameterValue(ConfigurationConstants.DELETE_UNFINISHED_SAVE, Boolean.class)) {
+            try {
+                boolean wasDeleted = saveFile.delete();
+
+                if (wasDeleted)
+                    LOGGER.debug(String.format(SaveConstants.DELETED_SAVE_FILE, saveFile.getPath()));
+                else
+                    LOGGER.debug(String.format(SaveConstants.DELETED_SAVE_FILE_FAILED, saveFile.getPath()));
+
+            } catch (SecurityException e) {
+                LOGGER.error(String.format(SaveConstants.DELETED_SAVE_FILE_FAILED, saveFile.getPath()), e);
+            }
+        }
+
+
         currentSavingProcess = null;
         EventSystem.removeListener(StartAbortingEvent.class, onStartAborting);
 
-        if (reason instanceof CancellationException || reason.getCause() instanceof CancellationException)
+        if (isAborting) {
+            isAborting = false;
             EventSystem.sendEvent(new AbortingFinishedEvent());
-        else
+        } else
             LOGGER.error(CacheConstants.SAVE_FAILED_ERROR, reason);
 
         EventSystem.sendEvent(new SaveFinishedEvent(false));
@@ -157,7 +175,9 @@ public class HarvestSaver
         return () -> {
             // create file
             final Configuration config = MainContext.getConfiguration();
-            File saveFile = createTargetFile(config, startTimestamp);
+            saveFile = createTargetFile(config, startTimestamp);
+
+            // check if file was created
             boolean isSuccessful = saveFile != null;
 
             if (isSuccessful)
@@ -287,7 +307,9 @@ public class HarvestSaver
         }
 
         // close reader
-        cacheReader.endArray();
+        if (!isAborting)
+            cacheReader.endArray();
+
         cacheReader.close();
 
         // close writer

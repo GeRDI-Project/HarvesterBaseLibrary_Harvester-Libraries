@@ -33,6 +33,9 @@ public class SaveConstants
     public static final String HASH_JSON = "hash";
     public static final String DATA_JSON = "data";
 
+    public static final String DELETED_SAVE_FILE = "Deleted unfinished Save-File '%s'.";
+    public static final String DELETED_SAVE_FILE_FAILED = "Could not delete unfinished Save-File '%s'!";
+
     /**
      * Private constructor, because this is a static class.
      */
