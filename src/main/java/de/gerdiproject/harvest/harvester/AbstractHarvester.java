@@ -66,8 +66,6 @@ public abstract class AbstractHarvester
     private final Map<String, String> properties;
 
     private final AtomicInteger maxDocumentCount;
-    private final AtomicInteger harvestedDocumentCount;
-
     private final AtomicInteger startIndex;
     private final AtomicInteger endIndex;
 
@@ -180,7 +178,6 @@ public abstract class AbstractHarvester
 
         currentHarvestingProcess = null;
         maxDocumentCount = new AtomicInteger();
-        harvestedDocumentCount = new AtomicInteger();
 
         startIndex = new AtomicInteger(0);
         endIndex = new AtomicInteger(0);
@@ -259,14 +256,10 @@ public abstract class AbstractHarvester
      */
     protected void addDocument(IDocument document)
     {
-        if (document != null) {
-            if (document instanceof ICleanable)
-                ((ICleanable) document).clean();
+        if (document != null && document instanceof ICleanable)
+            ((ICleanable) document).clean();
 
-            EventSystem.sendEvent(new DocumentHarvestedEvent(document));
-        }
-
-        harvestedDocumentCount.incrementAndGet();
+        EventSystem.sendEvent(new DocumentHarvestedEvent(document));
     }
 
 
@@ -331,8 +324,6 @@ public abstract class AbstractHarvester
     protected final void harvest()
     {
         logger.info(String.format(HarvesterConstants.HARVESTER_START, name));
-
-        harvestedDocumentCount.set(0);
 
         // convert max value to what is actually possible
         final int from = startIndex.get() == Integer.MAX_VALUE ? maxDocumentCount.get() : startIndex.get();

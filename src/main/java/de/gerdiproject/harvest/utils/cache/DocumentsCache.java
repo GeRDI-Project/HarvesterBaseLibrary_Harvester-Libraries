@@ -85,7 +85,8 @@ public class DocumentsCache
      * Event callback: When a document is harvested, write it to the cache file.
      */
     private Consumer<DocumentHarvestedEvent> onDocumentHarvested = (DocumentHarvestedEvent e) -> {
-        addDocument(e.getDocument());
+        if (e.getDocument() != null)
+            addDocument(e.getDocument());
     };
 
 

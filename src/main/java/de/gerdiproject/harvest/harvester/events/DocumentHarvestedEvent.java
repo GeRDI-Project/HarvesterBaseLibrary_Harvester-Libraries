@@ -33,7 +33,7 @@ public class DocumentHarvestedEvent implements IEvent
     /**
      * Simple constructor providing the harvested document.
      *
-     * @param doc the document that was harvested
+     * @param doc the document that was harvested, or null if nothing could be harvested
      */
     public DocumentHarvestedEvent(IDocument doc)
     {
@@ -43,7 +43,7 @@ public class DocumentHarvestedEvent implements IEvent
 
     /**
      * Returns the harvested document.
-     * @return the document that was harvested
+     * @return the document that was harvested or null if nothing could be harvested
      */
     public IDocument getDocument()
     {
