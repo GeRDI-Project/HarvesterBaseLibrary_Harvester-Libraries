@@ -131,18 +131,19 @@ public abstract class AbstractListHarvester<T> extends AbstractHarvester
                 // get documents from entry
                 final List<IDocument> docs = harvestEntry(e);
 
-                int jStart = (i == firstEntryIndex) ? startIndex : 0;
+                int j = (i == firstEntryIndex) ? startIndex : 0;
                 int jEnd = (i == lastEntryIndex) ? endIndex : numberOfDocumentsPerEntry;
 
+                // add all harvested documents to the cache
                 if (docs != null) {
-                    // add all harvested documents to the index
-                    for (int j = jStart; j < jEnd; j++)
-                        addDocument(docs.get(j));
-                } else {
-                    // if nothing was harvested, just skip the correct amount of documents
-                    for (int j = jStart; j < jEnd; j++)
-                        addDocument(null);
+                    while (j < jEnd && j < docs.size())
+                        addDocument(docs.get(j++));
                 }
+
+                // if less docs were harvested than expected,
+                // skip the correct amount of documents
+                while (j++ < jEnd)
+                    addDocument(null);
 
                 // finish iteration after harvesting the last index
                 if (i == lastEntryIndex)
