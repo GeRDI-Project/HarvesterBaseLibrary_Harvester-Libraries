@@ -16,40 +16,53 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package de.gerdiproject.harvest;
-
-
-import java.util.Set;
-import javax.ws.rs.core.Application;
-
+package de.gerdiproject.harvest.submission.elasticsearch.json;
 
 /**
- * Configuration file that registers all rest classes.
+ * This JSON object is part of an ElasticSearch submission response.
  *
  * @author Robin Weiss
  */
-@javax.ws.rs.ApplicationPath("harvest")
-public class ApplicationConfig extends Application
+public class ElasticSearchShard
 {
-    @Override
-    public Set<Class<?>> getClasses()
-    {
-        Set<Class<?>> resources = new java.util.HashSet<>();
-        addRestResourceClasses(resources);
+    private int total;
+    private int successful;
+    private int failed;
 
-        return resources;
+
+    public int getTotal()
+    {
+        return total;
     }
 
 
-    /**
-     * Do not modify addRestResourceClasses() method. It is automatically
-     * populated with all resources defined in the project. If required, comment
-     * out calling this method in getClasses().
-     */
-    private void addRestResourceClasses(Set<Class<?>> resources)
+    public int getSuccessful()
     {
-        resources.add(de.gerdiproject.harvest.harvester.rest.HarvesterFacade.class);
-        resources.add(de.gerdiproject.harvest.config.rest.ConfigurationFacade.class);
+        return successful;
     }
 
+
+    public int getFailed()
+    {
+        return failed;
+    }
+
+
+    public void setTotal(int total)
+    {
+        this.total = total;
+    }
+
+
+    public void setSuccessful(int successful)
+    {
+        this.successful = successful;
+    }
+
+
+    public void setFailed(int failed)
+    {
+        this.failed = failed;
+    }
 }
+

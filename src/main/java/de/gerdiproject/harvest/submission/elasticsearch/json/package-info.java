@@ -16,31 +16,9 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package de.gerdiproject.harvest.save.constants;
-
-import de.gerdiproject.harvest.save.HarvestSaver;
-
 /**
- * This static class is a collection of constants that are used by the {@linkplain HarvestSaver}.
+ * This package contains ElasticSearch JSON responses.
  *
  * @author Robin Weiss
  */
-public class SaveConstants
-{
-    public static final String HARVEST_DATE_JSON = "harvestDate";
-    public static final String DURATION_JSON = "durationInSeconds";
-    public static final String IS_FROM_DISK_JSON = "wasHarvestedFromDisk";
-    public static final String HASH_JSON = "hash";
-    public static final String DATA_JSON = "data";
-
-    public static final String DELETED_SAVE_FILE = "Deleted unfinished Save-File '%s'.";
-    public static final String DELETED_SAVE_FILE_FAILED = "Could not delete unfinished Save-File '%s'!";
-
-    /**
-     * Private constructor, because this is a static class.
-     */
-    private SaveConstants()
-    {
-
-    }
-}
+package de.gerdiproject.harvest.submission.elasticsearch.json;

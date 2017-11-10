@@ -59,6 +59,7 @@ public final class ParameterFactory
         AbstractParameter<?> submitSize = createSubmissionSize();
         AbstractParameter<?> submitName = createSubmissionUserName();
         AbstractParameter<?> submitPassword = createSubmissionPassword();
+        AbstractParameter<?> deleteUnfinishedSaves = createDeleteUnfinishedSaves();
 
         params.put(autoSave.getKey(), autoSave);
         params.put(autoSubmit.getKey(), autoSubmit);
@@ -69,6 +70,7 @@ public final class ParameterFactory
         params.put(readFromDisk.getKey(), readFromDisk);
         params.put(writeToDisk.getKey(), writeToDisk);
         params.put(keepCache.getKey(), keepCache);
+        params.put(deleteUnfinishedSaves.getKey(), deleteUnfinishedSaves);
 
         return params;
     }
@@ -191,6 +193,25 @@ public final class ParameterFactory
                                                             );
         return new BooleanParameter(ConfigurationConstants.KEEP_CACHE, allowedStates, false);
     }
+
+
+    /**
+     * Creates a flag-parameter for changing whether saved documents should be deleted when the save process is aborted or fails.
+     *
+     * @return a flag-parameter for whether cached documents should be deleted when the save process is aborted or fails
+     */
+    public static AbstractParameter<?> createDeleteUnfinishedSaves()
+    {
+        final List<Class<? extends IState>> allowedStates = Arrays.asList(
+                                                                InitializationState.class,
+                                                                ErrorState.class,
+                                                                IdleState.class,
+                                                                HarvestingState.class,
+                                                                SubmittingState.class
+                                                            );
+        return new BooleanParameter(ConfigurationConstants.DELETE_UNFINISHED_SAVE, allowedStates, true);
+    }
+
 
     /**
      * Creates a parameter for changing the URL to which the harvested documents are being posted.

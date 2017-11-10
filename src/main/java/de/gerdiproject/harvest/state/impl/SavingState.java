@@ -87,6 +87,7 @@ public class SavingState extends AbstractProgressingState
     @Override
     public void onStateLeave()
     {
+        super.onStateLeave();
         EventSystem.removeListener(DocumentSavedEvent.class, onDocumentSaved);
         EventSystem.removeListener(SaveFinishedEvent.class, onSaveFinished);
         EventSystem.removeListener(SubmissionStartedEvent.class, StateEventHandlerConstants.ON_SUBMISSION_STARTED);

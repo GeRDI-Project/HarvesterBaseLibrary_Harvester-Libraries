@@ -16,40 +16,40 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package de.gerdiproject.harvest;
-
-
-import java.util.Set;
-import javax.ws.rs.core.Application;
+package de.gerdiproject.harvest.submission.elasticsearch.json;
 
 
 /**
- * Configuration file that registers all rest classes.
+ * This JSON object is part of an ElasticSearch submission response if an error appears.
  *
  * @author Robin Weiss
  */
-@javax.ws.rs.ApplicationPath("harvest")
-public class ApplicationConfig extends Application
+public class ElasticSearchErrorCause
 {
-    @Override
-    public Set<Class<?>> getClasses()
-    {
-        Set<Class<?>> resources = new java.util.HashSet<>();
-        addRestResourceClasses(resources);
+    private String type;
+    private String reason;
 
-        return resources;
+
+    public String getType()
+    {
+        return type;
     }
 
 
-    /**
-     * Do not modify addRestResourceClasses() method. It is automatically
-     * populated with all resources defined in the project. If required, comment
-     * out calling this method in getClasses().
-     */
-    private void addRestResourceClasses(Set<Class<?>> resources)
+    public void setType(String type)
     {
-        resources.add(de.gerdiproject.harvest.harvester.rest.HarvesterFacade.class);
-        resources.add(de.gerdiproject.harvest.config.rest.ConfigurationFacade.class);
+        this.type = type;
     }
 
+
+    public String getReason()
+    {
+        return reason;
+    }
+
+
+    public void setReason(String reason)
+    {
+        this.reason = reason;
+    }
 }

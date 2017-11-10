@@ -16,10 +16,55 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
+package de.gerdiproject.harvest.submission.elasticsearch.json;
+
+import java.util.List;
+
 
 /**
- * This package contains implementations of the {@linkplain de.gerdiproject.harvest.submission.AbstractSubmitter}.
+ * This JSON object represents the response of an ElasticSearch submission.
  *
  * @author Robin Weiss
  */
-package de.gerdiproject.harvest.submission.impl;
+public class ElasticSearchResponse
+{
+    private int took;
+    private boolean errors;
+    private List<ElasticSearchIndexWrapper> items;
+
+
+    public int getTook()
+    {
+        return took;
+    }
+
+
+    public boolean hasErrors()
+    {
+        return errors;
+    }
+
+
+    public List<ElasticSearchIndexWrapper> getItems()
+    {
+        return items;
+    }
+
+
+    public void setTook(int took)
+    {
+        this.took = took;
+    }
+
+
+    public void setErrors(boolean errors)
+    {
+        this.errors = errors;
+    }
+
+
+    public void setItems(List<ElasticSearchIndexWrapper> items)
+    {
+        this.items = items;
+    }
+}

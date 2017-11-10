@@ -185,6 +185,8 @@ public abstract class AbstractListHarvester<T> extends AbstractHarvester
         for (byte b : digest)
             pw.printf(HarvesterConstants.OCTAT_FORMAT, b);
 
+        pw.close();
+
         return buffer.toString();
     }
 

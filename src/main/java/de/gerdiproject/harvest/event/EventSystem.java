@@ -54,16 +54,18 @@ public class EventSystem
      */
     public static <T extends IEvent> void addListener(Class<T> eventClass, Consumer<T> callback)
     {
-        List<Consumer<? extends IEvent>> eventList = instance.callbackMap.get(eventClass);
+        synchronized (instance.callbackMap) {
+            List<Consumer<? extends IEvent>> eventList = instance.callbackMap.get(eventClass);
 
-        // create list, if it does not exist yet
-        if (eventList == null) {
-            eventList = new LinkedList<Consumer<? extends IEvent>>();
-            instance.callbackMap.put(eventClass, eventList);
+            // create list, if it does not exist yet
+            if (eventList == null) {
+                eventList = new LinkedList<Consumer<? extends IEvent>>();
+                instance.callbackMap.put(eventClass, eventList);
+            }
+
+            // add callback to list
+            eventList.add(callback);
         }
-
-        // add callback to list
-        eventList.add(callback);
     }
 
 
@@ -76,11 +78,13 @@ public class EventSystem
      */
     public static <T extends IEvent> void removeListener(Class<T> eventClass, Consumer<T> callback)
     {
-        List<Consumer<? extends IEvent>> eventList = instance.callbackMap.get(eventClass);
+        synchronized (instance.callbackMap) {
+            List<Consumer<? extends IEvent>> eventList = instance.callbackMap.get(eventClass);
 
-        // remove event from list, if the list exists
-        if (eventList != null)
-            eventList.remove(callback);
+            // remove event from list, if the list exists
+            if (eventList != null)
+                eventList.remove(callback);
+        }
     }
 
 
@@ -92,7 +96,9 @@ public class EventSystem
      */
     public static <T extends IEvent> void removeAllListeners(Class<T> eventClass)
     {
-        instance.callbackMap.remove(eventClass);
+        synchronized (instance.callbackMap) {
+            instance.callbackMap.remove(eventClass);
+        }
     }
 
 
@@ -105,9 +111,11 @@ public class EventSystem
     @SuppressWarnings("unchecked") // this warning is suppressed, because the public functions guarantee that the consumer consumes events of the same class as the corresponding key
     public static <T extends IEvent> void sendEvent(T event)
     {
-        List<Consumer<? extends IEvent>> eventList = instance.callbackMap.get(event.getClass());
+        synchronized (instance.callbackMap) {
+            List<Consumer<? extends IEvent>> eventList = instance.callbackMap.get(event.getClass());
 
-        if (eventList != null)
-            eventList.forEach((Consumer<? extends IEvent> c) -> ((Consumer<T>)c).accept(event));
+            if (eventList != null)
+                eventList.forEach((Consumer<? extends IEvent> c) -> ((Consumer<T>)c).accept(event));
+        }
     }
 }

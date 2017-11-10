@@ -34,7 +34,7 @@ import de.gerdiproject.harvest.harvester.rest.HarvesterFacade;
 import de.gerdiproject.harvest.state.events.AbortingFinishedEvent;
 import de.gerdiproject.harvest.state.events.AbortingStartedEvent;
 import de.gerdiproject.harvest.state.events.StartAbortingEvent;
-import de.gerdiproject.harvest.submission.impl.ElasticSearchSubmitter;
+import de.gerdiproject.harvest.submission.elasticsearch.ElasticSearchSubmitter;
 import de.gerdiproject.harvest.utils.CancelableFuture;
 import de.gerdiproject.harvest.utils.data.HttpRequester;
 

@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package de.gerdiproject.harvest.submission.constants;
+package de.gerdiproject.harvest.submission.elasticsearch.constants;
 
 /**
  * This static class is a collection of constants that relate to the submission of documents to ElasticSearch.
@@ -37,18 +37,20 @@ public class ElasticSearchConstants
     public static final String BATCH_POST_INSTRUCTION = "{\"index\":{\"_id\":\"%s\"}}%n%s%n";
     public static final String BULK_SUBMISSION_URL_SUFFIX = "_bulk";
 
-    public static final String SUBMIT_ERROR_INDICATOR = "\"status\" : 400";
-    public static final String SUBMIT_PARTIAL_FAILED_FORMAT = "%n\t%s of document '%s': %s - %s'";
 
-    public static final String ID_JSON = "_id";
-    public static final String INDEX_JSON = "index";
-    public static final String ITEMS_JSON = "items";
-    public static final String ERROR_JSON = "error";
-    public static final String REASON_JSON = "reason";
-    public static final String CAUSED_BY_JSON = "caused_by";
-    public static final String TYPE_JSON = "type";
+    // DATE RANGE FIX
+    public static final String DATE_REGEX = "\"value\":(\"\\d\\d\\d\\d-\\d\\d-\\d\\dT\\d\\d:\\d\\d[^\"/]*Z\")";
+    public static final String DATE_REPLACEMENT = "\"value\":\\{\"gte\":$1,\"lte\":$1\\}";
 
-    public static final String NULL_JSON = "null";
+    public static final String DATE_RANGE_REGEX = "\"value\":\"(\\d\\d\\d\\d-\\d\\d-\\d\\dT\\d\\d:\\d\\d[^\"]*?Z)?/(\\d\\d\\d\\d-\\d\\d-\\d\\dT\\d\\d:\\d\\d[^\"]*?Z)?\"";
+    public static final String DATE_RANGE_REPLACEMENT = "\"value\":\\{\"gte\":\"$1\",\"lte\":\"$2\"\\}";
+    public static final String EMPTY_DATE_RANGE_REGEX = "(\"gte\":\"\",)|(,\"lte\":\"\")";
+    public static final String EMPTY_DATE_RANGE_REPLACEMENT = "";
+
+    // SERVER RESPONSE JSON
+    public static final String DOCUMENT_SUBMIT_ERROR = "Could not submit document #%d%n%s";
+    public static final String DOCUMENT_SUBMIT_ERROR_REASON = "  %s: %s";
+    public static final String DOCUMENT_SUBMIT_ERROR_CAUSE = ", caused by%n  %s: %s";
 
     /**
      * Private constructor, because this is a static class.
