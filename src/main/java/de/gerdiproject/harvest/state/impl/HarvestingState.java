@@ -38,7 +38,6 @@ import de.gerdiproject.harvest.utils.time.HarvestTimeKeeper;
  */
 public class HarvestingState extends AbstractProgressingState
 {
-    private final boolean isMaxNumberKnown;
     /**
      * Constructor that requires the maximum amount of harvestable documents.
      *
@@ -47,7 +46,6 @@ public class HarvestingState extends AbstractProgressingState
     public HarvestingState(int maxNumberOfHarvestedDocuments)
     {
         super(maxNumberOfHarvestedDocuments);
-        isMaxNumberKnown = (maxNumberOfHarvestedDocuments > 0 && maxNumberOfHarvestedDocuments != Integer.MAX_VALUE);
     }
 
     /**
@@ -65,9 +63,7 @@ public class HarvestingState extends AbstractProgressingState
         EventSystem.addListener(HarvestFinishedEvent.class, StateEventHandlerConstants.ON_HARVEST_FINISHED);
         EventSystem.addListener(SubmissionStartedEvent.class, StateEventHandlerConstants.ON_SUBMISSION_STARTED);
         EventSystem.addListener(SaveStartedEvent.class, StateEventHandlerConstants.ON_SAVE_STARTED);
-
-        if (isMaxNumberKnown)
-            EventSystem.addListener(DocumentHarvestedEvent.class, onDocumentHarvested);
+        EventSystem.addListener(DocumentHarvestedEvent.class, onDocumentHarvested);
     }
 
 
@@ -79,9 +75,7 @@ public class HarvestingState extends AbstractProgressingState
         EventSystem.removeListener(HarvestFinishedEvent.class, StateEventHandlerConstants.ON_HARVEST_FINISHED);
         EventSystem.removeListener(SubmissionStartedEvent.class, StateEventHandlerConstants.ON_SUBMISSION_STARTED);
         EventSystem.removeListener(SaveStartedEvent.class, StateEventHandlerConstants.ON_SAVE_STARTED);
-
-        if (isMaxNumberKnown)
-            EventSystem.removeListener(DocumentHarvestedEvent.class, onDocumentHarvested);
+        EventSystem.removeListener(DocumentHarvestedEvent.class, onDocumentHarvested);
     }
 
 

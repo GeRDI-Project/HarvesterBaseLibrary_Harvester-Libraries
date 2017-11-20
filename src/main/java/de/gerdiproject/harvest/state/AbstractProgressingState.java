@@ -40,8 +40,10 @@ public abstract class AbstractProgressingState implements IState
 {
     protected static final Logger LOGGER = LoggerFactory.getLogger(StateMachine.class);
 
-    protected int currentProgress;
+    private final boolean isMaxNumberKnown;
     protected final int maxProgress;
+
+    protected int currentProgress;
     protected long startTimeStamp;
 
 
@@ -62,6 +64,8 @@ public abstract class AbstractProgressingState implements IState
     public AbstractProgressingState(int maxProgress)
     {
         this.maxProgress = maxProgress;
+
+        isMaxNumberKnown = maxProgress > 0 && maxProgress != Integer.MAX_VALUE;
     }
 
 
@@ -85,7 +89,7 @@ public abstract class AbstractProgressingState implements IState
     {
         String status;
 
-        if (maxProgress > 0 && maxProgress != Integer.MAX_VALUE)
+        if (isMaxNumberKnown)
             status = String.format(
                          StateConstants.PROGESS_TEXT_DETAILED,
                          currentProgress,
@@ -194,7 +198,7 @@ public abstract class AbstractProgressingState implements IState
         int newProgressInPercent = (int) getProgressInPercent();
 
         // log updated progress in percent
-        if (newProgressInPercent != oldProgressInPercent) {
+        if (isMaxNumberKnown && newProgressInPercent > oldProgressInPercent) {
             LOGGER.debug(String.format(
                              StateConstants.PROGESS_TEXT,
                              getName(),

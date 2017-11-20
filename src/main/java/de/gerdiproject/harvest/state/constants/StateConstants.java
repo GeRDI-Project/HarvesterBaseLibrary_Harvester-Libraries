@@ -84,7 +84,7 @@ public class StateConstants
 
     public static final String PROGESS_TEXT = "%s: %3d%% (%d / %d)";
     public static final String PROGESS_TEXT_DETAILED = "%d / %d (%.2f%%)  Remaining Time: %s";
-    public static final String PROGESS_TEXT_NO_MAX_VALUE = "%d / ???";
+    public static final String PROGESS_TEXT_NO_MAX_VALUE = "%d documents";
 
     /**
      * Private constructor, because this is a static class.
