@@ -87,16 +87,15 @@ public abstract class AbstractProgressingState implements IState
 
         if (maxProgress > 0 && maxProgress != Integer.MAX_VALUE)
             status = String.format(
-                         StateConstants.PROGESS_TEXT_NO_MAX_VALUE,
-                         currentProgress
-                     );
-        else
-            status = String.format(
                          StateConstants.PROGESS_TEXT_DETAILED,
                          currentProgress,
                          maxProgress,
                          getProgressInPercent(),
                          getDurationText(estimateRemainingSeconds()));
+        else
+            status = String.format(
+                         StateConstants.PROGESS_TEXT_NO_MAX_VALUE,
+                         currentProgress);
 
         return status;
     }
