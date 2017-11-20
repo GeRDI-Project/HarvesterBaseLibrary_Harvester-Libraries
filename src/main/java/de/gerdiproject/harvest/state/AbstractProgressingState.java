@@ -83,12 +83,22 @@ public abstract class AbstractProgressingState implements IState
     @Override
     public String getStatusString()
     {
-        return String.format(
-                   StateConstants.PROGESS_TEXT_DETAILED,
-                   currentProgress,
-                   maxProgress,
-                   getProgressInPercent(),
-                   getDurationText(estimateRemainingSeconds()));
+        String status;
+
+        if (maxProgress > 0 && maxProgress != Integer.MAX_VALUE)
+            status = String.format(
+                         StateConstants.PROGESS_TEXT_NO_MAX_VALUE,
+                         currentProgress
+                     );
+        else
+            status = String.format(
+                         StateConstants.PROGESS_TEXT_DETAILED,
+                         currentProgress,
+                         maxProgress,
+                         getProgressInPercent(),
+                         getDurationText(estimateRemainingSeconds()));
+
+        return status;
     }
 
 
@@ -120,7 +130,7 @@ public abstract class AbstractProgressingState implements IState
             return (milliSecondsTotal - milliSecondsUntilNow) / 1000l;
         }
 
-        return StateConstants.UNKNOWN_NUMBER;
+        return -1;
     }
 
 
@@ -147,7 +157,7 @@ public abstract class AbstractProgressingState implements IState
     {
         String durationText;
 
-        if (durationInSeconds == StateConstants.UNKNOWN_NUMBER)
+        if (durationInSeconds < 0 || durationInSeconds == Long.MAX_VALUE)
             durationText = StateConstants.TIME_UNKNOWN;
 
         else if (durationInSeconds <= 60)

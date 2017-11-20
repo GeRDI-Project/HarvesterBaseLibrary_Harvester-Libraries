@@ -76,7 +76,6 @@ public class StateConstants
     public static final String ABORT_FINISHED = "%s-process aborted!";
 
     // PROGRESSING STATES
-    public static final int UNKNOWN_NUMBER = -1;
     public static final String TIME_UNKNOWN = "unknown";
     public static final String DAYS_HOURS = "%dd %dh";
     public static final String HOURS_MINUTES = "%dh %dm";
@@ -85,6 +84,7 @@ public class StateConstants
 
     public static final String PROGESS_TEXT = "%s: %3d%% (%d / %d)";
     public static final String PROGESS_TEXT_DETAILED = "%d / %d (%.2f%%)  Remaining Time: %s";
+    public static final String PROGESS_TEXT_NO_MAX_VALUE = "%d / ???";
 
     /**
      * Private constructor, because this is a static class.
