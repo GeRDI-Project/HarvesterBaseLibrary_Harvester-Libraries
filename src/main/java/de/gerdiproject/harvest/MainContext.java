@@ -26,6 +26,7 @@ import java.util.function.Function;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import de.gerdiproject.harvest.application.constants.ApplicationConstants;
 import de.gerdiproject.harvest.config.Configuration;
 import de.gerdiproject.harvest.config.constants.ConfigurationConstants;
 import de.gerdiproject.harvest.config.parameters.AbstractParameter;
@@ -45,10 +46,6 @@ import de.gerdiproject.harvest.utils.time.HarvestTimeKeeper;
 public class MainContext
 {
     private String moduleName;
-
-    private static final String INIT_START = "Initializing Harvester...";
-    private static final String INIT_FAILED = "Could not initialize Harvester!";
-    private static final String INIT_SUCCESS = "%s initialized!";
 
     private static final Logger LOGGER = LoggerFactory.getLogger(MainContext.class);
 
@@ -132,7 +129,7 @@ public class MainContext
 
         // init harvester
         CancelableFuture<Boolean> initProcess = new CancelableFuture<>(() -> {
-            LOGGER.info(INIT_START);
+            LOGGER.info(ApplicationConstants.INIT_HARVESTER_START);
             instance.harvester = harvesterClass.newInstance();
             instance.harvester.setAsMainHarvester();
 
@@ -167,7 +164,7 @@ public class MainContext
     private static Function<Boolean, Boolean> onHarvesterInitializedSuccess = (Boolean state) -> {
 
         // log sucess
-        LOGGER.info(String.format(INIT_SUCCESS, getModuleName()));
+        LOGGER.info(String.format(ApplicationConstants.INIT_HARVESTER_SUCCESS, getModuleName()));
 
         // change state
         EventSystem.sendEvent(new HarvesterInitializedEvent(state));
@@ -183,7 +180,7 @@ public class MainContext
     private static Function<Throwable, Boolean> onHarvesterInitializedFailed = (Throwable reason) -> {
 
         // log exception that caused the failure
-        LOGGER.error(INIT_FAILED, reason.getCause());
+        LOGGER.error(ApplicationConstants.INIT_HARVESTER_FAILED, reason.getCause());
 
         // change stage
         EventSystem.sendEvent(new HarvesterInitializedEvent(false));

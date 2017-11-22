@@ -19,7 +19,11 @@
 package de.gerdiproject.harvest;
 
 
+import de.gerdiproject.harvest.application.constants.ApplicationConstants;
+import de.gerdiproject.harvest.application.events.ContextDestroyedEvent;
+import de.gerdiproject.harvest.application.events.ContextInitializedEvent;
 import de.gerdiproject.harvest.config.parameters.AbstractParameter;
+import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.harvester.AbstractHarvester;
 import de.gerdiproject.harvest.state.StateMachine;
 import de.gerdiproject.harvest.submission.AbstractSubmitter;
@@ -53,6 +57,7 @@ import com.google.gson.JsonSerializer;
  */
 public class ContextListener<T extends AbstractHarvester> implements ServletContextListener
 {
+
     // this warning is suppressed, because the only generic Superclass MUST be T. The cast will always succeed.
     @SuppressWarnings("unchecked")
     private Class<T> harvesterClass =
@@ -126,8 +131,7 @@ public class ContextListener<T extends AbstractHarvester> implements ServletCont
      * This method is called when the server is set up. Creates a logger and
      * harvester and sets them in the MainContext.
      *
-     * @param sce
-     *            the servlet context event that was initialized
+     * @param sce the servlet context event that was initialized
      * @see de.gerdiproject.harvest.MainContext
      */
     @Override
@@ -149,18 +153,22 @@ public class ContextListener<T extends AbstractHarvester> implements ServletCont
 
         // init documents cache and sender
         DocumentsCache.init(createSubmitter());
+
+        EventSystem.sendEvent(new ContextInitializedEvent());
     }
 
 
     /**
      * This method is called when the server shuts down. Currently does nothing.
      *
-     * @param sce
-     *            the servlet context event that was destroyed
+     * @param sce the servlet context event that was destroyed
      */
     @Override
     public void contextDestroyed(ServletContextEvent sce)
     {
-    }
+        EventSystem.sendEvent(new ContextDestroyedEvent());
 
+        String goodbyeMsg = String.format(ApplicationConstants.CONTEXT_DESTROYED, getServiceName());
+        System.out.println(goodbyeMsg);  // NOPMD The logger does not work at this point
+    }
 }
