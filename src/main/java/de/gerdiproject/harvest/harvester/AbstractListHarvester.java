@@ -78,7 +78,7 @@ public abstract class AbstractListHarvester<T> extends AbstractHarvester
      *
      * @return a collection of entries
      */
-    abstract protected Collection<T> loadEntries();
+    protected abstract Collection<T> loadEntries();
 
 
     /**
@@ -89,7 +89,7 @@ public abstract class AbstractListHarvester<T> extends AbstractHarvester
      *
      * @return a list of search documents, or null if no documents could be retrieved from the entry
      */
-    abstract protected List<IDocument> harvestEntry(T entry);
+    protected abstract List<IDocument> harvestEntry(T entry);
 
 
     @Override

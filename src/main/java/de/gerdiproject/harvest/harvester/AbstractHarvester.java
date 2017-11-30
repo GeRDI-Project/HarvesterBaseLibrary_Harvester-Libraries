@@ -123,7 +123,7 @@ public abstract class AbstractHarvester
      *             process
      * @return true, if everything was harvested
      */
-    abstract protected boolean harvestInternal(int startIndex, int endIndex) throws Exception; // NOPMD - we want the inheriting class to be able to throw any exception
+    protected abstract boolean harvestInternal(int startIndex, int endIndex) throws Exception; // NOPMD - we want the inheriting class to be able to throw any exception
 
 
     /**
@@ -131,7 +131,7 @@ public abstract class AbstractHarvester
      *
      * @return the total number of documents that are to be harvested
      */
-    abstract protected int initMaxNumberOfDocuments();
+    protected abstract int initMaxNumberOfDocuments();
 
 
     /**
@@ -143,13 +143,13 @@ public abstract class AbstractHarvester
      * @throws NoSuchAlgorithmException occurs if an invalid algorithm is used for a {@linkplain MessageDigest}
      * @throws NullPointerException occurs for several reasons, depending on the implementation
      */
-    abstract protected String initHash() throws NoSuchAlgorithmException, NullPointerException;
+    protected abstract String initHash() throws NoSuchAlgorithmException, NullPointerException;
 
 
     /**
      * Aborts the harvesting process, allowing a new harvest to be started.
      */
-    abstract protected void abortHarvest();
+    protected abstract void abortHarvest();
 
 
     /**

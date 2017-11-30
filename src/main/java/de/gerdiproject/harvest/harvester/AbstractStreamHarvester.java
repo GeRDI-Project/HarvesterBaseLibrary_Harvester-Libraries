@@ -108,7 +108,7 @@ public abstract class AbstractStreamHarvester<T> extends AbstractHarvester
      *
      * @param addEntryToStream use this consumer function to add entries to the stream
      */
-    abstract protected void loadEntries(Consumer<T> addEntryToStream);
+    protected abstract void loadEntries(Consumer<T> addEntryToStream);
 
 
     /**
@@ -118,7 +118,7 @@ public abstract class AbstractStreamHarvester<T> extends AbstractHarvester
      *
      * @return a list of search documents, or null if no documents could be retrieved from the entry
      */
-    abstract protected List<IDocument> harvestEntry(T entry);
+    protected abstract List<IDocument> harvestEntry(T entry);
 
 
     @Override
