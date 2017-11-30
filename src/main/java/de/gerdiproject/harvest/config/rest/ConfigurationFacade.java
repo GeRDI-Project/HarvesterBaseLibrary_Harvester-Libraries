@@ -95,18 +95,21 @@ public class ConfigurationFacade
     })
     public String setParameters(final MultivaluedMap<String, String> formParams)
     {
-        final Configuration config = MainContext.getConfiguration();
-
-        if (config == null)
-            return ConfigurationConstants.REST_INFO_FAILED;
-
         final StringBuilder sb = new StringBuilder();
 
-        for (Entry<String, List<String>> entry : formParams.entrySet()) {
-            String key = entry.getKey();
-            List<String> values = entry.getValue();
+        if (formParams != null) {
+            final Configuration config = MainContext.getConfiguration();
 
-            values.forEach((String value) -> sb.append(config.setParameter(key, value)).append('\n'));
+            if (config == null)
+                return ConfigurationConstants.REST_INFO_FAILED;
+
+
+            for (Entry<String, List<String>> entry : formParams.entrySet()) {
+                String key = entry.getKey();
+                List<String> values = entry.getValue();
+
+                values.forEach((String value) -> sb.append(config.setParameter(key, value)).append('\n'));
+            }
         }
 
         // if nothing was attempted to be changed, inform the user

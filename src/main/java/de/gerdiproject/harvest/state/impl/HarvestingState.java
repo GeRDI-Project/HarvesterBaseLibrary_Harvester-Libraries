@@ -59,10 +59,11 @@ public class HarvestingState extends AbstractProgressingState
     public void onStateEnter()
     {
         super.onStateEnter();
-        EventSystem.addListener(DocumentHarvestedEvent.class, onDocumentHarvested);
+
         EventSystem.addListener(HarvestFinishedEvent.class, StateEventHandlerConstants.ON_HARVEST_FINISHED);
         EventSystem.addListener(SubmissionStartedEvent.class, StateEventHandlerConstants.ON_SUBMISSION_STARTED);
         EventSystem.addListener(SaveStartedEvent.class, StateEventHandlerConstants.ON_SAVE_STARTED);
+        EventSystem.addListener(DocumentHarvestedEvent.class, onDocumentHarvested);
     }
 
 
@@ -70,10 +71,11 @@ public class HarvestingState extends AbstractProgressingState
     public void onStateLeave()
     {
         super.onStateLeave();
-        EventSystem.removeListener(DocumentHarvestedEvent.class, onDocumentHarvested);
+
         EventSystem.removeListener(HarvestFinishedEvent.class, StateEventHandlerConstants.ON_HARVEST_FINISHED);
         EventSystem.removeListener(SubmissionStartedEvent.class, StateEventHandlerConstants.ON_SUBMISSION_STARTED);
         EventSystem.removeListener(SaveStartedEvent.class, StateEventHandlerConstants.ON_SAVE_STARTED);
+        EventSystem.removeListener(DocumentHarvestedEvent.class, onDocumentHarvested);
     }
 
 

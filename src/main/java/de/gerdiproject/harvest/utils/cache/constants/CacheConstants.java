@@ -29,20 +29,25 @@ import de.gerdiproject.harvest.utils.cache.DocumentsCache;
  */
 public class CacheConstants
 {
-    public static final String SAVE_FILE_NAME = "harvestedIndices/%s_result_%d.json";
-    public static final String SAVE_FILE_NAME_PARTIAL = "harvestedIndices/%s_partialResult_%d-%d_%d.json";
+    public static final String JSON_FILE_EXTENSION = ".json";
+
+    public static final String SAVE_FILE_NAME = "harvestedIndices/%s_result_%d" + JSON_FILE_EXTENSION;
+    public static final String SAVE_FILE_NAME_PARTIAL = "harvestedIndices/%s_partialResult_%d-%d_%d" + JSON_FILE_EXTENSION;
     public static final String SAVE_FAILED_DIRECTORY = "Could not save documents: Unable to create directories!";
     public static final String SAVE_FAILED_ERROR = "Could not save harvested documents!";
     public static final String START_CACHE_ERROR = "Error starting the cache writer";
     public static final String FINISH_CACHE_ERROR = "Error closing the cache writer";
 
     public static final String CACHE_FOLDER_PATH = "cachedIndex/%s/";
-    public static final String CACHE_FILE_PATH = CACHE_FOLDER_PATH + "cachedDocuments_%d.json";
-    public static final String CACHE_FILE_REGEX = "cachedDocuments_\\d+\\.json";
+    public static final String CACHE_FILE_PATH = CACHE_FOLDER_PATH + "cachedDocuments_%d" + JSON_FILE_EXTENSION;
+    public static final String CACHE_FILE_REGEX = "cachedDocuments_\\d+\\" + JSON_FILE_EXTENSION;
 
     public static final String DELETE_FILE_SUCCESS = "Deleted old cache file '%s'.";
     public static final String DELETE_FILE_FAILED = "Could not deleted old cache file '%s'!";
 
+    // AbstractStreamHarvester
+    public static final String CACHE_ENTRY_STREAM_PATH = CACHE_FOLDER_PATH + "StreamHarvester/%s" + JSON_FILE_EXTENSION;
+    public static final String ENTRY_STREAM_WRITE_ERROR = "Could not write entries to file at path '%s'!";
 
     /**
      * Private constructor, because this is a static class.
