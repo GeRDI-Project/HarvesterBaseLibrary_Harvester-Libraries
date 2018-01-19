@@ -28,6 +28,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.List;
 
+import javax.ws.rs.core.MediaType;
 
 import de.gerdiproject.harvest.IDocument;
 import de.gerdiproject.harvest.MainContext;
@@ -88,7 +89,8 @@ public class ElasticSearchSubmitter extends AbstractSubmitter
                               RestRequestType.POST,
                               submissionUrl.toString(),
                               bulkRequestBuilder.toString(),
-                              credentials
+                              credentials,
+                              MediaType.APPLICATION_JSON
                           );
 
         // parse JSON response
