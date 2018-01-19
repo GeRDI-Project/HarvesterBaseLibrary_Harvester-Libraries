@@ -321,29 +321,30 @@ public class HttpRequester
      */
     public String getRestResponse(RestRequestType method, String url, String body) throws HTTPException, IOException
     {
-        return getRestResponse(method, url, body, null);
+        return getRestResponse(method, url, body, null, MediaType.TEXT_PLAIN);
     }
 
 
     /**
-     * Sends an authorized REST request with a plain-text body and returns the
+     * Sends an authorized REST request with a specified body and returns the
      * response as a string.
      *
      * @param method the request method that is being sent
      * @param url the URL to which the request is being sent
-     * @param body the plain-text body of the request
+     * @param body the body of the request
      * @param authorization the base-64-encoded username and password, or null if no
      *                       authorization is required
+     * @param contentType the contentType of the body
      *
      * @throws HTTPException thrown if the response code is not 2xx
      * @throws IOException thrown if the response output stream could not be created
      *
      * @return the HTTP response as plain text
      */
-    public String getRestResponse(RestRequestType method, String url, String body, String authorization) throws HTTPException, IOException
+    public String getRestResponse(RestRequestType method, String url, String body, String authorization, String contentType) throws HTTPException, IOException
     {
         try {
-            HttpURLConnection connection = sendRestRequest(method, url, body, authorization);
+            HttpURLConnection connection = sendRestRequest(method, url, body, authorization, contentType);
 
             // create a reader for the HTTP response
             InputStream response = connection.getInputStream();
@@ -397,19 +398,20 @@ public class HttpRequester
      */
     public Map<String, List<String>> getRestHeader(RestRequestType method, String url, String body) throws HTTPException, IOException
     {
-        return getRestHeader(method, url, body, null);
+        return getRestHeader(method, url, body, null, MediaType.TEXT_PLAIN);
     }
 
 
     /**
-     * Sends an authorized REST request with a plain-text body and returns the
+     * Sends an authorized REST request with a specified body and returns the
      * header fields.
      *
      * @param method the request method that is being sent
      * @param url the URL to which the request is being sent
-     * @param body the plain-text body of the request
+     * @param body the body of the request
      * @param authorization the base-64-encoded username and password, or null if no
      *                       authorization is required
+     * @param contentType the contentType of the body
      *
      * @throws HTTPException thrown if the response code is not 2xx
      * @throws IOException thrown if the response output stream could not be created
@@ -417,11 +419,11 @@ public class HttpRequester
      * @return the response header fields, or null if the response could not be parsed
      */
     public Map<String, List<String>> getRestHeader(RestRequestType method, String url, String body,
-                                                   String authorization) throws HTTPException, IOException
+                                                   String authorization, String contentType) throws HTTPException, IOException
     {
         Map<String, List<String>> headerFields = null;
 
-        HttpURLConnection connection = sendRestRequest(method, url, body, authorization);
+        HttpURLConnection connection = sendRestRequest(method, url, body, authorization, contentType);
         headerFields = connection.getHeaderFields();
 
         return headerFields;
@@ -429,20 +431,21 @@ public class HttpRequester
 
 
     /**
-     * Sends a REST request with a plain-text body and returns the connection.
+     * Sends a REST request with a specified body and returns the connection.
      *
      * @param method the request method that is being sent
      * @param url the URL to which the request is being sent
-     * @param body the plain-text body of the request
+     * @param body the body of the request
      * @param authorization the base-64-encoded username and password, or null if no
      *                           authorization is required
+     * @param contentType the contentType of the body
      *
      * @throws HTTPException thrown if the response code is not 2xx
      * @throws IOException thrown if the response output stream could not be created
      *
      * @return the connection to the host
      */
-    private HttpURLConnection sendRestRequest(RestRequestType method, String url, String body, String authorization)
+    private HttpURLConnection sendRestRequest(RestRequestType method, String url, String body, String authorization, String contentType)
     throws IOException, HTTPException
     {
         // generate a URL and open a connection
@@ -453,7 +456,7 @@ public class HttpRequester
         connection.setInstanceFollowRedirects(false);
         connection.setUseCaches(false);
         connection.setRequestMethod(method.toString());
-        connection.setRequestProperty(HttpHeaders.CONTENT_TYPE, MediaType.TEXT_PLAIN);
+        connection.setRequestProperty(HttpHeaders.CONTENT_TYPE, contentType);
         connection.setRequestProperty(DataOperationConstants.REQUEST_PROPERTY_CHARSET, httpCharset.displayName());
 
         // set authentication
