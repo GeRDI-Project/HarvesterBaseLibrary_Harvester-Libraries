@@ -336,13 +336,13 @@ public class Configuration
         final StringBuilder harvesterBuilder = new StringBuilder();
         harvesterParameters.forEach(
             (String key, AbstractParameter<?> param) ->
-            harvesterBuilder.append(String.format(harvesterParameterFormat, key, param.toString()))
+            harvesterBuilder.append(String.format(harvesterParameterFormat, key, param.getStringValue()))
         );
 
         final StringBuilder globalBuilder = new StringBuilder();
         globalParameters.forEach(
             (String key, AbstractParameter<?> param) ->
-            globalBuilder.append(String.format(globalParameterFormat, key, param.toString()))
+            globalBuilder.append(String.format(globalParameterFormat, key, param.getStringValue()))
         );
 
         return String.format(
