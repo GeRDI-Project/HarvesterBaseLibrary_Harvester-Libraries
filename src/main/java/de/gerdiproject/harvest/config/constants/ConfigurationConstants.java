@@ -91,7 +91,7 @@ public class ConfigurationConstants
     public static final String URL_PREFIX = "%URL_PARAMETER%";
     public static final String GLOBAL_PARAMETERS_JSON = "globalParameters";
     public static final String HARVESTER_PARAMETERS_JSON = "harvesterParameters";
-    public static final String BASIC_PARAMETER_FORMAT = "%%1$-%ds :  %%s%%n";
+    public static final String BASIC_PARAMETER_FORMAT = "%%1$-%ds :  %%2$s%%n";
 
     /**
      * Private constructor, because this is a static class.
