@@ -60,14 +60,10 @@ public class StateConstants
 
     public static final String READY = "%s is now ready!";
     public static final String HARVEST_STARTED = "Harvest started!";
-    public static final String HARVEST_FINISHED_AT = "Harvest finished at %s";
-    public static final String HARVEST_SAVED_AT = ", saved at %s";
-    public static final String HARVEST_SUBMITTED_AT = ", submitted at %s";
-    public static final String HARVEST_NOT_STARTED = "Ready to harvest";
 
-    public static final String IDLE_STATUS = "Harvest:\t\t%s"
-                                             + "%nSave to disk:\t%s"
-                                             + "%nSubmit to DB:\t%s";
+    public static final String IDLE_STATUS = "Harvest:     %s%n"
+                                             + "Storage:     %s%n"
+                                             + "Submission:  %s";
 
     public static final String HARVEST_DONE = "Harvest finished!";
     public static final String HARVEST_FAILED = "Harvest failed!";

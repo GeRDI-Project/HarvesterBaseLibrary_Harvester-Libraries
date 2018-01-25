@@ -41,11 +41,11 @@ public class HarvesterConstants
     public static final String LOG_OUT_OF_RANGE = "Skipping %s - Document indices out of range.";
 
     // REST
-    public static final String REST_INFO = "- %s -%n%n%s%n%nRange:\t\t%s-%s%n%n"
-                                           + "POST\t\t\tStarts the harvest%n"
-                                           + "POST/abort\t\tAborts an ongoing harvest%n"
-                                           + "POST/submit\t\tSubmits harvested documents to a DataBase%n"
-                                           + "POST/save\t\tSaves harvested documents to disk";
+    public static final String REST_INFO = "- %s -%n%n%s%n%nRange:  %s-%s%n%n"
+                                           + "POST         Starts the harvest%n"
+                                           + "POST/abort   Aborts an ongoing harvest%n"
+                                           + "POST/submit  Submits harvested documents to a DataBase%n"
+                                           + "POST/save    Saves harvested documents to disk";
 
     /**
      * Private constructor, because this is a static class.
