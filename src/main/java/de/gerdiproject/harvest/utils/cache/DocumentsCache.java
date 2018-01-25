@@ -39,6 +39,7 @@ import de.gerdiproject.harvest.harvester.events.HarvestFinishedEvent;
 import de.gerdiproject.harvest.harvester.events.HarvestStartedEvent;
 import de.gerdiproject.harvest.save.HarvestSaver;
 import de.gerdiproject.harvest.save.events.StartSaveEvent;
+import de.gerdiproject.harvest.state.events.AbortingFinishedEvent;
 import de.gerdiproject.harvest.submission.AbstractSubmitter;
 import de.gerdiproject.harvest.submission.events.StartSubmissionEvent;
 import de.gerdiproject.harvest.utils.cache.constants.CacheConstants;
@@ -103,6 +104,15 @@ public class DocumentsCache
      */
     private Consumer<StartSaveEvent> onStartSaving = (StartSaveEvent e) -> {
         saver.save(cacheFile, documentHash, documentCount, e.isAutoTriggered());
+    };
+
+
+    /**
+     * Event callback: When an abortion is finished, close the cache streaming, so all data gets submitted
+     * if we want to submit an incomplete amount of documents.
+     */
+    private Consumer<AbortingFinishedEvent> onAbortingFinished = (AbortingFinishedEvent e) -> {
+        finishCaching();
     };
 
 
@@ -216,6 +226,9 @@ public class DocumentsCache
                         MainContext.getCharset()));
                 cacheWriter.beginArray();
 
+                // listen to abort events
+                EventSystem.addListener(AbortingFinishedEvent.class, onAbortingFinished);
+
                 return true;
             } catch (IOException e) {
                 LOGGER.error(CacheConstants.START_CACHE_ERROR, e);
@@ -231,6 +244,9 @@ public class DocumentsCache
      */
     private void finishCaching()
     {
+        // stop listening to abort events
+        EventSystem.removeListener(AbortingFinishedEvent.class, onAbortingFinished);
+
         try {
             if (cacheWriter != null) {
                 cacheWriter.endArray();

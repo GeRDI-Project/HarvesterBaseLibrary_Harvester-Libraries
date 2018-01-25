@@ -73,8 +73,8 @@ public class ConfigurationConstants
     public static final String LOAD_FAILED = "Could not load configuration from '%s': %s";
     public static final String NO_EXISTS = "No configuration exists!";
     public static final String REST_INFO = "- %s Configuration -%n%n%s%n"
-                                           + "POST\t\tSaves the current configuration to disk.%n"
-                                           + "PUT \t\tSets x-www-form-urlencoded parameters for the harvester.%n\t\t\tValid values: %s.%n";
+                                           + "POST  Saves the current configuration to disk.%n"
+                                           + "PUT   Sets x-www-form-urlencoded parameters for the harvester.%n\t\t\tValid values: %s.%n";
     public static final String REST_INFO_FAILED = "Could not initialize Configuration.\nPlease, look at the server logs for details.";
 
     public static final String PARSE_ERROR = "Could not read configuration parameter value '%s' from key '%s'!";
@@ -91,6 +91,7 @@ public class ConfigurationConstants
     public static final String URL_PREFIX = "%URL_PARAMETER%";
     public static final String GLOBAL_PARAMETERS_JSON = "globalParameters";
     public static final String HARVESTER_PARAMETERS_JSON = "harvesterParameters";
+    public static final String BASIC_PARAMETER_FORMAT = "%%1$-%ds :  %%2$s%%n";
 
     /**
      * Private constructor, because this is a static class.

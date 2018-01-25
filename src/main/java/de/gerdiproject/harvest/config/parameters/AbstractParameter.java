@@ -133,6 +133,6 @@ public abstract class AbstractParameter<T>
     @Override
     public String toString()
     {
-        return key + ":\t" + getStringValue();
+        return getKey() + " : " + getStringValue();
     }
 }

@@ -114,8 +114,13 @@ public class EventSystem
         synchronized (instance.callbackMap) {
             List<Consumer<? extends IEvent>> eventList = instance.callbackMap.get(event.getClass());
 
-            if (eventList != null)
-                eventList.forEach((Consumer<? extends IEvent> c) -> ((Consumer<T>)c).accept(event));
+            if (eventList != null) {
+                int i = eventList.size();
+
+                // traverse list from back to front, in case a listener gets removed by a callback function
+                while (i != 0)
+                    ((Consumer<T>)eventList.get(--i)).accept(event);
+            }
         }
     }
 }

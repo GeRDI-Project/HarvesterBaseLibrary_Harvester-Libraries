@@ -32,6 +32,7 @@ import de.gerdiproject.harvest.utils.data.DiskIO;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -51,7 +52,10 @@ public class Configuration
     private static final Logger LOGGER = LoggerFactory.getLogger(Configuration.class);
 
     private Map<String, AbstractParameter<?>> globalParameters;
+    String globalParameterFormat;
+
     private Map<String, AbstractParameter<?>> harvesterParameters;
+    String harvesterParameterFormat;
 
 
     /**
@@ -64,6 +68,9 @@ public class Configuration
     {
         this.globalParameters = globalParameters;
         this.harvesterParameters = harvesterParameters;
+
+        this.globalParameterFormat = getPaddedKeyFormat(globalParameters);
+        this.harvesterParameterFormat = getPaddedKeyFormat(harvesterParameters);
 
         updateAllParameters();
     }
@@ -79,7 +86,34 @@ public class Configuration
         this.globalParameters = ParameterFactory.createDefaultParameters();
         this.harvesterParameters = ParameterFactory.createHarvesterParameters(harvesterParams);
 
+        this.globalParameterFormat = getPaddedKeyFormat(globalParameters);
+        this.harvesterParameterFormat = getPaddedKeyFormat(harvesterParameters);
+
         updateAllParameters();
+    }
+
+
+    /**
+     * Finds the length of the longest string key of a map and returns
+     * a formatting String that can be used to display key value pairs
+     * of the map in a pretty format.
+     *
+     * @param map the map of which the key lengths are compared
+     *
+     * @return the length of the longest string key in the map
+     */
+    private String getPaddedKeyFormat(Map<String, ?> map)
+    {
+        final AtomicInteger maxLength = new AtomicInteger(0);
+
+        map.forEach((String key, Object value) -> {
+            int keyLength = key.length();
+
+            if (keyLength > maxLength.get())
+                maxLength.set(keyLength);
+        });
+
+        return String.format(ConfigurationConstants.BASIC_PARAMETER_FORMAT, maxLength.get());
     }
 
 
@@ -302,15 +336,14 @@ public class Configuration
         final StringBuilder harvesterBuilder = new StringBuilder();
         harvesterParameters.forEach(
             (String key, AbstractParameter<?> param) ->
-            harvesterBuilder.append("  ").append(param).append('\n')
+            harvesterBuilder.append(String.format(harvesterParameterFormat, key, param.getStringValue()))
         );
 
         final StringBuilder globalBuilder = new StringBuilder();
         globalParameters.forEach(
             (String key, AbstractParameter<?> param) ->
-            globalBuilder.append("  ").append(param).append('\n')
+            globalBuilder.append(String.format(globalParameterFormat, key, param.getStringValue()))
         );
-
 
         return String.format(
                    ConfigurationConstants.CONFIG_PARAMETERS,
