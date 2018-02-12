@@ -23,7 +23,9 @@ import de.gerdiproject.harvest.state.StateMachine;
 import de.gerdiproject.harvest.MainContext;
 import de.gerdiproject.harvest.config.Configuration;
 import de.gerdiproject.harvest.config.constants.ConfigurationConstants;
+import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.harvester.constants.HarvesterConstants;
+import de.gerdiproject.harvest.harvester.events.GetProviderNameEvent;
 
 import javax.ws.rs.Produces;
 import javax.ws.rs.GET;
@@ -44,7 +46,6 @@ import javax.ws.rs.core.MultivaluedMap;
 @Path("")
 public class HarvesterFacade
 {
-
     /**
      * Starts a harvest using the harvester that is registered in the
      * MainContext.
@@ -94,6 +95,21 @@ public class HarvesterFacade
         String name = MainContext.getModuleName();
 
         return String.format(HarvesterConstants.REST_INFO, name, status, from, to);
+    }
+
+    /**
+     * Returns the name of the data provider that is harvested.
+     *
+     * @return the name of the data provider that is harvested
+     */
+    @GET
+    @Path("data-provider")
+    @Produces({
+        MediaType.TEXT_PLAIN, MediaType.APPLICATION_JSON
+    })
+    public String getDataProvider()
+    {
+        return EventSystem.sendSynchronousEvent(new GetProviderNameEvent());
     }
 
 
