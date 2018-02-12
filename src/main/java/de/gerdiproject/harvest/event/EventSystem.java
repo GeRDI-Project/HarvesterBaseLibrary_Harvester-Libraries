@@ -23,6 +23,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 /**
  * This singleton class provides a means to dispatch and listen to {@linkplain IEvent}s.
@@ -32,6 +33,7 @@ import java.util.function.Consumer;
 public class EventSystem
 {
     private Map<Class<? extends IEvent>, List<Consumer<? extends IEvent>>> callbackMap;
+    private Map<Class<? extends ISynchronousEvent<?>>, Function<? extends ISynchronousEvent<?>, ?>> synchronousCallbackMap;
 
     private static EventSystem instance = new EventSystem();
 
@@ -42,6 +44,7 @@ public class EventSystem
     private EventSystem()
     {
         callbackMap = new HashMap<>();
+        synchronousCallbackMap = new HashMap<>();
     }
 
 
@@ -121,6 +124,60 @@ public class EventSystem
                 while (i != 0)
                     ((Consumer<T>)eventList.get(--i)).accept(event);
             }
+        }
+    }
+
+
+    /**
+     * Adds a callback function that executes and returns a value when a specified synchronous event is dispatched.
+     * Due to the synchronous nature, only one callback function may be registered per event class.
+     *
+     * @param eventClass the class of the synchronous event
+     * @param callback the callback function that is executed and returns when the event is dispatched
+     * @param <T> the type of the synchronous event
+     * @param <R> the type of the return value of the callback function
+     */
+    public static <R, T extends ISynchronousEvent<R>> void addSynchronousListener(Class<T> eventClass, Function<T, R> callback)
+    {
+        synchronized (instance.synchronousCallbackMap) {
+            instance.synchronousCallbackMap.put(eventClass, callback);
+        }
+    }
+
+
+    /**
+     * Removes the callback function of a synchronous event.
+     *
+     * @param eventClass the class of the synchronous event
+     * @param <T> the type of the synchronous event
+     */
+    public static <T extends ISynchronousEvent<?>> void removeSynchronousListener(Class<T> eventClass)
+    {
+        synchronized (instance.synchronousCallbackMap) {
+            instance.synchronousCallbackMap.remove(eventClass);
+        }
+    }
+
+
+    /**
+     * Dispatches a synchronous event that executes a unique callback function and returns its calculated value.
+     *
+     * @param event a synchronous event
+     * @param <T> the type of the synchronous event
+     * @param <R> the type of the return value of the callback function
+     *
+     * @return the return value of the callback function that is registered
+     */
+    @SuppressWarnings("unchecked")
+    public static <R, T extends ISynchronousEvent<R>> R sendSynchronousEvent(T event)
+    {
+        synchronized (instance.synchronousCallbackMap) {
+            Function<? extends ISynchronousEvent<?>, ?> callback = instance.synchronousCallbackMap.get(event.getClass());
+
+            if (callback != null)
+                return ((Function<T, R>)callback).apply(event);
+            else
+                return null;
         }
     }
 }

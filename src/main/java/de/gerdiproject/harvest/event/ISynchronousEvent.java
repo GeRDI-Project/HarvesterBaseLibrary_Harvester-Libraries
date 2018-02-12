@@ -16,29 +16,13 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package de.gerdiproject.harvest.application.constants;
+package de.gerdiproject.harvest.event;
 
 /**
- * This static class is a collection of constants that are used for ContextListeners and application related classes.
- *
  * @author Robin Weiss
+ *
  */
-public class ApplicationConstants
+public interface ISynchronousEvent<T>
 {
-    public static final String INIT_HARVESTER_START = "Initializing Harvester...";
-    public static final String INIT_HARVESTER_FAILED = "Could not initialize Harvester!";
-    public static final String INIT_HARVESTER_SUCCESS = "%s initialized!";
 
-    public static final String CONTEXT_DESTROYED = "%s undeployed!";
-
-    public static final String HARVESTER_SERVICE_NAME_SUFFIX = "HarvesterService";
-    public static final String HARVESTER_NAME_SUB_STRING = "harvester";
-
-    /**
-     * Private constructor, because this is a static class.
-     */
-    private ApplicationConstants()
-    {
-
-    }
 }
