@@ -50,6 +50,7 @@ public class ApplicationConfig extends Application
     {
         resources.add(de.gerdiproject.harvest.harvester.rest.HarvesterFacade.class);
         resources.add(de.gerdiproject.harvest.config.rest.ConfigurationFacade.class);
+        resources.add(de.gerdiproject.harvest.application.rest.StatusFacade.class);
     }
 
 }

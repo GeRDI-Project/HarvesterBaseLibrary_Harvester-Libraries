@@ -16,10 +16,14 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package de.gerdiproject.harvest.harvester.rest;
+package de.gerdiproject.harvest.application.rest;
 
 
+import de.gerdiproject.harvest.state.IState;
 import de.gerdiproject.harvest.state.StateMachine;
+import de.gerdiproject.harvest.state.impl.ErrorState;
+import de.gerdiproject.harvest.application.constants.ApplicationConstants;
+import de.gerdiproject.harvest.application.enums.HealthStatus;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.harvester.events.GetProviderNameEvent;
 
@@ -30,13 +34,12 @@ import javax.ws.rs.core.MediaType;
 
 
 /**
- * A restful facade for the harvester that allows to retrieve additional information
- * about the harvester service.
+ * A restful facade for the harvester service that allows to retrieve additional information.
  *
  * @author Robin Weiss
  */
 @Path("status")
-public final class HarvesterStatusFacade
+public final class StatusFacade
 {
     /**
      * Displays the name of the current state of the harvester.
@@ -53,6 +56,7 @@ public final class HarvesterStatusFacade
         return StateMachine.getCurrentState().getName();
     }
 
+
     /**
      * Returns the name of the data provider that is harvested.
      *
@@ -66,5 +70,46 @@ public final class HarvesterStatusFacade
     public String getDataProvider()
     {
         return EventSystem.sendSynchronousEvent(new GetProviderNameEvent());
+    }
+
+
+    /**
+     * Displays the name of the current state of the harvester.
+     *
+     * @return the name of the current state of the harvester
+     */
+    @GET
+    @Path("health")
+    @Produces({
+        MediaType.TEXT_PLAIN
+    })
+    public String getHealth()
+    {
+        IState currentState = StateMachine.getCurrentState();
+        HealthStatus health = HealthStatus.OK;
+
+        if (currentState instanceof ErrorState)
+            health = HealthStatus.FUBAR;
+        else {
+            final String status = currentState.getStatusString();
+
+            final boolean hasHarvestFailed = status.contains(ApplicationConstants.FAILED_HARVEST_HEALTH_CHECK);
+
+            if (hasHarvestFailed)
+                health = HealthStatus.HARVEST_FAILED;
+            else {
+                final boolean hasSavingFailed = status.contains(ApplicationConstants.FAILED_SAVE_HEALTH_CHECK);
+                final boolean hasSubmissionFailed = status.contains(ApplicationConstants.FAILED_SUBMISSION_HEALTH_CHECK);
+
+                if (hasSavingFailed && hasSubmissionFailed)
+                    health = HealthStatus.SAVING_AND_SUBMISSION_FAILED;
+                else if (hasSavingFailed)
+                    health = HealthStatus.SAVING_FAILED;
+                else if (hasSubmissionFailed)
+                    health = HealthStatus.SUBMISSION_FAILED;
+            }
+        }
+
+        return health.toString();
     }
 }
