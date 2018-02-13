@@ -18,8 +18,6 @@
  */
 package de.gerdiproject.harvest.application.constants;
 
-import de.gerdiproject.harvest.state.constants.StateConstants;
-import de.gerdiproject.harvest.utils.time.ProcessTimeMeasure;
 
 /**
  * This static class is a collection of constants that are used for ContextListeners and application related classes.
@@ -36,19 +34,6 @@ public class ApplicationConstants
 
     public static final String HARVESTER_SERVICE_NAME_SUFFIX = "HarvesterService";
     public static final String HARVESTER_NAME_SUB_STRING = "harvester";
-
-    public static final String FAILED_HARVEST_HEALTH_CHECK = String.format(
-                                                                 StateConstants.HARVEST_STATUS,
-                                                                 ProcessTimeMeasure.ProcessStatus.Failed.toString());
-
-    public static final String FAILED_SAVE_HEALTH_CHECK = String.format(
-                                                              StateConstants.SAVE_STATUS,
-                                                              ProcessTimeMeasure.ProcessStatus.Failed.toString());
-
-    public static final String FAILED_SUBMISSION_HEALTH_CHECK = String.format(
-                                                                    StateConstants.SUBMIT_STATUS,
-                                                                    ProcessTimeMeasure.ProcessStatus.Failed.toString());
-
 
     /**
      * Private constructor, because this is a static class.

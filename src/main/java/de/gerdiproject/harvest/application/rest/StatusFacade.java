@@ -22,7 +22,8 @@ package de.gerdiproject.harvest.application.rest;
 import de.gerdiproject.harvest.state.IState;
 import de.gerdiproject.harvest.state.StateMachine;
 import de.gerdiproject.harvest.state.impl.ErrorState;
-import de.gerdiproject.harvest.application.constants.ApplicationConstants;
+import de.gerdiproject.harvest.MainContext;
+import de.gerdiproject.harvest.application.constants.StatusConstants;
 import de.gerdiproject.harvest.application.enums.HealthStatus;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.harvester.events.GetProviderNameEvent;
@@ -42,6 +43,20 @@ import javax.ws.rs.core.MediaType;
 public final class StatusFacade
 {
     /**
+     * Displays the possible HTTP requests of this facade.
+     *
+     * @return the possible HTTP requests of this facade
+     */
+    @GET
+    @Produces({
+        MediaType.TEXT_PLAIN
+    })
+    public String getInfo()
+    {
+        return String.format(StatusConstants.REST_INFO, MainContext.getModuleName());
+    }
+
+    /**
      * Displays the name of the current state of the harvester.
      *
      * @return the name of the current state of the harvester
@@ -51,7 +66,7 @@ public final class StatusFacade
     @Produces({
         MediaType.TEXT_PLAIN
     })
-    public String getInfo()
+    public String getStateName()
     {
         return StateMachine.getCurrentState().getName();
     }
@@ -93,13 +108,13 @@ public final class StatusFacade
         else {
             final String status = currentState.getStatusString();
 
-            final boolean hasHarvestFailed = status.contains(ApplicationConstants.FAILED_HARVEST_HEALTH_CHECK);
+            final boolean hasHarvestFailed = status.contains(StatusConstants.FAILED_HARVEST_HEALTH_CHECK);
 
             if (hasHarvestFailed)
                 health = HealthStatus.HARVEST_FAILED;
             else {
-                final boolean hasSavingFailed = status.contains(ApplicationConstants.FAILED_SAVE_HEALTH_CHECK);
-                final boolean hasSubmissionFailed = status.contains(ApplicationConstants.FAILED_SUBMISSION_HEALTH_CHECK);
+                final boolean hasSavingFailed = status.contains(StatusConstants.FAILED_SAVE_HEALTH_CHECK);
+                final boolean hasSubmissionFailed = status.contains(StatusConstants.FAILED_SUBMISSION_HEALTH_CHECK);
 
                 if (hasSavingFailed && hasSubmissionFailed)
                     health = HealthStatus.SAVING_AND_SUBMISSION_FAILED;

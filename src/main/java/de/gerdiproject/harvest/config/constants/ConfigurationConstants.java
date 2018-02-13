@@ -74,8 +74,11 @@ public class ConfigurationConstants
     public static final String LOAD_FAILED = "Could not load configuration from '%s': %s";
     public static final String NO_EXISTS = "No configuration exists!";
     public static final String REST_INFO = "- %s Configuration -%n%n%s%n"
+                                           + "GET   Returns either the entire configuration in pretty text, or%n"
+                                           + "      if '?key=xxx' is added, returns the value of parameter 'xxx'.%n"
                                            + "POST  Saves the current configuration to disk.%n"
-                                           + "PUT   Sets x-www-form-urlencoded parameters for the harvester.%n\t\t\tValid values: %s.%n";
+                                           + "PUT   Sets x-www-form-urlencoded parameters for the harvester.%n"
+                                           + "      Valid values: %s.%n";
     public static final String REST_INFO_FAILED = "Could not initialize Configuration.\nPlease, look at the server logs for details.";
 
     public static final String PARSE_ERROR = "Could not read configuration parameter value '%s' from key '%s'!";
