@@ -26,6 +26,7 @@ import de.gerdiproject.harvest.MainContext;
 import de.gerdiproject.harvest.application.constants.StatusConstants;
 import de.gerdiproject.harvest.application.enums.HealthStatus;
 import de.gerdiproject.harvest.event.EventSystem;
+import de.gerdiproject.harvest.harvester.events.GetMaxDocumentCountEvent;
 import de.gerdiproject.harvest.harvester.events.GetProviderNameEvent;
 
 import javax.ws.rs.Produces;
@@ -85,6 +86,23 @@ public final class StatusFacade
     public String getDataProvider()
     {
         return EventSystem.sendSynchronousEvent(new GetProviderNameEvent());
+    }
+
+
+    /**
+     * Calculates the maximum number of documents that can possibly be harvested.
+     *
+     * @return the maximum number of documents that can possibly be harvested
+     */
+    @GET
+    @Path("max-documents")
+    @Produces({
+        MediaType.TEXT_PLAIN
+    })
+    public String getMaxDocumentCount()
+    {
+        int maxDocs = EventSystem.sendSynchronousEvent(new GetMaxDocumentCountEvent());
+        return String.valueOf(maxDocs);
     }
 
 

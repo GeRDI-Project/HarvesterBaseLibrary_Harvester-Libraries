@@ -28,6 +28,7 @@ import de.gerdiproject.harvest.config.events.HarvesterParameterChangedEvent;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.harvester.constants.HarvesterConstants;
 import de.gerdiproject.harvest.harvester.events.DocumentHarvestedEvent;
+import de.gerdiproject.harvest.harvester.events.GetMaxDocumentCountEvent;
 import de.gerdiproject.harvest.harvester.events.GetProviderNameEvent;
 import de.gerdiproject.harvest.harvester.events.HarvestFinishedEvent;
 import de.gerdiproject.harvest.harvester.events.HarvestStartedEvent;
@@ -48,6 +49,7 @@ import java.util.Map;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -110,6 +112,11 @@ public abstract class AbstractHarvester
         EventSystem.sendEvent(new AbortingStartedEvent());
         abortHarvest();
     };
+
+    /**
+     * Synchronous event listener for retrieving the max number of harvestable documents.
+     */
+    private final Function<GetMaxDocumentCountEvent, Integer> onGetMaxDocumentCount;
 
 
     /**
@@ -183,6 +190,17 @@ public abstract class AbstractHarvester
 
         startIndex = new AtomicInteger(0);
         endIndex = new AtomicInteger(0);
+
+        // define function for getting the estimated amount of harvested documents
+        onGetMaxDocumentCount = (GetMaxDocumentCountEvent e) -> {
+            int beginning = startIndex.get();
+            int end = endIndex.get();
+
+            if (end == Integer.MAX_VALUE)
+                end = getMaxNumberOfDocuments();
+
+            return end - beginning;
+        };
     }
 
 
@@ -218,6 +236,8 @@ public abstract class AbstractHarvester
         // only the main harvester needs event interactions. if it is composite, it calls its subharvesters accordingly
         EventSystem.addListener(HarvesterParameterChangedEvent.class, onParameterChanged);
         EventSystem.addListener(StartHarvestEvent.class, (StartHarvestEvent e) -> harvest());
+
+        EventSystem.addSynchronousListener(GetMaxDocumentCountEvent.class, onGetMaxDocumentCount);
         EventSystem.addSynchronousListener(
             GetProviderNameEvent.class,
             (GetProviderNameEvent e) -> getDataProviderName());

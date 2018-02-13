@@ -45,6 +45,8 @@ public class StatusConstants
                                            + "GET        Returns this overview of possible HTTP calls.%n"
                                            + "GET/status Returns plain text describing what the service is doing.%n"
                                            + "GET/health Returns plain text that serves as a health check.%n"
+                                           + "GET/max-documents Returns the max number of documents that can be%n"
+                                           + "                  harvested considering the harvesting range.%n"
                                            + "GET/data-provider Returns the name of the data provider that is harvested.";
 
     /**
