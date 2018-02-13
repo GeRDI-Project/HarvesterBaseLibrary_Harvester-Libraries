@@ -20,19 +20,13 @@ package de.gerdiproject.harvest.harvester.rest;
 
 
 import de.gerdiproject.harvest.state.StateMachine;
-import de.gerdiproject.harvest.MainContext;
-import de.gerdiproject.harvest.config.Configuration;
-import de.gerdiproject.harvest.config.constants.ConfigurationConstants;
 import de.gerdiproject.harvest.event.EventSystem;
-import de.gerdiproject.harvest.harvester.constants.HarvesterConstants;
 import de.gerdiproject.harvest.harvester.events.GetProviderNameEvent;
 
 import javax.ws.rs.Produces;
 import javax.ws.rs.GET;
-import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.MultivaluedMap;
 
 
 /**
