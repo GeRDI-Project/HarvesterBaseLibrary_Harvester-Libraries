@@ -64,6 +64,7 @@ public class ConfigurationConstants
     public static final String INTEGER_VALUE_MIN = "min";
     public static final String INTEGER_VALID_VALUES_TEXT = INTEGER_VALUE_MAX + ", " + INTEGER_VALUE_MIN + ", 0, 1, ...";
 
+    public static final String PASSWORD_STRING_TEXT = "*****";
     public static final String STRING_VALID_VALUES_TEXT = "<anything>";
     public static final String URL_VALID_VALUES_TEXT = "<a valid URL>";
 
@@ -92,6 +93,7 @@ public class ConfigurationConstants
     public static final String GLOBAL_PARAMETERS_JSON = "globalParameters";
     public static final String HARVESTER_PARAMETERS_JSON = "harvesterParameters";
     public static final String BASIC_PARAMETER_FORMAT = "%%1$-%ds :  %%2$s%%n";
+
 
     /**
      * Private constructor, because this is a static class.
