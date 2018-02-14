@@ -22,6 +22,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import de.gerdiproject.harvest.MainContext;
+import de.gerdiproject.harvest.application.constants.StatusConstants;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.harvester.events.HarvestStartedEvent;
 import de.gerdiproject.harvest.harvester.events.StartHarvestEvent;
@@ -126,6 +127,13 @@ public class IdleState implements IState
     {
         EventSystem.sendEvent(new StartSaveEvent(false));
         return StateConstants.SAVING_STATUS;
+    }
+
+
+    @Override
+    public String getProgress()
+    {
+        return StatusConstants.NOT_AVAILABLE;
     }
 
 

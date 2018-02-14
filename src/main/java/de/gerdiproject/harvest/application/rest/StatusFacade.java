@@ -19,6 +19,7 @@
 package de.gerdiproject.harvest.application.rest;
 
 
+import de.gerdiproject.harvest.state.AbstractProgressingState;
 import de.gerdiproject.harvest.state.IState;
 import de.gerdiproject.harvest.state.StateMachine;
 import de.gerdiproject.harvest.state.impl.ErrorState;
@@ -30,6 +31,9 @@ import de.gerdiproject.harvest.harvester.events.GetMaxDocumentCountEvent;
 import de.gerdiproject.harvest.harvester.events.GetProviderNameEvent;
 
 import javax.ws.rs.Produces;
+
+import java.time.Instant;
+
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.core.MediaType;
@@ -91,6 +95,7 @@ public final class StatusFacade
 
     /**
      * Calculates the maximum number of documents that can possibly be harvested.
+     * If this number cannot be calculated, "N/A" is returned instead.
      *
      * @return the maximum number of documents that can possibly be harvested
      */
@@ -102,7 +107,49 @@ public final class StatusFacade
     public String getMaxDocumentCount()
     {
         int maxDocs = EventSystem.sendSynchronousEvent(new GetMaxDocumentCountEvent());
-        return String.valueOf(maxDocs);
+
+        if (maxDocs < 0)
+            return StatusConstants.NOT_AVAILABLE;
+        else
+            return String.valueOf(maxDocs);
+    }
+
+    /**
+     * Returns the progress of the current state.
+     * If the current state has no progress, "N/A" is returned instead.
+     *
+     * @return the maximum number of documents that can possibly be harvested
+     */
+    @GET
+    @Path("progress")
+    @Produces({
+        MediaType.TEXT_PLAIN
+    })
+    public String getProgress()
+    {
+        return StateMachine.getCurrentState().getProgress();
+    }
+
+
+    /**
+     * Retrieves a formatted timestamp of the time at which the harvest started,
+     * or "N/A" if no harvest was started yet.
+     *
+     * @return a formatted timestamp or "N/A" if no harvest was started yet
+     */
+    @GET
+    @Path("harvest-timestamp")
+    @Produces({
+        MediaType.TEXT_PLAIN
+    })
+    public String getHarvestStartTimestamp()
+    {
+        long timestamp = MainContext.getTimeKeeper().getHarvestMeasure().getStartTimestamp();
+
+        if (timestamp == -1L)
+            return StatusConstants.NOT_AVAILABLE;
+        else
+            return Instant.ofEpochMilli(timestamp).toString();
     }
 
 
@@ -118,7 +165,7 @@ public final class StatusFacade
     })
     public String getHealth()
     {
-        IState currentState = StateMachine.getCurrentState();
+        final IState currentState = StateMachine.getCurrentState();
         HealthStatus health = HealthStatus.OK;
 
         if (currentState instanceof ErrorState)

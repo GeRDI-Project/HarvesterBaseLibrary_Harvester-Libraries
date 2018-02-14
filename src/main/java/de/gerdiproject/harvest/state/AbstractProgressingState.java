@@ -59,6 +59,7 @@ public abstract class AbstractProgressingState implements IState
 
     /**
      * Constructor that requires the progress limit.
+     *
      * @param maxProgress the progress limit
      */
     public AbstractProgressingState(int maxProgress)
@@ -102,6 +103,27 @@ public abstract class AbstractProgressingState implements IState
                          currentProgress);
 
         return status;
+    }
+
+
+    /**
+     * Returns a minimalistic progress representation of two values separated
+     * by a slash. If the maximum progress number is unknown, only the number
+     * of the current progress is returned.
+     *
+     * @return current- and max value separated by a slash, or only the current value,
+     * if the max value is unknown
+     */
+    @Override
+    public String getProgress()
+    {
+        if (isMaxNumberKnown)
+            return String.format(
+                       StateConstants.PROGESS_TEXT_SIMPLE,
+                       currentProgress,
+                       maxProgress);
+        else
+            return String.valueOf(currentProgress);
     }
 
 

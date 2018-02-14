@@ -29,6 +29,7 @@ import de.gerdiproject.harvest.utils.time.ProcessTimeMeasure;
  */
 public class StatusConstants
 {
+    public static final String NOT_AVAILABLE = "N/A";
     public static final String FAILED_HARVEST_HEALTH_CHECK = String.format(
                                                                  StateConstants.HARVEST_STATUS,
                                                                  ProcessTimeMeasure.ProcessStatus.Failed.toString());

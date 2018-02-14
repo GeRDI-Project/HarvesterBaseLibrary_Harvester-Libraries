@@ -43,6 +43,13 @@ public interface IState
      */
     String getStatusString();
 
+    /**
+     * Returns a minimalistic representation the state's progress.
+     *
+     * @return a minimalistic representation the state's progress
+     */
+    String getProgress();
+
 
     /**
      * This function is called when the {@linkplain StateMachine} transitions into

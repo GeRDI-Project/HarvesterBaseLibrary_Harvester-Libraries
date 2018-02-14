@@ -443,7 +443,6 @@ public abstract class AbstractHarvester
      */
     protected void onHarvestFailed(Throwable reason)
     {
-
         // log the error
         logger.error(reason.getMessage(), reason);
 
