@@ -18,6 +18,8 @@
  */
 package de.gerdiproject.harvest.harvester.constants;
 
+import de.gerdiproject.harvest.config.constants.ConfigurationConstants;
+
 /**
  * This static class is a collection of constants that are used by harvesters.
  *
@@ -46,6 +48,8 @@ public class HarvesterConstants
                                            + "POST/abort   Aborts an ongoing harvest%n"
                                            + "POST/submit  Submits harvested documents to a DataBase%n"
                                            + "POST/save    Saves harvested documents to disk";
+    public static final String UNKNOWN_NUMBER = "???";
+    public static final String MAX_RANGE_NUMBER = "%d (" + ConfigurationConstants.INTEGER_VALUE_MAX + ")";
 
     /**
      * Private constructor, because this is a static class.
