@@ -19,10 +19,10 @@
 package de.gerdiproject.harvest.application.rest;
 
 
-import de.gerdiproject.harvest.state.AbstractProgressingState;
 import de.gerdiproject.harvest.state.IState;
 import de.gerdiproject.harvest.state.StateMachine;
 import de.gerdiproject.harvest.state.impl.ErrorState;
+import de.gerdiproject.harvest.utils.cache.events.GetCacheCountEvent;
 import de.gerdiproject.harvest.MainContext;
 import de.gerdiproject.harvest.application.constants.StatusConstants;
 import de.gerdiproject.harvest.application.enums.HealthStatus;
@@ -106,12 +106,33 @@ public final class StatusFacade
     })
     public String getMaxDocumentCount()
     {
-        int maxDocs = EventSystem.sendSynchronousEvent(new GetMaxDocumentCountEvent());
+        Integer maxDocs = EventSystem.sendSynchronousEvent(new GetMaxDocumentCountEvent());
 
-        if (maxDocs < 0)
+        if (maxDocs == null || maxDocs < 0)
             return StatusConstants.NOT_AVAILABLE;
         else
-            return String.valueOf(maxDocs);
+            return maxDocs.toString();
+    }
+
+    /**
+     * Retrieves the amount of documents that were harvested and are currently
+     * cached.
+     *
+     * @return the amount of documents that were harvested
+     */
+    @GET
+    @Path("harvested-documents")
+    @Produces({
+        MediaType.TEXT_PLAIN
+    })
+    public String getHarvestedDocumentCount()
+    {
+        Integer cachedDocs = EventSystem.sendSynchronousEvent(new GetCacheCountEvent());
+
+        if (cachedDocs == null)
+            return StatusConstants.NOT_AVAILABLE;
+        else
+            return cachedDocs.toString();
     }
 
     /**

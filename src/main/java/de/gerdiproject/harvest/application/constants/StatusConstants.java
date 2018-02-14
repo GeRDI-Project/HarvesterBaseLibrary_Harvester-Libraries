@@ -43,12 +43,16 @@ public class StatusConstants
                                                                     ProcessTimeMeasure.ProcessStatus.Failed.toString());
 
     public static final String REST_INFO = "- %s Extended REST Interface -%n%n"
-                                           + "GET        Returns this overview of possible HTTP calls.%n"
-                                           + "GET/status Returns plain text describing what the service is doing.%n"
-                                           + "GET/health Returns plain text that serves as a health check.%n"
+                                           + "GET          Returns this overview of possible HTTP calls.%n"
+                                           + "GET/status   Returns plain text describing what the service is doing.%n"
+                                           + "GET/health   Returns plain text that serves as a health check.%n"
+                                           + "GET/progress Returns two slash-separated numbers, representing the%n"
+                                           + "             progress of the current task, or N/A if idle.%n"
                                            + "GET/max-documents Returns the max number of documents that can be%n"
                                            + "                  harvested considering the harvesting range.%n"
-                                           + "GET/data-provider Returns the name of the data provider that is harvested.";
+                                           + "GET/data-provider Returns the name of the data provider that is harvested.%n"
+                                           + "GET/harvested-documents Returns the number of harvested and currently%n"
+                                           + "                        cached documents.";
 
     /**
      * Private constructor, because this is a static class.

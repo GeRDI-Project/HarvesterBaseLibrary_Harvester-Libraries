@@ -23,7 +23,9 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.util.Date;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,6 +45,7 @@ import de.gerdiproject.harvest.state.events.AbortingFinishedEvent;
 import de.gerdiproject.harvest.submission.AbstractSubmitter;
 import de.gerdiproject.harvest.submission.events.StartSubmissionEvent;
 import de.gerdiproject.harvest.utils.cache.constants.CacheConstants;
+import de.gerdiproject.harvest.utils.cache.events.GetCacheCountEvent;
 import de.gerdiproject.json.GsonUtils;
 
 /**
@@ -57,9 +60,9 @@ public class DocumentsCache
     private static final Logger LOGGER = LoggerFactory.getLogger(DocumentsCache.class);
     private static final DocumentsCache instance = new DocumentsCache();
 
+    private final AtomicInteger documentCount = new AtomicInteger(0);
     private AbstractSubmitter submitter;
     private HarvestSaver saver;
-    private int documentCount;
     private JsonWriter cacheWriter;
     private File cacheFile;
     private String documentHash;
@@ -68,7 +71,7 @@ public class DocumentsCache
     /**
      * Event callback: When a harvest starts, the cache writer is opened.
      */
-    private Consumer<HarvestStartedEvent> onHarvestStarted = (HarvestStartedEvent e) -> {
+    private final Consumer<HarvestStartedEvent> onHarvestStarted = (HarvestStartedEvent e) -> {
         startCaching();
     };
 
@@ -76,7 +79,7 @@ public class DocumentsCache
     /**
      * Event callback: When a harvest finishes, the cache writer is closed.
      */
-    private Consumer<HarvestFinishedEvent> onHarvestFinished = (HarvestFinishedEvent e) -> {
+    private final Consumer<HarvestFinishedEvent> onHarvestFinished = (HarvestFinishedEvent e) -> {
         documentHash = e.getDocumentChecksum();
         finishCaching();
     };
@@ -85,7 +88,7 @@ public class DocumentsCache
     /**
      * Event callback: When a document is harvested, write it to the cache file.
      */
-    private Consumer<DocumentHarvestedEvent> onDocumentHarvested = (DocumentHarvestedEvent e) -> {
+    private final Consumer<DocumentHarvestedEvent> onDocumentHarvested = (DocumentHarvestedEvent e) -> {
         if (e.getDocument() != null)
             addDocument(e.getDocument());
     };
@@ -94,16 +97,16 @@ public class DocumentsCache
     /**
      * Event callback: When a submission starts, submit the cache file via the {@linkplain AbstractSubmitter}.
      */
-    private Consumer<StartSubmissionEvent> onStartSubmitting = (StartSubmissionEvent e) -> {
-        submitter.submit(cacheFile, documentCount);
+    private final Consumer<StartSubmissionEvent> onStartSubmitting = (StartSubmissionEvent e) -> {
+        submitter.submit(cacheFile, documentCount.get());
     };
 
 
     /**
      * Event callback: When a save starts, save the cache file via the {@linkplain HarvestSaver}.
      */
-    private Consumer<StartSaveEvent> onStartSaving = (StartSaveEvent e) -> {
-        saver.save(cacheFile, documentHash, documentCount, e.isAutoTriggered());
+    private final Consumer<StartSaveEvent> onStartSaving = (StartSaveEvent e) -> {
+        saver.save(cacheFile, documentHash, documentCount.get(), e.isAutoTriggered());
     };
 
 
@@ -111,9 +114,15 @@ public class DocumentsCache
      * Event callback: When an abortion is finished, close the cache streaming, so all data gets submitted
      * if we want to submit an incomplete amount of documents.
      */
-    private Consumer<AbortingFinishedEvent> onAbortingFinished = (AbortingFinishedEvent e) -> {
+    private final Consumer<AbortingFinishedEvent> onAbortingFinished = (AbortingFinishedEvent e) -> {
         finishCaching();
     };
+
+    /**
+     * Synchronous Event callback: Returns the number of cached documents.
+     */
+    private final Function<GetCacheCountEvent, Integer> onGetCacheCount =
+        (GetCacheCountEvent e) ->   documentCount.get();
 
 
     /**
@@ -121,7 +130,6 @@ public class DocumentsCache
      */
     private DocumentsCache()
     {
-        this.documentCount = 0;
         this.cacheFile = new File(
             String.format(
                 CacheConstants.CACHE_FILE_PATH,
@@ -185,6 +193,7 @@ public class DocumentsCache
         EventSystem.addListener(HarvestFinishedEvent.class, instance.onHarvestFinished);
         EventSystem.addListener(StartSubmissionEvent.class, instance.onStartSubmitting);
         EventSystem.addListener(StartSaveEvent.class, instance.onStartSaving);
+        EventSystem.addSynchronousListener(GetCacheCountEvent.class, instance.onGetCacheCount);
     }
 
 
@@ -194,14 +203,14 @@ public class DocumentsCache
      */
     private void clear()
     {
-        if (documentCount > 0)
+        if (documentCount.get() > 0)
             finishCaching();
 
         // should we delete old cache files?
         if (!MainContext.getConfiguration().getParameterValue(ConfigurationConstants.KEEP_CACHE, Boolean.class))
             clearOldCacheFiles();
 
-        documentCount = 0;
+        documentCount.set(0);
         cacheWriter = null;
     }
 
@@ -267,6 +276,6 @@ public class DocumentsCache
     private synchronized void addDocument(IDocument doc)
     {
         GsonUtils.getGson().toJson(doc, doc.getClass(), cacheWriter);
-        documentCount++;
+        documentCount.incrementAndGet();
     }
 }
