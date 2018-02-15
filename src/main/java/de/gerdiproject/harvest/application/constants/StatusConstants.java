@@ -23,7 +23,7 @@ import de.gerdiproject.harvest.state.constants.StateConstants;
 import de.gerdiproject.harvest.utils.time.ProcessTimeMeasure;
 
 /**
- * This static class is a collection of constants that are used by the {@linkplain StatusFacade}
+ * This static class is a collection of constants that are used by the {@linkplain StatusFacade}.
  *
  * @author Robin Weiss
  */
@@ -55,10 +55,10 @@ public class StatusConstants
                                            + "                        cached documents.";
 
     /**
-     * Private constructor, because this is a static class.
+     * Private constructor, because this class just serves
+     * as a place to define constants.
      */
     private StatusConstants()
     {
-
     }
 }

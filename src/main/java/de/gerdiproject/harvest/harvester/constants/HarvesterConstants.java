@@ -51,11 +51,12 @@ public class HarvesterConstants
     public static final String UNKNOWN_NUMBER = "???";
     public static final String MAX_RANGE_NUMBER = "%d (" + ConfigurationConstants.INTEGER_VALUE_MAX + ")";
 
+
     /**
-     * Private constructor, because this is a static class.
+     * Private constructor, because this class just serves
+     * as a place to define constants.
      */
     private HarvesterConstants()
     {
-
     }
 }

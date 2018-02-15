@@ -39,8 +39,10 @@ public class SubmissionConstants
     public static final String NO_URL_ERROR = "Cannot submit documents: You need to set up a valid submission URL!";
     public static final String NO_DOCS_ERROR = "There are no documents to submit!";
 
+
     /**
-     * Private constructor, because this is a static class.
+     * Private constructor, because this class just serves
+     * as a place to define constants.
      */
     private SubmissionConstants()
     {

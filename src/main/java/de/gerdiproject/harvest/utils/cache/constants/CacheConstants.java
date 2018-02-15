@@ -49,11 +49,12 @@ public class CacheConstants
     public static final String CACHE_ENTRY_STREAM_PATH = CACHE_FOLDER_PATH + "StreamHarvester/%s" + JSON_FILE_EXTENSION;
     public static final String ENTRY_STREAM_WRITE_ERROR = "Could not write entries to file at path '%s'!";
 
+
     /**
-     * Private constructor, because this is a static class.
+     * Private constructor, because this class just serves
+     * as a place to define constants.
      */
     private CacheConstants()
     {
-
     }
 }

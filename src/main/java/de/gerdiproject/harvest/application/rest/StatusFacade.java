@@ -30,10 +30,10 @@ import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.harvester.events.GetMaxDocumentCountEvent;
 import de.gerdiproject.harvest.harvester.events.GetProviderNameEvent;
 
-import javax.ws.rs.Produces;
 
 import java.time.Instant;
 
+import javax.ws.rs.Produces;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.core.MediaType;

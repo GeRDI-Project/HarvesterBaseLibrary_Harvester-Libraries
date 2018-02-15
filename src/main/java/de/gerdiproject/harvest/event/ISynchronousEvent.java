@@ -19,10 +19,15 @@
 package de.gerdiproject.harvest.event;
 
 /**
- * @author Robin Weiss
+ * Interface for synchronous events. A synchronous event
+ * can trigger a registered function anywhere, without having
+ * to know the owning object or implementation thereof.
+ * The function must return a value.
  *
+ * @param <T> the type of the return value of the function
+ *
+ * @author Robin Weiss
  */
 public interface ISynchronousEvent<T>
 {
-
 }

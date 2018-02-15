@@ -99,10 +99,10 @@ public class ConfigurationConstants
 
 
     /**
-     * Private constructor, because this is a static class.
+     * Private constructor, because this class just serves
+     * as a place to define constants.
      */
     private ConfigurationConstants()
     {
-
     }
 }
