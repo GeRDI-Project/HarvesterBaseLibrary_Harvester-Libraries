@@ -63,6 +63,7 @@ public class ContextListener<T extends AbstractHarvester> implements ServletCont
     private Class<T> harvesterClass =
         (Class<T>)((ParameterizedType) getClass().getGenericSuperclass()).getActualTypeArguments()[0];
 
+
     /**
      * Retrieves the name of this harvester service.
      *
@@ -73,14 +74,15 @@ public class ContextListener<T extends AbstractHarvester> implements ServletCont
         // get name of main harvester class
         String name = harvesterClass.getSimpleName();
 
-        // make sure the name ends with "HarvesterService"
-        if (name.endsWith("arvester"))
-            name += "Service";
-        else if (!name.endsWith("arvesterService"))
-            name += "HarvesterService";
+        // remove HarvesterXXX if it exists within the name
+        int harvesterIndex = name.toLowerCase().lastIndexOf(ApplicationConstants.HARVESTER_NAME_SUB_STRING);
 
-        return name;
+        if (harvesterIndex != -1)
+            name = name.substring(0, harvesterIndex);
+
+        return name + ApplicationConstants.HARVESTER_SERVICE_NAME_SUFFIX ;
     }
+
 
     /**
      * Retrieves the charset that is used for harvesting and file operations.
@@ -90,6 +92,7 @@ public class ContextListener<T extends AbstractHarvester> implements ServletCont
     {
         return StandardCharsets.UTF_8;
     }
+
 
     /**
      * Creates a GsonBuilder that is to be shared across the service.
@@ -104,6 +107,7 @@ public class ContextListener<T extends AbstractHarvester> implements ServletCont
     {
         return new GsonBuilder();
     }
+
 
     /**
      * Returns additional parameters that are specific to the harvester implementation.

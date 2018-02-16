@@ -37,10 +37,10 @@ public class SaveConstants
     public static final String DELETED_SAVE_FILE_FAILED = "Could not delete unfinished Save-File '%s'!";
 
     /**
-     * Private constructor, because this is a static class.
+     * Private constructor, because this class just serves
+     * as a place to define constants.
      */
     private SaveConstants()
     {
-
     }
 }

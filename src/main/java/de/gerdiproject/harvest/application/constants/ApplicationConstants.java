@@ -18,6 +18,7 @@
  */
 package de.gerdiproject.harvest.application.constants;
 
+
 /**
  * This static class is a collection of constants that are used for ContextListeners and application related classes.
  *
@@ -30,6 +31,9 @@ public class ApplicationConstants
     public static final String INIT_HARVESTER_SUCCESS = "%s initialized!";
 
     public static final String CONTEXT_DESTROYED = "%s undeployed!";
+
+    public static final String HARVESTER_SERVICE_NAME_SUFFIX = "HarvesterService";
+    public static final String HARVESTER_NAME_SUB_STRING = "harvester";
 
     /**
      * Private constructor, because this is a static class.

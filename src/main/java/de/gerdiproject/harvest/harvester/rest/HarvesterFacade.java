@@ -23,7 +23,9 @@ import de.gerdiproject.harvest.state.StateMachine;
 import de.gerdiproject.harvest.MainContext;
 import de.gerdiproject.harvest.config.Configuration;
 import de.gerdiproject.harvest.config.constants.ConfigurationConstants;
+import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.harvester.constants.HarvesterConstants;
+import de.gerdiproject.harvest.harvester.events.GetMaxDocumentCountEvent;
 
 import javax.ws.rs.Produces;
 import javax.ws.rs.GET;
@@ -44,7 +46,6 @@ import javax.ws.rs.core.MultivaluedMap;
 @Path("")
 public class HarvesterFacade
 {
-
     /**
      * Starts a harvest using the harvester that is registered in the
      * MainContext.
@@ -77,21 +78,35 @@ public class HarvesterFacade
     })
     public String getInfo()
     {
-        String status = StateMachine.getCurrentState().getStatusString();
+        final String status = StateMachine.getCurrentState().getStatusString();
 
         // get harvesting range
-
-        String from = "???";
-        String to = "???";
-        Configuration config = MainContext.getConfiguration();
+        String from = HarvesterConstants.UNKNOWN_NUMBER;
+        String to = HarvesterConstants.UNKNOWN_NUMBER;
+        final Configuration config = MainContext.getConfiguration();
 
         if (config != null) {
+            // get the range specified in the config
             from = config.getParameterStringValue(ConfigurationConstants.HARVEST_START_INDEX);
             to = config.getParameterStringValue(ConfigurationConstants.HARVEST_END_INDEX);
+
+            // add the real expected number of max documents from the main harvester
+            if (to.equals(ConfigurationConstants.INTEGER_VALUE_MAX)) {
+                Integer maxDocs = EventSystem.sendSynchronousEvent(new GetMaxDocumentCountEvent());
+
+                if (maxDocs != null && maxDocs > 0) {
+                    try {
+                        int maxRange = Integer.parseInt(from) + maxDocs;
+                        to = String.format(HarvesterConstants.MAX_RANGE_NUMBER, maxRange);
+                    } catch (NumberFormatException e) { // NOPMD - just leave the String how it was before
+
+                    }
+                }
+            }
         }
 
         // get harvester name
-        String name = MainContext.getModuleName();
+        final String name = MainContext.getModuleName();
 
         return String.format(HarvesterConstants.REST_INFO, name, status, from, to);
     }

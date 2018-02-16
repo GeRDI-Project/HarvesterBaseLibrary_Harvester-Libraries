@@ -16,26 +16,19 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package de.gerdiproject.harvest.utils.time.constants;
+package de.gerdiproject.harvest.harvester.events;
 
-
-import de.gerdiproject.harvest.utils.time.HarvestTimeKeeper;
+import de.gerdiproject.harvest.event.ISynchronousEvent;
 
 /**
- * This static class is a collection of constants, used by the {@linkplain HarvestTimeKeeper}.
+ * This synchronous event returns an estimated number of the
+ * maximum amount of documents that can possibly be harvested.
+ * The calculation of that number includes the harvesting range,
+ * determined by the harvestFrom and harvestTo parameters.
  *
  * @author Robin Weiss
  */
-public class HarvestTimeKeeperConstants
+public class GetMaxDocumentCountEvent implements ISynchronousEvent<Integer>
 {
-    public static final String STATUS_FORMAT = "%s at %s";
 
-
-    /**
-     * Private constructor, because this class just serves
-     * as a place to define constants.
-     */
-    private HarvestTimeKeeperConstants()
-    {
-    }
 }

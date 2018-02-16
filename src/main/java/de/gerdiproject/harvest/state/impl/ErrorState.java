@@ -18,6 +18,7 @@
  */
 package de.gerdiproject.harvest.state.impl;
 
+import de.gerdiproject.harvest.application.constants.StatusConstants;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.harvester.events.HarvesterInitializedEvent;
 import de.gerdiproject.harvest.state.IState;
@@ -91,6 +92,13 @@ public class ErrorState implements IState
     public String save()
     {
         return StateConstants.ERROR_DETAILED;
+    }
+
+
+    @Override
+    public String getProgress()
+    {
+        return StatusConstants.NOT_AVAILABLE;
     }
 
 

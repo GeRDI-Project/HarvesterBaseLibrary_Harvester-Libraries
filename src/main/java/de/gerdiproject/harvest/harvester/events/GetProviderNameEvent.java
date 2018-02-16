@@ -16,26 +16,16 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package de.gerdiproject.harvest.utils.time.constants;
+package de.gerdiproject.harvest.harvester.events;
 
-
-import de.gerdiproject.harvest.utils.time.HarvestTimeKeeper;
+import de.gerdiproject.harvest.event.ISynchronousEvent;
 
 /**
- * This static class is a collection of constants, used by the {@linkplain HarvestTimeKeeper}.
+ * This synchronous event returns the name of the harvested data provider.
  *
  * @author Robin Weiss
  */
-public class HarvestTimeKeeperConstants
+public class GetProviderNameEvent implements ISynchronousEvent<String>
 {
-    public static final String STATUS_FORMAT = "%s at %s";
 
-
-    /**
-     * Private constructor, because this class just serves
-     * as a place to define constants.
-     */
-    private HarvestTimeKeeperConstants()
-    {
-    }
 }

@@ -22,11 +22,14 @@ package de.gerdiproject.harvest.harvester;
 import de.gerdiproject.harvest.ICleanable;
 import de.gerdiproject.harvest.IDocument;
 import de.gerdiproject.harvest.MainContext;
+import de.gerdiproject.harvest.application.constants.ApplicationConstants;
 import de.gerdiproject.harvest.config.constants.ConfigurationConstants;
 import de.gerdiproject.harvest.config.events.HarvesterParameterChangedEvent;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.harvester.constants.HarvesterConstants;
 import de.gerdiproject.harvest.harvester.events.DocumentHarvestedEvent;
+import de.gerdiproject.harvest.harvester.events.GetMaxDocumentCountEvent;
+import de.gerdiproject.harvest.harvester.events.GetProviderNameEvent;
 import de.gerdiproject.harvest.harvester.events.HarvestFinishedEvent;
 import de.gerdiproject.harvest.harvester.events.HarvestStartedEvent;
 import de.gerdiproject.harvest.harvester.events.StartHarvestEvent;
@@ -46,6 +49,7 @@ import java.util.Map;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -108,6 +112,11 @@ public abstract class AbstractHarvester
         EventSystem.sendEvent(new AbortingStartedEvent());
         abortHarvest();
     };
+
+    /**
+     * Synchronous event listener for retrieving the max number of harvestable documents.
+     */
+    private final Function<GetMaxDocumentCountEvent, Integer> onGetMaxDocumentCount;
 
 
     /**
@@ -181,6 +190,17 @@ public abstract class AbstractHarvester
 
         startIndex = new AtomicInteger(0);
         endIndex = new AtomicInteger(0);
+
+        // define function for getting the estimated amount of harvested documents
+        onGetMaxDocumentCount = (GetMaxDocumentCountEvent e) -> {
+            int beginning = startIndex.get();
+            int end = endIndex.get();
+
+            if (end == Integer.MAX_VALUE)
+                end = getMaxNumberOfDocuments();
+
+            return end - beginning;
+        };
     }
 
 
@@ -216,6 +236,30 @@ public abstract class AbstractHarvester
         // only the main harvester needs event interactions. if it is composite, it calls its subharvesters accordingly
         EventSystem.addListener(HarvesterParameterChangedEvent.class, onParameterChanged);
         EventSystem.addListener(StartHarvestEvent.class, (StartHarvestEvent e) -> harvest());
+
+        EventSystem.addSynchronousListener(GetMaxDocumentCountEvent.class, onGetMaxDocumentCount);
+        EventSystem.addSynchronousListener(
+            GetProviderNameEvent.class,
+            (GetProviderNameEvent e) -> getDataProviderName());
+    }
+
+
+    /**
+     * Returns the name of the data provider that is harvested.
+     *
+     * @return the name of the data provider that is harvested
+     */
+    protected String getDataProviderName()
+    {
+        String name = getClass().getSimpleName();
+
+        // remove HarvesterXXX if it exists within the name
+        int harvesterIndex = name.toLowerCase().lastIndexOf(ApplicationConstants.HARVESTER_NAME_SUB_STRING);
+
+        if (harvesterIndex != -1)
+            name = name.substring(0, harvesterIndex);
+
+        return name;
     }
 
 
@@ -399,7 +443,6 @@ public abstract class AbstractHarvester
      */
     protected void onHarvestFailed(Throwable reason)
     {
-
         // log the error
         logger.error(reason.getMessage(), reason);
 

@@ -254,7 +254,7 @@ public final class ParameterFactory
      *
      * @return a parameter for the user password for sending documents
      */
-    public static StringParameter createSubmissionPassword()
+    public static PasswordParameter createSubmissionPassword()
     {
         final List<Class<? extends IState>> allowedStates = Arrays.asList(
                                                                 InitializationState.class,
@@ -263,7 +263,7 @@ public final class ParameterFactory
                                                                 HarvestingState.class,
                                                                 SavingState.class
                                                             );
-        return new StringParameter(ConfigurationConstants.SUBMISSION_PASSWORD, allowedStates, null);
+        return new PasswordParameter(ConfigurationConstants.SUBMISSION_PASSWORD, allowedStates);
     }
 
     /**

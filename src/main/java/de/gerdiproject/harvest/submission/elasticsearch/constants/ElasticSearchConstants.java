@@ -52,8 +52,10 @@ public class ElasticSearchConstants
     public static final String DOCUMENT_SUBMIT_ERROR_REASON = "  %s: %s";
     public static final String DOCUMENT_SUBMIT_ERROR_CAUSE = ", caused by%n  %s: %s";
 
+
     /**
-     * Private constructor, because this is a static class.
+     * Private constructor, because this class just serves
+     * as a place to define constants.
      */
     private ElasticSearchConstants()
     {

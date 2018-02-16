@@ -32,6 +32,7 @@ import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 
@@ -42,23 +43,37 @@ import javax.ws.rs.core.MultivaluedMap;
  * @author Robin Weiss
  */
 @Path("config")
-public class ConfigurationFacade
+public final class ConfigurationFacade
 {
     /**
-     * Displays an info string that summerizes the current configuration.
+     * If a key is specified in the query, the string value of the corresponding parameter is returned.
+     * Is such a key not specified, the entire configuration is returned in a nice to read way.
      *
-     * @return an info string
+     * @param key the key of the parameter, or null if such a key is not specified
+     *
+     * @return a pretty formatted version of the entire configuration,
+     *          or the value of the parameter with the matching query key. or an empty string,
+     *          If a key is specified, but the parameter does not exist, an empty string is returned.
      */
     @GET
     @Produces({
         MediaType.TEXT_PLAIN
     })
-    public String getInfo()
+    public String getValue(@QueryParam("key") String key)
     {
-        if (MainContext.getConfiguration() == null)
-            return ConfigurationConstants.REST_INFO_FAILED;
-        else
-            return MainContext.getConfiguration().getInfoString();
+        if (key == null) {
+            if (MainContext.getConfiguration() == null)
+                return ConfigurationConstants.REST_INFO_FAILED;
+            else
+                return MainContext.getConfiguration().getInfoString();
+        } else {
+            String value = null;
+
+            if (MainContext.getConfiguration() != null)
+                value = MainContext.getConfiguration().getParameterStringValue(key);
+
+            return value == null ? "" : value;
+        }
     }
 
 
@@ -78,6 +93,7 @@ public class ConfigurationFacade
         else
             return MainContext.getConfiguration().saveToDisk();
     }
+
 
     /**
      * Changes parameters of the configuration.

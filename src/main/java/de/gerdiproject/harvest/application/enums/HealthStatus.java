@@ -16,26 +16,41 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package de.gerdiproject.harvest.utils.time.constants;
-
-
-import de.gerdiproject.harvest.utils.time.HarvestTimeKeeper;
+package de.gerdiproject.harvest.application.enums;
 
 /**
- * This static class is a collection of constants, used by the {@linkplain HarvestTimeKeeper}.
+ * This enumeration represents a simplified health status of the harvester service.
  *
  * @author Robin Weiss
  */
-public class HarvestTimeKeeperConstants
-{
-    public static final String STATUS_FORMAT = "%s at %s";
-
+public enum HealthStatus {
+    /**
+     * The service has not experienced any significant failures.
+     */
+    OK,
 
     /**
-     * Private constructor, because this class just serves
-     * as a place to define constants.
+     * The harvest could not be completed, due to an exception.
      */
-    private HarvestTimeKeeperConstants()
-    {
-    }
+    HARVEST_FAILED,
+
+    /**
+     * The submission could not be completed, due to an exception.
+     */
+    SUBMISSION_FAILED,
+
+    /**
+     * The saving could not be completed, due to an exception.
+     */
+    SAVING_FAILED,
+
+    /**
+     * Both the saving and submission could not be completed, due to an exception.
+     */
+    SAVING_AND_SUBMISSION_FAILED,
+
+    /**
+     * The harvester service could not be started.
+     */
+    FUBAR
 }

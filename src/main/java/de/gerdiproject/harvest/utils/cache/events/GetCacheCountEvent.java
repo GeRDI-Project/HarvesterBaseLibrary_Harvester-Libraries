@@ -16,26 +16,17 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package de.gerdiproject.harvest.utils.time.constants;
+package de.gerdiproject.harvest.utils.cache.events;
 
-
-import de.gerdiproject.harvest.utils.time.HarvestTimeKeeper;
+import de.gerdiproject.harvest.event.ISynchronousEvent;
 
 /**
- * This static class is a collection of constants, used by the {@linkplain HarvestTimeKeeper}.
+ * This synchronous event returns the number of harvested,
+ * currently cached documents.
  *
  * @author Robin Weiss
  */
-public class HarvestTimeKeeperConstants
+public class GetCacheCountEvent implements ISynchronousEvent<Integer>
 {
-    public static final String STATUS_FORMAT = "%s at %s";
 
-
-    /**
-     * Private constructor, because this class just serves
-     * as a place to define constants.
-     */
-    private HarvestTimeKeeperConstants()
-    {
-    }
 }

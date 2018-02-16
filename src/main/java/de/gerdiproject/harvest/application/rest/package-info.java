@@ -16,26 +16,9 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package de.gerdiproject.harvest.utils.time.constants;
-
-
-import de.gerdiproject.harvest.utils.time.HarvestTimeKeeper;
-
 /**
- * This static class is a collection of constants, used by the {@linkplain HarvestTimeKeeper}.
+ * This package contains restful iterfaces that concern the entire application.
  *
  * @author Robin Weiss
  */
-public class HarvestTimeKeeperConstants
-{
-    public static final String STATUS_FORMAT = "%s at %s";
-
-
-    /**
-     * Private constructor, because this class just serves
-     * as a place to define constants.
-     */
-    private HarvestTimeKeeperConstants()
-    {
-    }
-}
+package de.gerdiproject.harvest.application.rest;

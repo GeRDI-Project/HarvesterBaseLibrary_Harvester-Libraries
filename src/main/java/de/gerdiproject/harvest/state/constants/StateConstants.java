@@ -61,9 +61,12 @@ public class StateConstants
     public static final String READY = "%s is now ready!";
     public static final String HARVEST_STARTED = "Harvest started!";
 
-    public static final String IDLE_STATUS = "Harvest:     %s%n"
-                                             + "Storage:     %s%n"
-                                             + "Submission:  %s";
+    public static final String HARVEST_STATUS = "Harvest:     %s";
+    public static final String SAVE_STATUS = "Storage:     %s";
+    public static final String SUBMIT_STATUS = "Submission:  %s";
+    public static final String IDLE_STATUS = HARVEST_STATUS + "%n"
+                                             + SAVE_STATUS + "%n"
+                                             + SUBMIT_STATUS;
 
     public static final String HARVEST_DONE = "Harvest finished!";
     public static final String HARVEST_FAILED = "Harvest failed!";
@@ -79,11 +82,14 @@ public class StateConstants
     public static final String SECONDS = "%ds";
 
     public static final String PROGESS_TEXT = "%s: %3d%% (%d / %d)";
+    public static final String PROGESS_TEXT_SIMPLE = "%d/%d";
     public static final String PROGESS_TEXT_DETAILED = "%d / %d (%.2f%%)  Remaining Time: %s";
     public static final String PROGESS_TEXT_NO_MAX_VALUE = "%d documents";
 
+
     /**
-     * Private constructor, because this is a static class.
+     * Private constructor, because this class just serves
+     * as a place to define constants.
      */
     private StateConstants()
     {

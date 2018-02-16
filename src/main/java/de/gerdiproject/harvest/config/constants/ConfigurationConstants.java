@@ -64,6 +64,7 @@ public class ConfigurationConstants
     public static final String INTEGER_VALUE_MIN = "min";
     public static final String INTEGER_VALID_VALUES_TEXT = INTEGER_VALUE_MAX + ", " + INTEGER_VALUE_MIN + ", 0, 1, ...";
 
+    public static final String PASSWORD_STRING_TEXT = "*****";
     public static final String STRING_VALID_VALUES_TEXT = "<anything>";
     public static final String URL_VALID_VALUES_TEXT = "<a valid URL>";
 
@@ -73,8 +74,11 @@ public class ConfigurationConstants
     public static final String LOAD_FAILED = "Could not load configuration from '%s': %s";
     public static final String NO_EXISTS = "No configuration exists!";
     public static final String REST_INFO = "- %s Configuration -%n%n%s%n"
+                                           + "GET   Returns either the entire configuration in pretty text, or%n"
+                                           + "      if '?key=xxx' is added, returns the value of parameter 'xxx'.%n"
                                            + "POST  Saves the current configuration to disk.%n"
-                                           + "PUT   Sets x-www-form-urlencoded parameters for the harvester.%n\t\t\tValid values: %s.%n";
+                                           + "PUT   Sets x-www-form-urlencoded parameters for the harvester.%n"
+                                           + "      Valid values: %s.%n";
     public static final String REST_INFO_FAILED = "Could not initialize Configuration.\nPlease, look at the server logs for details.";
 
     public static final String PARSE_ERROR = "Could not read configuration parameter value '%s' from key '%s'!";
@@ -93,11 +97,12 @@ public class ConfigurationConstants
     public static final String HARVESTER_PARAMETERS_JSON = "harvesterParameters";
     public static final String BASIC_PARAMETER_FORMAT = "%%1$-%ds :  %%2$s%%n";
 
+
     /**
-     * Private constructor, because this is a static class.
+     * Private constructor, because this class just serves
+     * as a place to define constants.
      */
     private ConfigurationConstants()
     {
-
     }
 }

@@ -21,6 +21,7 @@ package de.gerdiproject.harvest.state.impl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import de.gerdiproject.harvest.application.constants.StatusConstants;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.state.IState;
 import de.gerdiproject.harvest.state.StateMachine;
@@ -115,6 +116,13 @@ public class AbortingState implements IState
     public String save()
     {
         return String.format(StateConstants.ABORT_DETAILED, processName);
+    }
+
+
+    @Override
+    public String getProgress()
+    {
+        return StatusConstants.NOT_AVAILABLE;
     }
 
 
