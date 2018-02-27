@@ -48,8 +48,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Consumer;
-import java.util.function.Function;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -80,43 +78,6 @@ public abstract class AbstractHarvester
     protected final HttpRequester httpRequester;
 
     protected final Logger logger; // NOPMD - we want to retrieve the type of the inheriting class
-
-
-    /**
-     * Event listener for harvester parameter changes. Parameters include the harvesting range, as well as
-     * any implementation specific properties.
-     */
-    private final Consumer<HarvesterParameterChangedEvent> onParameterChanged = (HarvesterParameterChangedEvent e) -> {
-        String key = e.getParameter().getKey();
-        Object value = e.getParameter().getValue();
-
-        if (key.equals(ConfigurationConstants.HARVEST_START_INDEX))
-            setStartIndex((Integer) value);
-
-        else if (key.equals(ConfigurationConstants.HARVEST_END_INDEX))
-            setEndIndex((Integer) value);
-
-        else if (value != null)
-            setProperty(key, value.toString());
-
-        else
-            setProperty(key, null);
-    };
-
-
-    /**
-     * Event listener for aborting the harvester.
-     */
-    private final Consumer<StartAbortingEvent> onStartAborting = (StartAbortingEvent e) -> {
-        EventSystem.removeListener(StartAbortingEvent.class, this.onStartAborting);
-        EventSystem.sendEvent(new AbortingStartedEvent());
-        abortHarvest();
-    };
-
-    /**
-     * Synchronous event listener for retrieving the max number of harvestable documents.
-     */
-    private final Function<GetMaxDocumentCountEvent, Integer> onGetMaxDocumentCount;
 
 
     /**
@@ -190,17 +151,6 @@ public abstract class AbstractHarvester
 
         startIndex = new AtomicInteger(0);
         endIndex = new AtomicInteger(0);
-
-        // define function for getting the estimated amount of harvested documents
-        onGetMaxDocumentCount = (GetMaxDocumentCountEvent e) -> {
-            int beginning = startIndex.get();
-            int end = endIndex.get();
-
-            if (end == Integer.MAX_VALUE)
-                end = getMaxNumberOfDocuments();
-
-            return end - beginning;
-        };
     }
 
 
@@ -234,32 +184,10 @@ public abstract class AbstractHarvester
         isMainHarvester = true;
 
         // only the main harvester needs event interactions. if it is composite, it calls its subharvesters accordingly
-        EventSystem.addListener(HarvesterParameterChangedEvent.class, onParameterChanged);
-        EventSystem.addListener(StartHarvestEvent.class, (StartHarvestEvent e) -> harvest());
-
-        EventSystem.addSynchronousListener(GetMaxDocumentCountEvent.class, onGetMaxDocumentCount);
-        EventSystem.addSynchronousListener(
-            GetProviderNameEvent.class,
-            (GetProviderNameEvent e) -> getDataProviderName());
-    }
-
-
-    /**
-     * Returns the name of the data provider that is harvested.
-     *
-     * @return the name of the data provider that is harvested
-     */
-    protected String getDataProviderName()
-    {
-        String name = getClass().getSimpleName();
-
-        // remove HarvesterXXX if it exists within the name
-        int harvesterIndex = name.toLowerCase().lastIndexOf(ApplicationConstants.HARVESTER_NAME_SUB_STRING);
-
-        if (harvesterIndex != -1)
-            name = name.substring(0, harvesterIndex);
-
-        return name;
+        EventSystem.addListener(HarvesterParameterChangedEvent.class, this::onParameterChanged);
+        EventSystem.addListener(StartHarvestEvent.class, this::onStartHarvest);
+        EventSystem.addSynchronousListener(GetMaxDocumentCountEvent.class, this::onGetMaxDocumentCount);
+        EventSystem.addSynchronousListener(GetProviderNameEvent.class, this::onGetDataProviderName);
     }
 
 
@@ -375,7 +303,7 @@ public abstract class AbstractHarvester
 
         // only send events from the main harvester
         if (isMainHarvester) {
-            EventSystem.addListener(StartAbortingEvent.class, onStartAborting);
+            EventSystem.addListener(StartAbortingEvent.class, this::onStartAborting);
             EventSystem.sendEvent(new HarvestStartedEvent(from, to));
         }
 
@@ -406,7 +334,7 @@ public abstract class AbstractHarvester
 
         // do some things, only if this is the main harvester
         if (isMainHarvester) {
-            EventSystem.removeListener(StartAbortingEvent.class, onStartAborting);
+            EventSystem.removeListener(StartAbortingEvent.class, this::onStartAborting);
             EventSystem.sendEvent(new HarvestFinishedEvent(true, getHash(false)));
         }
     }
@@ -451,7 +379,7 @@ public abstract class AbstractHarvester
 
         if (isMainHarvester) {
             EventSystem.sendEvent(new HarvestFinishedEvent(false, getHash(false)));
-            EventSystem.removeListener(StartAbortingEvent.class, onStartAborting);
+            EventSystem.removeListener(StartAbortingEvent.class, this::onStartAborting);
         }
     }
 
@@ -487,5 +415,99 @@ public abstract class AbstractHarvester
         }
 
         return hash;
+    }
+
+
+    //////////////////////////////
+    // Event Callback Functions //
+    //////////////////////////////
+
+
+    /**
+     * Event callback for harvester parameter changes. Parameters include the harvesting range, as well as
+     * any implementation specific properties.
+     *
+     * @param event the event that triggered this callback function
+     */
+    private void onParameterChanged(HarvesterParameterChangedEvent event)
+    {
+        final String key = event.getParameter().getKey();
+        final Object value = event.getParameter().getValue();
+
+        if (key.equals(ConfigurationConstants.HARVEST_START_INDEX))
+            setStartIndex((Integer) value);
+
+        else if (key.equals(ConfigurationConstants.HARVEST_END_INDEX))
+            setEndIndex((Integer) value);
+
+        else if (value != null)
+            setProperty(key, value.toString());
+
+        else
+            setProperty(key, null);
+    };
+
+
+    /**
+     * Event callback for aborting the harvester.
+     *
+     * @param event the event that triggered this callback function
+     */
+    private void onStartAborting(StartAbortingEvent event) // NOPMD events must be defined as parameter, even if not used
+    {
+        EventSystem.removeListener(StartAbortingEvent.class, this::onStartAborting);
+        EventSystem.sendEvent(new AbortingStartedEvent());
+        abortHarvest();
+    };
+
+
+    /**
+     * Synchronous event callback that returns the name of the data provider that is harvested.
+     *
+     * @param event the event that triggered this callback function
+     *
+     * @return the name of the data provider that is harvested
+     */
+    protected String onGetDataProviderName(GetProviderNameEvent event)
+    {
+        String name = getClass().getSimpleName();
+
+        // remove HarvesterXXX if it exists within the name
+        int harvesterIndex = name.toLowerCase().lastIndexOf(ApplicationConstants.HARVESTER_NAME_SUB_STRING);
+
+        if (harvesterIndex != -1)
+            name = name.substring(0, harvesterIndex);
+
+        return name;
+    }
+
+
+    /**
+     * Event callback for starting the harvester.
+     *
+     * @param event the event that triggered this callback function
+     */
+    private void onStartHarvest(StartHarvestEvent event) // NOPMD events must be defined as parameter, even if not used
+    {
+        harvest();
+    }
+
+
+    /**
+     * Synchronous event callback for retrieving the max number of harvestable documents.
+     *
+     * @param event the event that triggered this callback function
+     *
+     * @return the max number of harvestable documents
+     */
+    private final Integer onGetMaxDocumentCount(GetMaxDocumentCountEvent event) // NOPMD events must be defined as parameter, even if not used
+    {
+        int beginning = startIndex.get();
+        int end = endIndex.get();
+
+        if (end == Integer.MAX_VALUE)
+            end = getMaxNumberOfDocuments();
+
+        return end - beginning;
     }
 }
