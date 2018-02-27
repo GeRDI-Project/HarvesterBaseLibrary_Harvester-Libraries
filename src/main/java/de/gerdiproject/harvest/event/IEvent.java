@@ -19,7 +19,7 @@
 package de.gerdiproject.harvest.event;
 
 /**
- * This is an interface for all events that can be registered and dispatched via the {@linkplain EventSystem}.
+ * This is an interface for all asynchronous events that can be registered and dispatched via the {@linkplain EventSystem}.
  *
  * @author Robin Weiss
  */

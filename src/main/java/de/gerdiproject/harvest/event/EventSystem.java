@@ -22,6 +22,9 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -32,10 +35,13 @@ import java.util.function.Function;
  */
 public class EventSystem
 {
-    private Map<Class<? extends IEvent>, List<Consumer<? extends IEvent>>> callbackMap;
-    private Map<Class<? extends ISynchronousEvent<?>>, Function<? extends ISynchronousEvent<?>, ?>> synchronousCallbackMap;
+    private final Map<Class<? extends IEvent>, List<Consumer<? extends IEvent>>> callbackMap;
+    private final Map<Class<? extends ISynchronousEvent<?>>, Function<? extends ISynchronousEvent<?>, ?>> synchronousCallbackMap;
+    private final Queue<IEvent> asyncEventQueue;
+    private final AtomicBoolean isProcessingEvents;
 
     private static EventSystem instance = new EventSystem();
+
 
 
     /**
@@ -45,6 +51,8 @@ public class EventSystem
     {
         callbackMap = new HashMap<>();
         synchronousCallbackMap = new HashMap<>();
+        asyncEventQueue = new ConcurrentLinkedQueue<>();
+        isProcessingEvents = new AtomicBoolean(false);
     }
 
 
@@ -106,18 +114,60 @@ public class EventSystem
 
 
     /**
-     * Dispatches a specified event, calling all functions that were added to it via the addListener() function.
+     * Dispatches a specified asynchronous event by adding it to a queue.
+     * If the event is the only one in the queue, its callback functions will be called immediately.
+     * Otherwise, all other queued events will be processed first.
      *
      * @param event the event that is dispatched
      * @param <T> the type of the dispatched event
      */
-    @SuppressWarnings("unchecked") // this warning is suppressed, because the public functions guarantee that the consumer consumes events of the same class as the corresponding key
     public static <T extends IEvent> void sendEvent(T event)
     {
-        synchronized (instance.callbackMap) {
-            List<Consumer<? extends IEvent>> eventList = instance.callbackMap.get(event.getClass());
+        instance.asyncEventQueue.add(event);
+        instance.processAsynchronousEventQueue();
+    }
 
-            if (eventList != null) {
+
+    /**
+     * If no other dequeueing process is in progress, this method
+     * empties the asynchronous event queue in order, executing all corresponding callbacks.
+     */
+    private void processAsynchronousEventQueue()
+    {
+        if (!isProcessingEvents.get()) {
+            isProcessingEvents.set(true);
+
+            while (!asyncEventQueue.isEmpty()) {
+                // retrieve next event to process
+                final IEvent nextEvent = asyncEventQueue.poll();
+
+                if (nextEvent != null)
+                    executeAsynchronousCallbacks(nextEvent);
+            }
+
+            isProcessingEvents.set(false);
+        }
+    }
+
+
+    /**
+     * Executes all functions that were to added to the specified event via the addListener() function.
+     *
+     * @param event the event that was dispatched
+     * @param <T> the type of the dispatched event
+     */
+    @SuppressWarnings({"unchecked"}) // this warning is suppressed, because the public functions guarantee that the consumer consumes events of the same class as the corresponding key
+    private <T extends IEvent> void executeAsynchronousCallbacks(T event)
+    {
+        final List<Consumer<? extends IEvent>> eventList;
+
+        // get callback list for event
+        synchronized (callbackMap) {
+            eventList = callbackMap.get(event.getClass());
+        }
+
+        if (eventList != null) {
+            synchronized (eventList) {
                 int i = eventList.size();
 
                 // traverse list from back to front, in case a listener gets removed by a callback function
