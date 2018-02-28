@@ -137,13 +137,8 @@ public class EventSystem
         if (!isProcessingEvents.get()) {
             isProcessingEvents.set(true);
 
-            while (!asyncEventQueue.isEmpty()) {
-                // retrieve next event to process
-                final IEvent nextEvent = asyncEventQueue.poll();
-
-                if (nextEvent != null)
-                    executeAsynchronousCallbacks(nextEvent);
-            }
+            while (!asyncEventQueue.isEmpty())
+                executeAsynchronousCallbacks(asyncEventQueue.poll());
 
             isProcessingEvents.set(false);
         }
