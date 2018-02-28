@@ -40,7 +40,7 @@ public class EventSystem
     private final Queue<IEvent> asyncEventQueue;
     private final AtomicBoolean isProcessingEvents;
 
-    private static EventSystem instance = new EventSystem();
+    private final static EventSystem instance = new EventSystem();
 
 
 
