@@ -16,16 +16,16 @@
 package de.gerdiproject.harvest.harvester;
 
 
-import de.gerdiproject.harvest.IDocument;
-import de.gerdiproject.harvest.MainContext;
-import de.gerdiproject.harvest.harvester.constants.HarvesterConstants;
-
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Collection;
 import java.util.List;
+
+import de.gerdiproject.harvest.IDocument;
+import de.gerdiproject.harvest.MainContext;
+import de.gerdiproject.harvest.harvester.constants.HarvesterConstants;
 
 
 /**
@@ -38,17 +38,14 @@ public abstract class AbstractListHarvester<T> extends AbstractHarvester
 {
     protected Collection<T> entries;
     protected final int numberOfDocumentsPerEntry;
-    protected boolean isAborting;
 
 
     /**
      * Forwarding the superclass constructor.
      *
-     * @param harvesterName
-     *            a unique name of the harvester
-     * @param numberOfDocumentsPerEntry
-     *            the number of documents that are expected to be harvested from
-     *            each entry
+     * @param harvesterName a unique name of the harvester
+     * @param numberOfDocumentsPerEntry the number of documents that are
+     *            expected to be harvested from each entry
      */
     public AbstractListHarvester(String harvesterName, int numberOfDocumentsPerEntry)
     {
@@ -60,9 +57,8 @@ public abstract class AbstractListHarvester<T> extends AbstractHarvester
     /**
      * Forwarding the superclass constructor.
      *
-     * @param numberOfDocumentsPerEntry
-     *            the number of documents that are expected to be harvested from
-     *            each entry
+     * @param numberOfDocumentsPerEntry the number of documents that are
+     *            expected to be harvested from each entry
      */
     public AbstractListHarvester(int numberOfDocumentsPerEntry)
     {
@@ -79,12 +75,13 @@ public abstract class AbstractListHarvester<T> extends AbstractHarvester
 
 
     /**
-     * Harvests a single entry, adding between zero and 'numberOfDocumentsPerEntry' entries to the search index.
+     * Harvests a single entry, adding between zero and
+     * 'numberOfDocumentsPerEntry' entries to the search index.
      *
-     * @param entry
-     *            the entry that is to be read
+     * @param entry the entry that is to be read
      *
-     * @return a list of search documents, or null if no documents could be retrieved from the entry
+     * @return a list of search documents, or null if no documents could be
+     *         retrieved from the entry
      */
     protected abstract List<IDocument> harvestEntry(T entry);
 
@@ -186,21 +183,5 @@ public abstract class AbstractListHarvester<T> extends AbstractHarvester
         pw.close();
 
         return buffer.toString();
-    }
-
-
-    @Override
-    public void abortHarvest()
-    {
-        if (currentHarvestingProcess != null)
-            isAborting = true;
-    }
-
-
-    @Override
-    protected void onHarvestAborted()
-    {
-        isAborting = false;
-        super.onHarvestAborted();
     }
 }

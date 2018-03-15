@@ -32,7 +32,8 @@ import de.gerdiproject.harvest.utils.cache.DocumentsCache;
 
 /**
  * This harvester manages a set of sub-harvesters. When the harvest is started,
- * all sub-harvesters are started concurrently, but write to a shared {@linkplain DocumentsCache}.
+ * all sub-harvesters are started concurrently, but write to a shared
+ * {@linkplain DocumentsCache}.
  *
  * @author Robin Weiss
  */
@@ -47,8 +48,8 @@ public abstract class AbstractCompositeHarvester extends AbstractHarvester
      * name.
      *
      * @param harvesterName a unique name of the harvester
-     * @param subHarvesters the harvesters that are executed concurrently when the
-     *         composite harvester is started
+     * @param subHarvesters the harvesters that are executed concurrently when
+     *            the composite harvester is started
      */
     public AbstractCompositeHarvester(String harvesterName, Iterable<AbstractHarvester> subHarvesters)
     {
@@ -61,9 +62,8 @@ public abstract class AbstractCompositeHarvester extends AbstractHarvester
     /**
      * Constructor that requires an Iterable of sub-harvesters.
      *
-     * @param subHarvesters
-     *            the harvesters that are executed concurrently when the
-     *            composite harvester is started
+     * @param subHarvesters the harvesters that are executed concurrently when
+     *            the composite harvester is started
      */
     public AbstractCompositeHarvester(Iterable<AbstractHarvester> subHarvesters)
     {
@@ -90,7 +90,8 @@ public abstract class AbstractCompositeHarvester extends AbstractHarvester
 
 
     /**
-     * Takes an index of all documents combined and adapts the harvesting ranges of all sub-harvesters accordingly.
+     * Takes an index of all documents combined and adapts the harvesting ranges
+     * of all sub-harvesters accordingly.
      *
      * @param index the new index, either start- or end index
      * @param indexSetter a function that sets the sub-harvesters index range
@@ -155,9 +156,7 @@ public abstract class AbstractCompositeHarvester extends AbstractHarvester
     @Override
     public void init()
     {
-        subHarvesters.forEach((AbstractHarvester subHarvester) ->
-                              subHarvester.init()
-                             );
+        subHarvesters.forEach((AbstractHarvester subHarvester) -> subHarvester.init());
         super.init();
     }
 
@@ -180,9 +179,7 @@ public abstract class AbstractCompositeHarvester extends AbstractHarvester
         // for now, concatenate all hashes
         final StringBuilder hashBuilder = new StringBuilder();
 
-        subHarvesters.forEach((AbstractHarvester subHarvester) ->
-                              hashBuilder.append(subHarvester.getHash(false))
-                             );
+        subHarvesters.forEach((AbstractHarvester subHarvester) -> hashBuilder.append(subHarvester.getHash(false)));
 
         // generate hash of all concatenated hashes
         final MessageDigest md = MessageDigest.getInstance(HarvesterConstants.SHA_HASH_ALGORITHM);
@@ -205,6 +202,7 @@ public abstract class AbstractCompositeHarvester extends AbstractHarvester
     @Override
     protected void abortHarvest()
     {
+        isAborting = true;
         if (currentHarvestingProcess != null)
             subHarvesters.forEach((AbstractHarvester sub) -> sub.abortHarvest());
     }

@@ -48,7 +48,8 @@ import de.gerdiproject.json.GsonUtils;
 import de.gerdiproject.json.datacite.DataCiteJson;
 
 /**
- * This static class offers some helper functions for saving a harvest result to disk.
+ * This static class offers some helper functions for saving a harvest result to
+ * disk.
  *
  * @author Robin Weiss
  */
@@ -74,10 +75,13 @@ public class HarvestSaver
     /**
      * Saves cached harvested documents to disk.
      *
-     * @param cachedDocuments the file in which the cached documents are stored as a JSON array
-     * @param sourceHash a String used for version checks of the source data that was harvested
+     * @param cachedDocuments the file in which the cached documents are stored
+     *            as a JSON array
+     * @param sourceHash a String used for version checks of the source data
+     *            that was harvested
      * @param numberOfDocs the amount of documents that are to be saved
-     * @param isAutoTriggered true if the save was not explicitly triggered via a REST call
+     * @param isAutoTriggered true if the save was not explicitly triggered via
+     *            a REST call
      */
     public void save(File cachedDocuments, String sourceHash, int numberOfDocs, boolean isAutoTriggered)
     {
@@ -92,15 +96,14 @@ public class HarvestSaver
         long finishTimestamp = MainContext.getTimeKeeper().getHarvestMeasure().getEndTimestamp();
 
         // start asynchronous save
-        currentSavingProcess = new CancelableFuture<>(
-            createSaveProcess(cachedDocuments, startTimestamp, finishTimestamp, sourceHash));
+        currentSavingProcess =
+                new CancelableFuture<>(createSaveProcess(cachedDocuments, startTimestamp, finishTimestamp, sourceHash));
 
         // exception handler
         currentSavingProcess.thenApply((isSuccessful) -> {
             onSaveFinishedSuccessfully(isSuccessful);
             return isSuccessful;
-        })
-        .exceptionally(throwable -> {
+        }).exceptionally(throwable -> {
             onSaveFailed(throwable);
             return false;
         });
@@ -117,19 +120,30 @@ public class HarvestSaver
         currentSavingProcess = null;
         EventSystem.removeListener(StartAbortingEvent.class, onStartAborting);
         EventSystem.sendEvent(new SaveFinishedEvent(isSuccessful));
+
+        // if the save was aborted while it finished, notify listeners to
+        // prevent dead-locks
+        if (isAborting) {
+            isAborting = false;
+            EventSystem.sendEvent(new AbortingFinishedEvent());
+        }
     }
 
 
     /**
-     * This function is executed if the saving process is interrupted due to an exception.
+     * This function is executed if the saving process is interrupted due to an
+     * exception.
      *
      * @param reason the exception that caused the saving to be interrupted
      */
     private void onSaveFailed(Throwable reason)
     {
         // clean up unfinished save file
-        if (saveFile != null && saveFile.exists()
-            && MainContext.getConfiguration().getParameterValue(ConfigurationConstants.DELETE_UNFINISHED_SAVE, Boolean.class)) {
+        if (saveFile != null
+                && saveFile.exists()
+                && MainContext.getConfiguration().getParameterValue(
+                        ConfigurationConstants.DELETE_UNFINISHED_SAVE,
+                        Boolean.class)) {
             try {
                 boolean wasDeleted = saveFile.delete();
 
@@ -143,10 +157,10 @@ public class HarvestSaver
             }
         }
 
-
         currentSavingProcess = null;
         EventSystem.removeListener(StartAbortingEvent.class, onStartAborting);
 
+        // if the save was aborted, notify listeners
         if (isAborting) {
             isAborting = false;
             EventSystem.sendEvent(new AbortingFinishedEvent());
@@ -160,10 +174,12 @@ public class HarvestSaver
     /**
      * Creates a saving-process that can be called asynchronously.
      *
-     * @param cachedDocuments the file in which the cached documents are stored as a JSON array
+     * @param cachedDocuments the file in which the cached documents are stored
+     *            as a JSON array
      * @param startTimestamp the UNIX Timestamp of the beginning of the harvest
      * @param finishTimestamp the UNIX Timestamp of the end of the harvest
-     * @param sourceHash a String used for version checks of the source data that was harvested
+     * @param sourceHash a String used for version checks of the source data
+     *            that was harvested
      *
      * @return true, if the file was saved successfully
      */
@@ -177,30 +193,24 @@ public class HarvestSaver
             // check if file was created
             boolean isSuccessful = saveFile != null;
 
-            if (isSuccessful)
-            {
+            if (isSuccessful) {
                 try {
                     // prepare json reader for the cached document list
                     JsonReader reader = new JsonReader(
-                        new InputStreamReader(
-                            new FileInputStream(cachedDocuments),
-                            MainContext.getCharset()));
+                            new InputStreamReader(new FileInputStream(cachedDocuments), MainContext.getCharset()));
 
                     // prepare json writer for the save file
                     JsonWriter writer = new JsonWriter(
-                        new OutputStreamWriter(
-                            new FileOutputStream(saveFile),
-                            MainContext.getCharset()));
+                            new OutputStreamWriter(new FileOutputStream(saveFile), MainContext.getCharset()));
 
                     // transfer data to target file
                     writeDocuments(
-                        reader,
-                        writer,
-                        startTimestamp,
-                        finishTimestamp,
-                        sourceHash,
-                        config.getParameterValue(ConfigurationConstants.READ_HTTP_FROM_DISK, Boolean.class)
-                    );
+                            reader,
+                            writer,
+                            startTimestamp,
+                            finishTimestamp,
+                            sourceHash,
+                            config.getParameterValue(ConfigurationConstants.READ_HTTP_FROM_DISK, Boolean.class));
                 } catch (IOException e) {
                     LOGGER.error(CacheConstants.SAVE_FAILED_ERROR, e);
                     isSuccessful = false;
@@ -232,16 +242,13 @@ public class HarvestSaver
         if (from > 0 || to != Integer.MAX_VALUE) {
 
             fileName = String.format(
-                           CacheConstants.SAVE_FILE_NAME_PARTIAL,
-                           MainContext.getModuleName(),
-                           from,
-                           to,
-                           startTimestamp);
+                    CacheConstants.SAVE_FILE_NAME_PARTIAL,
+                    MainContext.getModuleName(),
+                    from,
+                    to,
+                    startTimestamp);
         } else {
-            fileName = String.format(
-                           CacheConstants.SAVE_FILE_NAME,
-                           MainContext.getModuleName(),
-                           startTimestamp);
+            fileName = String.format(CacheConstants.SAVE_FILE_NAME, MainContext.getModuleName(), startTimestamp);
         }
 
         // create file and directories
@@ -258,20 +265,24 @@ public class HarvestSaver
 
 
     /**
-     * Writes cached documents from a reader directly to a writer, adding additional harvesting related data
+     * Writes cached documents from a reader directly to a writer, adding
+     * additional harvesting related data
      *
      * @param cacheReader a JSON reader of a file that contains cached documents
      * @param writer a JSON writer to a file
      * @param startTimestamp the UNIX Timestamp of the beginning of the harvest
      * @param finishTimestamp the UNIX Timestamp of the end of the harvest
-     * @param sourceHash a String used for version checks of the source data that was harvested
-     * @param readFromDisk if true, the harvest was not retrieved from the web, but instead, from locally cached HTTP responses
+     * @param sourceHash a String used for version checks of the source data
+     *            that was harvested
+     * @param readFromDisk if true, the harvest was not retrieved from the web,
+     *            but instead, from locally cached HTTP responses
      *
      * @throws IOException thrown by either the cacheReader or the writer
      */
     private void writeDocuments(JsonReader cacheReader, JsonWriter writer, long startTimestamp, long finishTimestamp, String sourceHash, boolean readFromDisk) throws IOException
     {
-        // this event holds no unique data, we can resubmit it as often as we want
+        // this event holds no unique data, we can resubmit it as often as we
+        // want
         DocumentSavedEvent savedEvent = new DocumentSavedEvent();
 
         writer.beginObject();

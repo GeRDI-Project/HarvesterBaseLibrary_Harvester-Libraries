@@ -41,7 +41,6 @@ import de.gerdiproject.harvest.submission.events.StartSubmissionEvent;
 import de.gerdiproject.harvest.submission.events.SubmissionFinishedEvent;
 import de.gerdiproject.harvest.submission.events.SubmissionStartedEvent;
 
-
 /**
  * This class is a static collection of state change event handlers.
  *
@@ -53,8 +52,8 @@ public class StateEventHandlerConstants
 
 
     /**
-     * Private constructor, because this class just serves
-     * as a place to define constants.
+     * Private constructor, because this class just serves as a place to define
+     * constants.
      */
     private StateEventHandlerConstants()
     {
@@ -63,10 +62,10 @@ public class StateEventHandlerConstants
 
 
     /**
-     * Switches the state to {@linkplain HarvestingState} when a harvest was started.
+     * Switches the state to {@linkplain HarvestingState} when a harvest was
+     * started.
      */
-    public static final Consumer<HarvestStartedEvent> ON_HARVEST_STARTED =
-    (HarvestStartedEvent e) -> {
+    public static final Consumer<HarvestStartedEvent> ON_HARVEST_STARTED = (HarvestStartedEvent e) -> {
 
         HarvestingState nextState = new HarvestingState(e.getEndIndex() - e.getStartIndex());
         EventSystem.sendEvent(new ChangeStateEvent(nextState));
@@ -74,13 +73,14 @@ public class StateEventHandlerConstants
 
 
     /**
-     * If the harvesting process is done either go to the {@linkplain IdleState}, {@linkplain SavingState},
-     * or {@linkplain SubmittingState}, depending on the configuration.
+     * If the harvesting process is done either go to the
+     * {@linkplain IdleState}, {@linkplain SavingState}, or
+     * {@linkplain SubmittingState}, depending on the configuration.
      */
     public static final Consumer<HarvestFinishedEvent> ON_HARVEST_FINISHED = (HarvestFinishedEvent e) -> {
-        // was the harvest successful? then choose the next automatic post-processing state
-        if (e.isSuccessful())
-        {
+        // was the harvest successful? then choose the next automatic
+        // post-processing state
+        if (e.isSuccessful()) {
             LOGGER.info(StateConstants.HARVEST_DONE);
 
             final Configuration config = MainContext.getConfiguration();
@@ -102,10 +102,10 @@ public class StateEventHandlerConstants
 
 
     /**
-     * Switches the state to {@linkplain SubmittingState} when a document submission was started.
+     * Switches the state to {@linkplain SubmittingState} when a document
+     * submission was started.
      */
-    public static final Consumer<SubmissionStartedEvent> ON_SUBMISSION_STARTED =
-    (SubmissionStartedEvent e) -> {
+    public static final Consumer<SubmissionStartedEvent> ON_SUBMISSION_STARTED = (SubmissionStartedEvent e) -> {
 
         SubmittingState nextState = new SubmittingState(e.getNumberOfDocuments());
         EventSystem.sendEvent(new ChangeStateEvent(nextState));
@@ -113,10 +113,10 @@ public class StateEventHandlerConstants
 
 
     /**
-     * Switches the state to {@linkplain SavingState} when a document saving process was started.
+     * Switches the state to {@linkplain SavingState} when a document saving
+     * process was started.
      */
-    public static final Consumer<SaveStartedEvent> ON_SAVE_STARTED =
-    (SaveStartedEvent e) -> {
+    public static final Consumer<SaveStartedEvent> ON_SAVE_STARTED = (SaveStartedEvent e) -> {
 
         SavingState nextState = new SavingState(e.getNumberOfDocuments(), e.isAutoTriggered());
         EventSystem.sendEvent(new ChangeStateEvent(nextState));
@@ -124,10 +124,10 @@ public class StateEventHandlerConstants
 
 
     /**
-     * Switches the state to {@linkplain IdleState} when an aborting-process finishes.
+     * Switches the state to {@linkplain IdleState} when an aborting-process
+     * finishes.
      */
-    public static final Consumer<AbortingFinishedEvent> ON_ABORTING_FINISHED =
-    (AbortingFinishedEvent e) -> {
+    public static final Consumer<AbortingFinishedEvent> ON_ABORTING_FINISHED = (AbortingFinishedEvent e) -> {
 
         IdleState nextState = new IdleState();
         EventSystem.sendEvent(new ChangeStateEvent(nextState));
@@ -135,11 +135,11 @@ public class StateEventHandlerConstants
 
 
     /**
-     * Switches the state to {@linkplain IdleState} if the initialization was successful.
-     * Otherwise, the state is switched to the {@linkplain ErrorState}.
+     * Switches the state to {@linkplain IdleState} if the initialization was
+     * successful. Otherwise, the state is switched to the
+     * {@linkplain ErrorState}.
      */
-    public static final Consumer<HarvesterInitializedEvent> ON_HARVESTER_INITIALIZED =
-    (HarvesterInitializedEvent e) -> {
+    public static final Consumer<HarvesterInitializedEvent> ON_HARVESTER_INITIALIZED = (HarvesterInitializedEvent e) -> {
         if (e.isSuccessful())
             EventSystem.sendEvent(new ChangeStateEvent(new IdleState()));
         else
@@ -148,8 +148,8 @@ public class StateEventHandlerConstants
 
 
     /**
-     * Switches the state to {@linkplain IdleState} when a submission-process finishes.
+     * Switches the state to {@linkplain IdleState} when a submission-process
+     * finishes.
      */
-    public static final Consumer<SubmissionFinishedEvent> ON_SUBMISSION_FINISHED =
-        (SubmissionFinishedEvent e) -> EventSystem.sendEvent(new ChangeStateEvent(new IdleState()));
+    public static final Consumer<SubmissionFinishedEvent> ON_SUBMISSION_FINISHED = (SubmissionFinishedEvent e) -> EventSystem.sendEvent(new ChangeStateEvent(new IdleState()));
 }
