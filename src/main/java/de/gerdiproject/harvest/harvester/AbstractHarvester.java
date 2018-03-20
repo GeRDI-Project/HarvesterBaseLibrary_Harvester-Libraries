@@ -16,6 +16,17 @@
 package de.gerdiproject.harvest.harvester;
 
 
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import de.gerdiproject.harvest.ICleanable;
 import de.gerdiproject.harvest.IDocument;
 import de.gerdiproject.harvest.MainContext;
@@ -38,25 +49,15 @@ import de.gerdiproject.harvest.submission.elasticsearch.ElasticSearchSubmitter;
 import de.gerdiproject.harvest.utils.CancelableFuture;
 import de.gerdiproject.harvest.utils.data.HttpRequester;
 
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.CancellationException;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 
 /**
  * AbstractHarvesters offer a skeleton for harvesting a data provider to
  * retrieve all of its metadata. The metadata can subsequently be submitted to
- * ElasticSearch via the {@link ElasticSearchSubmitter}. This most basic Harvester
- * class offers functions that can be controlled via REST requests from the
- * {@link HarvesterFacade}, as well as some utility objects that are required by
- * all harvests. Subclasses must implement the concrete harvesting process.
+ * ElasticSearch via the {@link ElasticSearchSubmitter}. This most basic
+ * Harvester class offers functions that can be controlled via REST requests
+ * from the {@link HarvesterFacade}, as well as some utility objects that are
+ * required by all harvests. Subclasses must implement the concrete harvesting
+ * process.
  *
  * @author Robin Weiss
  */
@@ -70,6 +71,7 @@ public abstract class AbstractHarvester
 
     protected CancelableFuture<Boolean> currentHarvestingProcess;
     protected boolean isMainHarvester;
+    protected boolean isAborting;
     protected String name;
     protected String hash;
     protected final HttpRequester httpRequester;
@@ -81,13 +83,10 @@ public abstract class AbstractHarvester
      * The main harvesting method. The overridden implementation should add
      * documents to the search index by calling addDocumentToIndex().
      *
-     * @param startIndex
-     *            the index of the first document to be harvested
-     * @param endIndex
-     *            the index of the last document to be harvested
-     * @throws Exception
-     *             any kind of exception that can occur during the harvesting
-     *             process
+     * @param startIndex the index of the first document to be harvested
+     * @param endIndex the index of the last document to be harvested
+     * @throws Exception any kind of exception that can occur during the
+     *             harvesting process
      * @return true, if everything was harvested
      */
     protected abstract boolean harvestInternal(int startIndex, int endIndex) throws Exception; // NOPMD - we want the inheriting class to be able to throw any exception
@@ -107,8 +106,10 @@ public abstract class AbstractHarvester
      *
      * @return a hash as a checksum of the data which is to be harvested
      *
-     * @throws NoSuchAlgorithmException occurs if an invalid algorithm is used for a {@linkplain MessageDigest}
-     * @throws NullPointerException occurs for several reasons, depending on the implementation
+     * @throws NoSuchAlgorithmException occurs if an invalid algorithm is used
+     *             for a {@linkplain MessageDigest}
+     * @throws NullPointerException occurs for several reasons, depending on the
+     *             implementation
      */
     protected abstract String initHash() throws NoSuchAlgorithmException, NullPointerException;
 
@@ -116,7 +117,11 @@ public abstract class AbstractHarvester
     /**
      * Aborts the harvesting process, allowing a new harvest to be started.
      */
-    protected abstract void abortHarvest();
+    protected void abortHarvest()
+    {
+        if (currentHarvestingProcess != null)
+            isAborting = true;
+    }
 
 
     /**
@@ -135,9 +140,7 @@ public abstract class AbstractHarvester
      */
     public AbstractHarvester(String harvesterName)
     {
-        name = (harvesterName != null)
-               ? harvesterName
-               : getClass().getSimpleName();
+        name = (harvesterName != null) ? harvesterName : getClass().getSimpleName();
         logger = LoggerFactory.getLogger(name);
 
         properties = new HashMap<>();
@@ -151,9 +154,9 @@ public abstract class AbstractHarvester
     }
 
 
-
     /**
-     * Initializes the Harvester, calculating the hash and maximum number of harvestable documents.
+     * Initializes the Harvester, calculating the hash and maximum number of
+     * harvestable documents.
      */
     public void init()
     {
@@ -173,8 +176,9 @@ public abstract class AbstractHarvester
 
 
     /**
-     * Marks this harvester as the main harvester.
-     * Warning: This should not be called manually! This is only called once by the {@linkplain MainContext}.
+     * Marks this harvester as the main harvester. Warning: This should not be
+     * called manually! This is only called once by the
+     * {@linkplain MainContext}.
      */
     public void setAsMainHarvester()
     {
@@ -191,8 +195,7 @@ public abstract class AbstractHarvester
     /**
      * Retrieves the value of a property.
      *
-     * @param key
-     *            the name of the property
+     * @param key the name of the property
      * @return the property value
      */
     protected String getProperty(String key)
@@ -204,10 +207,8 @@ public abstract class AbstractHarvester
     /**
      * Sets the value of a property.
      *
-     * @param key
-     *            the property name
-     * @param value
-     *            the new property value
+     * @param key the property name
+     * @param value the new property value
      */
     protected void setProperty(String key, String value)
     {
@@ -220,8 +221,7 @@ public abstract class AbstractHarvester
      * document is null, it is not added to the search index, but the progress
      * is incremented regardlessly.
      *
-     * @param document
-     *            the document that is to be added to the search index
+     * @param document the document that is to be added to the search index
      */
     protected void addDocument(IDocument document)
     {
@@ -237,8 +237,7 @@ public abstract class AbstractHarvester
      * document is null, it is not added to the search index, but the progress
      * is incremented regardlessly.
      *
-     * @param documents
-     *            the documents that are to be added to the search index
+     * @param documents the documents that are to be added to the search index
      */
     protected void addDocuments(List<IDocument> documents)
     {
@@ -260,7 +259,7 @@ public abstract class AbstractHarvester
     /**
      * Sets the start index of the harvesting range.
      *
-     * @param from  the index of the first document to be harvested
+     * @param from the index of the first document to be harvested
      */
     protected void setStartIndex(int from)
     {
@@ -300,24 +299,23 @@ public abstract class AbstractHarvester
 
         // only send events from the main harvester
         if (isMainHarvester) {
-            EventSystem.addListener(StartAbortingEvent.class, this::onStartAborting);
+            EventSystem.addListener(StartAbortingEvent.class, onStartAborting);
             EventSystem.sendEvent(new HarvestStartedEvent(from, to));
         }
 
         // start asynchronous harvest
-        currentHarvestingProcess = new CancelableFuture<>(
-            () -> harvestInternal(from, to));
+        currentHarvestingProcess = new CancelableFuture<>(() -> harvestInternal(from, to));
 
         // success handler
         currentHarvestingProcess.thenApply((isSuccessful) -> {
             finishHarvestSuccessfully();
             return isSuccessful;
         })
-        // exception handler
-        .exceptionally(throwable -> {
-            finishHarvestExceptionally(throwable.getCause());
-            return false;
-        });
+                // exception handler
+                .exceptionally(throwable -> {
+                    finishHarvestExceptionally(throwable.getCause());
+                    return false;
+                });
     }
 
 
@@ -331,8 +329,15 @@ public abstract class AbstractHarvester
 
         // do some things, only if this is the main harvester
         if (isMainHarvester) {
-            EventSystem.removeListener(StartAbortingEvent.class, this::onStartAborting);
+            EventSystem.removeListener(StartAbortingEvent.class, onStartAborting);
             EventSystem.sendEvent(new HarvestFinishedEvent(true, getHash(false)));
+        }
+
+        // dead-lock fix: clear aborting status
+        if (isAborting) {
+            isAborting = false;
+            if (isMainHarvester)
+                EventSystem.sendEvent(new AbortingFinishedEvent());
         }
     }
 
@@ -342,8 +347,7 @@ public abstract class AbstractHarvester
      * Cleans up a failed harvesting process, allowing a new harvest to be
      * started. Also calls a function depending on why the harvest failed.
      *
-     * @param reason
-     *            the exception that caused the harvest to fail
+     * @param reason the exception that caused the harvest to fail
      */
     protected void finishHarvestExceptionally(Throwable reason)
     {
@@ -351,7 +355,7 @@ public abstract class AbstractHarvester
         currentHarvestingProcess = null;
 
         // check if the harvest was aborted
-        if (reason instanceof CancellationException || reason.getCause() instanceof CancellationException)
+        if (isAborting)
             onHarvestAborted();
         else
             onHarvestFailed(reason);
@@ -363,8 +367,7 @@ public abstract class AbstractHarvester
      * This method is called after an ongoing harvest failed due to an
      * exception.
      *
-     * @param reason
-     *            the exception that caused the harvest to fail
+     * @param reason the exception that caused the harvest to fail
      */
     protected void onHarvestFailed(Throwable reason)
     {
@@ -376,7 +379,7 @@ public abstract class AbstractHarvester
 
         if (isMainHarvester) {
             EventSystem.sendEvent(new HarvestFinishedEvent(false, getHash(false)));
-            EventSystem.removeListener(StartAbortingEvent.class, this::onStartAborting);
+            EventSystem.removeListener(StartAbortingEvent.class, onStartAborting);
         }
     }
 
@@ -387,6 +390,8 @@ public abstract class AbstractHarvester
      */
     protected void onHarvestAborted()
     {
+        isAborting = false;
+
         if (isMainHarvester)
             EventSystem.sendEvent(new AbortingFinishedEvent());
 
@@ -397,8 +402,7 @@ public abstract class AbstractHarvester
     /**
      * Returns the checksum hash of the entries which are to be harvested.
      *
-     * @param recalculate
-     *            if true, recalculates the hash value
+     * @param recalculate if true, recalculates the hash value
      * @return the checksum hash of the entries which are to be harvested
      */
     public String getHash(boolean recalculate)
@@ -419,10 +423,19 @@ public abstract class AbstractHarvester
     // Event Callback Functions //
     //////////////////////////////
 
+    /**
+     * Event callback for aborting the harvester.
+     */
+    private final Consumer<StartAbortingEvent> onStartAborting = (StartAbortingEvent e) -> {
+        EventSystem.removeListener(StartAbortingEvent.class, this.onStartAborting);
+        EventSystem.sendEvent(new AbortingStartedEvent());
+        abortHarvest();
+    };
+
 
     /**
-     * Event callback for harvester parameter changes. Parameters include the harvesting range, as well as
-     * any implementation specific properties.
+     * Event callback for harvester parameter changes. Parameters include the
+     * harvesting range, as well as any implementation specific properties.
      *
      * @param event the event that triggered this callback function
      */
@@ -446,20 +459,8 @@ public abstract class AbstractHarvester
 
 
     /**
-     * Event callback for aborting the harvester.
-     *
-     * @param event the event that triggered this callback function
-     */
-    private void onStartAborting(StartAbortingEvent event) // NOPMD events must be defined as parameter, even if not used
-    {
-        EventSystem.removeListener(StartAbortingEvent.class, this::onStartAborting);
-        EventSystem.sendEvent(new AbortingStartedEvent());
-        abortHarvest();
-    };
-
-
-    /**
-     * Synchronous event callback that returns the name of the data provider that is harvested.
+     * Synchronous event callback that returns the name of the data provider
+     * that is harvested.
      *
      * @param event the event that triggered this callback function
      *
@@ -491,7 +492,8 @@ public abstract class AbstractHarvester
 
 
     /**
-     * Synchronous event callback for retrieving the max number of harvestable documents.
+     * Synchronous event callback for retrieving the max number of harvestable
+     * documents.
      *
      * @param event the event that triggered this callback function
      *

@@ -16,13 +16,6 @@
 package de.gerdiproject.harvest.harvester;
 
 
-import de.gerdiproject.harvest.IDocument;
-import de.gerdiproject.harvest.MainContext;
-import de.gerdiproject.harvest.application.events.ContextDestroyedEvent;
-import de.gerdiproject.harvest.event.EventSystem;
-import de.gerdiproject.harvest.harvester.constants.HarvesterConstants;
-import de.gerdiproject.harvest.utils.cache.constants.CacheConstants;
-import de.gerdiproject.json.GsonUtils;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -39,11 +32,21 @@ import com.google.gson.Gson;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
 
+import de.gerdiproject.harvest.IDocument;
+import de.gerdiproject.harvest.MainContext;
+import de.gerdiproject.harvest.application.events.ContextDestroyedEvent;
+import de.gerdiproject.harvest.event.EventSystem;
+import de.gerdiproject.harvest.harvester.constants.HarvesterConstants;
+import de.gerdiproject.harvest.utils.cache.constants.CacheConstants;
+import de.gerdiproject.json.GsonUtils;
+
 
 /**
- * This harvester writes a collection of entries to a stream, caching them in a file on disk and counting them at the same time.
- * You can conveniently use this harvester instead of an {@linkplain AbstractListHarvester} if the server is low on memory.
- * However, what is saved in heap space, will add to the size on disk instead.
+ * This harvester writes a collection of entries to a stream, caching them in a
+ * file on disk and counting them at the same time. You can conveniently use
+ * this harvester instead of an {@linkplain AbstractListHarvester} if the server
+ * is low on memory. However, what is saved in heap space, will add to the size
+ * on disk instead.
  *
  * @author Robin Weiss
  */
@@ -51,30 +54,25 @@ public abstract class AbstractStreamHarvester<T> extends AbstractHarvester
 {
     // this warning is suppressed, because the only generic Superclass MUST be T. The cast will always succeed.
     @SuppressWarnings("unchecked")
-    private final Class<T> entryClass =
-        (Class<T>)((ParameterizedType) getClass().getGenericSuperclass()).getActualTypeArguments()[0];
+    private final Class<T> entryClass = (Class<T>) ((ParameterizedType) getClass().getGenericSuperclass()).getActualTypeArguments()[0];
 
     private final AtomicInteger entryCount;
     protected final int numberOfDocumentsPerEntry;
 
-    protected boolean isAborting;
-
 
     /**
-     * Event listener that deletes the cache file when the service is undeployed.
+     * Event listener that deletes the cache file when the service is
+     * undeployed.
      */
-    private final Consumer<ContextDestroyedEvent> onContextDestroyed =
-        (ContextDestroyedEvent e) -> deleteEntryStreamFile();
+    private final Consumer<ContextDestroyedEvent> onContextDestroyed = (ContextDestroyedEvent e) -> deleteEntryStreamFile();
 
 
     /**
      * Forwarding the superclass constructor.
      *
-     * @param harvesterName
-     *            a unique name of the harvester
-     * @param numberOfDocumentsPerEntry
-     *            the number of documents that are expected to be harvested from
-     *            each entry
+     * @param harvesterName a unique name of the harvester
+     * @param numberOfDocumentsPerEntry the number of documents that are
+     *            expected to be harvested from each entry
      */
     public AbstractStreamHarvester(String harvesterName, int numberOfDocumentsPerEntry)
     {
@@ -89,9 +87,8 @@ public abstract class AbstractStreamHarvester<T> extends AbstractHarvester
     /**
      * Forwarding the superclass constructor.
      *
-     * @param numberOfDocumentsPerEntry
-     *            the number of documents that are expected to be harvested from
-     *            each entry
+     * @param numberOfDocumentsPerEntry the number of documents that are
+     *            expected to be harvested from each entry
      */
     public AbstractStreamHarvester(int numberOfDocumentsPerEntry)
     {
@@ -100,20 +97,23 @@ public abstract class AbstractStreamHarvester<T> extends AbstractHarvester
 
 
     /**
-     * Writes JSON entries into a stream and counts them.
-     * Each entry of the stream will later be treated by the harvestEntry() function.
+     * Writes JSON entries into a stream and counts them. Each entry of the
+     * stream will later be treated by the harvestEntry() function.
      *
-     * @param addEntryToStream use this consumer function to add entries to the stream
+     * @param addEntryToStream use this consumer function to add entries to the
+     *            stream
      */
     protected abstract void loadEntries(Consumer<T> addEntryToStream);
 
 
     /**
-     * Harvests a single entry, adding between zero and 'numberOfDocumentsPerEntry' entries to the search index.
+     * Harvests a single entry, adding between zero and
+     * 'numberOfDocumentsPerEntry' entries to the search index.
      *
      * @param entry the entry that is to be read
      *
-     * @return a list of search documents, or null if no documents could be retrieved from the entry
+     * @return a list of search documents, or null if no documents could be
+     *         retrieved from the entry
      */
     protected abstract List<IDocument> harvestEntry(T entry);
 
@@ -215,9 +215,11 @@ public abstract class AbstractStreamHarvester<T> extends AbstractHarvester
 
 
     /**
-     * Resets the entry count and loads source entries via a stream of JSON objects into a cache file.
+     * Resets the entry count and loads source entries via a stream of JSON
+     * objects into a cache file.
      *
-     * @throws IOException this exception is thrown if a read or write function of the entry stream fails
+     * @throws IOException this exception is thrown if a read or write function
+     *             of the entry stream fails
      */
     private void writeEntriesToStream() throws IOException
     {
@@ -238,12 +240,14 @@ public abstract class AbstractStreamHarvester<T> extends AbstractHarvester
 
 
     /**
-     * Creates a {@linkplain JsonWriter} for the stream of JSON entries that are to be harvested.
-     * The writer is used to cache and count all source entries that will later be converted to searchable documents.
+     * Creates a {@linkplain JsonWriter} for the stream of JSON entries that are
+     * to be harvested. The writer is used to cache and count all source entries
+     * that will later be converted to searchable documents.
      *
      * @return a JsonWriter for the stream of JSON entries
      *
-     * @throws FileNotFoundException this exception is thrown if the file could not be created or found
+     * @throws FileNotFoundException this exception is thrown if the file could
+     *             not be created or found
      */
     private JsonWriter createEntryStreamWriter() throws FileNotFoundException
     {
@@ -252,20 +256,20 @@ public abstract class AbstractStreamHarvester<T> extends AbstractHarvester
         if (cacheFile == null)
             throw new FileNotFoundException();
 
-        return new JsonWriter(
-                   new OutputStreamWriter(
-                       new FileOutputStream(cacheFile),
-                       MainContext.getCharset()));
+        return new JsonWriter(new OutputStreamWriter(new FileOutputStream(cacheFile), MainContext.getCharset()));
     }
 
 
     /**
-     * Creates a {@linkplain JsonReader} for the stream of JSON entries that are to be harvested.
-     * The reader is used to process the cached entries and convert them to searchable documents.
+     * Creates a {@linkplain JsonReader} for the stream of JSON entries that are
+     * to be harvested. The reader is used to process the cached entries and
+     * convert them to searchable documents.
      *
-     * @return a JsonReader for the stream of JSON entries that are cached in a file
+     * @return a JsonReader for the stream of JSON entries that are cached in a
+     *         file
      *
-     * @throws FileNotFoundException this exception is thrown if the file could not be created or found
+     * @throws FileNotFoundException this exception is thrown if the file could
+     *             not be created or found
      */
     private JsonReader createEntryStreamReader() throws FileNotFoundException
     {
@@ -274,10 +278,7 @@ public abstract class AbstractStreamHarvester<T> extends AbstractHarvester
         if (cacheFile == null)
             throw new FileNotFoundException();
 
-        return  new JsonReader(
-                    new InputStreamReader(
-                        new FileInputStream(cacheFile),
-                        MainContext.getCharset()));
+        return new JsonReader(new InputStreamReader(new FileInputStream(cacheFile), MainContext.getCharset()));
     }
 
 
@@ -312,10 +313,7 @@ public abstract class AbstractStreamHarvester<T> extends AbstractHarvester
      */
     protected File getEntryStreamFile()
     {
-        String filePath = String.format(
-                              CacheConstants.CACHE_ENTRY_STREAM_PATH,
-                              MainContext.getModuleName(),
-                              name);
+        String filePath = String.format(CacheConstants.CACHE_ENTRY_STREAM_PATH, MainContext.getModuleName(), name);
 
         File cacheFile = new File(filePath);
 
@@ -334,12 +332,15 @@ public abstract class AbstractStreamHarvester<T> extends AbstractHarvester
 
 
     /**
-     * Creates a consuming function that can be passed as function argument.
-     * The function adds an entry to a specified {@linkplain JsonWriter} and increments the entry count.
+     * Creates a consuming function that can be passed as function argument. The
+     * function adds an entry to a specified {@linkplain JsonWriter} and
+     * increments the entry count.
      *
-     * @param entryWriter the writer to which the entry is written as a JSON object
+     * @param entryWriter the writer to which the entry is written as a JSON
+     *            object
      *
-     * @return a consuming function that adds an entry to a specified {@linkplain JsonWriter} and increments the entry count
+     * @return a consuming function that adds an entry to a specified
+     *         {@linkplain JsonWriter} and increments the entry count
      */
     private Consumer<T> createAddEntryToStreamFunction(JsonWriter entryWriter)
     {
@@ -354,21 +355,5 @@ public abstract class AbstractStreamHarvester<T> extends AbstractHarvester
     protected int initMaxNumberOfDocuments()
     {
         return entryCount.get() * numberOfDocumentsPerEntry;
-    }
-
-
-    @Override
-    public void abortHarvest()
-    {
-        if (currentHarvestingProcess != null)
-            isAborting = true;
-    }
-
-
-    @Override
-    protected void onHarvestAborted()
-    {
-        isAborting = false;
-        super.onHarvestAborted();
     }
 }
