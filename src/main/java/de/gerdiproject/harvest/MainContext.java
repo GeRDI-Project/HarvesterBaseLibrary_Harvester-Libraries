@@ -31,12 +31,13 @@ import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.harvester.AbstractHarvester;
 import de.gerdiproject.harvest.harvester.events.HarvesterInitializedEvent;
 import de.gerdiproject.harvest.utils.CancelableFuture;
+import de.gerdiproject.harvest.utils.HashGenerator;
 import de.gerdiproject.harvest.utils.time.HarvestTimeKeeper;
 
 
 /**
- * This class provides static methods for retrieving application
- * singleton utility and configuration classes.
+ * This class provides static methods for retrieving application singleton
+ * utility and configuration classes.
  *
  * @author Robin Weiss
  */
@@ -146,17 +147,19 @@ public class MainContext
             config.updateParameter(ConfigurationConstants.HARVEST_START_INDEX);
             config.updateParameter(ConfigurationConstants.HARVEST_END_INDEX);
 
+            // init HashGenerator
+            HashGenerator.init(charset);
             return true;
         });
 
-        initProcess.thenApply(onHarvesterInitializedSuccess)
-        .exceptionally(onHarvesterInitializedFailed);
+        initProcess.thenApply(onHarvesterInitializedSuccess).exceptionally(onHarvesterInitializedFailed);
     }
 
 
     /**
-     * This function is called when the asynchronous harvester initialization completes successfully.
-     * It logs the success and changes the state machine's current state.
+     * This function is called when the asynchronous harvester initialization
+     * completes successfully. It logs the success and changes the state
+     * machine's current state.
      */
     private static Function<Boolean, Boolean> onHarvesterInitializedSuccess = (Boolean state) -> {
 
@@ -171,8 +174,9 @@ public class MainContext
 
 
     /**
-     * This function is called when the asynchronous harvester fails to be initialized.
-     * It logs the exception that caused the failure and changes the state machine's current state.
+     * This function is called when the asynchronous harvester fails to be
+     * initialized. It logs the exception that caused the failure and changes
+     * the state machine's current state.
      */
     private static Function<Throwable, Boolean> onHarvesterInitializedFailed = (Throwable reason) -> {
 

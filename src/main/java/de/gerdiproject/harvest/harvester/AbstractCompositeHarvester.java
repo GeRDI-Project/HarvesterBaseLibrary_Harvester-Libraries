@@ -16,17 +16,13 @@
 package de.gerdiproject.harvest.harvester;
 
 
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiConsumer;
 
-import de.gerdiproject.harvest.MainContext;
-import de.gerdiproject.harvest.harvester.constants.HarvesterConstants;
+import de.gerdiproject.harvest.utils.HashGenerator;
 import de.gerdiproject.harvest.utils.cache.DocumentsCache;
 
 
@@ -177,25 +173,10 @@ public abstract class AbstractCompositeHarvester extends AbstractHarvester
     protected String initHash() throws NoSuchAlgorithmException, NullPointerException
     {
         // for now, concatenate all hashes
-        final StringBuilder hashBuilder = new StringBuilder();
+        final StringBuffer hashBuilder = new StringBuffer();
 
         subHarvesters.forEach((AbstractHarvester subHarvester) -> hashBuilder.append(subHarvester.getHash(false)));
-
-        // generate hash of all concatenated hashes
-        final MessageDigest md = MessageDigest.getInstance(HarvesterConstants.SHA_HASH_ALGORITHM);
-        md.update(hashBuilder.toString().getBytes(MainContext.getCharset()));
-
-        final byte[] digest = md.digest();
-
-        final StringWriter buffer = new StringWriter(digest.length * 2);
-        final PrintWriter pw = new PrintWriter(buffer);
-
-        for (byte b : digest)
-            pw.printf(HarvesterConstants.OCTAT_FORMAT, b);
-
-        pw.close();
-
-        return buffer.toString();
+        return HashGenerator.instance().getShaHash(hashBuilder.toString());
     }
 
 
@@ -203,6 +184,7 @@ public abstract class AbstractCompositeHarvester extends AbstractHarvester
     protected void abortHarvest()
     {
         isAborting = true;
+
         if (currentHarvestingProcess != null)
             subHarvesters.forEach((AbstractHarvester sub) -> sub.abortHarvest());
     }
