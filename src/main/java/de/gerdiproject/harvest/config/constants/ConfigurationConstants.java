@@ -44,7 +44,7 @@ public class ConfigurationConstants
     public static final String SUBMISSION_USER_NAME = "submissionUserName";
     public static final String SUBMISSION_PASSWORD = "submissionPassword";
     public static final String SUBMISSION_SIZE = "submissionSize";
-    public static final String KEEP_CACHE = "keepCachedDocuments";
+    public static final String FORCE_HARVEST = "forceHarvest";
     public static final String DELETE_UNFINISHED_SAVE = "deleteFailedSaves";
 
     public static final String CHANGED_PARAM = "Set parameter '%s' to '%s'.";

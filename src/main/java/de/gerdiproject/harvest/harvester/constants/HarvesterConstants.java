@@ -34,24 +34,26 @@ public class HarvesterConstants
     public static final String HARVESTER_END = "%s finished!";
     public static final String HARVESTER_FAILED = "%s failed!";
     public static final String HARVESTER_ABORTED = "%s aborted!";
+    public static final String HARVESTER_SKIPPED = "Skipping %s, because no changes were detected!";
 
     // LIST HARVESTER
-    public static final String ERROR_NO_ENTRIES = "Cannot harvest %s - The source entries are empty or could not be retrieved!";
+    public static final String ERROR_NO_ENTRIES =
+            "Cannot harvest %s - The source entries are empty or could not be retrieved!";
     public static final String LOG_OUT_OF_RANGE = "Skipping %s - Document indices out of range.";
 
     // REST
     public static final String REST_INFO = "- %s -%n%n%s%n%nRange:  %s-%s%n%n"
-                                           + "POST         Starts the harvest%n"
-                                           + "POST/abort   Aborts an ongoing harvest%n"
-                                           + "POST/submit  Submits harvested documents to a DataBase%n"
-                                           + "POST/save    Saves harvested documents to disk";
+            + "POST         Starts the harvest%n"
+            + "POST/abort   Aborts an ongoing harvest%n"
+            + "POST/submit  Submits harvested documents to a DataBase%n"
+            + "POST/save    Saves harvested documents to disk";
     public static final String UNKNOWN_NUMBER = "???";
     public static final String MAX_RANGE_NUMBER = "%d (" + ConfigurationConstants.INTEGER_VALUE_MAX + ")";
 
 
     /**
-     * Private constructor, because this class just serves
-     * as a place to define constants.
+     * Private constructor, because this class just serves as a place to define
+     * constants.
      */
     private HarvesterConstants()
     {

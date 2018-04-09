@@ -16,11 +16,12 @@
 package de.gerdiproject.harvest.save;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.function.Consumer;
 
@@ -28,7 +29,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.gson.Gson;
-import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
 
 import de.gerdiproject.harvest.MainContext;
@@ -39,11 +39,14 @@ import de.gerdiproject.harvest.save.constants.SaveConstants;
 import de.gerdiproject.harvest.save.events.DocumentSavedEvent;
 import de.gerdiproject.harvest.save.events.SaveFinishedEvent;
 import de.gerdiproject.harvest.save.events.SaveStartedEvent;
+import de.gerdiproject.harvest.save.events.StartSaveEvent;
 import de.gerdiproject.harvest.state.events.AbortingFinishedEvent;
 import de.gerdiproject.harvest.state.events.AbortingStartedEvent;
 import de.gerdiproject.harvest.state.events.StartAbortingEvent;
 import de.gerdiproject.harvest.utils.CancelableFuture;
+import de.gerdiproject.harvest.utils.cache.DocumentChangesCache;
 import de.gerdiproject.harvest.utils.cache.constants.CacheConstants;
+import de.gerdiproject.harvest.utils.cache.events.RegisterCacheEvent;
 import de.gerdiproject.json.GsonUtils;
 import de.gerdiproject.json.datacite.DataCiteJson;
 
@@ -55,6 +58,10 @@ import de.gerdiproject.json.datacite.DataCiteJson;
  */
 public class HarvestSaver
 {
+    private final static HarvestSaver instance = new HarvestSaver();
+
+    private final List<DocumentChangesCache> cacheList = Collections.synchronizedList(new LinkedList<>());
+
     private CancelableFuture<Boolean> currentSavingProcess;
     private boolean isAborting;
     private File saveFile;
@@ -63,28 +70,24 @@ public class HarvestSaver
 
 
     /**
-     * Event listener for aborting the submitter.
+     * Adds event listeners, granting .
      */
-    private final Consumer<StartAbortingEvent> onStartAborting = (StartAbortingEvent e) -> {
-        isAborting = true;
-        EventSystem.removeListener(StartAbortingEvent.class, this.onStartAborting);
-        EventSystem.sendEvent(new AbortingStartedEvent());
-    };
+    public static void init()
+    {
+        EventSystem.addListener(RegisterCacheEvent.class, instance.onRegisterCache);
+        EventSystem.addListener(StartSaveEvent.class, instance.onStartSave);
+    }
 
 
     /**
      * Saves cached harvested documents to disk.
      *
-     * @param cachedDocuments the file in which the cached documents are stored
-     *            as a JSON array
-     * @param sourceHash a String used for version checks of the source data
-     *            that was harvested
-     * @param numberOfDocs the amount of documents that are to be saved
      * @param isAutoTriggered true if the save was not explicitly triggered via
      *            a REST call
      */
-    public void save(File cachedDocuments, String sourceHash, int numberOfDocs, boolean isAutoTriggered)
+    private void save(boolean isAutoTriggered)
     {
+        final int numberOfDocs = getNumberOfChangedDocuments();
         EventSystem.sendEvent(new SaveStartedEvent(isAutoTriggered, numberOfDocs));
 
         // listen to abort requests
@@ -97,7 +100,7 @@ public class HarvestSaver
 
         // start asynchronous save
         currentSavingProcess =
-                new CancelableFuture<>(createSaveProcess(cachedDocuments, startTimestamp, finishTimestamp, sourceHash));
+                new CancelableFuture<>(createSaveProcess(startTimestamp, finishTimestamp));
 
         // exception handler
         currentSavingProcess.thenApply((isSuccessful) -> {
@@ -174,16 +177,13 @@ public class HarvestSaver
     /**
      * Creates a saving-process that can be called asynchronously.
      *
-     * @param cachedDocuments the file in which the cached documents are stored
-     *            as a JSON array
+     * @param cachedDocuments the cache of changed documents
      * @param startTimestamp the UNIX Timestamp of the beginning of the harvest
      * @param finishTimestamp the UNIX Timestamp of the end of the harvest
-     * @param sourceHash a String used for version checks of the source data
-     *            that was harvested
      *
      * @return true, if the file was saved successfully
      */
-    private Callable<Boolean> createSaveProcess(File cachedDocuments, long startTimestamp, long finishTimestamp, String sourceHash)
+    private Callable<Boolean> createSaveProcess(long startTimestamp, long finishTimestamp)
     {
         return () -> {
             // create file
@@ -195,21 +195,15 @@ public class HarvestSaver
 
             if (isSuccessful) {
                 try {
-                    // prepare json reader for the cached document list
-                    JsonReader reader = new JsonReader(
-                            new InputStreamReader(new FileInputStream(cachedDocuments), MainContext.getCharset()));
-
                     // prepare json writer for the save file
                     JsonWriter writer = new JsonWriter(
                             new OutputStreamWriter(new FileOutputStream(saveFile), MainContext.getCharset()));
 
                     // transfer data to target file
                     writeDocuments(
-                            reader,
                             writer,
                             startTimestamp,
                             finishTimestamp,
-                            sourceHash,
                             config.getParameterValue(ConfigurationConstants.READ_HTTP_FROM_DISK, Boolean.class));
                 } catch (IOException e) {
                     LOGGER.error(CacheConstants.SAVE_FAILED_ERROR, e);
@@ -247,9 +241,8 @@ public class HarvestSaver
                     from,
                     to,
                     startTimestamp);
-        } else {
+        } else
             fileName = String.format(CacheConstants.SAVE_FILE_NAME, MainContext.getModuleName(), startTimestamp);
-        }
 
         // create file and directories
         File saveFile = new File(fileName);
@@ -268,18 +261,15 @@ public class HarvestSaver
      * Writes cached documents from a reader directly to a writer, adding
      * additional harvesting related data
      *
-     * @param cacheReader a JSON reader of a file that contains cached documents
      * @param writer a JSON writer to a file
      * @param startTimestamp the UNIX Timestamp of the beginning of the harvest
      * @param finishTimestamp the UNIX Timestamp of the end of the harvest
-     * @param sourceHash a String used for version checks of the source data
-     *            that was harvested
      * @param readFromDisk if true, the harvest was not retrieved from the web,
      *            but instead, from locally cached HTTP responses
      *
      * @throws IOException thrown by either the cacheReader or the writer
      */
-    private void writeDocuments(JsonReader cacheReader, JsonWriter writer, long startTimestamp, long finishTimestamp, String sourceHash, boolean readFromDisk) throws IOException
+    private void writeDocuments(JsonWriter writer, long startTimestamp, long finishTimestamp, boolean readFromDisk) throws IOException
     {
         // this event holds no unique data, we can resubmit it as often as we
         // want
@@ -295,30 +285,23 @@ public class HarvestSaver
         writer.name(SaveConstants.IS_FROM_DISK_JSON);
         writer.value(readFromDisk);
 
-        writer.name(SaveConstants.HASH_JSON);
-        writer.value(sourceHash);
-
         writer.name(SaveConstants.DATA_JSON);
         writer.beginArray();
 
         // iterate through cached array
         final Gson gson = GsonUtils.getGson();
-        cacheReader.beginArray();
-
-        while (cacheReader.hasNext()) {
-            if (isAborting)
-                break;
-
-            // read a document from the array
-            gson.toJson(gson.fromJson(cacheReader, DataCiteJson.class), DataCiteJson.class, writer);
-            EventSystem.sendEvent(savedEvent);
+        for (DocumentChangesCache cachedDocuments : cacheList) {
+            cachedDocuments.forEach((String documentId, DataCiteJson document) -> {
+                if (isAborting)
+                    return false;
+                else {
+                    // read a document from the array
+                    gson.toJson(document, DataCiteJson.class, writer);
+                    EventSystem.sendEvent(savedEvent);
+                    return true;
+                }
+            });
         }
-
-        // close reader
-        if (!isAborting)
-            cacheReader.endArray();
-
-        cacheReader.close();
 
         // close writer
         writer.endArray();
@@ -329,4 +312,53 @@ public class HarvestSaver
         if (isAborting)
             currentSavingProcess.cancel(false);
     }
+
+
+    /**
+     * Iterates through all registered caches and calculates the total number of
+     * changed documents.
+     *
+     * @return the total number of submitted changes.
+     */
+    protected int getNumberOfChangedDocuments()
+    {
+        int docCount = 0;
+        for (final DocumentChangesCache cache : cacheList)
+            docCount += cache.getSize();
+
+        return docCount;
+    }
+
+
+    //////////////////////////////
+    // Event Callback Functions //
+    //////////////////////////////
+
+
+    /**
+     * Event listener for registering a new documents cache.
+     */
+    private final Consumer<RegisterCacheEvent> onRegisterCache = (RegisterCacheEvent e) -> {
+        cacheList.add(e.getCache().getChangesCache());
+    };
+
+
+    /**
+     * Event callback: When a save starts, save the cache file via the
+     * {@linkplain HarvestSaver}.
+     */
+    private final Consumer<StartSaveEvent> onStartSave = (StartSaveEvent e) -> {
+        save(e.isAutoTriggered());
+    };
+
+
+    /**
+     * Event listener for aborting the submitter.
+     */
+    private final Consumer<StartAbortingEvent> onStartAborting = (StartAbortingEvent e) -> {
+        isAborting = true;
+        EventSystem.removeListener(StartAbortingEvent.class, this.onStartAborting);
+        EventSystem.sendEvent(new AbortingStartedEvent());
+    };
+
 }

@@ -28,8 +28,7 @@ import de.gerdiproject.harvest.utils.cache.DocumentsCache;
 
 /**
  * This harvester manages a set of sub-harvesters. When the harvest is started,
- * all sub-harvesters are started concurrently, but write to a shared
- * {@linkplain DocumentsCache}.
+ * all sub-harvesters are started concurrently.
  *
  * @author Robin Weiss
  */
@@ -166,6 +165,17 @@ public abstract class AbstractCompositeHarvester extends AbstractHarvester
             total += subHarvester.getMaxNumberOfDocuments();
 
         return total;
+    }
+
+
+    /**
+     * The composite harvester does not harvest documents on its own. Therefore,
+     * no cache is required.
+     */
+    @Override
+    protected DocumentsCache initDocumentsCache()
+    {
+        return null;
     }
 
 

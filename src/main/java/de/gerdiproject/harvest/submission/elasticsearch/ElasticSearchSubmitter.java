@@ -16,21 +16,16 @@
 package de.gerdiproject.harvest.submission.elasticsearch;
 
 
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.rmi.ServerException;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.List;
+import java.util.Map;
 
 import javax.ws.rs.core.MediaType;
 
 import de.gerdiproject.harvest.IDocument;
-import de.gerdiproject.harvest.MainContext;
 import de.gerdiproject.harvest.config.Configuration;
-import de.gerdiproject.harvest.harvester.constants.HarvesterConstants;
 import de.gerdiproject.harvest.submission.AbstractSubmitter;
 import de.gerdiproject.harvest.submission.elasticsearch.constants.ElasticSearchConstants;
 import de.gerdiproject.harvest.submission.elasticsearch.json.ElasticSearchIndex;
@@ -42,53 +37,33 @@ import de.gerdiproject.json.GsonUtils;
 
 
 /**
- * This class serves as a communicator for an Elastic Search node. An
- * URL and optionally a username and password must be set up prior to the submission.
+ * This class serves as a communicator for an Elastic Search node. An URL and
+ * optionally a username and password must be set up prior to the submission.
  *
  * @author Robin Weiss
  */
 public class ElasticSearchSubmitter extends AbstractSubmitter
 {
-    private final MessageDigest messageDigest;
-
-
-    /**
-     * Constructor that initializes the SHA-MessageDigest for creating IDs from documents.
-     */
-    public ElasticSearchSubmitter()
-    {
-        // initialize the SHA Digest fo creating ElasticSearch IDs
-        MessageDigest md;
-
-        try {
-            md = MessageDigest.getInstance(HarvesterConstants.SHA_HASH_ALGORITHM);
-        } catch (NoSuchAlgorithmException e) {
-            // this should never ever happen
-            md = null;
-        }
-
-        messageDigest = md;
-    }
+    private StringBuilder bulkRequestBuilder;
 
 
     @Override
-    protected void submitBatch(List<IDocument> documents, URL submissionUrl, String credentials) throws Exception // NOPMD - Exception is explicitly thrown, because it is up to the implementation which Exception causes the submission to fail
+    protected void submitBatch(Map<String, IDocument> documents, URL submissionUrl, String credentials) throws Exception // NOPMD - Exception is explicitly thrown, because it is up to the implementation which Exception causes the submission to fail
     {
         // build a string for bulk-posting to Elastic search
-        StringBuilder bulkRequestBuilder = new StringBuilder();
+        bulkRequestBuilder = new StringBuilder();
         HttpRequester httpRequester = new HttpRequester();
 
-        for (int i = 0, len = documents.size(); i < len; i++)
-            bulkRequestBuilder.append(createBulkInstruction(documents.get(i)));
+        documents.forEach(this::createBulkInstruction);
+
 
         // send POST request to Elastic search
         String response = httpRequester.getRestResponse(
-                              RestRequestType.POST,
-                              submissionUrl.toString(),
-                              bulkRequestBuilder.toString(),
-                              credentials,
-                              MediaType.APPLICATION_JSON
-                          );
+                RestRequestType.POST,
+                submissionUrl.toString(),
+                bulkRequestBuilder.toString(),
+                credentials,
+                MediaType.APPLICATION_JSON);
 
         // parse JSON response
         ElasticSearchResponse responseJson = GsonUtils.getGson().fromJson(response, ElasticSearchResponse.class);
@@ -100,14 +75,15 @@ public class ElasticSearchSubmitter extends AbstractSubmitter
 
 
     /**
-     * Retrieves errors from a JSON response and creates an error string out of them.
+     * Retrieves errors from a JSON response and creates an error string out of
+     * them.
      *
      * @param responseJson the JSON response to an ElasticSearch bulk submission
      * @param documents the submitted documents that caused the issues
      *
      * @return an error string of failed submissions
      */
-    private String getSubmissionErrorText(ElasticSearchResponse responseJson, List<IDocument> documents)
+    private String getSubmissionErrorText(ElasticSearchResponse responseJson, Map<String, IDocument> documents)
     {
         List<ElasticSearchIndexWrapper> submittedItems = responseJson.getItems();
         StringBuilder sb = new StringBuilder();
@@ -123,7 +99,9 @@ public class ElasticSearchSubmitter extends AbstractSubmitter
                 sb.append(indexElement.getErrorText(submittedDocumentCount + i)).append('\n');
 
                 // append failed document
-                sb.append(toElasticSearchJson(GsonUtils.getGson().toJson(documents.get(i), documents.get(i).getClass()))).append('\n');
+                IDocument failedDocument = documents.get(indexElement.getId());
+                sb.append(toElasticSearchJson(failedDocument));
+                sb.append('\n');
             }
         }
 
@@ -138,54 +116,43 @@ public class ElasticSearchSubmitter extends AbstractSubmitter
      *
      * @return a bulk-submission instruction for a single document
      */
-    private String createBulkInstruction(IDocument doc)
+    private void createBulkInstruction(String documentId, IDocument doc)
     {
-        // convert document to JSON string and make DateRanges compatible with ElasticSearch
-        String jsonString = toElasticSearchJson(GsonUtils.getGson().toJson(doc, doc.getClass()));
-        String id = getDocumentId(jsonString);
+        final String bulkInstruction;
 
-        return String.format(ElasticSearchConstants.BATCH_POST_INSTRUCTION, id, jsonString);
+        if (doc != null) {
+            // convert document to JSON string and make DateRanges compatible with ElasticSearch
+            String jsonString = toElasticSearchJson(doc);
+
+            bulkInstruction = String.format(
+                    ElasticSearchConstants.BATCH_INDEX_INSTRUCTION,
+                    documentId,
+                    jsonString);
+        } else
+            bulkInstruction = String.format(ElasticSearchConstants.BATCH_DELETE_INSTRUCTION, documentId);
+
+        bulkRequestBuilder.append(bulkInstruction);
     }
 
 
     /**
-     * Converts a regular JSON string to an ElasticSearch JSON string by formatting dates to date ranges.
+     * Converts a document to an ElasticSearch JSON string by mapping regular
+     * dates to date ranges.
      *
-     * @param jsonString the source JSON string
+     * @param document the document of which the ElasticSearch JSON string is
+     *            generated
      *
      * @return an ElasticSearch compatible JSON string
      */
-    private String toElasticSearchJson(String jsonString)
+    private String toElasticSearchJson(final IDocument document)
     {
-        return jsonString
-               .replaceAll(ElasticSearchConstants.DATE_RANGE_REGEX, ElasticSearchConstants.DATE_RANGE_REPLACEMENT)
-               .replaceAll(ElasticSearchConstants.DATE_REGEX, ElasticSearchConstants.DATE_REPLACEMENT);
-    }
+        final String jsonString = GsonUtils.getGson().toJson(document, document.getClass());
 
-
-    /**
-     * Retrieves the SHA-hash of a String and returns it to be used as an ID
-     * for ElasticSearch.
-     *
-     * @param documentJson the JSON string of the document
-     *
-     * @return a SHA-hash in octat format
-     */
-    protected String getDocumentId(String documentJson)
-    {
-        messageDigest.update(documentJson.getBytes(MainContext.getCharset()));
-
-        final byte[] digest = messageDigest.digest();
-
-        final StringWriter buffer = new StringWriter(digest.length * 2);
-        final PrintWriter pw = new PrintWriter(buffer);
-
-        for (byte b : digest)
-            pw.printf(HarvesterConstants.OCTAT_FORMAT, b);
-
-        pw.close();
-
-        return buffer.toString();
+        return jsonString.replaceAll(
+                ElasticSearchConstants.DATE_RANGE_REGEX,
+                ElasticSearchConstants.DATE_RANGE_REPLACEMENT).replaceAll(
+                        ElasticSearchConstants.DATE_REGEX,
+                        ElasticSearchConstants.DATE_REPLACEMENT);
     }
 
 
@@ -224,6 +191,7 @@ public class ElasticSearchSubmitter extends AbstractSubmitter
 
         return bulkSubmissionUrl;
     }
+
 
     @Override
     protected String getCredentials(Configuration config)

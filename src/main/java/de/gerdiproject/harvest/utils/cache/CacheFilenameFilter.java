@@ -18,31 +18,31 @@ package de.gerdiproject.harvest.utils.cache;
 import java.io.File;
 import java.io.FilenameFilter;
 
-import de.gerdiproject.harvest.utils.cache.constants.CacheConstants;
-
 /**
- * A file name filter that checks if the file names are document cache files, but not
- * the cache file that is currently in use.
+ * A file name filter that checks if file names do not match a given timestamp.
  *
  * @author Robin Weiss
  */
 public class CacheFilenameFilter implements FilenameFilter
 {
-    private final String currentCacheName;
+    private final long currentCacheTimestamp;
 
 
     /**
      * Constructor that requires the cache file that is currently in use.
-     * @param currentCacheFile the cache file that is currently in use
+     * 
+     * @param currentCacheTimestamp the timestamp at which the current harvest
+     *            started
      */
-    public CacheFilenameFilter(File currentCacheFile)
+    public CacheFilenameFilter(long currentCacheTimestamp)
     {
-        currentCacheName = currentCacheFile.getName();
+        this.currentCacheTimestamp = currentCacheTimestamp;
     }
+
 
     @Override
     public boolean accept(File file, String fileName)
     {
-        return !fileName.equals(currentCacheName) && fileName.matches(CacheConstants.CACHE_FILE_REGEX);
+        return !fileName.equals(String.valueOf(currentCacheTimestamp));
     }
 }

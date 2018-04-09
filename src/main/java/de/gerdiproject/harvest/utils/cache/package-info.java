@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 /**
- * This package contains classes and packages that are related to caching harvested documents on disk via the
- * {@linkplain de.gerdiproject.harvest.utils.cache.DocumentsCache}.
+ * This package contains classes and packages that are related to caching
+ * harvested documents on disk via
+ * {@linkplain de.gerdiproject.harvest.utils.cache.DocumentsCache}s.
  *
  * @author Robin Weiss
  */

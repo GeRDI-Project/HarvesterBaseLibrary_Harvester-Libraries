@@ -16,232 +16,146 @@
 package de.gerdiproject.harvest.utils.cache;
 
 import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStreamWriter;
-import java.util.Date;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
-import java.util.function.Function;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.google.gson.stream.JsonWriter;
 
 import de.gerdiproject.harvest.IDocument;
 import de.gerdiproject.harvest.MainContext;
-import de.gerdiproject.harvest.config.constants.ConfigurationConstants;
 import de.gerdiproject.harvest.event.EventSystem;
-import de.gerdiproject.harvest.harvester.events.DocumentHarvestedEvent;
+import de.gerdiproject.harvest.harvester.events.GetProviderNameEvent;
 import de.gerdiproject.harvest.harvester.events.HarvestFinishedEvent;
 import de.gerdiproject.harvest.harvester.events.HarvestStartedEvent;
 import de.gerdiproject.harvest.save.HarvestSaver;
-import de.gerdiproject.harvest.save.events.StartSaveEvent;
 import de.gerdiproject.harvest.state.events.AbortingFinishedEvent;
 import de.gerdiproject.harvest.submission.AbstractSubmitter;
-import de.gerdiproject.harvest.submission.events.StartSubmissionEvent;
+import de.gerdiproject.harvest.utils.HashGenerator;
 import de.gerdiproject.harvest.utils.cache.constants.CacheConstants;
-import de.gerdiproject.harvest.utils.cache.events.GetCacheCountEvent;
-import de.gerdiproject.json.GsonUtils;
+import de.gerdiproject.harvest.utils.cache.events.RegisterCacheEvent;
 
 /**
- * This singleton class is a wrapper for a JSON file writer that writes harvested documents as a JSON-array to a cache-file.
- * The cached documents can be saved to disk along with harvesting related metadata using the {@linkplain HarvestSaver}, or submitted to a Database
- * via an {@linkplain AbstractSubmitter}.
+ * This singleton class is a wrapper for a JSON file writer that writes
+ * harvested documents as a JSON-array to a cache-file. The cached documents can
+ * be saved to disk along with harvesting related metadata using the
+ * {@linkplain HarvestSaver}, or submitted to a Database via an
+ * {@linkplain AbstractSubmitter}.
  *
  * @author Robin Weiss
  */
 public class DocumentsCache
 {
-    private static final Logger LOGGER = LoggerFactory.getLogger(DocumentsCache.class);
-    private static final DocumentsCache instance = new DocumentsCache();
-
-    private final AtomicInteger documentCount = new AtomicInteger(0);
-    private AbstractSubmitter submitter;
-    private HarvestSaver saver;
-    private JsonWriter cacheWriter;
-    private File cacheFile;
-    private String documentHash;
+    private final DocumentVersionsCache versionsCache;
+    private final DocumentChangesCache changesCache;
+    private final DocumentDeletionsCache deletionsCache;
+    private final String harvesterId;
 
 
     /**
-     * Event callback: When a harvest starts, the cache writer is opened.
+     * Constructs a cache for a harvester.
+     * 
+     * @param harvesterName the unique name of the harvester
      */
-    private final Consumer<HarvestStartedEvent> onHarvestStarted = (HarvestStartedEvent e) -> {
-        startCaching();
-    };
-
-
-    /**
-     * Event callback: When a harvest finishes, the cache writer is closed.
-     */
-    private final Consumer<HarvestFinishedEvent> onHarvestFinished = (HarvestFinishedEvent e) -> {
-        documentHash = e.getDocumentChecksum();
-        finishCaching();
-    };
-
-
-    /**
-     * Event callback: When a document is harvested, write it to the cache file.
-     */
-    private final Consumer<DocumentHarvestedEvent> onDocumentHarvested = (DocumentHarvestedEvent e) -> {
-        if (e.getDocument() != null)
-            addDocument(e.getDocument());
-    };
-
-
-    /**
-     * Event callback: When a submission starts, submit the cache file via the {@linkplain AbstractSubmitter}.
-     */
-    private final Consumer<StartSubmissionEvent> onStartSubmitting = (StartSubmissionEvent e) -> {
-        submitter.submit(cacheFile, documentCount.get());
-    };
-
-
-    /**
-     * Event callback: When a save starts, save the cache file via the {@linkplain HarvestSaver}.
-     */
-    private final Consumer<StartSaveEvent> onStartSaving = (StartSaveEvent e) -> {
-        saver.save(cacheFile, documentHash, documentCount.get(), e.isAutoTriggered());
-    };
-
-
-    /**
-     * Event callback: When an abortion is finished, close the cache streaming, so all data gets submitted
-     * if we want to submit an incomplete amount of documents.
-     */
-    private final Consumer<AbortingFinishedEvent> onAbortingFinished = (AbortingFinishedEvent e) -> {
-        finishCaching();
-    };
-
-    /**
-     * Synchronous Event callback: Returns the number of cached documents.
-     */
-    private final Function<GetCacheCountEvent, Integer> onGetCacheCount =
-        (GetCacheCountEvent e) ->   documentCount.get();
-
-
-    /**
-     * Private constructor for the singleton instance.
-     */
-    private DocumentsCache()
+    public DocumentsCache(final String harvesterName)
     {
-        this.cacheFile = new File(
-            String.format(
-                CacheConstants.CACHE_FILE_PATH,
-                MainContext.getModuleName(),
-                new Date().getTime()
-            ));
+        final String providerName = EventSystem.sendSynchronousEvent(new GetProviderNameEvent());
+        this.harvesterId = providerName + harvesterName;
+
+        // create cache directory
+        final File cacheDirectory =
+                new File(String.format(CacheConstants.CACHE_FOLDER_PATH, MainContext.getModuleName()));
+        final boolean isDirectoryCreated = cacheDirectory.exists() || cacheDirectory.mkdirs();
+
+        this.versionsCache = new DocumentVersionsCache(harvesterName);
+        this.changesCache = new DocumentChangesCache(harvesterName);
+        this.deletionsCache = new DocumentDeletionsCache(harvesterName);
+
+        EventSystem.addListener(HarvestStartedEvent.class, this::onHarvestStarted);
+        EventSystem.addListener(HarvestFinishedEvent.class, this::onHarvestFinished);
+        EventSystem.sendEvent(new RegisterCacheEvent(this));
     }
 
 
     /**
-     * Removes all cache files that are no longer in use by this harvester.
+     * Returns the cache that contains updated and new documents.
+     * 
+     * @return the cache that contains updated and new documents
      */
-    private void clearOldCacheFiles()
+    public DocumentChangesCache getChangesCache()
     {
-        String cacheDirPath = String.format(CacheConstants.CACHE_FOLDER_PATH, MainContext.getModuleName());
-        File cacheDir = new File(cacheDirPath);
-
-        if (cacheDir.exists() && cacheDir.isDirectory()) {
-            File[] oldCacheFiles;
-
-            // try to get all cache files in the folder
-            try {
-                oldCacheFiles = cacheDir.listFiles(new CacheFilenameFilter(cacheFile));
-            } catch (SecurityException e) {
-                oldCacheFiles = null;
-            }
-
-            // only continue if there are files
-            if (oldCacheFiles != null) {
-                for (File oldCache : oldCacheFiles) {
-                    boolean deleteSuccess;
-
-                    try {
-                        deleteSuccess = oldCache.delete();
-                    } catch (SecurityException e) {
-                        deleteSuccess = false;
-                    }
-
-                    if (deleteSuccess)
-                        LOGGER.info(String.format(CacheConstants.DELETE_FILE_SUCCESS, oldCache.getName()));
-                    else
-                        LOGGER.error(String.format(CacheConstants.DELETE_FILE_FAILED, oldCache.getName()));
-                }
-            }
-        }
+        return changesCache;
     }
 
 
     /**
-     * Initializes the singleton instance.
+     * Returns the cache that contains documents that are to be removed from the
+     * index.
+     * 
+     * @return the cache that contains documents that are to be removed from the
+     *         index
+     */
+    public DocumentDeletionsCache getDeletionsCache()
+    {
+        return deletionsCache;
+    }
+
+
+    /**
+     * Returns the cache that contains hash values of already harvested
+     * documents.
+     * 
+     * @return the cache that contains hash values of already harvested
+     *         documents
+     */
+    public DocumentVersionsCache getVersionsCache()
+    {
+        return versionsCache;
+    }
+
+
+    /**
+     * Skips all documents of the version cache, removing them from the list of
+     * documents that are to be submitted.
+     */
+    public void skipAllDocuments()
+    {
+        versionsCache.forEach((String documentId, String documentHash) -> {
+            deletionsCache.removeDocumentId(documentId);
+            return true;
+        });
+    }
+
+
+    /**
+     * Checks if a document has changed since the last harvest and either skips
+     * it, or adds it to the changes cache.
+     * 
+     * @param doc the document that is to be processed
+     */
+    public void cacheDocument(IDocument doc)
+    {
+        if (hasDocumentChanged(doc))
+            skipDocument(doc);
+        else
+            addDocument(doc);
+    };
+
+
+    /**
+     * Clears the old data, creates directories for the cache file and opens the
+     * cache writer.
      *
-     * @param submitter the submitter that is used for sending away harvested documents
-     */
-    public static void init(AbstractSubmitter submitter)
-    {
-        instance.submitter = submitter;
-        instance.saver = new HarvestSaver();
-
-        EventSystem.addListener(DocumentHarvestedEvent.class, instance.onDocumentHarvested);
-        EventSystem.addListener(HarvestStartedEvent.class, instance.onHarvestStarted);
-        EventSystem.addListener(HarvestFinishedEvent.class, instance.onHarvestFinished);
-        EventSystem.addListener(StartSubmissionEvent.class, instance.onStartSubmitting);
-        EventSystem.addListener(StartSaveEvent.class, instance.onStartSaving);
-        EventSystem.addSynchronousListener(GetCacheCountEvent.class, instance.onGetCacheCount);
-    }
-
-
-    /**
-     * Finishes the potentially open cache writer, clears old files and resets the writer and
-     * number of cached documents.
-     */
-    private void clear()
-    {
-        if (documentCount.get() > 0)
-            finishCaching();
-
-        // should we delete old cache files?
-        if (!MainContext.getConfiguration().getParameterValue(ConfigurationConstants.KEEP_CACHE, Boolean.class))
-            clearOldCacheFiles();
-
-        documentCount.set(0);
-        cacheWriter = null;
-    }
-
-
-    /**
-     * Clears the old data, creates directories for the cache file and opens the cache writer.
+     * @param timestamp the unix timestamp at which the harvest started
      *
-     * @return true if the writer could be opened successfully and the cache file was created
+     * @return true if the writer could be opened successfully and the cache
+     *         file was created
      */
-    private boolean startCaching()
+    private void startCaching(long timestamp)
     {
-        clear();
+        finishCaching();
 
-        // create directories
-        boolean isDirectoryCreated = cacheFile.getParentFile().exists() || cacheFile.getParentFile().mkdirs();
+        deletionsCache.init(versionsCache);
+        versionsCache.init();
+        changesCache.init();
 
-        if (isDirectoryCreated) {
-            try {
-                cacheWriter = new JsonWriter(
-                    new OutputStreamWriter(
-                        new FileOutputStream(cacheFile),
-                        MainContext.getCharset()));
-                cacheWriter.beginArray();
-
-                // listen to abort events
-                EventSystem.addListener(AbortingFinishedEvent.class, onAbortingFinished);
-
-                return true;
-            } catch (IOException e) {
-                LOGGER.error(CacheConstants.START_CACHE_ERROR, e);
-            }
-        }
-
-        return false;
+        EventSystem.addListener(AbortingFinishedEvent.class, onAbortingFinished);
     }
 
 
@@ -252,16 +166,6 @@ public class DocumentsCache
     {
         // stop listening to abort events
         EventSystem.removeListener(AbortingFinishedEvent.class, onAbortingFinished);
-
-        try {
-            if (cacheWriter != null) {
-                cacheWriter.endArray();
-                cacheWriter.close();
-                cacheWriter = null;
-            }
-        } catch (IOException e) {
-            LOGGER.error(CacheConstants.FINISH_CACHE_ERROR, e);
-        }
     }
 
 
@@ -270,9 +174,92 @@ public class DocumentsCache
      *
      * @param doc the document that is to be written to the cache
      */
-    private synchronized void addDocument(IDocument doc)
+    private void addDocument(IDocument doc)
     {
-        GsonUtils.getGson().toJson(doc, doc.getClass(), cacheWriter);
-        documentCount.incrementAndGet();
+        final String documentId = getDocumentId(doc);
+        changesCache.putDocument(documentId, doc);
+        versionsCache.putDocumentHash(documentId, HashGenerator.instance().getShaHash(doc));
+        deletionsCache.removeDocumentId(documentId);
     }
+
+
+    /**
+     * Removes a document from the deletion cache, but does not add it to the
+     * changes cache.
+     * 
+     * @param doc the document that is to be skipped
+     */
+    private void skipDocument(IDocument doc)
+    {
+        final String documentId = getDocumentId(doc);
+        deletionsCache.removeDocumentId(documentId);
+    }
+
+
+    /**
+     * Assembles a unique identifier of a document.
+     * 
+     * @param doc the document of which an ID is to be created
+     * 
+     * @return a unique identifier of a document
+     */
+    private String getDocumentId(IDocument doc)
+    {
+        return HashGenerator.instance().getShaHash(harvesterId + doc.getSourceId());
+    }
+
+
+    /**
+     * Checks whether the hash of a document differs from that of the versions
+     * cache.
+     * 
+     * @param doc the document that is to be checked
+     * 
+     * @return true, if the hash value of the document has changed
+     */
+    private boolean hasDocumentChanged(IDocument doc)
+    {
+        final String documentId = getDocumentId(doc);
+        final String currentHash = HashGenerator.instance().getShaHash(doc);
+        final String oldHash = versionsCache.getDocumentHash(documentId);
+
+        return oldHash == null || !oldHash.equals(currentHash);
+    }
+
+
+    //////////////////////////////
+    // Event Callback Functions //
+    //////////////////////////////
+
+    /**
+     * Event callback: When a harvest starts, the cache writer is opened.
+     * 
+     * @param event the event that triggered this function
+     */
+    private void onHarvestStarted(HarvestStartedEvent event)
+    {
+        startCaching(event.getStartTimestamp());
+    };
+
+
+    /**
+     * Event callback: When a harvest finishes, the cache writer is closed.
+     * 
+     * @param event the event that triggered this function
+     */
+    private void onHarvestFinished(HarvestFinishedEvent event)
+    {
+        versionsCache.setHarvesterHash(event.getDocumentChecksum());
+        finishCaching();
+    };
+
+
+    /**
+     * Event callback: When an abortion is finished, close the cache streaming,
+     * so all data gets submitted if we want to submit an incomplete amount of
+     * documents.
+     */
+    private final Consumer<AbortingFinishedEvent> onAbortingFinished = (AbortingFinishedEvent e) -> {
+        finishCaching();
+    };
 }
