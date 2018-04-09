@@ -139,6 +139,9 @@ public class MainContext
         CancelableFuture<Boolean> initProcess = new CancelableFuture<>(() -> {
             LOGGER.info(ApplicationConstants.INIT_HARVESTER_START);
 
+            // init HashGenerator
+            HashGenerator.init(charset);
+
             // initialize saver and submitter
             HarvestSaver.init();
             instance.submitter = submitter;
@@ -164,8 +167,6 @@ public class MainContext
             config.updateParameter(ConfigurationConstants.HARVEST_START_INDEX);
             config.updateParameter(ConfigurationConstants.HARVEST_END_INDEX);
 
-            // init HashGenerator
-            HashGenerator.init(charset);
             return true;
         });
 

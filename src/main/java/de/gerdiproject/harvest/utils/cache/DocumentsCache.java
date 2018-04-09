@@ -142,12 +142,10 @@ public class DocumentsCache
      * Clears the old data, creates directories for the cache file and opens the
      * cache writer.
      *
-     * @param timestamp the unix timestamp at which the harvest started
-     *
      * @return true if the writer could be opened successfully and the cache
      *         file was created
      */
-    private void startCaching(long timestamp)
+    private void startCaching()
     {
         finishCaching();
 
@@ -238,7 +236,7 @@ public class DocumentsCache
      */
     private void onHarvestStarted(HarvestStartedEvent event)
     {
-        startCaching(event.getStartTimestamp());
+        startCaching();
     };
 
 

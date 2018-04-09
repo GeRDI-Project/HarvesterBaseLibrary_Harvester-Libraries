@@ -16,9 +16,8 @@
 package de.gerdiproject.harvest.config.adapter;
 
 import java.lang.reflect.Type;
-import java.util.Map.Entry;
-import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 
 import com.google.gson.Gson;
@@ -43,16 +42,19 @@ import de.gerdiproject.harvest.config.parameters.UrlParameter;
 import de.gerdiproject.json.GsonUtils;
 
 /**
- * This adapter defines the (de-)serialization behavior of {@linkplain Configuration} objects.
+ * This adapter defines the (de-)serialization behavior of
+ * {@linkplain Configuration} objects.
  *
  * @author Robin Weiss
  */
 public class ConfigurationAdapter implements JsonDeserializer<Configuration>, JsonSerializer<Configuration>
 {
     /**
-     * Returns a {@linkplain Gson} with an integrated {@linkplain ConfigurationAdapter}.
+     * Returns a {@linkplain Gson} with an integrated
+     * {@linkplain ConfigurationAdapter}.
      *
-     * @return a {@linkplain Gson} with an integrated {@linkplain ConfigurationAdapter}
+     * @return a {@linkplain Gson} with an integrated
+     *         {@linkplain ConfigurationAdapter}
      */
     public static Gson getGson()
     {
@@ -61,22 +63,20 @@ public class ConfigurationAdapter implements JsonDeserializer<Configuration>, Js
 
 
     @Override
-    public Configuration deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context)
-    throws JsonParseException
+    public Configuration deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context) throws JsonParseException
     {
         // initialize global parameters with default values
         Map<String, AbstractParameter<?>> globalParameters = ParameterFactory.createDefaultParameters();
-        Map<String, AbstractParameter<?>> harvesterParameters = new LinkedHashMap<>();
+        Map<String, AbstractParameter<?>> harvesterParameters = ParameterFactory.createHarvesterParameters(null);
 
         JsonObject configJson = json.getAsJsonObject();
 
         // fill global parameters
         JsonObject globalParamsJson = configJson.get(ConfigurationConstants.GLOBAL_PARAMETERS_JSON).getAsJsonObject();
-        globalParameters.forEach((String key, AbstractParameter<?> value)-> {
+        globalParameters.forEach((String key, AbstractParameter<?> value) -> {
             JsonElement valueJson = globalParamsJson.get(key);
 
-            if (valueJson != null)
-            {
+            if (valueJson != null) {
                 if (valueJson.getAsJsonPrimitive().isString())
                     globalParameters.get(key).setValue(valueJson.getAsString(), null);
 
@@ -87,7 +87,8 @@ public class ConfigurationAdapter implements JsonDeserializer<Configuration>, Js
         });
 
         // fill harvester parameters
-        Set<Entry<String, JsonElement>> harvesterParamsJson = configJson.get(ConfigurationConstants.HARVESTER_PARAMETERS_JSON).getAsJsonObject().entrySet();
+        Set<Entry<String, JsonElement>> harvesterParamsJson =
+                configJson.get(ConfigurationConstants.HARVESTER_PARAMETERS_JSON).getAsJsonObject().entrySet();
 
         for (Entry<String, JsonElement> paramJson : harvesterParamsJson) {
             String key = paramJson.getKey();
@@ -117,9 +118,10 @@ public class ConfigurationAdapter implements JsonDeserializer<Configuration>, Js
                 harvesterParameters.put(key, param);
             else
                 throw new JsonParseException(
-                    String.format(ConfigurationConstants.PARSE_ERROR,
-                                  GsonUtils.getPrettyGson().toJson(paramJson.getValue()),
-                                  key));
+                        String.format(
+                                ConfigurationConstants.PARSE_ERROR,
+                                GsonUtils.getPrettyGson().toJson(paramJson.getValue()),
+                                key));
         }
 
         return new Configuration(globalParameters, harvesterParameters);
