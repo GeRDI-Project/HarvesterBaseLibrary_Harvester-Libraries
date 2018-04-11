@@ -296,8 +296,10 @@ public class HarvestSaver
                 if (isAborting)
                     return false;
                 else {
-                    // read a document from the array
-                    gson.toJson(document, DataCiteJson.class, writer);
+                    // write a document to the array
+                    if (document != null)
+                        gson.toJson(document, DataCiteJson.class, writer);
+
                     EventSystem.sendEvent(savedEvent);
                     return true;
                 }
@@ -325,7 +327,7 @@ public class HarvestSaver
     {
         int docCount = 0;
         for (final DocumentChangesCache cache : cacheList)
-            docCount += cache.getSize();
+            docCount += cache.size();
 
         return docCount;
     }

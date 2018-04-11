@@ -22,14 +22,16 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiFunction;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.gson.Gson;
-import com.google.gson.JsonObject;
+import com.google.gson.JsonElement;
 import com.google.gson.stream.JsonReader;
+import com.google.gson.stream.JsonToken;
 import com.google.gson.stream.JsonWriter;
 
 import de.gerdiproject.harvest.IDocument;
@@ -74,8 +76,10 @@ public class DocumentChangesCache
     /**
      * Initializes the cache by creating an empty file and setting the size to
      * zero.
+     * 
+     * @param versionsCache a cache of previously harvested IDs
      */
-    public void init()
+    public void init(DocumentVersionsCache versionsCache)
     {
         // remove old file
         if (cacheFile.exists())
@@ -89,14 +93,33 @@ public class DocumentChangesCache
                             new FileOutputStream(cacheFile),
                             MainContext.getCharset()));
 
+            final AtomicInteger numberOfCopiedIds = new AtomicInteger(0);
+            boolean isSuccessful = false;
+            // copy documentIds and count them
             writer.beginObject();
+            isSuccessful = versionsCache.forEach((String documentId, String documentHash) -> {
+                try {
+                    writer.name(documentId);
+                    writer.nullValue();
+                } catch (IOException e) {
+                    return false;
+                }
+                numberOfCopiedIds.incrementAndGet();
+                return true;
+            });
+
+            // close writer
             writer.endObject();
             writer.close();
+
+            if (isSuccessful)
+                this.size = numberOfCopiedIds.get();
+            else
+                this.size = 0;
+
         } catch (IOException e) {
             LOGGER.error(String.format(CacheConstants.CACHE_CREATE_FAILED, cacheFile.getAbsolutePath()));
         }
-
-        this.size = 0;
     }
 
 
@@ -105,7 +128,7 @@ public class DocumentChangesCache
      * 
      * @return the number of cached documents
      */
-    public int getSize()
+    public int size()
     {
         return size;
     }
@@ -138,7 +161,12 @@ public class DocumentChangesCache
 
                 while (isFunctionSuccessful && reader.hasNext()) {
                     final String documentId = reader.nextName();
-                    final DataCiteJson addedDoc = gson.fromJson(reader, DataCiteJson.class);
+                    final DataCiteJson addedDoc;
+                    if (reader.peek() == JsonToken.NULL) {
+                        addedDoc = null;
+                        reader.skipValue();
+                    } else
+                        addedDoc = gson.fromJson(reader, DataCiteJson.class);
                     isFunctionSuccessful = documentFunction.apply(documentId, addedDoc);
                 }
 
@@ -156,11 +184,23 @@ public class DocumentChangesCache
 
 
     /**
+     * Removes a document entry from the cache.
+     * 
+     * @param documentId the ID of the document that is to be removed
+     */
+    public void removeDocument(String documentId)
+    {
+        putDocument(documentId, null);
+    }
+
+
+    /**
      * Adds a key-value pair to the cache. The key is the unique documentId and
      * the value is the JSON representation of the document.
      * 
      * @param documentId the unique document identifier
-     * @param document the JSON representation of the document
+     * @param document the JSON representation of the document or null, if the
+     *            document is to be removed
      */
     public void putDocument(final String documentId, final IDocument document)
     {
@@ -181,28 +221,37 @@ public class DocumentChangesCache
             // copy key value pairs until the specified key is found
             while (reader.hasNext()) {
                 final String readKey = reader.nextName();
-                final JsonObject readValue = gson.fromJson(reader, JsonObject.class);
+                final JsonElement readValue = gson.fromJson(reader, JsonElement.class);
 
                 if (readKey.equals(documentId)) {
                     size--;
                     break;
                 } else {
                     writer.name(readKey);
-                    gson.toJson(readValue, JsonObject.class, writer);
+
+                    if (readValue.isJsonNull())
+                        writer.nullValue();
+                    else
+                        gson.toJson(readValue, JsonElement.class, writer);
                 }
             }
 
             // add specified key-value pair
-            writer.name(documentId);
-            gson.toJson(document, document.getClass(), writer);
-            size++;
+            if (document != null) {
+                writer.name(documentId);
+                gson.toJson(document, document.getClass(), writer);
+                size++;
+            }
 
             // if any old key-value pairs remain in the source file, copy them
             while (reader.hasNext()) {
                 final String readKey = reader.nextName();
-                final JsonObject readValue = gson.fromJson(reader, JsonObject.class);
+                final JsonElement readValue = gson.fromJson(reader, JsonElement.class);
                 writer.name(readKey);
-                gson.toJson(readValue, JsonObject.class, writer);
+                if (readValue.isJsonNull())
+                    writer.nullValue();
+                else
+                    gson.toJson(readValue, JsonElement.class, writer);
             }
 
             // close reader
@@ -225,7 +274,7 @@ public class DocumentChangesCache
 
     /**
      * Retrieves the document JSON for a specified document ID from the cache
-     * file.
+     * file, or null if this document is to be deleted.
      * 
      * @param documentId the identifier of the document which is to be retrieved
      * @return a JSON document or null, if no entry exists for the document
@@ -244,15 +293,18 @@ public class DocumentChangesCache
 
                 while (reader.hasNext()) {
                     final String id = reader.nextName();
-                    final DataCiteJson readValue = gson.fromJson(reader, DataCiteJson.class);
 
                     if (id.equals(documentId)) {
-                        document = readValue;
+                        document = reader.peek() == JsonToken.NULL
+                                ? null
+                                : gson.fromJson(reader, DataCiteJson.class);
                         break;
                     }
+                    reader.skipValue();
                 }
                 reader.close();
-            } catch (IOException e) { // NOPMD - nothing to do here, documentHash is null by default
+            } catch (IOException e) {
+                // NOPMD - nothing to do here, documentHash is null by default
 
             }
         }

@@ -42,7 +42,7 @@ import de.gerdiproject.harvest.submission.events.StartSubmissionEvent;
 import de.gerdiproject.harvest.submission.events.SubmissionFinishedEvent;
 import de.gerdiproject.harvest.submission.events.SubmissionStartedEvent;
 import de.gerdiproject.harvest.utils.CancelableFuture;
-import de.gerdiproject.harvest.utils.cache.DocumentsCache;
+import de.gerdiproject.harvest.utils.cache.DocumentChangesCache;
 import de.gerdiproject.harvest.utils.cache.events.RegisterCacheEvent;
 import de.gerdiproject.json.datacite.DataCiteJson;
 
@@ -54,7 +54,7 @@ import de.gerdiproject.json.datacite.DataCiteJson;
  */
 public abstract class AbstractSubmitter
 {
-    private final List<DocumentsCache> cacheList = Collections.synchronizedList(new LinkedList<>());
+    private final List<DocumentChangesCache> cacheList = Collections.synchronizedList(new LinkedList<>());
     private int failedDocumentCount;
 
     protected final Map<String, IDocument> submissionMap = new HashMap<>();
@@ -111,7 +111,7 @@ public abstract class AbstractSubmitter
         if (canSubmit) {
             // start asynchronous submission
             currentSubmissionProcess = new CancelableFuture<>(
-                    createSubmissionProcess(cacheList, submissionUrl, credentials, batchSize));
+                    createSubmissionProcess(submissionUrl, credentials, batchSize));
 
             // finished handler
             currentSubmissionProcess.thenApply((isSuccessful) -> {
@@ -137,7 +137,6 @@ public abstract class AbstractSubmitter
      * Creates a callable function that sequentially submits all harvested
      * documents in subsets of adjustable size.
      *
-     * @param cachedDocuments the caches of deleted and added documents
      * @param submissionUrl the URL to which the documents are to be submitted
      * @param credentials user credentials or null, if they do not exist
      * @param batchSize the max number of documents to be processed in a batch
@@ -145,35 +144,23 @@ public abstract class AbstractSubmitter
      *
      * @return a function that can be used of asynchronous requests
      */
-    protected Callable<Boolean> createSubmissionProcess(List<DocumentsCache> cachedDocuments, URL submissionUrl, String credentials, int batchSize)
+    protected Callable<Boolean> createSubmissionProcess(URL submissionUrl, String credentials, int batchSize)
     {
         return () -> {
             boolean areAllSubmissionsSuccessful = true;
 
             // go through all registered caches and process their documents
-            for (final DocumentsCache cache : cacheList) {
+            for (final DocumentChangesCache cache : cacheList) {
                 // stop cache iteration if aborting
                 if (isAborting)
                     break;
 
-                // process all documents that are to be added
-                areAllSubmissionsSuccessful &= cache.getChangesCache().forEach(
+                // process all documents that are to be changed or deleted
+                areAllSubmissionsSuccessful &= cache.forEach(
                         (String documentId, DataCiteJson addedDoc) -> {
                             addDocument(
                                     documentId,
                                     addedDoc,
-                                    submissionUrl,
-                                    credentials,
-                                    batchSize);
-                            return !isAborting;
-                        });
-
-                // process all documents that are to be deleted
-                areAllSubmissionsSuccessful &= cache.getDeletionsCache().forEach(
-                        (String documentId) -> {
-                            addDocument(
-                                    documentId,
-                                    null,
                                     submissionUrl,
                                     credentials,
                                     batchSize);
@@ -399,9 +386,8 @@ public abstract class AbstractSubmitter
     {
         int docCount = 0;
 
-        for (final DocumentsCache cache : cacheList) {
-            docCount += cache.getChangesCache().getSize();
-            docCount += cache.getDeletionsCache().getSize();
+        for (final DocumentChangesCache cache : cacheList) {
+            docCount += cache.size();
         }
 
         return docCount;
@@ -417,7 +403,7 @@ public abstract class AbstractSubmitter
      * Event listener for registering a new documents cache.
      */
     private final Consumer<RegisterCacheEvent> onRegisterCache = (RegisterCacheEvent e) -> {
-        cacheList.add(e.getCache());
+        cacheList.add(e.getCache().getChangesCache());
     };
 
 

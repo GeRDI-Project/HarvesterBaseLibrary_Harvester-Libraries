@@ -40,7 +40,6 @@ public class DocumentsCache
 {
     private final DocumentVersionsCache versionsCache;
     private final DocumentChangesCache changesCache;
-    private final DocumentDeletionsCache deletionsCache;
     private final String harvesterId;
 
 
@@ -61,7 +60,6 @@ public class DocumentsCache
 
         this.versionsCache = new DocumentVersionsCache(harvesterName);
         this.changesCache = new DocumentChangesCache(harvesterName);
-        this.deletionsCache = new DocumentDeletionsCache(harvesterName);
 
         EventSystem.sendEvent(new RegisterCacheEvent(this));
     }
@@ -75,19 +73,6 @@ public class DocumentsCache
     public DocumentChangesCache getChangesCache()
     {
         return changesCache;
-    }
-
-
-    /**
-     * Returns the cache that contains documents that are to be removed from the
-     * index.
-     * 
-     * @return the cache that contains documents that are to be removed from the
-     *         index
-     */
-    public DocumentDeletionsCache getDeletionsCache()
-    {
-        return deletionsCache;
     }
 
 
@@ -111,7 +96,7 @@ public class DocumentsCache
     public void skipAllDocuments()
     {
         versionsCache.forEach((String documentId, String documentHash) -> {
-            deletionsCache.removeDocumentId(documentId);
+            changesCache.removeDocument(documentId);
             return true;
         });
     }
@@ -142,7 +127,6 @@ public class DocumentsCache
         final String documentId = getDocumentId(doc);
         changesCache.putDocument(documentId, doc);
         versionsCache.putDocumentHash(documentId, HashGenerator.instance().getShaHash(doc));
-        deletionsCache.removeDocumentId(documentId);
     }
 
 
@@ -152,8 +136,7 @@ public class DocumentsCache
     public void init()
     {
         versionsCache.init();
-        changesCache.init();
-        deletionsCache.init(versionsCache);
+        changesCache.init(versionsCache);
     }
 
 
@@ -166,7 +149,7 @@ public class DocumentsCache
     private void skipDocument(IDocument doc)
     {
         final String documentId = getDocumentId(doc);
-        deletionsCache.removeDocumentId(documentId);
+        changesCache.removeDocument(documentId);
     }
 
 
