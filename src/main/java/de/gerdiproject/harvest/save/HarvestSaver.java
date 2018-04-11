@@ -87,9 +87,6 @@ public class HarvestSaver
      */
     private void save(boolean isAutoTriggered)
     {
-        final int numberOfDocs = getNumberOfChangedDocuments();
-        EventSystem.sendEvent(new SaveStartedEvent(isAutoTriggered, numberOfDocs));
-
         // listen to abort requests
         isAborting = false;
         EventSystem.addListener(StartAbortingEvent.class, onStartAborting);
@@ -100,7 +97,7 @@ public class HarvestSaver
 
         // start asynchronous save
         currentSavingProcess =
-                new CancelableFuture<>(createSaveProcess(startTimestamp, finishTimestamp));
+                new CancelableFuture<>(createSaveProcess(startTimestamp, finishTimestamp, isAutoTriggered));
 
         // exception handler
         currentSavingProcess.thenApply((isSuccessful) -> {
@@ -180,12 +177,16 @@ public class HarvestSaver
      * @param cachedDocuments the cache of changed documents
      * @param startTimestamp the UNIX Timestamp of the beginning of the harvest
      * @param finishTimestamp the UNIX Timestamp of the end of the harvest
+     * @param isAutoTriggered true if the save was not explicitly triggered via
+     *            a REST call
      *
      * @return true, if the file was saved successfully
      */
-    private Callable<Boolean> createSaveProcess(long startTimestamp, long finishTimestamp)
+    private Callable<Boolean> createSaveProcess(long startTimestamp, long finishTimestamp, boolean isAutoTriggered)
     {
         return () -> {
+            EventSystem.sendEvent(new SaveStartedEvent(isAutoTriggered, getNumberOfChangedDocuments()));
+
             // create file
             final Configuration config = MainContext.getConfiguration();
             saveFile = createTargetFile(config, startTimestamp);

@@ -32,6 +32,7 @@ import de.gerdiproject.harvest.harvester.AbstractHarvester;
 import de.gerdiproject.harvest.harvester.events.HarvesterInitializedEvent;
 import de.gerdiproject.harvest.save.HarvestSaver;
 import de.gerdiproject.harvest.state.StateMachine;
+import de.gerdiproject.harvest.state.impl.InitializationState;
 import de.gerdiproject.harvest.submission.AbstractSubmitter;
 import de.gerdiproject.harvest.utils.CancelableFuture;
 import de.gerdiproject.harvest.utils.HashGenerator;
@@ -132,8 +133,7 @@ public class MainContext
         instance.moduleName = moduleName;
         instance.charset = charset;
 
-        // init state machine
-        StateMachine.init();
+        StateMachine.setState(new InitializationState());
 
         // init harvester
         CancelableFuture<Boolean> initProcess = new CancelableFuture<>(() -> {

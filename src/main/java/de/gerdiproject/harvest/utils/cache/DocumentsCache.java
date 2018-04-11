@@ -16,16 +16,12 @@
 package de.gerdiproject.harvest.utils.cache;
 
 import java.io.File;
-import java.util.function.Consumer;
 
 import de.gerdiproject.harvest.IDocument;
 import de.gerdiproject.harvest.MainContext;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.harvester.events.GetProviderNameEvent;
-import de.gerdiproject.harvest.harvester.events.HarvestFinishedEvent;
-import de.gerdiproject.harvest.harvester.events.HarvestStartedEvent;
 import de.gerdiproject.harvest.save.HarvestSaver;
-import de.gerdiproject.harvest.state.events.AbortingFinishedEvent;
 import de.gerdiproject.harvest.submission.AbstractSubmitter;
 import de.gerdiproject.harvest.utils.HashGenerator;
 import de.gerdiproject.harvest.utils.cache.constants.CacheConstants;
@@ -67,8 +63,6 @@ public class DocumentsCache
         this.changesCache = new DocumentChangesCache(harvesterName);
         this.deletionsCache = new DocumentDeletionsCache(harvesterName);
 
-        EventSystem.addListener(HarvestStartedEvent.class, this::onHarvestStarted);
-        EventSystem.addListener(HarvestFinishedEvent.class, this::onHarvestFinished);
         EventSystem.sendEvent(new RegisterCacheEvent(this));
     }
 
@@ -132,39 +126,10 @@ public class DocumentsCache
     public void cacheDocument(IDocument doc)
     {
         if (hasDocumentChanged(doc))
-            skipDocument(doc);
-        else
             addDocument(doc);
+        else
+            skipDocument(doc);
     };
-
-
-    /**
-     * Clears the old data, creates directories for the cache file and opens the
-     * cache writer.
-     *
-     * @return true if the writer could be opened successfully and the cache
-     *         file was created
-     */
-    private void startCaching()
-    {
-        finishCaching();
-
-        deletionsCache.init(versionsCache);
-        versionsCache.init();
-        changesCache.init();
-
-        EventSystem.addListener(AbortingFinishedEvent.class, onAbortingFinished);
-    }
-
-
-    /**
-     * Closes the cache writer.
-     */
-    private void finishCaching()
-    {
-        // stop listening to abort events
-        EventSystem.removeListener(AbortingFinishedEvent.class, onAbortingFinished);
-    }
 
 
     /**
@@ -172,12 +137,23 @@ public class DocumentsCache
      *
      * @param doc the document that is to be written to the cache
      */
-    private void addDocument(IDocument doc)
+    public void addDocument(IDocument doc)
     {
         final String documentId = getDocumentId(doc);
         changesCache.putDocument(documentId, doc);
         versionsCache.putDocumentHash(documentId, HashGenerator.instance().getShaHash(doc));
         deletionsCache.removeDocumentId(documentId);
+    }
+
+
+    /**
+     * Initializes all caches.
+     */
+    public void init()
+    {
+        versionsCache.init();
+        changesCache.init();
+        deletionsCache.init(versionsCache);
     }
 
 
@@ -223,41 +199,4 @@ public class DocumentsCache
 
         return oldHash == null || !oldHash.equals(currentHash);
     }
-
-
-    //////////////////////////////
-    // Event Callback Functions //
-    //////////////////////////////
-
-    /**
-     * Event callback: When a harvest starts, the cache writer is opened.
-     * 
-     * @param event the event that triggered this function
-     */
-    private void onHarvestStarted(HarvestStartedEvent event)
-    {
-        startCaching();
-    };
-
-
-    /**
-     * Event callback: When a harvest finishes, the cache writer is closed.
-     * 
-     * @param event the event that triggered this function
-     */
-    private void onHarvestFinished(HarvestFinishedEvent event)
-    {
-        versionsCache.setHarvesterHash(event.getDocumentChecksum());
-        finishCaching();
-    };
-
-
-    /**
-     * Event callback: When an abortion is finished, close the cache streaming,
-     * so all data gets submitted if we want to submit an incomplete amount of
-     * documents.
-     */
-    private final Consumer<AbortingFinishedEvent> onAbortingFinished = (AbortingFinishedEvent e) -> {
-        finishCaching();
-    };
 }

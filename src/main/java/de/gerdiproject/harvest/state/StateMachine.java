@@ -15,14 +15,12 @@
  */
 package de.gerdiproject.harvest.state;
 
-import de.gerdiproject.harvest.event.EventSystem;
-import de.gerdiproject.harvest.state.events.ChangeStateEvent;
 import de.gerdiproject.harvest.state.impl.InitializationState;
 
 /**
- * This singleton state machine controls REST input by delegating it to the current state.
- * Edge-case scenarios are more easily avoided this way, as all REST-triggered functions
- * have a clearly defined behavior at any given state.
+ * This singleton state machine controls REST input by delegating it to the
+ * current state. Edge-case scenarios are more easily avoided this way, as all
+ * REST-triggered functions have a clearly defined behavior at any given state.
  *
  * @author Robin Weiss
  */
@@ -34,22 +32,11 @@ public class StateMachine
 
 
     /**
-     * Private constructor for the singleton instance.
-     * The default state is the {@linkplain InitializationState}.
+     * Private constructor for the singleton instance. The default state is the
+     * {@linkplain InitializationState}.
      */
     private StateMachine()
     {
-        currentState = new InitializationState();
-        currentState.onStateEnter();
-    }
-
-    /**
-     * Init must be called explicitly, because this class must be referenced once in order to work.
-     */
-    public static void init()
-    {
-        // register event listeners
-        EventSystem.addListener(ChangeStateEvent.class, (ChangeStateEvent e) -> instance.setState(e.getState()));
     }
 
 
@@ -58,11 +45,13 @@ public class StateMachine
      *
      * @param newState the new state
      */
-    private void setState(IState newState)
+    public static void setState(IState newState)
     {
-        currentState.onStateLeave();
-        currentState = newState;
-        currentState.onStateEnter();
+        if (instance.currentState != null)
+            instance.currentState.onStateLeave();
+
+        instance.currentState = newState;
+        instance.currentState.onStateEnter();
     }
 
 

@@ -64,7 +64,10 @@ public class CacheConstants
     public static final String CACHE_CREATE_FAILED = "Could not create cache file '%s'!";
 
     // DocumentVersionsCache
-    public static final String HARVESTER_HASH_JSON = "harvesterHash";
+    public static final String HARVESTER_VALUES_JSON = "harvesterValues";
+    public static final String HARVESTER_SOURCE_HASH_JSON = "sourceHash";
+    public static final String HARVESTER_FROM_JSON = "rangeFrom";
+    public static final String HARVESTER_TO_JSON = "rangeTo";
     public static final String DOCUMENT_HASHES_JSON = "documentHashes";
 
     // AbstractStreamHarvester

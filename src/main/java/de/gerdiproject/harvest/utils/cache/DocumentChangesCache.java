@@ -24,6 +24,9 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.util.function.BiFunction;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.stream.JsonReader;
@@ -44,6 +47,8 @@ import de.gerdiproject.json.datacite.DataCiteJson;
  */
 public class DocumentChangesCache
 {
+    private static final Logger LOGGER = LoggerFactory.getLogger(DocumentChangesCache.class);
+
     private final File cacheFile;
     private final Gson gson;
     private int size;
@@ -79,8 +84,16 @@ public class DocumentChangesCache
         // create new file
         try {
             cacheFile.createNewFile();
-        } catch (IOException e) {
+            final JsonWriter writer = new JsonWriter(
+                    new OutputStreamWriter(
+                            new FileOutputStream(cacheFile),
+                            MainContext.getCharset()));
 
+            writer.beginObject();
+            writer.endObject();
+            writer.close();
+        } catch (IOException e) {
+            LOGGER.error(String.format(CacheConstants.CACHE_CREATE_FAILED, cacheFile.getAbsolutePath()));
         }
 
         this.size = 0;
@@ -114,33 +127,41 @@ public class DocumentChangesCache
         // prepare variables
         boolean isFunctionSuccessful = true;
 
-        try {
-            // prepare json reader for the cached document list
-            final JsonReader reader = new JsonReader(
-                    new InputStreamReader(new FileInputStream(cacheFile), MainContext.getCharset()));
+        if (size > 0) {
+            try {
+                // prepare json reader for the cached document list
+                final JsonReader reader = new JsonReader(
+                        new InputStreamReader(new FileInputStream(cacheFile), MainContext.getCharset()));
 
-            // iterate through cached array
-            reader.beginArray();
+                // iterate through cached documents
+                reader.beginObject();
 
-            while (isFunctionSuccessful && reader.hasNext()) {
-                final String documentId = reader.nextName();
-                final DataCiteJson addedDoc = gson.fromJson(reader, DataCiteJson.class);
-                isFunctionSuccessful = documentFunction.apply(documentId, addedDoc);
+                while (isFunctionSuccessful && reader.hasNext()) {
+                    final String documentId = reader.nextName();
+                    final DataCiteJson addedDoc = gson.fromJson(reader, DataCiteJson.class);
+                    isFunctionSuccessful = documentFunction.apply(documentId, addedDoc);
+                }
+
+                // close reader
+                if (!isFunctionSuccessful)
+                    reader.endObject();
+
+                reader.close();
+            } catch (IOException e) {
+                isFunctionSuccessful = false;
             }
-
-            // close reader
-            if (!isFunctionSuccessful)
-                reader.endArray();
-
-            reader.close();
-        } catch (IOException e) {
-            isFunctionSuccessful = false;
         }
-
         return isFunctionSuccessful;
     }
 
 
+    /**
+     * Adds a key-value pair to the cache. The key is the unique documentId and
+     * the value is the JSON representation of the document.
+     * 
+     * @param documentId the unique document identifier
+     * @param document the JSON representation of the document
+     */
     public void putDocument(final String documentId, final IDocument document)
     {
         final File tempFile = new File(cacheFile.getAbsolutePath() + CacheConstants.TEMP_FILE_EXTENSION);
@@ -185,7 +206,6 @@ public class DocumentChangesCache
             }
 
             // close reader
-            reader.endObject();
             reader.close();
 
             // close writer
@@ -193,12 +213,13 @@ public class DocumentChangesCache
             writer.close();
 
         } catch (IOException e) {
+            LOGGER.error(String.format(CacheConstants.ENTRY_STREAM_WRITE_ERROR, tempFile.getAbsolutePath()));
             return;
         }
 
         // replace current file with temporary file
-        cacheFile.delete();
-        tempFile.renameTo(cacheFile);
+        if (cacheFile.delete())
+            tempFile.renameTo(cacheFile);
     }
 
 

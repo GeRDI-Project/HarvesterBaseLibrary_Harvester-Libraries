@@ -23,9 +23,9 @@ import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.save.events.DocumentSavedEvent;
 import de.gerdiproject.harvest.save.events.SaveFinishedEvent;
 import de.gerdiproject.harvest.state.AbstractProgressingState;
+import de.gerdiproject.harvest.state.StateMachine;
 import de.gerdiproject.harvest.state.constants.StateConstants;
 import de.gerdiproject.harvest.state.constants.StateEventHandlerConstants;
-import de.gerdiproject.harvest.state.events.ChangeStateEvent;
 import de.gerdiproject.harvest.submission.events.StartSubmissionEvent;
 import de.gerdiproject.harvest.submission.events.SubmissionStartedEvent;
 import de.gerdiproject.harvest.utils.time.HarvestTimeKeeper;
@@ -61,12 +61,15 @@ public class SavingState extends AbstractProgressingState
         super(numberOfDocsToBeSaved);
 
         this.onSaveFinished =
-        (SaveFinishedEvent e) -> {
-            if (isAutoTriggered && MainContext.getConfiguration().getParameterValue(ConfigurationConstants.AUTO_SUBMIT, Boolean.class))
-                EventSystem.sendEvent(new StartSubmissionEvent());
-            else
-                EventSystem.sendEvent(new ChangeStateEvent(new IdleState()));
-        };
+                (SaveFinishedEvent e) -> {
+                    if (isAutoTriggered
+                            && MainContext.getConfiguration().getParameterValue(
+                                    ConfigurationConstants.AUTO_SUBMIT,
+                                    Boolean.class))
+                        EventSystem.sendEvent(new StartSubmissionEvent());
+                    else
+                        StateMachine.setState(new IdleState());
+                };
     }
 
 
@@ -74,6 +77,7 @@ public class SavingState extends AbstractProgressingState
     public void onStateEnter()
     {
         super.onStateEnter();
+        LOGGER.info(StateConstants.SAVING_STATUS);
         EventSystem.addListener(DocumentSavedEvent.class, onDocumentSaved);
         EventSystem.addListener(SaveFinishedEvent.class, onSaveFinished);
         EventSystem.addListener(SubmissionStartedEvent.class, StateEventHandlerConstants.ON_SUBMISSION_STARTED);
@@ -88,6 +92,7 @@ public class SavingState extends AbstractProgressingState
         EventSystem.removeListener(DocumentSavedEvent.class, onDocumentSaved);
         EventSystem.removeListener(SaveFinishedEvent.class, onSaveFinished);
         EventSystem.removeListener(SubmissionStartedEvent.class, StateEventHandlerConstants.ON_SUBMISSION_STARTED);
+        LOGGER.info(StateConstants.SAVING_DONE);
     }
 
 
@@ -96,12 +101,12 @@ public class SavingState extends AbstractProgressingState
     {
         HarvestTimeKeeper timeKeeper = MainContext.getTimeKeeper();
         return String.format(
-                   StateConstants.IDLE_STATUS,
-                   timeKeeper.getHarvestMeasure().toString(),
-                   super.getStatusString(),
-                   timeKeeper.getSubmissionMeasure().toString()
+                StateConstants.IDLE_STATUS,
+                timeKeeper.getHarvestMeasure().toString(),
+                super.getStatusString(),
+                timeKeeper.getSubmissionMeasure().toString()
 
-               );
+        );
     }
 
 
@@ -132,8 +137,8 @@ public class SavingState extends AbstractProgressingState
     {
         // TODO implement pause
         return String.format(
-                   StateConstants.CANNOT_RESUME_PREFIX + StateConstants.SAVE_IN_PROGRESS,
-                   StateConstants.SAVE_PROCESS);
+                StateConstants.CANNOT_RESUME_PREFIX + StateConstants.SAVE_IN_PROGRESS,
+                StateConstants.SAVE_PROCESS);
     }
 
 

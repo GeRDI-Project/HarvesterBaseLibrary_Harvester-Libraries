@@ -71,6 +71,8 @@ public class StateConstants
     public static final String ABORT_STARTED = "Aborting %s-process...";
     public static final String ABORT_FINISHED = "%s-process aborted!";
 
+    public static final String SAVING_DONE = "Saving finished!";
+
     // PROGRESSING STATES
     public static final String TIME_UNKNOWN = "unknown";
     public static final String DAYS_HOURS = "%dd %dh";
