@@ -57,7 +57,7 @@ public class ContextListener<T extends AbstractHarvester> implements ServletCont
     // this warning is suppressed, because the only generic Superclass MUST be T. The cast will always succeed.
     @SuppressWarnings("unchecked")
     private Class<T> harvesterClass =
-            (Class<T>) ((ParameterizedType) getClass().getGenericSuperclass()).getActualTypeArguments()[0];
+        (Class<T>)((ParameterizedType) getClass().getGenericSuperclass()).getActualTypeArguments()[0];
 
 
     /**
@@ -146,11 +146,11 @@ public class ContextListener<T extends AbstractHarvester> implements ServletCont
 
         // init main context
         MainContext.init(
-                getServiceName(),
-                harvesterClass,
-                getCharset(),
-                getHarvesterSpecificParameters(),
-                createSubmitter());
+            getServiceName(),
+            harvesterClass,
+            getCharset(),
+            getHarvesterSpecificParameters(),
+            createSubmitter());
 
         EventSystem.sendEvent(new ContextInitializedEvent());
     }

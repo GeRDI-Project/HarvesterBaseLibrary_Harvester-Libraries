@@ -74,7 +74,7 @@ public final class ParameterFactory
 
     /**
      * Creates a map of harvester specific parameters.
-     * 
+     *
      * @param harvesterParams a list of harvester specific parameters
      *
      * @return a map of harvester specific parameters
@@ -284,7 +284,7 @@ public final class ParameterFactory
                 IdleState.class,
                 HarvestingState.class,
                 SavingState.class);
-        return new IntegerParameter(ConfigurationConstants.SUBMISSION_SIZE, allowedStates, 1000);
+        return new IntegerParameter(ConfigurationConstants.SUBMISSION_SIZE, allowedStates, 1048576);
     }
 
 

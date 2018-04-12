@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 /**
- * This package contains events that are related to only the {@linkplain de.gerdiproject.harvest.utils.cache.DocumentsCache}
+ * This package contains events that are related to only the {@linkplain de.gerdiproject.harvest.utils.cache.HarvesterCache}
  * itself.
  *
  * @author Robin Weiss

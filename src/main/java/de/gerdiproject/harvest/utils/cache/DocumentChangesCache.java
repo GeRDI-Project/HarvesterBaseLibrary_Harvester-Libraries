@@ -44,7 +44,7 @@ import de.gerdiproject.json.datacite.DataCiteJson;
  * This class wraps a cache file that stores a map of document identifiers to
  * document JSON. It is used for determining which files need to be added or
  * changed for the submission
- * 
+ *
  * @author Robin Weiss
  */
 public class DocumentChangesCache
@@ -59,24 +59,24 @@ public class DocumentChangesCache
     /**
      * Constructor that requires the file name prefix of the cache file that is
      * to be created.
-     * 
+     *
      * @param filePrefix the file name prefix of the changes cache file
      */
     public DocumentChangesCache(final String filePrefix)
     {
         this.gson = GsonUtils.getGson();
         this.cacheFile = new File(
-                String.format(
-                        CacheConstants.ADDITION_CACHE_FILE_PATH,
-                        MainContext.getModuleName(),
-                        filePrefix));
+            String.format(
+                CacheConstants.ADDITION_CACHE_FILE_PATH,
+                MainContext.getModuleName(),
+                filePrefix));
     }
 
 
     /**
      * Initializes the cache by creating an empty file and setting the size to
      * zero.
-     * 
+     *
      * @param versionsCache a cache of previously harvested IDs
      */
     public void init(DocumentVersionsCache versionsCache)
@@ -89,19 +89,21 @@ public class DocumentChangesCache
         try {
             cacheFile.createNewFile();
             final JsonWriter writer = new JsonWriter(
-                    new OutputStreamWriter(
-                            new FileOutputStream(cacheFile),
-                            MainContext.getCharset()));
+                new OutputStreamWriter(
+                    new FileOutputStream(cacheFile),
+                    MainContext.getCharset()));
 
             final AtomicInteger numberOfCopiedIds = new AtomicInteger(0);
             boolean isSuccessful = false;
             // copy documentIds and count them
             writer.beginObject();
             isSuccessful = versionsCache.forEach((String documentId, String documentHash) -> {
-                try {
+                try
+                {
                     writer.name(documentId);
                     writer.nullValue();
-                } catch (IOException e) {
+                } catch (IOException e)
+                {
                     return false;
                 }
                 numberOfCopiedIds.incrementAndGet();
@@ -125,7 +127,7 @@ public class DocumentChangesCache
 
     /**
      * Returns the number of cached documents.
-     * 
+     *
      * @return the number of cached documents
      */
     public int size()
@@ -138,11 +140,11 @@ public class DocumentChangesCache
      * Iterates through the file of cached documents and executes a function on
      * each document. If the function returns false, the whole process is
      * aborted.
-     * 
+     *
      * @param documentFunction a function that accepts a documentId and the
      *            corresponding document JSON object and returns true if it was
      *            successfully processed
-     * 
+     *
      * @return true if all documents were processed successfully
      */
     public boolean forEach(BiFunction<String, DataCiteJson, Boolean> documentFunction)
@@ -154,7 +156,7 @@ public class DocumentChangesCache
             try {
                 // prepare json reader for the cached document list
                 final JsonReader reader = new JsonReader(
-                        new InputStreamReader(new FileInputStream(cacheFile), MainContext.getCharset()));
+                    new InputStreamReader(new FileInputStream(cacheFile), MainContext.getCharset()));
 
                 // iterate through cached documents
                 reader.beginObject();
@@ -162,11 +164,13 @@ public class DocumentChangesCache
                 while (isFunctionSuccessful && reader.hasNext()) {
                     final String documentId = reader.nextName();
                     final DataCiteJson addedDoc;
+
                     if (reader.peek() == JsonToken.NULL) {
                         addedDoc = null;
                         reader.skipValue();
                     } else
                         addedDoc = gson.fromJson(reader, DataCiteJson.class);
+
                     isFunctionSuccessful = documentFunction.apply(documentId, addedDoc);
                 }
 
@@ -179,13 +183,14 @@ public class DocumentChangesCache
                 isFunctionSuccessful = false;
             }
         }
+
         return isFunctionSuccessful;
     }
 
 
     /**
      * Removes a document entry from the cache.
-     * 
+     *
      * @param documentId the ID of the document that is to be removed
      */
     public void removeDocument(String documentId)
@@ -197,7 +202,7 @@ public class DocumentChangesCache
     /**
      * Adds a key-value pair to the cache. The key is the unique documentId and
      * the value is the JSON representation of the document.
-     * 
+     *
      * @param documentId the unique document identifier
      * @param document the JSON representation of the document or null, if the
      *            document is to be removed
@@ -205,15 +210,16 @@ public class DocumentChangesCache
     public void putDocument(final String documentId, final IDocument document)
     {
         final File tempFile = new File(cacheFile.getAbsolutePath() + CacheConstants.TEMP_FILE_EXTENSION);
+
         try {
             // prepare json reader for the cached document list
             final JsonReader reader = new JsonReader(
-                    new InputStreamReader(new FileInputStream(cacheFile), MainContext.getCharset()));
+                new InputStreamReader(new FileInputStream(cacheFile), MainContext.getCharset()));
 
             final JsonWriter writer = new JsonWriter(
-                    new OutputStreamWriter(
-                            new FileOutputStream(tempFile),
-                            MainContext.getCharset()));
+                new OutputStreamWriter(
+                    new FileOutputStream(tempFile),
+                    MainContext.getCharset()));
 
             reader.beginObject();
             writer.beginObject();
@@ -248,6 +254,7 @@ public class DocumentChangesCache
                 final String readKey = reader.nextName();
                 final JsonElement readValue = gson.fromJson(reader, JsonElement.class);
                 writer.name(readKey);
+
                 if (readValue.isJsonNull())
                     writer.nullValue();
                 else
@@ -275,7 +282,7 @@ public class DocumentChangesCache
     /**
      * Retrieves the document JSON for a specified document ID from the cache
      * file, or null if this document is to be deleted.
-     * 
+     *
      * @param documentId the identifier of the document which is to be retrieved
      * @return a JSON document or null, if no entry exists for the document
      */
@@ -287,7 +294,7 @@ public class DocumentChangesCache
             try {
                 // prepare json reader for the cached document list
                 final JsonReader reader = new JsonReader(
-                        new InputStreamReader(new FileInputStream(cacheFile), MainContext.getCharset()));
+                    new InputStreamReader(new FileInputStream(cacheFile), MainContext.getCharset()));
 
                 reader.beginObject();
 
@@ -296,18 +303,21 @@ public class DocumentChangesCache
 
                     if (id.equals(documentId)) {
                         document = reader.peek() == JsonToken.NULL
-                                ? null
-                                : gson.fromJson(reader, DataCiteJson.class);
+                                   ? null
+                                   : gson.fromJson(reader, DataCiteJson.class);
                         break;
                     }
+
                     reader.skipValue();
                 }
+
                 reader.close();
             } catch (IOException e) {
                 // NOPMD - nothing to do here, documentHash is null by default
 
             }
         }
+
         return document;
     }
 }

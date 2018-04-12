@@ -47,7 +47,7 @@ import de.gerdiproject.harvest.state.events.AbortingStartedEvent;
 import de.gerdiproject.harvest.state.events.StartAbortingEvent;
 import de.gerdiproject.harvest.submission.elasticsearch.ElasticSearchSubmitter;
 import de.gerdiproject.harvest.utils.CancelableFuture;
-import de.gerdiproject.harvest.utils.cache.DocumentsCache;
+import de.gerdiproject.harvest.utils.cache.HarvesterCache;
 import de.gerdiproject.harvest.utils.data.HttpRequester;
 
 
@@ -69,7 +69,7 @@ public abstract class AbstractHarvester
     private final AtomicInteger maxDocumentCount;
     private final AtomicInteger startIndex;
     private final AtomicInteger endIndex;
-    private DocumentsCache documentsCache;
+    private HarvesterCache documentsCache;
 
     protected CancelableFuture<Boolean> currentHarvestingProcess;
     protected boolean isMainHarvester;
@@ -152,9 +152,9 @@ public abstract class AbstractHarvester
      * 
      * @return a cache for harvested documents
      */
-    protected DocumentsCache initDocumentsCache()
+    protected HarvesterCache initDocumentsCache()
     {
-        final DocumentsCache cache = documentsCache != null ? documentsCache : new DocumentsCache(name);
+        final HarvesterCache cache = documentsCache != null ? documentsCache : new HarvesterCache(name);
 
         // update the harvester hash in the cache file
         final int from = startIndex.get() == Integer.MAX_VALUE ? maxDocumentCount.get() : startIndex.get();

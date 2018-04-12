@@ -23,7 +23,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.BiConsumer;
 
 import de.gerdiproject.harvest.utils.HashGenerator;
-import de.gerdiproject.harvest.utils.cache.DocumentsCache;
+import de.gerdiproject.harvest.utils.cache.HarvesterCache;
 
 
 /**
@@ -173,7 +173,7 @@ public abstract class AbstractCompositeHarvester extends AbstractHarvester
      * no cache is required.
      */
     @Override
-    protected DocumentsCache initDocumentsCache()
+    protected HarvesterCache initDocumentsCache()
     {
         return null;
     }

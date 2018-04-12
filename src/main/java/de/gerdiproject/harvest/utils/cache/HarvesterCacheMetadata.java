@@ -24,7 +24,7 @@ import de.gerdiproject.json.GsonUtils;
  * {@linkplain DocumentVersionsCache}. It contains information about the
  * {@linkplain AbstractHarvester} that is linked to the cache, and is used to
  * determine whether documents need to be harvested again.
- * 
+ *
  * @author Robin Weiss
  */
 public class HarvesterCacheMetadata
@@ -49,9 +49,9 @@ public class HarvesterCacheMetadata
      * Compares this metadata to checks if this meta requires an update which
      * may occur because the range of the new metadata is greater or the hash
      * value is different.
-     * 
+     *
      * @param newMetadata the metadata to which this metadata is compared
-     * 
+     *
      * @return true if this metadata is a strict subset of the newMetadata
      */
     public boolean isUpdateNeeded(final HarvesterCacheMetadata newMetadata)
@@ -65,7 +65,7 @@ public class HarvesterCacheMetadata
 
     /**
      * Copies the values of another {@link HarvesterCacheMetadata} object.
-     * 
+     *
      * @param other the object of which the values are copied
      */
     public void set(final HarvesterCacheMetadata other)
@@ -78,7 +78,7 @@ public class HarvesterCacheMetadata
 
     /**
      * Sets the source hash value.
-     * 
+     *
      * @param sourceHash a value that serves as a version checksum of all
      *            possible harvested source data
      */
@@ -90,7 +90,7 @@ public class HarvesterCacheMetadata
 
     /**
      * Sets the harvesting range start index.
-     * 
+     *
      * @param rangeFrom the start index of the harvesting range
      */
     public void setRangeFrom(int rangeFrom)
@@ -101,7 +101,7 @@ public class HarvesterCacheMetadata
 
     /**
      * Sets the harvesting range end index.
-     * 
+     *
      * @param rangeTo the exclusive end index of the harvesting range
      */
     public void setRangeTo(int rangeTo)

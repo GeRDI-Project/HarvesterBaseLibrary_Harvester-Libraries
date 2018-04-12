@@ -16,7 +16,7 @@
 /**
  * This package contains classes and packages that are related to caching
  * harvested documents on disk via
- * {@linkplain de.gerdiproject.harvest.utils.cache.DocumentsCache}s.
+ * {@linkplain de.gerdiproject.harvest.utils.cache.HarvesterCache}s.
  *
  * @author Robin Weiss
  */

@@ -19,17 +19,17 @@ package de.gerdiproject.harvest.utils.cache.events;
 import de.gerdiproject.harvest.event.IEvent;
 import de.gerdiproject.harvest.save.HarvestSaver;
 import de.gerdiproject.harvest.submission.AbstractSubmitter;
-import de.gerdiproject.harvest.utils.cache.DocumentsCache;
+import de.gerdiproject.harvest.utils.cache.HarvesterCache;
 
 /**
- * This event aims to register {@linkplain DocumentsCache}s to an
+ * This event aims to register {@linkplain HarvesterCache}s to an
  * {@linkplain AbstractSubmitter} and {@linkplain HarvestSaver}.
  *
  * @author Robin Weiss
  */
 public class RegisterCacheEvent implements IEvent
 {
-    private final DocumentsCache cache;
+    private final HarvesterCache cache;
 
 
     /**
@@ -37,7 +37,7 @@ public class RegisterCacheEvent implements IEvent
      *
      * @param cache the cache that is to be registered
      */
-    public RegisterCacheEvent(DocumentsCache cache)
+    public RegisterCacheEvent(HarvesterCache cache)
     {
         this.cache = cache;
     }
@@ -48,7 +48,7 @@ public class RegisterCacheEvent implements IEvent
      *
      * @return the cache that is to be registered
      */
-    public DocumentsCache getCache()
+    public HarvesterCache getCache()
     {
         return cache;
     }

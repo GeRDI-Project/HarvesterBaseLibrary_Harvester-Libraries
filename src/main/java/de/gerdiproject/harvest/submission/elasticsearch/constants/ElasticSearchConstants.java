@@ -38,7 +38,6 @@ public class ElasticSearchConstants
     public static final String BATCH_DELETE_INSTRUCTION = "{\"delete\":{\"_id\":\"%s\"}}%n";
     public static final String BULK_SUBMISSION_URL_SUFFIX = "_bulk";
 
-
     // DATE RANGE FIX
     public static final String DATE_REGEX = "\"value\":(\"\\d\\d\\d\\d-\\d\\d-\\d\\dT\\d\\d:\\d\\d[^\"/]*Z\")";
     public static final String DATE_REPLACEMENT = "\"value\":\\{\"gte\":$1,\"lte\":$1\\}";
@@ -53,6 +52,8 @@ public class ElasticSearchConstants
     public static final String DOCUMENT_SUBMIT_ERROR = "Could not submit document #%d%n%s";
     public static final String DOCUMENT_SUBMIT_ERROR_REASON = "  %s: %s";
     public static final String DOCUMENT_SUBMIT_ERROR_CAUSE = ", caused by%n  %s: %s";
+
+    public static final String BASIC_AUTH_PREFIX = "Basic ";
 
 
     /**

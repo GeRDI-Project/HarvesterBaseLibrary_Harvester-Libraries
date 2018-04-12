@@ -44,7 +44,7 @@ public class HarvesterConstants
     // REST
     public static final String REST_INFO = "- %s -%n%n%s%n%nRange:  %s-%s%n%n"
             + "POST         Starts the harvest%n"
-            + "POST/abort   Aborts an ongoing harvest%n"
+            + "POST/abort   Aborts an ongoing harvest, saving, or submission%n"
             + "POST/submit  Submits harvested documents to a DataBase%n"
             + "POST/save    Saves harvested documents to disk";
     public static final String UNKNOWN_NUMBER = "???";

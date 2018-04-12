@@ -16,11 +16,11 @@
 package de.gerdiproject.harvest.utils.cache.constants;
 
 
-import de.gerdiproject.harvest.utils.cache.DocumentsCache;
+import de.gerdiproject.harvest.utils.cache.HarvesterCache;
 
 /**
  * This static class is a collection of constants, used by
- * {@linkplain DocumentsCache}s.
+ * {@linkplain HarvesterCache}s.
  *
  * @author Robin Weiss
  */

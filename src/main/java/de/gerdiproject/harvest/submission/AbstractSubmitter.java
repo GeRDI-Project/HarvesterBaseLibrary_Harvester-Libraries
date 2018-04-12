@@ -22,7 +22,6 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Callable;
 import java.util.function.Consumer;
 
 import org.slf4j.Logger;
@@ -30,8 +29,11 @@ import org.slf4j.LoggerFactory;
 
 import de.gerdiproject.harvest.IDocument;
 import de.gerdiproject.harvest.MainContext;
-import de.gerdiproject.harvest.config.Configuration;
 import de.gerdiproject.harvest.config.constants.ConfigurationConstants;
+import de.gerdiproject.harvest.config.events.GlobalParameterChangedEvent;
+import de.gerdiproject.harvest.config.parameters.IntegerParameter;
+import de.gerdiproject.harvest.config.parameters.StringParameter;
+import de.gerdiproject.harvest.config.parameters.UrlParameter;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.state.events.AbortingFinishedEvent;
 import de.gerdiproject.harvest.state.events.AbortingStartedEvent;
@@ -44,6 +46,7 @@ import de.gerdiproject.harvest.submission.events.SubmissionStartedEvent;
 import de.gerdiproject.harvest.utils.CancelableFuture;
 import de.gerdiproject.harvest.utils.cache.DocumentChangesCache;
 import de.gerdiproject.harvest.utils.cache.events.RegisterCacheEvent;
+import de.gerdiproject.json.GsonUtils;
 import de.gerdiproject.json.datacite.DataCiteJson;
 
 /**
@@ -55,15 +58,50 @@ import de.gerdiproject.json.datacite.DataCiteJson;
 public abstract class AbstractSubmitter
 {
     private final List<DocumentChangesCache> cacheList = Collections.synchronizedList(new LinkedList<>());
+    private CancelableFuture<Boolean> currentSubmissionProcess;
     private int failedDocumentCount;
+    private String userName;
+    private String password;
 
-    protected final Map<String, IDocument> submissionMap = new HashMap<>();
     protected final Logger logger; // NOPMD - we want to retrieve the type of the inheriting class
 
-    protected int submittedDocumentCount;
+    /**
+     * A mapping between document IDs and documents that are to be submitted as
+     * a batch.
+     */
+    protected final Map<String, IDocument> batchMap;
+
+    /**
+     * The number of processed documents.
+     */
+    protected int processedDocumentCount;
+
+    /**
+     * True, if the submission process is being aborted.
+     */
     protected boolean isAborting;
 
-    private CancelableFuture<Boolean> currentSubmissionProcess;
+
+    /**
+     * The size of the current batch request in bytes.
+     */
+    private int currentBatchSize = 0;
+
+    /**
+     * The maximum number of bytes that are allowed to be submitted in each
+     * batch.
+     */
+    protected int maxBatchSize;
+
+    /**
+     * The optional authentication credentials for accessing the submission URL.
+     */
+    protected String credentials;
+
+    /**
+     * The URL to which is submitted
+     */
+    protected URL url;
 
 
     /**
@@ -72,7 +110,8 @@ public abstract class AbstractSubmitter
     public AbstractSubmitter()
     {
         logger = LoggerFactory.getLogger(getClass());
-
+        batchMap = new HashMap<>();
+        failedDocumentCount = 0;
     }
 
 
@@ -83,6 +122,7 @@ public abstract class AbstractSubmitter
     {
         EventSystem.addListener(RegisterCacheEvent.class, onRegisterCache);
         EventSystem.addListener(StartSubmissionEvent.class, onStartSubmission);
+        EventSystem.addListener(GlobalParameterChangedEvent.class, this::onGlobalParameterChanged);
     }
 
 
@@ -90,124 +130,141 @@ public abstract class AbstractSubmitter
      * Reads cached documents and submits them.
      *
      */
-    public void submit()
+    public void submitAll()
     {
-        final int numberOfDocuments = getNumberOfSubmittedChanges();
+        final int numberOfDocuments = getNumberOfSubmittableChanges();
         failedDocumentCount = numberOfDocuments;
         isAborting = false;
-        submittedDocumentCount = 0;
+        processedDocumentCount = 0;
+        currentBatchSize = 0;
+        batchMap.clear();
 
         // send event
         EventSystem.sendEvent(new SubmissionStartedEvent(numberOfDocuments));
 
-        final Configuration config = MainContext.getConfiguration();
-        URL submissionUrl = getSubmissionUrl(config);
-        String credentials = getCredentials(config);
-        int batchSize = config.getParameterValue(ConfigurationConstants.SUBMISSION_SIZE, Integer.class);
-
         // prepare stuff and check if we can submit
-        boolean canSubmit = startSubmission(submissionUrl);
+        boolean canSubmit = startSubmission();
 
         if (canSubmit) {
             // start asynchronous submission
-            currentSubmissionProcess = new CancelableFuture<>(
-                    createSubmissionProcess(submissionUrl, credentials, batchSize));
+            currentSubmissionProcess = startSubmissionProcess();
 
             // finished handler
             currentSubmissionProcess.thenApply((isSuccessful) -> {
                 onSubmissionFinished();
                 return isSuccessful;
             })
-                    // exception handler
-                    .exceptionally(throwable -> {
-                        if (isAborting)
-                            onSubmissionAborted();
-                        else {
-                            logger.error(SubmissionConstants.SUBMISSION_INTERRUPTED, throwable);
-                            onSubmissionFinished();
-                        }
-                        return false;
-                    });
+            // exception handler
+            .exceptionally(throwable -> {
+                if (isAborting)
+                    onSubmissionAborted();
+                else
+                {
+                    logger.error(SubmissionConstants.SUBMISSION_INTERRUPTED, throwable);
+                    onSubmissionFinished();
+                }
+                return false;
+            });
         } else // fail the submission
             onSubmissionFinished();
     }
 
 
     /**
-     * Creates a callable function that sequentially submits all harvested
+     * Creates an asynchronous function that sequentially submits all harvested
      * documents in subsets of adjustable size.
-     *
-     * @param submissionUrl the URL to which the documents are to be submitted
-     * @param credentials user credentials or null, if they do not exist
-     * @param batchSize the max number of documents to be processed in a batch
-     *            submission
      *
      * @return a function that can be used of asynchronous requests
      */
-    protected Callable<Boolean> createSubmissionProcess(URL submissionUrl, String credentials, int batchSize)
+    protected CancelableFuture<Boolean> startSubmissionProcess()
     {
-        return () -> {
+        return new CancelableFuture<>(() -> {
             boolean areAllSubmissionsSuccessful = true;
 
             // go through all registered caches and process their documents
-            for (final DocumentChangesCache cache : cacheList) {
+            for (final DocumentChangesCache cache : cacheList)
+            {
                 // stop cache iteration if aborting
                 if (isAborting)
                     break;
 
                 // process all documents that are to be changed or deleted
                 areAllSubmissionsSuccessful &= cache.forEach(
-                        (String documentId, DataCiteJson addedDoc) -> {
-                            addDocument(
-                                    documentId,
-                                    addedDoc,
-                                    submissionUrl,
-                                    credentials,
-                                    batchSize);
-                            return !isAborting;
-                        });
+                (String documentId, DataCiteJson addedDoc) -> {
+                    addDocument(documentId, addedDoc);
+                    return !isAborting;
+                });
             }
 
             // cancel the asynchronous process
-            if (isAborting) {
-                submissionMap.clear();
+            if (isAborting)
+            {
+                batchMap.clear();
                 currentSubmissionProcess.cancel(false);
             }
             // send remainder of documents
-            else if (submissionMap.size() > 0) {
-                areAllSubmissionsSuccessful &= trySubmitBatch(submissionMap, submissionUrl, credentials);
-                submissionMap.clear();
+            else if (batchMap.size() > 0)
+            {
+                areAllSubmissionsSuccessful &= trySubmitBatch();
+                batchMap.clear();
             }
 
             return areAllSubmissionsSuccessful;
-        };
+        });
     }
 
 
     /**
      * Adds a document to the batch of submissions.
-     * 
+     *
      * @param documentId the unique identifier of the document
      * @param document the document that is to be added to the submission, or
      *            null if the document is supposed to be deleted from the index
-     * @param submissionUrl the URL to which the batch is submitted
-     * @param credentials the login credentials of the URL or null, if they are
-     *            not required
-     * @param batchSize the max number of documents that are to be submitted on
-     *            each batch
      */
-    private void addDocument(String documentId, DataCiteJson document, URL submissionUrl, String credentials, int batchSize)
+    protected void addDocument(String documentId, DataCiteJson document)
     {
         if (!isAborting) {
-            submissionMap.put(documentId, document);
+            int documentSize = getSizeOfDocument(documentId, document);
 
-            // send documents in chunks of a configurable size
-            if (submissionMap.size() == batchSize) {
-                trySubmitBatch(submissionMap, submissionUrl, credentials);
-                submissionMap.clear();
+            // check if the document alone is bigger than the maximum allowed submission size
+            if (currentBatchSize == 0 && documentSize > maxBatchSize) {
+                String documentString = document == null
+                                        ? null
+                                        : GsonUtils.getGson().toJson(document, document.getClass());
+                logger.error(
+                    String.format(
+                        SubmissionConstants.DOCUMENT_TOO_LARGE,
+                        documentSize,
+                        maxBatchSize,
+                        documentString));
+
+                // abort here, because we must skip this document
+                processedDocumentCount++;
+                return;
             }
+
+            // check if the batch size is reached and submit
+            if (currentBatchSize + documentSize > maxBatchSize) {
+                trySubmitBatch();
+                batchMap.clear();
+                currentBatchSize = 0;
+            }
+
+            batchMap.put(documentId, document);
+            currentBatchSize += documentSize;
         }
     }
+
+
+    /**
+     * Calculates the size of a single document within the batch in bytes.
+     *
+     * @param documentId the unique identifier of the document
+     * @param document the document of which the size is measured
+     *
+     * @return the size of the document in bytes
+     */
+    protected abstract int getSizeOfDocument(String documentId, IDocument document);
 
 
     /**
@@ -217,26 +274,27 @@ public abstract class AbstractSubmitter
      * @param documents a map of documentIDs to documents that are to be
      *            submitted, the values may also be null, in which case the
      *            document is to be removed from the index
-     * @param submissionUrl the URL to which the documents are to be submitted
-     * @param credentials user credentials or null, if they do not exist
      *
      * @throws Exception any kind of exception that can be thrown by the
      *             submission process
      */
-    protected abstract void submitBatch(Map<String, IDocument> documents, URL submissionUrl, String credentials) throws Exception; // NOPMD - Exception is explicitly thrown, because it is up to the implementation which Exception causes the submission to fail
+    protected abstract void submitBatch(Map<String, IDocument> documents) throws Exception; // NOPMD - Exception is explicitly thrown, because it is up to the implementation which Exception causes the submission to fail
 
 
     /**
      * Attempts to initiate document submission.
      *
-     * @param submissionUrl the URL to which the documents are to be submitted
-     *
      * @return true, if the submission can proceed
      */
-    protected boolean startSubmission(URL submissionUrl)
+    protected boolean startSubmission()
     {
-        if (submissionUrl == null) {
+        if (url == null) {
             logger.error(SubmissionConstants.NO_URL_ERROR);
+            return false;
+        }
+
+        if (getNumberOfSubmittableChanges() == 0) {
+            logger.error(SubmissionConstants.NO_DOCS_ERROR);
             return false;
         }
 
@@ -244,7 +302,7 @@ public abstract class AbstractSubmitter
         EventSystem.addListener(StartAbortingEvent.class, onStartAborting);
 
         // log the beginning of the submission
-        logger.info(String.format(SubmissionConstants.SUBMISSION_START, submissionUrl.toString()));
+        logger.info(String.format(SubmissionConstants.SUBMISSION_START, url.toString()));
 
         return true;
     }
@@ -263,7 +321,7 @@ public abstract class AbstractSubmitter
         if (failedDocumentCount == 0)
             logger.info(SubmissionConstants.SUBMISSION_DONE_ALL_OK);
 
-        else if (failedDocumentCount == submittedDocumentCount || submittedDocumentCount == 0)
+        else if (failedDocumentCount == processedDocumentCount || processedDocumentCount == 0)
             logger.warn(SubmissionConstants.SUBMISSION_DONE_ALL_FAILED);
 
         else
@@ -292,52 +350,39 @@ public abstract class AbstractSubmitter
     /**
      * Sends documents to an external place.
      *
-     * @param documents a chunk of harvested documents
-     * @param submissionUrl the final URL to which the documents are submitted
-     * @param credentials login credentials, or null if they are not needed
-     *
      * @return true, if the submission succeeded
      */
-    protected boolean trySubmitBatch(Map<String, IDocument> documents, URL submissionUrl, String credentials)
+    protected boolean trySubmitBatch()
     {
-        if (documents == null || documents.isEmpty()) {
-            logger.error(
-                    String.format(
-                            SubmissionConstants.SUBMIT_PARTIAL_FAILED,
-                            String.valueOf(submittedDocumentCount),
-                            SubmissionConstants.UNKNOWN_DOCUMENT_COUNT) + SubmissionConstants.NO_DOCS_ERROR);
-            return false;
-        }
-
-        int numberOfDocs = documents.size();
+        int numberOfDocs = batchMap.size();
         boolean isSuccessful;
 
         try {
             // attempt to submit the batch
-            submitBatch(documents, submissionUrl, credentials);
+            submitBatch(batchMap);
 
             // log success and send an event
             logger.info(
-                    String.format(
-                            SubmissionConstants.SUBMIT_PARTIAL_OK,
-                            submittedDocumentCount,
-                            submittedDocumentCount + numberOfDocs));
+                String.format(
+                    SubmissionConstants.SUBMIT_PARTIAL_OK,
+                    processedDocumentCount,
+                    processedDocumentCount + numberOfDocs));
             failedDocumentCount -= numberOfDocs;
             isSuccessful = true;
         } catch (Exception e) {
             // log the failure
             logger.error(
-                    String.format(
-                            SubmissionConstants.SUBMIT_PARTIAL_FAILED,
-                            String.valueOf(submittedDocumentCount),
-                            String.valueOf(submittedDocumentCount + numberOfDocs)),
-                    e);
+                String.format(
+                    SubmissionConstants.SUBMIT_PARTIAL_FAILED,
+                    String.valueOf(processedDocumentCount),
+                    String.valueOf(processedDocumentCount + numberOfDocs)),
+                e);
             isSuccessful = false;
         }
 
         // send event
         EventSystem.sendEvent(new DocumentsSubmittedEvent(isSuccessful, numberOfDocs));
-        submittedDocumentCount += numberOfDocs;
+        processedDocumentCount += numberOfDocs;
 
         return isSuccessful;
     }
@@ -346,33 +391,14 @@ public abstract class AbstractSubmitter
     /**
      * Creates login credentials for a submission.
      *
-     * @param config the global configuration
-     *
      * @return a base64 encoded username/password string
      */
-    protected String getCredentials(Configuration config)
+    protected String getCredentials()
     {
-        final String userName = config.getParameterValue(ConfigurationConstants.SUBMISSION_USER_NAME, String.class);
-        final String password = config.getParameterValue(ConfigurationConstants.SUBMISSION_PASSWORD, String.class);
-
         if (userName == null || password == null || userName.isEmpty())
             return null;
         else
             return Base64.getEncoder().encodeToString((userName + ":" + password).getBytes(MainContext.getCharset()));
-    }
-
-
-    /**
-     * Retrieves and possibly refines the submission URL.
-     *
-     * @param config the global configuration
-     *
-     * @return a URL to which the documents are being sent
-     */
-    protected URL getSubmissionUrl(Configuration config)
-    {
-        URL submissionUrl = config.getParameterValue(ConfigurationConstants.SUBMISSION_URL, URL.class);
-        return submissionUrl;
     }
 
 
@@ -382,13 +408,12 @@ public abstract class AbstractSubmitter
      *
      * @return the total number of submitted changes.
      */
-    protected int getNumberOfSubmittedChanges()
+    protected int getNumberOfSubmittableChanges()
     {
         int docCount = 0;
 
-        for (final DocumentChangesCache cache : cacheList) {
+        for (final DocumentChangesCache cache : cacheList)
             docCount += cache.size();
-        }
 
         return docCount;
     }
@@ -412,8 +437,9 @@ public abstract class AbstractSubmitter
      * {@linkplain AbstractSubmitter}.
      */
     private final Consumer<StartSubmissionEvent> onStartSubmission = (StartSubmissionEvent e) -> {
-        submit();
+        submitAll();
     };
+
 
     /**
      * Event listener for aborting the submitter.
@@ -422,5 +448,36 @@ public abstract class AbstractSubmitter
         isAborting = true;
         EventSystem.removeListener(StartAbortingEvent.class, this.onStartAborting);
         EventSystem.sendEvent(new AbortingStartedEvent());
+    };
+
+
+    /**
+     * Event listener for changing submission parameters.
+     *
+     * @param e the event that triggered the parameter change
+     */
+    protected void onGlobalParameterChanged(GlobalParameterChangedEvent e)
+    {
+        final String paramName = e.getParameter().getKey();
+
+        switch (paramName) {
+            case ConfigurationConstants.SUBMISSION_SIZE:
+                this.maxBatchSize = ((IntegerParameter) e.getParameter()).getValue();
+                break;
+
+            case ConfigurationConstants.SUBMISSION_URL:
+                this.url = ((UrlParameter) e.getParameter()).getValue();
+                break;
+
+            case ConfigurationConstants.SUBMISSION_USER_NAME:
+                this.userName = ((StringParameter) e.getParameter()).getValue();
+                this.credentials = getCredentials();
+                break;
+
+            case ConfigurationConstants.SUBMISSION_PASSWORD:
+                this.password = ((StringParameter) e.getParameter()).getValue();
+                this.credentials = getCredentials();
+                break;
+        }
     };
 }

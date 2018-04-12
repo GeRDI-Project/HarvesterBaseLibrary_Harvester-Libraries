@@ -28,15 +28,14 @@ import de.gerdiproject.harvest.utils.cache.constants.CacheConstants;
 import de.gerdiproject.harvest.utils.cache.events.RegisterCacheEvent;
 
 /**
- * This singleton class is a wrapper for a JSON file writer that writes
- * harvested documents as a JSON-array to a cache-file. The cached documents can
- * be saved to disk along with harvesting related metadata using the
+ * This class serves as a cache for harvested documents. The cached documents
+ * can be saved to disk along with harvesting related metadata using the
  * {@linkplain HarvestSaver}, or submitted to a Database via an
  * {@linkplain AbstractSubmitter}.
  *
  * @author Robin Weiss
  */
-public class DocumentsCache
+public class HarvesterCache
 {
     private final DocumentVersionsCache versionsCache;
     private final DocumentChangesCache changesCache;
@@ -48,7 +47,7 @@ public class DocumentsCache
      * 
      * @param harvesterName the unique name of the harvester
      */
-    public DocumentsCache(final String harvesterName)
+    public HarvesterCache(final String harvesterName)
     {
         final String providerName = EventSystem.sendSynchronousEvent(new GetProviderNameEvent());
         this.harvesterId = providerName + harvesterName;

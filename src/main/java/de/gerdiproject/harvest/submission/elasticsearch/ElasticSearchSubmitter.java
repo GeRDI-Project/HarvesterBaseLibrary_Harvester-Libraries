@@ -25,7 +25,9 @@ import java.util.Map;
 import javax.ws.rs.core.MediaType;
 
 import de.gerdiproject.harvest.IDocument;
-import de.gerdiproject.harvest.config.Configuration;
+import de.gerdiproject.harvest.MainContext;
+import de.gerdiproject.harvest.config.constants.ConfigurationConstants;
+import de.gerdiproject.harvest.config.events.GlobalParameterChangedEvent;
 import de.gerdiproject.harvest.submission.AbstractSubmitter;
 import de.gerdiproject.harvest.submission.elasticsearch.constants.ElasticSearchConstants;
 import de.gerdiproject.harvest.submission.elasticsearch.json.ElasticSearchIndex;
@@ -44,24 +46,38 @@ import de.gerdiproject.json.GsonUtils;
  */
 public class ElasticSearchSubmitter extends AbstractSubmitter
 {
-    private StringBuilder bulkRequestBuilder;
+    private HttpRequester httpRequester;
+    private final StringBuilder batchRequestBuilder = new StringBuilder();
 
 
     @Override
-    protected void submitBatch(Map<String, IDocument> documents, URL submissionUrl, String credentials) throws Exception // NOPMD - Exception is explicitly thrown, because it is up to the implementation which Exception causes the submission to fail
+    public void init()
     {
-        // build a string for bulk-posting to Elastic search
-        bulkRequestBuilder = new StringBuilder();
-        HttpRequester httpRequester = new HttpRequester();
+        super.init();
+        httpRequester = new HttpRequester();
+    }
 
-        documents.forEach(this::createBulkInstruction);
+
+    @Override
+    protected void submitBatch(Map<String, IDocument> documents) throws Exception // NOPMD - Exception is explicitly thrown, because it is up to the implementation which Exception causes the submission to fail
+    {
+        // clear previous batch
+        int batchLength = batchRequestBuilder.length();
+
+        if (batchLength > 0)
+            batchRequestBuilder.delete(0, batchLength);
+
+        // build a string for bulk-posting to Elastic search
+        documents.forEach(
+                (String documentId, IDocument document) -> batchRequestBuilder.append(
+                        createBulkInstruction(documentId, document)));
 
 
         // send POST request to Elastic search
         String response = httpRequester.getRestResponse(
                 RestRequestType.POST,
-                submissionUrl.toString(),
-                bulkRequestBuilder.toString(),
+                url.toString(),
+                batchRequestBuilder.toString(),
                 credentials,
                 MediaType.APPLICATION_JSON);
 
@@ -96,7 +112,7 @@ public class ElasticSearchSubmitter extends AbstractSubmitter
                     sb.append('\n');
 
                 // append error text
-                sb.append(indexElement.getErrorText(submittedDocumentCount + i)).append('\n');
+                sb.append(indexElement.getErrorText(processedDocumentCount + i)).append('\n');
 
                 // append failed document
                 IDocument failedDocument = documents.get(indexElement.getId());
@@ -116,7 +132,7 @@ public class ElasticSearchSubmitter extends AbstractSubmitter
      *
      * @return a bulk-submission instruction for a single document
      */
-    private void createBulkInstruction(String documentId, IDocument doc)
+    private String createBulkInstruction(String documentId, IDocument doc)
     {
         final String bulkInstruction;
 
@@ -131,7 +147,7 @@ public class ElasticSearchSubmitter extends AbstractSubmitter
         } else
             bulkInstruction = String.format(ElasticSearchConstants.BATCH_DELETE_INSTRUCTION, documentId);
 
-        bulkRequestBuilder.append(bulkInstruction);
+        return bulkInstruction;
     }
 
 
@@ -157,51 +173,60 @@ public class ElasticSearchSubmitter extends AbstractSubmitter
 
 
     @Override
-    protected URL getSubmissionUrl(Configuration config)
+    protected void onGlobalParameterChanged(GlobalParameterChangedEvent event)
     {
-        URL elasticSearchUrl = super.getSubmissionUrl(config);
-        URL bulkSubmissionUrl = null;
+        super.onGlobalParameterChanged(event);
 
-        if (elasticSearchUrl != null) {
-            String[] path = elasticSearchUrl.getPath().substring(1).split("/");
-            String bulkSubmitUrl = elasticSearchUrl.toString();
+        // if the url was changed, convert it to a bulk submission url
+        if (event.getParameter().getKey().equals(ConfigurationConstants.SUBMISSION_URL)) {
+            if (url != null) {
+                String[] path = url.getPath().substring(1).split("/");
+                String bulkSubmitUrl = url.toString();
 
-            // check if the URL already is a bulk submission URL
-            if (!path[path.length - 1].equals(ElasticSearchConstants.BULK_SUBMISSION_URL_SUFFIX)) {
-                // extract URL without Query, add a slash if necessary
-                int queryIndex = bulkSubmitUrl.indexOf('?');
+                // check if the URL already is a bulk submission URL
+                if (!path[path.length - 1].equals(ElasticSearchConstants.BULK_SUBMISSION_URL_SUFFIX)) {
+                    // extract URL without Query, add a slash if necessary
+                    int queryIndex = bulkSubmitUrl.indexOf('?');
 
-                if (queryIndex != -1)
-                    bulkSubmitUrl = bulkSubmitUrl.substring(0, queryIndex);
+                    if (queryIndex != -1)
+                        bulkSubmitUrl = bulkSubmitUrl.substring(0, queryIndex);
 
-                if (bulkSubmitUrl.charAt(bulkSubmitUrl.length() - 1) != '/')
-                    bulkSubmitUrl += '/';
+                    if (bulkSubmitUrl.charAt(bulkSubmitUrl.length() - 1) != '/')
+                        bulkSubmitUrl += '/';
 
-                // add bulk suffix
-                bulkSubmitUrl += ElasticSearchConstants.BULK_SUBMISSION_URL_SUFFIX;
-            }
+                    // add bulk suffix
+                    bulkSubmitUrl += ElasticSearchConstants.BULK_SUBMISSION_URL_SUFFIX;
+                }
 
-            try {
-                // check if the URL is valid
-                bulkSubmissionUrl = new URL(bulkSubmitUrl);
-            } catch (MalformedURLException e) {
-                bulkSubmissionUrl = null;
+                try {
+                    // check if the URL is valid
+                    url = new URL(bulkSubmitUrl);
+                } catch (MalformedURLException e) {
+                    url = null;
+                }
             }
         }
-
-        return bulkSubmissionUrl;
     }
 
 
     @Override
-    protected String getCredentials(Configuration config)
+    protected String getCredentials()
     {
-        String credentials = super.getCredentials(config);
+        String newCredentials = super.getCredentials();
 
         // prepend Basic-Authorization keyword
-        if (credentials != null)
-            return "Basic " + credentials;
+        if (newCredentials != null)
+            return ElasticSearchConstants.BASIC_AUTH_PREFIX + newCredentials;
         else
             return null;
     }
+
+
+    @Override
+    protected int getSizeOfDocument(String documentId, IDocument document)
+    {
+        return createBulkInstruction(documentId, document).getBytes(MainContext.getCharset()).length;
+    }
+
+
 }

@@ -40,7 +40,7 @@ import de.gerdiproject.json.GsonUtils;
  * version of the cache and one file that is copied from the stable version
  * during initialization and will receive all changes. The stable file can be
  * updated with said changes via a method call.
- * 
+ *
  * @author Robin Weiss
  */
 public class DocumentVersionsCache
@@ -56,7 +56,7 @@ public class DocumentVersionsCache
     /**
      * Constructor that requires the file name prefix of the cache files that
      * are to be created.
-     * 
+     *
      * @param filePrefix the file name prefix of the cache files that are to be
      *            created
      */
@@ -112,6 +112,7 @@ public class DocumentVersionsCache
                 reader.nextName();
                 reader.beginObject();
                 writer.beginObject();
+
                 while (reader.hasNext())
                     writer.name(reader.nextName()).value(reader.nextString());
 
@@ -135,7 +136,7 @@ public class DocumentVersionsCache
     /**
      * Sets the hash value that represents the entire source data of the
      * harvester.
-     * 
+     *
      * @param hash the hash value that represents the entire source data of the
      *            harvester
      * @param harvestStartIndex the start index of the harvesting range
@@ -151,30 +152,30 @@ public class DocumentVersionsCache
 
     /**
      * Reads the stable cache file and returns the harvesterHash value.
-     * 
+     *
      * @return the harvesterHash value, or null if it could not be retrieved
      *
      *         private HarvesterCacheMetadata getHarvesterMetadataFromFile() {
      *         HarvesterCacheMetadata cacheMetadata = null;
-     * 
+     *
      *         if (stableFile.exists()) { try { // prepare json reader for the
      *         cached document list final JsonReader reader = new JsonReader(
      *         new InputStreamReader(new FileInputStream(stableFile),
      *         MainContext.getCharset()));
-     * 
+     *
      *         // read only the first key-value pair of the harvester values
      *         reader.beginObject(); reader.nextName(); cacheMetadata =
      *         GsonUtils.getGson().fromJson(reader,
      *         HarvesterCacheMetadata.class); reader.close(); } catch
      *         (IOException e) {
-     * 
+     *
      *         } } return cacheMetadata; }
      */
 
 
     /**
      * Checks if the WIP-harvester-metadata is newer than the stable one.
-     * 
+     *
      * @return true, if the current harvester metadata differs from the stable
      *         metadata
      */
@@ -191,6 +192,7 @@ public class DocumentVersionsCache
     public void applyChanges()
     {
         final File tempFile = new File(stableFile.getAbsolutePath() + CacheConstants.TEMP_FILE_EXTENSION);
+
         try {
             // prepare json reader for the cached document list
             final JsonReader reader = new JsonReader(
@@ -235,6 +237,7 @@ public class DocumentVersionsCache
 
         // replace stable file with wip file
         boolean isStableFileDeleted = !stableFile.exists();
+
         if (!isStableFileDeleted)
             isStableFileDeleted = stableFile.delete();
 
@@ -252,10 +255,10 @@ public class DocumentVersionsCache
      * Iterates through all cached entries of the stable file and executes a
      * specified function for each entry. If the function returns false, the
      * process is aborted.
-     * 
+     *
      * @param entryFunction a function that accepts a documentId and
      *            documentHash and returns true if the forEach should continue
-     * 
+     *
      * @return true if all entries were processed
      */
     public boolean forEach(BiFunction<String, String, Boolean> entryFunction)
@@ -278,11 +281,13 @@ public class DocumentVersionsCache
 
                 // iterate through all entries
                 reader.beginObject();
+
                 while (isSuccessful && reader.hasNext()) {
                     final String documentId = reader.nextName();
                     final String documentHash = reader.nextString();
                     isSuccessful = entryFunction.apply(documentId, documentHash);
                 }
+
                 // close reader
                 reader.close();
             } catch (IOException e) {
@@ -297,7 +302,7 @@ public class DocumentVersionsCache
 
     /**
      * Removes an entry with a specified documentId from the WIP file.
-     * 
+     *
      * @param documentId the identifier of the document that is to be removed
      */
     public void removeDocumentHash(final String documentId)
@@ -309,7 +314,7 @@ public class DocumentVersionsCache
     /**
      * Adds or replaces a documentId to documentHash entry of the WIP file. If
      * the documentHash is null, the entry with the corresponding id is deleted.
-     * 
+     *
      * @param documentId the identifier of the document that is to be
      *            changed/added
      * @param documentHash the value that is to be assigned to the documentId,
@@ -319,6 +324,7 @@ public class DocumentVersionsCache
     {
         boolean hasChanges = false;
         final File tempFile = new File(workInProgressFile.getAbsolutePath() + CacheConstants.TEMP_FILE_EXTENSION);
+
         try {
             // prepare json reader for the cached document list
             final JsonReader reader = new JsonReader(
@@ -334,6 +340,7 @@ public class DocumentVersionsCache
 
             // copy key value pairs until the specified key is found
             boolean doesKeyExist = false;
+
             while (reader.hasNext()) {
                 final String readKey = reader.nextName();
                 final String readValue = reader.nextString();
@@ -378,7 +385,7 @@ public class DocumentVersionsCache
     /**
      * Retrieves the document hash for a specified document ID from the stable
      * cache file.
-     * 
+     *
      * @param documentId the identifier of the document of which the hash is
      *            retrieved
      * @return a hash value or null, if no entry exists for the document
@@ -410,11 +417,13 @@ public class DocumentVersionsCache
                         break;
                     }
                 }
+
                 reader.close();
             } catch (IOException e) { // NOPMD - nothing to do here, documentHash is null by default
 
             }
         }
+
         return documentHash;
     }
 }
