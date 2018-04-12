@@ -83,19 +83,18 @@ public class DocumentVersionsCache
      */
     public void init()
     {
-        // delete old WIP file
-        if (workInProgressFile.exists())
-            workInProgressFile.delete();
-
         // copy stable document hashes to WIP file, or create empty WIP file, if no stable exists
         try {
-            // create empty WIP file
-            workInProgressFile.createNewFile();
+            // create a new WIP file
+            CacheUtils.createEmptyFile(workInProgressFile);
+
+            // open WIP file writer
             final JsonWriter writer = new JsonWriter(
                     new OutputStreamWriter(
                             new FileOutputStream(workInProgressFile),
                             MainContext.getCharset()));
 
+            // copy values from stable cache file, if it exists
             if (stableFile.exists()) {
                 // prepare json reader for the cached document list
                 final JsonReader reader = new JsonReader(
@@ -104,9 +103,8 @@ public class DocumentVersionsCache
                 // retrieve harvester cache metadata
                 reader.beginObject();
                 reader.nextName();
-                HarvesterCacheMetadata readStableMetadata =
-                        GsonUtils.getGson().fromJson(reader, HarvesterCacheMetadata.class);
-                this.stableHarvesterMetadata.set(readStableMetadata);
+                this.stableHarvesterMetadata.set(
+                        GsonUtils.getGson().fromJson(reader, HarvesterCacheMetadata.class));
 
                 // copy the document-hashes-map
                 reader.nextName();
@@ -123,12 +121,13 @@ public class DocumentVersionsCache
                 // close reader
                 reader.close();
             } else {
+                // if no stable cache exists, write an empty object to the WIP file
                 writer.beginObject();
                 writer.endObject();
                 writer.close();
             }
         } catch (IOException e) {
-            LOGGER.error(String.format(CacheConstants.CACHE_CREATE_FAILED, workInProgressFile.getAbsolutePath()), e);
+            LOGGER.error(String.format(CacheConstants.CACHE_INIT_FAILED, this.getClass().getSimpleName()), e);
         }
     }
 
@@ -148,29 +147,6 @@ public class DocumentVersionsCache
         workInProgressHarvesterMetadata.setRangeTo(harvestEndIndex);
         workInProgressHarvesterMetadata.setSourceHash(hash);
     }
-
-
-    /**
-     * Reads the stable cache file and returns the harvesterHash value.
-     *
-     * @return the harvesterHash value, or null if it could not be retrieved
-     *
-     *         private HarvesterCacheMetadata getHarvesterMetadataFromFile() {
-     *         HarvesterCacheMetadata cacheMetadata = null;
-     *
-     *         if (stableFile.exists()) { try { // prepare json reader for the
-     *         cached document list final JsonReader reader = new JsonReader(
-     *         new InputStreamReader(new FileInputStream(stableFile),
-     *         MainContext.getCharset()));
-     *
-     *         // read only the first key-value pair of the harvester values
-     *         reader.beginObject(); reader.nextName(); cacheMetadata =
-     *         GsonUtils.getGson().fromJson(reader,
-     *         HarvesterCacheMetadata.class); reader.close(); } catch
-     *         (IOException e) {
-     *
-     *         } } return cacheMetadata; }
-     */
 
 
     /**
@@ -236,18 +212,12 @@ public class DocumentVersionsCache
         }
 
         // replace stable file with wip file
-        boolean isStableFileDeleted = !stableFile.exists();
+        CacheUtils.replaceFile(stableFile, tempFile);
+        stableHarvesterMetadata.set(workInProgressHarvesterMetadata);
 
-        if (!isStableFileDeleted)
-            isStableFileDeleted = stableFile.delete();
-
-        // only replace stable file if it no longer exists
-        if (isStableFileDeleted) {
-            tempFile.renameTo(stableFile);
-            workInProgressFile.delete();
-            stableHarvesterMetadata.set(workInProgressHarvesterMetadata);
-        } else
-            LOGGER.error(String.format(CacheConstants.DELETE_FILE_FAILED, stableFile.getAbsolutePath()));
+        // clear WIP file as it is no longer needed
+        if (!workInProgressFile.delete())
+            LOGGER.error(String.format(CacheConstants.DELETE_FILE_FAILED, workInProgressFile.getAbsolutePath()));
     }
 
 
@@ -375,10 +345,8 @@ public class DocumentVersionsCache
         }
 
         // replace current file with temporary file
-        if (hasChanges) {
-            workInProgressFile.delete();
-            tempFile.renameTo(workInProgressFile);
-        }
+        if (hasChanges)
+            CacheUtils.replaceFile(workInProgressFile, tempFile);
     }
 
 
@@ -420,7 +388,6 @@ public class DocumentVersionsCache
 
                 reader.close();
             } catch (IOException e) { // NOPMD - nothing to do here, documentHash is null by default
-
             }
         }
 

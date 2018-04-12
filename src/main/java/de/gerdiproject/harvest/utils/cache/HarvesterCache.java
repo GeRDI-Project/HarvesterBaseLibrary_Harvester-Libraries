@@ -55,12 +55,17 @@ public class HarvesterCache
         // create cache directory
         final File cacheDirectory =
                 new File(String.format(CacheConstants.CACHE_FOLDER_PATH, MainContext.getModuleName()));
+
+        // only register cache if its files can be created
         final boolean isDirectoryCreated = cacheDirectory.exists() || cacheDirectory.mkdirs();
-
-        this.versionsCache = new DocumentVersionsCache(harvesterName);
-        this.changesCache = new DocumentChangesCache(harvesterName);
-
-        EventSystem.sendEvent(new RegisterCacheEvent(this));
+        if (isDirectoryCreated) {
+            this.versionsCache = new DocumentVersionsCache(harvesterName);
+            this.changesCache = new DocumentChangesCache(harvesterName);
+            EventSystem.sendEvent(new RegisterCacheEvent(this));
+        } else {
+            this.versionsCache = null;
+            this.changesCache = null;
+        }
     }
 
 

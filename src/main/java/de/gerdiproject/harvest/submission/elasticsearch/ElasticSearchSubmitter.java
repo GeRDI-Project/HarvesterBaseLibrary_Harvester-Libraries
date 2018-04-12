@@ -47,7 +47,6 @@ import de.gerdiproject.json.GsonUtils;
 public class ElasticSearchSubmitter extends AbstractSubmitter
 {
     private HttpRequester httpRequester;
-    private final StringBuilder batchRequestBuilder = new StringBuilder();
 
 
     @Override
@@ -62,10 +61,7 @@ public class ElasticSearchSubmitter extends AbstractSubmitter
     protected void submitBatch(Map<String, IDocument> documents) throws Exception // NOPMD - Exception is explicitly thrown, because it is up to the implementation which Exception causes the submission to fail
     {
         // clear previous batch
-        int batchLength = batchRequestBuilder.length();
-
-        if (batchLength > 0)
-            batchRequestBuilder.delete(0, batchLength);
+        final StringBuilder batchRequestBuilder = new StringBuilder();
 
         // build a string for bulk-posting to Elastic search
         documents.forEach(
@@ -178,32 +174,30 @@ public class ElasticSearchSubmitter extends AbstractSubmitter
         super.onGlobalParameterChanged(event);
 
         // if the url was changed, convert it to a bulk submission url
-        if (event.getParameter().getKey().equals(ConfigurationConstants.SUBMISSION_URL)) {
-            if (url != null) {
-                String[] path = url.getPath().substring(1).split("/");
-                String bulkSubmitUrl = url.toString();
+        if (event.getParameter().getKey().equals(ConfigurationConstants.SUBMISSION_URL) && url != null) {
+            String[] path = url.getPath().substring(1).split("/");
+            String bulkSubmitUrl = url.toString();
 
-                // check if the URL already is a bulk submission URL
-                if (!path[path.length - 1].equals(ElasticSearchConstants.BULK_SUBMISSION_URL_SUFFIX)) {
-                    // extract URL without Query, add a slash if necessary
-                    int queryIndex = bulkSubmitUrl.indexOf('?');
+            // check if the URL already is a bulk submission URL
+            if (!path[path.length - 1].equals(ElasticSearchConstants.BULK_SUBMISSION_URL_SUFFIX)) {
+                // extract URL without Query, add a slash if necessary
+                int queryIndex = bulkSubmitUrl.indexOf('?');
 
-                    if (queryIndex != -1)
-                        bulkSubmitUrl = bulkSubmitUrl.substring(0, queryIndex);
+                if (queryIndex != -1)
+                    bulkSubmitUrl = bulkSubmitUrl.substring(0, queryIndex);
 
-                    if (bulkSubmitUrl.charAt(bulkSubmitUrl.length() - 1) != '/')
-                        bulkSubmitUrl += '/';
+                if (bulkSubmitUrl.charAt(bulkSubmitUrl.length() - 1) != '/')
+                    bulkSubmitUrl += '/';
 
-                    // add bulk suffix
-                    bulkSubmitUrl += ElasticSearchConstants.BULK_SUBMISSION_URL_SUFFIX;
-                }
+                // add bulk suffix
+                bulkSubmitUrl += ElasticSearchConstants.BULK_SUBMISSION_URL_SUFFIX;
+            }
 
-                try {
-                    // check if the URL is valid
-                    url = new URL(bulkSubmitUrl);
-                } catch (MalformedURLException e) {
-                    url = null;
-                }
+            try {
+                // check if the URL is valid
+                url = new URL(bulkSubmitUrl);
+            } catch (MalformedURLException e) {
+                url = null;
             }
         }
     }

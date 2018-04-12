@@ -66,10 +66,10 @@ public class DocumentChangesCache
     {
         this.gson = GsonUtils.getGson();
         this.cacheFile = new File(
-            String.format(
-                CacheConstants.ADDITION_CACHE_FILE_PATH,
-                MainContext.getModuleName(),
-                filePrefix));
+                String.format(
+                        CacheConstants.ADDITION_CACHE_FILE_PATH,
+                        MainContext.getModuleName(),
+                        filePrefix));
     }
 
 
@@ -81,29 +81,23 @@ public class DocumentChangesCache
      */
     public void init(DocumentVersionsCache versionsCache)
     {
-        // remove old file
-        if (cacheFile.exists())
-            cacheFile.delete();
-
         // create new file
         try {
-            cacheFile.createNewFile();
+            CacheUtils.createEmptyFile(cacheFile);
             final JsonWriter writer = new JsonWriter(
-                new OutputStreamWriter(
-                    new FileOutputStream(cacheFile),
-                    MainContext.getCharset()));
+                    new OutputStreamWriter(
+                            new FileOutputStream(cacheFile),
+                            MainContext.getCharset()));
 
             final AtomicInteger numberOfCopiedIds = new AtomicInteger(0);
             boolean isSuccessful = false;
             // copy documentIds and count them
             writer.beginObject();
             isSuccessful = versionsCache.forEach((String documentId, String documentHash) -> {
-                try
-                {
+                try {
                     writer.name(documentId);
                     writer.nullValue();
-                } catch (IOException e)
-                {
+                } catch (IOException e) {
                     return false;
                 }
                 numberOfCopiedIds.incrementAndGet();
@@ -156,7 +150,7 @@ public class DocumentChangesCache
             try {
                 // prepare json reader for the cached document list
                 final JsonReader reader = new JsonReader(
-                    new InputStreamReader(new FileInputStream(cacheFile), MainContext.getCharset()));
+                        new InputStreamReader(new FileInputStream(cacheFile), MainContext.getCharset()));
 
                 // iterate through cached documents
                 reader.beginObject();
@@ -214,12 +208,12 @@ public class DocumentChangesCache
         try {
             // prepare json reader for the cached document list
             final JsonReader reader = new JsonReader(
-                new InputStreamReader(new FileInputStream(cacheFile), MainContext.getCharset()));
+                    new InputStreamReader(new FileInputStream(cacheFile), MainContext.getCharset()));
 
             final JsonWriter writer = new JsonWriter(
-                new OutputStreamWriter(
-                    new FileOutputStream(tempFile),
-                    MainContext.getCharset()));
+                    new OutputStreamWriter(
+                            new FileOutputStream(tempFile),
+                            MainContext.getCharset()));
 
             reader.beginObject();
             writer.beginObject();
@@ -274,8 +268,7 @@ public class DocumentChangesCache
         }
 
         // replace current file with temporary file
-        if (cacheFile.delete())
-            tempFile.renameTo(cacheFile);
+        CacheUtils.replaceFile(cacheFile, tempFile);
     }
 
 
@@ -294,7 +287,7 @@ public class DocumentChangesCache
             try {
                 // prepare json reader for the cached document list
                 final JsonReader reader = new JsonReader(
-                    new InputStreamReader(new FileInputStream(cacheFile), MainContext.getCharset()));
+                        new InputStreamReader(new FileInputStream(cacheFile), MainContext.getCharset()));
 
                 reader.beginObject();
 
@@ -302,19 +295,15 @@ public class DocumentChangesCache
                     final String id = reader.nextName();
 
                     if (id.equals(documentId)) {
-                        document = reader.peek() == JsonToken.NULL
-                                   ? null
-                                   : gson.fromJson(reader, DataCiteJson.class);
+                        if (reader.peek() == JsonToken.BEGIN_OBJECT)
+                            document = gson.fromJson(reader, DataCiteJson.class);
                         break;
                     }
-
                     reader.skipValue();
                 }
 
                 reader.close();
-            } catch (IOException e) {
-                // NOPMD - nothing to do here, documentHash is null by default
-
+            } catch (IOException e) { // NOPMD - nothing to do here, document is null by default
             }
         }
 

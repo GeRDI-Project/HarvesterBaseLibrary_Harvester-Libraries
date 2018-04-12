@@ -154,17 +154,16 @@ public abstract class AbstractSubmitter
                 onSubmissionFinished();
                 return isSuccessful;
             })
-            // exception handler
-            .exceptionally(throwable -> {
-                if (isAborting)
-                    onSubmissionAborted();
-                else
-                {
-                    logger.error(SubmissionConstants.SUBMISSION_INTERRUPTED, throwable);
-                    onSubmissionFinished();
-                }
-                return false;
-            });
+                    // exception handler
+                    .exceptionally(throwable -> {
+                        if (isAborting)
+                            onSubmissionAborted();
+                        else {
+                            logger.error(SubmissionConstants.SUBMISSION_INTERRUPTED, throwable);
+                            onSubmissionFinished();
+                        }
+                        return false;
+                    });
         } else // fail the submission
             onSubmissionFinished();
     }
@@ -182,29 +181,26 @@ public abstract class AbstractSubmitter
             boolean areAllSubmissionsSuccessful = true;
 
             // go through all registered caches and process their documents
-            for (final DocumentChangesCache cache : cacheList)
-            {
+            for (final DocumentChangesCache cache : cacheList) {
                 // stop cache iteration if aborting
                 if (isAborting)
                     break;
 
                 // process all documents that are to be changed or deleted
                 areAllSubmissionsSuccessful &= cache.forEach(
-                (String documentId, DataCiteJson addedDoc) -> {
-                    addDocument(documentId, addedDoc);
-                    return !isAborting;
-                });
+                        (String documentId, DataCiteJson addedDoc) -> {
+                            addDocument(documentId, addedDoc);
+                            return !isAborting;
+                        });
             }
 
             // cancel the asynchronous process
-            if (isAborting)
-            {
+            if (isAborting) {
                 batchMap.clear();
                 currentSubmissionProcess.cancel(false);
             }
             // send remainder of documents
-            else if (batchMap.size() > 0)
-            {
+            else if (batchMap.size() > 0) {
                 areAllSubmissionsSuccessful &= trySubmitBatch();
                 batchMap.clear();
             }
@@ -229,14 +225,14 @@ public abstract class AbstractSubmitter
             // check if the document alone is bigger than the maximum allowed submission size
             if (currentBatchSize == 0 && documentSize > maxBatchSize) {
                 String documentString = document == null
-                                        ? null
-                                        : GsonUtils.getGson().toJson(document, document.getClass());
+                        ? null
+                        : GsonUtils.getGson().toJson(document, document.getClass());
                 logger.error(
-                    String.format(
-                        SubmissionConstants.DOCUMENT_TOO_LARGE,
-                        documentSize,
-                        maxBatchSize,
-                        documentString));
+                        String.format(
+                                SubmissionConstants.DOCUMENT_TOO_LARGE,
+                                documentSize,
+                                maxBatchSize,
+                                documentString));
 
                 // abort here, because we must skip this document
                 processedDocumentCount++;
@@ -363,20 +359,20 @@ public abstract class AbstractSubmitter
 
             // log success and send an event
             logger.info(
-                String.format(
-                    SubmissionConstants.SUBMIT_PARTIAL_OK,
-                    processedDocumentCount,
-                    processedDocumentCount + numberOfDocs));
+                    String.format(
+                            SubmissionConstants.SUBMIT_PARTIAL_OK,
+                            processedDocumentCount,
+                            processedDocumentCount + numberOfDocs));
             failedDocumentCount -= numberOfDocs;
             isSuccessful = true;
         } catch (Exception e) {
             // log the failure
             logger.error(
-                String.format(
-                    SubmissionConstants.SUBMIT_PARTIAL_FAILED,
-                    String.valueOf(processedDocumentCount),
-                    String.valueOf(processedDocumentCount + numberOfDocs)),
-                e);
+                    String.format(
+                            SubmissionConstants.SUBMIT_PARTIAL_FAILED,
+                            String.valueOf(processedDocumentCount),
+                            String.valueOf(processedDocumentCount + numberOfDocs)),
+                    e);
             isSuccessful = false;
         }
 
@@ -478,6 +474,7 @@ public abstract class AbstractSubmitter
                 this.password = ((StringParameter) e.getParameter()).getValue();
                 this.credentials = getCredentials();
                 break;
+            default: // ignore
         }
     };
 }

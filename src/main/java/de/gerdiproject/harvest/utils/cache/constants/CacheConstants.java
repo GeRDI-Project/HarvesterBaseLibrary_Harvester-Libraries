@@ -58,10 +58,11 @@ public class CacheConstants
 
     public static final String CACHE_FILE_REGEXxxx = "cachedDocuments_\\d+\\" + JSON_FILE_EXTENSION;
 
-    public static final String DELETE_FILE_SUCCESS = "Deleted old cache file '%s'.";
-    public static final String DELETE_FILE_FAILED = "Could not delete old cache file '%s'!";
+    public static final String DELETE_FILE_SUCCESS = "Deleted cache file '%s'.";
+    public static final String DELETE_FILE_FAILED = "Could not delete cache file '%s'!";
 
     public static final String CACHE_CREATE_FAILED = "Could not create cache file '%s'!";
+    public static final String CACHE_INIT_FAILED = "Could not initialize %s!";
 
     // DocumentVersionsCache
     public static final String HARVESTER_VALUES_JSON = "harvesterValues";
