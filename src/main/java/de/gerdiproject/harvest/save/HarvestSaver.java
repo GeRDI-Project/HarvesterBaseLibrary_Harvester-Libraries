@@ -45,8 +45,8 @@ import de.gerdiproject.harvest.state.events.AbortingStartedEvent;
 import de.gerdiproject.harvest.state.events.StartAbortingEvent;
 import de.gerdiproject.harvest.utils.CancelableFuture;
 import de.gerdiproject.harvest.utils.cache.DocumentChangesCache;
-import de.gerdiproject.harvest.utils.cache.constants.CacheConstants;
 import de.gerdiproject.harvest.utils.cache.events.RegisterCacheEvent;
+import de.gerdiproject.harvest.utils.time.ProcessTimeMeasure.ProcessStatus;
 import de.gerdiproject.json.GsonUtils;
 import de.gerdiproject.json.datacite.DataCiteJson;
 
@@ -70,7 +70,8 @@ public class HarvestSaver
 
 
     /**
-     * Adds event listeners, granting .
+     * Adds event listeners, and sets the harvest saver timestamp if something
+     * was saved in a previous session.
      */
     public static void init()
     {
@@ -165,7 +166,7 @@ public class HarvestSaver
             isAborting = false;
             EventSystem.sendEvent(new AbortingFinishedEvent());
         } else
-            LOGGER.error(CacheConstants.SAVE_FAILED_ERROR, reason);
+            LOGGER.error(SaveConstants.SAVE_FAILED_ERROR, reason);
 
         EventSystem.sendEvent(new SaveFinishedEvent(false));
     }
@@ -207,7 +208,7 @@ public class HarvestSaver
                             finishTimestamp,
                             config.getParameterValue(ConfigurationConstants.READ_HTTP_FROM_DISK, Boolean.class));
                 } catch (IOException e) {
-                    LOGGER.error(CacheConstants.SAVE_FAILED_ERROR, e);
+                    LOGGER.error(SaveConstants.SAVE_FAILED_ERROR, e);
                     isSuccessful = false;
                 }
             }
@@ -237,13 +238,13 @@ public class HarvestSaver
         if (from > 0 || to != Integer.MAX_VALUE) {
 
             fileName = String.format(
-                    CacheConstants.SAVE_FILE_NAME_PARTIAL,
+                    SaveConstants.SAVE_FILE_NAME_PARTIAL,
                     MainContext.getModuleName(),
                     from,
                     to,
                     startTimestamp);
         } else
-            fileName = String.format(CacheConstants.SAVE_FILE_NAME, MainContext.getModuleName(), startTimestamp);
+            fileName = String.format(SaveConstants.SAVE_FILE_NAME, MainContext.getModuleName(), startTimestamp);
 
         // create file and directories
         File saveFile = new File(fileName);
@@ -252,7 +253,7 @@ public class HarvestSaver
         if (isDirectoryCreated)
             return saveFile;
         else {
-            LOGGER.error(CacheConstants.SAVE_FAILED_DIRECTORY);
+            LOGGER.error(SaveConstants.SAVE_FAILED_DIRECTORY);
             return null;
         }
     }

@@ -29,11 +29,6 @@ public class CacheConstants
     public static final String JSON_FILE_EXTENSION = ".json";
     public static final String TEMP_FILE_EXTENSION = ".tmp";
 
-    public static final String SAVE_FILE_NAME = "harvestedIndices/%s_result_%d" + JSON_FILE_EXTENSION;
-    public static final String SAVE_FILE_NAME_PARTIAL =
-            "harvestedIndices/%s_partialResult_%d-%d_%d" + JSON_FILE_EXTENSION;
-    public static final String SAVE_FAILED_DIRECTORY = "Could not save documents: Unable to create directories!";
-    public static final String SAVE_FAILED_ERROR = "Could not save harvested documents!";
     public static final String START_CACHE_ERROR = "Error starting the cache writer";
     public static final String FINISH_CACHE_ERROR = "Error closing the cache writer";
 
