@@ -51,7 +51,7 @@ public class MainContext
 
     private static final Logger LOGGER = LoggerFactory.getLogger(MainContext.class);
 
-    private final HarvestTimeKeeper timeKeeper;
+    private HarvestTimeKeeper timeKeeper;
     private AbstractHarvester harvester;
     private Charset charset;
     private Configuration configuration;
@@ -65,7 +65,6 @@ public class MainContext
      */
     private MainContext()
     {
-        timeKeeper = new HarvestTimeKeeper();
     }
 
 
@@ -129,9 +128,10 @@ public class MainContext
      */
     public static <T extends AbstractHarvester> void init(String moduleName, Class<T> harvesterClass, Charset charset, List<AbstractParameter<?>> harvesterParams, AbstractSubmitter submitter)
     {
-        // set global parameters
         instance.moduleName = moduleName;
         instance.charset = charset;
+        instance.timeKeeper = new HarvestTimeKeeper();
+        instance.timeKeeper.init();
 
         StateMachine.setState(new InitializationState());
 

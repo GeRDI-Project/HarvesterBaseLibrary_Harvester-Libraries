@@ -57,6 +57,8 @@ public final class ParameterFactory
         AbstractParameter<?> submitName = createSubmissionUserName();
         AbstractParameter<?> submitPassword = createSubmissionPassword();
         AbstractParameter<?> deleteUnfinishedSaves = createDeleteUnfinishedSaves();
+        AbstractParameter<?> submitIncompleteHarvests = createSubmitIncomplete();
+        AbstractParameter<?> submitOutdated = createSubmitOutdated();
 
         params.put(autoSave.getKey(), autoSave);
         params.put(autoSubmit.getKey(), autoSubmit);
@@ -64,6 +66,8 @@ public final class ParameterFactory
         params.put(submitName.getKey(), submitName);
         params.put(submitPassword.getKey(), submitPassword);
         params.put(submitSize.getKey(), submitSize);
+        params.put(submitIncompleteHarvests.getKey(), submitIncompleteHarvests);
+        params.put(submitOutdated.getKey(), submitOutdated);
         params.put(readFromDisk.getKey(), readFromDisk);
         params.put(writeToDisk.getKey(), writeToDisk);
         params.put(deleteUnfinishedSaves.getKey(), deleteUnfinishedSaves);
@@ -285,6 +289,44 @@ public final class ParameterFactory
                 HarvestingState.class,
                 SavingState.class);
         return new IntegerParameter(ConfigurationConstants.SUBMISSION_SIZE, allowedStates, 1048576);
+    }
+
+
+    /**
+     * Creates a flag-parameter for changing whether documents should be
+     * re-submitted even if their version did not change.
+     *
+     * @return a flag-parameter for changing whether documents should be
+     *         re-submitted even if their version did not change
+     */
+    private static BooleanParameter createSubmitOutdated()
+    {
+        final List<Class<? extends IState>> allowedStates = Arrays.asList(
+                InitializationState.class,
+                ErrorState.class,
+                IdleState.class,
+                HarvestingState.class,
+                SavingState.class);
+        return new BooleanParameter(ConfigurationConstants.SUBMIT_FORCED, allowedStates, false);
+    }
+
+
+    /**
+     * Creates a flag-parameter for changing whether documents can be submitted
+     * even if their respective harvester failed or was aborted.
+     *
+     * @return a flag-parameter for changing whether documents can be submitted
+     *         even if their respective harvester failed or was aborted.
+     */
+    private static BooleanParameter createSubmitIncomplete()
+    {
+        final List<Class<? extends IState>> allowedStates = Arrays.asList(
+                InitializationState.class,
+                ErrorState.class,
+                IdleState.class,
+                HarvestingState.class,
+                SavingState.class);
+        return new BooleanParameter(ConfigurationConstants.SUBMIT_INCOMPLETE, allowedStates, false);
     }
 
 

@@ -45,8 +45,9 @@ import de.gerdiproject.harvest.state.events.AbortingStartedEvent;
 import de.gerdiproject.harvest.state.events.StartAbortingEvent;
 import de.gerdiproject.harvest.utils.CancelableFuture;
 import de.gerdiproject.harvest.utils.cache.DocumentChangesCache;
+import de.gerdiproject.harvest.utils.cache.FileUtils;
+import de.gerdiproject.harvest.utils.cache.constants.CacheConstants;
 import de.gerdiproject.harvest.utils.cache.events.RegisterCacheEvent;
-import de.gerdiproject.harvest.utils.time.ProcessTimeMeasure.ProcessStatus;
 import de.gerdiproject.json.GsonUtils;
 import de.gerdiproject.json.datacite.DataCiteJson;
 
@@ -118,6 +119,11 @@ public class HarvestSaver
      */
     private void onSaveFinishedSuccessfully(boolean isSuccessful)
     {
+        if (isSuccessful)
+            LOGGER.info(SaveConstants.SAVE_OK);
+        else
+            LOGGER.info(SaveConstants.SAVE_FAILED);
+
         currentSavingProcess = null;
         EventSystem.removeListener(StartAbortingEvent.class, onStartAborting);
         EventSystem.sendEvent(new SaveFinishedEvent(isSuccessful));
@@ -140,23 +146,8 @@ public class HarvestSaver
     private void onSaveFailed(Throwable reason)
     {
         // clean up unfinished save file
-        if (saveFile != null
-                && saveFile.exists()
-                && MainContext.getConfiguration().getParameterValue(
-                        ConfigurationConstants.DELETE_UNFINISHED_SAVE,
-                        Boolean.class)) {
-            try {
-                boolean wasDeleted = saveFile.delete();
-
-                if (wasDeleted)
-                    LOGGER.debug(String.format(SaveConstants.DELETED_SAVE_FILE, saveFile.getPath()));
-                else
-                    LOGGER.debug(String.format(SaveConstants.DELETED_SAVE_FILE_FAILED, saveFile.getPath()));
-
-            } catch (SecurityException e) {
-                LOGGER.error(String.format(SaveConstants.DELETED_SAVE_FILE_FAILED, saveFile.getPath()), e);
-            }
-        }
+        if (saveFile != null)
+            FileUtils.deleteFile(saveFile);
 
         currentSavingProcess = null;
         EventSystem.removeListener(StartAbortingEvent.class, onStartAborting);
@@ -166,7 +157,7 @@ public class HarvestSaver
             isAborting = false;
             EventSystem.sendEvent(new AbortingFinishedEvent());
         } else
-            LOGGER.error(SaveConstants.SAVE_FAILED_ERROR, reason);
+            LOGGER.error(SaveConstants.SAVE_FAILED, reason);
 
         EventSystem.sendEvent(new SaveFinishedEvent(false));
     }
@@ -186,7 +177,13 @@ public class HarvestSaver
     private Callable<Boolean> createSaveProcess(long startTimestamp, long finishTimestamp, boolean isAutoTriggered)
     {
         return () -> {
-            EventSystem.sendEvent(new SaveStartedEvent(isAutoTriggered, getNumberOfChangedDocuments()));
+            int documentCount = getNumberOfChangedDocuments();
+            EventSystem.sendEvent(new SaveStartedEvent(isAutoTriggered, documentCount));
+
+            if (documentCount == 0) {
+                LOGGER.error(SaveConstants.SAVE_FAILED_EMPTY);
+                return false;
+            }
 
             // create file
             final Configuration config = MainContext.getConfiguration();
@@ -196,6 +193,7 @@ public class HarvestSaver
             boolean isSuccessful = saveFile != null;
 
             if (isSuccessful) {
+                LOGGER.info(String.format(SaveConstants.SAVE_START, saveFile.getAbsolutePath()));
                 try {
                     // prepare json writer for the save file
                     JsonWriter writer = new JsonWriter(
@@ -208,7 +206,7 @@ public class HarvestSaver
                             finishTimestamp,
                             config.getParameterValue(ConfigurationConstants.READ_HTTP_FROM_DISK, Boolean.class));
                 } catch (IOException e) {
-                    LOGGER.error(SaveConstants.SAVE_FAILED_ERROR, e);
+                    LOGGER.error(SaveConstants.SAVE_INTERRUPTED, e);
                     isSuccessful = false;
                 }
             }
@@ -248,14 +246,9 @@ public class HarvestSaver
 
         // create file and directories
         File saveFile = new File(fileName);
-        boolean isDirectoryCreated = saveFile.getParentFile().exists() || saveFile.getParentFile().mkdirs();
+        FileUtils.createEmptyFile(saveFile);
 
-        if (isDirectoryCreated)
-            return saveFile;
-        else {
-            LOGGER.error(SaveConstants.SAVE_FAILED_DIRECTORY);
-            return null;
-        }
+        return saveFile.exists() ? saveFile : null;
     }
 
 
@@ -287,12 +280,13 @@ public class HarvestSaver
         writer.name(SaveConstants.IS_FROM_DISK_JSON);
         writer.value(readFromDisk);
 
-        writer.name(SaveConstants.DATA_JSON);
+        writer.name(CacheConstants.DOCUMENTS_JSON);
         writer.beginArray();
 
         // iterate through cached array
         final Gson gson = GsonUtils.getGson();
         for (DocumentChangesCache cachedDocuments : cacheList) {
+
             cachedDocuments.forEach((String documentId, DataCiteJson document) -> {
                 if (isAborting)
                     return false;

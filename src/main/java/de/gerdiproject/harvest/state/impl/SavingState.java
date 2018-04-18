@@ -77,7 +77,6 @@ public class SavingState extends AbstractProgressingState
     public void onStateEnter()
     {
         super.onStateEnter();
-        LOGGER.info(StateConstants.SAVING_STATUS);
         EventSystem.addListener(DocumentSavedEvent.class, onDocumentSaved);
         EventSystem.addListener(SaveFinishedEvent.class, onSaveFinished);
         EventSystem.addListener(SubmissionStartedEvent.class, StateEventHandlerConstants.ON_SUBMISSION_STARTED);
@@ -92,7 +91,6 @@ public class SavingState extends AbstractProgressingState
         EventSystem.removeListener(DocumentSavedEvent.class, onDocumentSaved);
         EventSystem.removeListener(SaveFinishedEvent.class, onSaveFinished);
         EventSystem.removeListener(SubmissionStartedEvent.class, StateEventHandlerConstants.ON_SUBMISSION_STARTED);
-        LOGGER.info(StateConstants.SAVING_DONE);
     }
 
 

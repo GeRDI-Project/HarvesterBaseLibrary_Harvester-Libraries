@@ -34,7 +34,12 @@ public class HarvesterConstants
     public static final String HARVESTER_END = "%s finished!";
     public static final String HARVESTER_FAILED = "%s failed!";
     public static final String HARVESTER_ABORTED = "%s aborted!";
-    public static final String HARVESTER_SKIPPED = "Skipping %s, because no changes were detected!";
+    public static final String HARVESTER_SKIPPED_OUTDATED = "Skipping %s, because no changes were detected!";
+    public static final String HARVESTER_SKIPPED_SUBMIT =
+            "Cancelling %s, because previous changes have not been submitted!%n"
+                    + "Either /submit the current index or set the '"
+                    + ConfigurationConstants.FORCE_HARVEST
+                    + "' flag to true when harvesting.";
 
     // LIST HARVESTER
     public static final String ERROR_NO_ENTRIES =
@@ -43,6 +48,7 @@ public class HarvesterConstants
 
     // REST
     public static final String REST_INFO = "- %s -%n%n%s%n%nRange:  %s-%s%n%n"
+            + "GET/outdated Checks if there is unharvested metadata%n"
             + "POST         Starts the harvest%n"
             + "POST/abort   Aborts an ongoing harvest, saving, or submission%n"
             + "POST/submit  Submits harvested documents to a DataBase%n"

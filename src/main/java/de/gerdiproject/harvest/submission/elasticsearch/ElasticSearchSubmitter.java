@@ -82,7 +82,7 @@ public class ElasticSearchSubmitter extends AbstractSubmitter
 
         // throw error if some documents could not be submitted
         if (responseJson.hasErrors())
-            throw new ServerException(getSubmissionErrorText(responseJson, documents));
+            throw new ServerException(getSubmissionErrorText(responseJson));
     }
 
 
@@ -91,11 +91,10 @@ public class ElasticSearchSubmitter extends AbstractSubmitter
      * them.
      *
      * @param responseJson the JSON response to an ElasticSearch bulk submission
-     * @param documents the submitted documents that caused the issues
      *
      * @return an error string of failed submissions
      */
-    private String getSubmissionErrorText(ElasticSearchResponse responseJson, Map<String, IDocument> documents)
+    private String getSubmissionErrorText(ElasticSearchResponse responseJson)
     {
         List<ElasticSearchIndexWrapper> submittedItems = responseJson.getItems();
         StringBuilder sb = new StringBuilder();
@@ -108,15 +107,9 @@ public class ElasticSearchSubmitter extends AbstractSubmitter
                     sb.append('\n');
 
                 // append error text
-                sb.append(indexElement.getErrorText(processedDocumentCount + i)).append('\n');
-
-                // append failed document
-                IDocument failedDocument = documents.get(indexElement.getId());
-                sb.append(toElasticSearchJson(failedDocument));
-                sb.append('\n');
+                sb.append(indexElement.getErrorText());
             }
         }
-
         return sb.toString();
     }
 

@@ -34,12 +34,17 @@ public class CacheConstants
 
     public static final String CACHE_FOLDER_PATH = "cachedIndex/%s/";
 
-    public static final String ADDITION_CACHE_FILE_PATH = CACHE_FOLDER_PATH
-            + "%s_updatedDocuments"
+    public static final String UPDATE_CACHE_FILE_NAME = "%s_updatedDocuments" + JSON_FILE_EXTENSION;
+    public static final String UPDATE_CACHE_FILE_PATH = CACHE_FOLDER_PATH
+            + UPDATE_CACHE_FILE_NAME
             + JSON_FILE_EXTENSION;
 
-    public static final String DELETION_CACHE_FILE_PATH = CACHE_FOLDER_PATH
-            + "%s_deletedDocuments"
+    public static final String UPDATE_CACHE_TEMP_FILE_PATH = CACHE_FOLDER_PATH
+            + "%s_updatedDocumentsPending"
+            + JSON_FILE_EXTENSION;
+
+    public static final String HARVEST_TIME_KEEPER_CACHE_FILE_PATH = CACHE_FOLDER_PATH
+            + "processTimes"
             + JSON_FILE_EXTENSION;
 
     public static final String VERSIONS_CACHE_FILE_PATH = CACHE_FOLDER_PATH
@@ -51,20 +56,20 @@ public class CacheConstants
             + "%s_documentVersionsPending"
             + JSON_FILE_EXTENSION;
 
-    public static final String CACHE_FILE_REGEXxxx = "cachedDocuments_\\d+\\" + JSON_FILE_EXTENSION;
 
-    public static final String DELETE_FILE_SUCCESS = "Deleted cache file '%s'.";
-    public static final String DELETE_FILE_FAILED = "Could not delete cache file '%s'!";
+    public static final String DELETE_FILE_SUCCESS = "Deleted file '%s'.";
+    public static final String DELETE_FILE_FAILED = "Could not delete file '%s'!";
 
-    public static final String CACHE_CREATE_FAILED = "Could not create cache file '%s'!";
+    public static final String CACHE_CREATE_FAILED = "Could not create file '%s'!";
     public static final String CACHE_INIT_FAILED = "Could not initialize %s!";
+    public static final String COPY_FILE_FAILED = "Could not copy file '%s' to '%s'!";
 
     // DocumentVersionsCache
     public static final String HARVESTER_VALUES_JSON = "harvesterValues";
     public static final String HARVESTER_SOURCE_HASH_JSON = "sourceHash";
     public static final String HARVESTER_FROM_JSON = "rangeFrom";
     public static final String HARVESTER_TO_JSON = "rangeTo";
-    public static final String DOCUMENT_HASHES_JSON = "documentHashes";
+    public static final String DOCUMENTS_JSON = "documents";
 
     // AbstractStreamHarvester
     public static final String CACHE_ENTRY_STREAM_PATH = CACHE_FOLDER_PATH + "StreamHarvester/%s" + JSON_FILE_EXTENSION;

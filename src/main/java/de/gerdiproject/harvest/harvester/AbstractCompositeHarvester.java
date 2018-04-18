@@ -173,7 +173,7 @@ public abstract class AbstractCompositeHarvester extends AbstractHarvester
      * no cache is required.
      */
     @Override
-    protected HarvesterCache initDocumentsCache()
+    protected HarvesterCache initCache()
     {
         return null;
     }
@@ -187,6 +187,34 @@ public abstract class AbstractCompositeHarvester extends AbstractHarvester
 
         subHarvesters.forEach((AbstractHarvester subHarvester) -> hashBuilder.append(subHarvester.getHash(false)));
         return HashGenerator.instance().getShaHash(hashBuilder.toString());
+    }
+
+
+    @Override
+    protected boolean isOutdated()
+    {
+        boolean hasOutdatedSubHarvesters = false;
+
+        for (AbstractHarvester h : subHarvesters) {
+            hasOutdatedSubHarvesters |= h.isOutdated();
+            if (hasOutdatedSubHarvesters)
+                break;
+        }
+        return hasOutdatedSubHarvesters;
+    }
+
+
+    @Override
+    protected void applyCacheChanges()
+    {
+        subHarvesters.forEach((AbstractHarvester subHarvester) -> subHarvester.applyCacheChanges());
+    }
+
+
+    @Override
+    protected void skipAllDocuments()
+    {
+        subHarvesters.forEach((AbstractHarvester subHarvester) -> subHarvester.skipAllDocuments());
     }
 
 

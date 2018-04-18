@@ -52,18 +52,16 @@ public class ElasticSearchIndex
     /**
      * Returns a human readable version of a possible error.
      *
-     * @param documentIndex the index of the submitted document
-     *
-     * @return a human readable version of the error or an empty string,
-     * if no errors occurred
+     * @return a human readable version of the error or an empty string, if no
+     *         errors occurred
      */
-    public String getErrorText(int documentIndex)
+    public String getErrorText()
     {
         if (error != null)
             return String.format(
-                       ElasticSearchConstants.DOCUMENT_SUBMIT_ERROR,
-                       documentIndex,
-                       error.toString());
+                    ElasticSearchConstants.DOCUMENT_SUBMIT_ERROR,
+                    id,
+                    error.toString());
         else
             return "";
     }

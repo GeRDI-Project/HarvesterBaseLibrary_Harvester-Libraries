@@ -36,6 +36,7 @@ import de.gerdiproject.harvest.config.events.HarvesterParameterChangedEvent;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.harvester.constants.HarvesterConstants;
 import de.gerdiproject.harvest.harvester.events.DocumentHarvestedEvent;
+import de.gerdiproject.harvest.harvester.events.GetHarvesterOutdatedEvent;
 import de.gerdiproject.harvest.harvester.events.GetMaxDocumentCountEvent;
 import de.gerdiproject.harvest.harvester.events.GetProviderNameEvent;
 import de.gerdiproject.harvest.harvester.events.HarvestFinishedEvent;
@@ -74,6 +75,7 @@ public abstract class AbstractHarvester
     protected CancelableFuture<Boolean> currentHarvestingProcess;
     protected boolean isMainHarvester;
     protected boolean isAborting;
+    protected boolean isFailing;
     protected boolean forceHarvest;
     protected String name;
     protected String hash;
@@ -152,15 +154,14 @@ public abstract class AbstractHarvester
      * 
      * @return a cache for harvested documents
      */
-    protected HarvesterCache initDocumentsCache()
+    protected HarvesterCache initCache()
     {
         final HarvesterCache cache = documentsCache != null ? documentsCache : new HarvesterCache(name);
 
         // update the harvester hash in the cache file
         final int from = startIndex.get() == Integer.MAX_VALUE ? maxDocumentCount.get() : startIndex.get();
         final int to = endIndex.get() == Integer.MAX_VALUE ? maxDocumentCount.get() : endIndex.get();
-        cache.getVersionsCache().setHarvesterMetadata(hash, from, to);
-        cache.init();
+        cache.init(hash, from, to);
 
         return cache;
     }
@@ -182,12 +183,15 @@ public abstract class AbstractHarvester
      */
     public void init()
     {
+        isFailing = false;
+
         // calculate hash
         try {
             hash = initHash();
         } catch (NoSuchAlgorithmException | NullPointerException e) {
             logger.error(String.format(HarvesterConstants.HASH_CREATION_FAILED, name), e);
             hash = null;
+            isFailing = true;
         }
 
         // calculate number of documents
@@ -196,7 +200,7 @@ public abstract class AbstractHarvester
         endIndex.set(maxHarvestableDocs);
 
         // prepare documents cache
-        documentsCache = initDocumentsCache();
+        documentsCache = initCache();
     }
 
 
@@ -214,6 +218,7 @@ public abstract class AbstractHarvester
         EventSystem.addListener(StartHarvestEvent.class, this::onStartHarvest);
         EventSystem.addSynchronousListener(GetMaxDocumentCountEvent.class, this::onGetMaxDocumentCount);
         EventSystem.addSynchronousListener(GetProviderNameEvent.class, this::onGetDataProviderName);
+        EventSystem.addSynchronousListener(GetHarvesterOutdatedEvent.class, this::onGetHarvesterOutdated);
     }
 
 
@@ -294,10 +299,16 @@ public abstract class AbstractHarvester
      */
     protected void setStartIndex(int from)
     {
+        if (startIndex.get() == from)
+            return;
+
         if (from <= 0)
             startIndex.set(0);
         else
             startIndex.set(from);
+
+        // when the range changes, the cache hash will change, too
+        documentsCache = initCache();
     }
 
 
@@ -309,10 +320,16 @@ public abstract class AbstractHarvester
      */
     protected void setEndIndex(int to)
     {
+        if (endIndex.get() == to)
+            return;
+
         if (to <= 0)
             endIndex.set(0);
         else
             endIndex.set(to);
+
+        // when the range changes, the cache hash will change, too
+        documentsCache = initCache();
     }
 
 
@@ -331,14 +348,19 @@ public abstract class AbstractHarvester
         final int from = startIndex.get() == Integer.MAX_VALUE ? maxDocumentCount.get() : startIndex.get();
         final int to = endIndex.get() == Integer.MAX_VALUE ? maxDocumentCount.get() : endIndex.get();
 
-        // check if the checksum changed since the last harvest. If yes skip the harvest
-        if (!forceHarvest
-                && hash != null
-                && documentsCache != null
-                && !documentsCache.getVersionsCache().isCacheOutdated()) {
-            logger.info(String.format(HarvesterConstants.HARVESTER_SKIPPED, name));
-            documentsCache.skipAllDocuments();
-            return;
+        if (!forceHarvest) {
+            // cancel harvest if the checksum changed since the last harvest
+            if (!isOutdated()) {
+                logger.info(String.format(HarvesterConstants.HARVESTER_SKIPPED_OUTDATED, name));
+                skipAllDocuments();
+                return;
+            }
+            // cancel harvest if previous changes were not submitted
+            if (MainContext.getTimeKeeper().hasUnsubmittedChanges()) {
+                logger.info(String.format(HarvesterConstants.HARVESTER_SKIPPED_SUBMIT, name));
+                skipAllDocuments();
+                return;
+            }
         }
 
         // only send events from the main harvester
@@ -374,11 +396,13 @@ public abstract class AbstractHarvester
         // do some things, only if this is the main harvester
         if (isMainHarvester) {
             EventSystem.removeListener(StartAbortingEvent.class, onStartAborting);
+
+            // finish caching
+            applyCacheChanges();
+
+            // send events
             EventSystem.sendEvent(new HarvestFinishedEvent(true, getHash(false)));
         }
-
-        // finish caching
-        documentsCache.getVersionsCache().applyChanges();
 
         // dead-lock fix: clear aborting status
         if (isAborting) {
@@ -419,6 +443,8 @@ public abstract class AbstractHarvester
      */
     protected void onHarvestFailed(Throwable reason)
     {
+        isFailing = true;
+
         // log the error
         logger.error(reason.getMessage(), reason);
 
@@ -426,12 +452,14 @@ public abstract class AbstractHarvester
         logger.warn(String.format(HarvesterConstants.HARVESTER_FAILED, name));
 
         if (isMainHarvester) {
-            EventSystem.sendEvent(new HarvestFinishedEvent(false, getHash(false)));
             EventSystem.removeListener(StartAbortingEvent.class, onStartAborting);
-        }
 
-        // finish caching
-        documentsCache.getVersionsCache().applyChanges();
+            // finish caching
+            applyCacheChanges();
+
+            // send events
+            EventSystem.sendEvent(new HarvestFinishedEvent(false, getHash(false)));
+        }
     }
 
 
@@ -441,13 +469,11 @@ public abstract class AbstractHarvester
      */
     protected void onHarvestAborted()
     {
-        isAborting = false;
-
-        if (isMainHarvester)
+        if (isMainHarvester) {
+            applyCacheChanges();
             EventSystem.sendEvent(new AbortingFinishedEvent());
-
-        // finish caching
-        documentsCache.getVersionsCache().applyChanges();
+        }
+        isAborting = false;
 
         logger.warn(String.format(HarvesterConstants.HARVESTER_ABORTED, name));
     }
@@ -459,7 +485,7 @@ public abstract class AbstractHarvester
      * @param recalculate if true, recalculates the hash value
      * @return the checksum hash of the entries which are to be harvested
      */
-    public String getHash(boolean recalculate)
+    protected String getHash(boolean recalculate)
     {
         if (recalculate) {
             try {
@@ -470,6 +496,36 @@ public abstract class AbstractHarvester
         }
 
         return hash;
+    }
+
+
+    /**
+     * Checks if the data provider has new data.
+     * 
+     * @return true if the previously harvested documents are outdated or the
+     *         harvesting range changed
+     */
+    protected boolean isOutdated()
+    {
+        return documentsCache.getVersionsCache().isOutdated();
+    }
+
+
+    /**
+     * Applies all changes caused by the harvest to the cache.
+     */
+    protected void applyCacheChanges()
+    {
+        documentsCache.applyChanges(!isFailing, isAborting);
+    }
+
+
+    /**
+     * Skips all documents that are to be harvested.
+     */
+    protected void skipAllDocuments()
+    {
+        documentsCache.skipAllDocuments();
     }
 
 
@@ -534,6 +590,20 @@ public abstract class AbstractHarvester
             name = name.substring(0, harvesterIndex);
 
         return name;
+    }
+
+
+    /**
+     * Synchronous event callback that returns true if the harvester requires an
+     * update.
+     * 
+     * @param event the event that triggered this callback function
+     * 
+     * @return true if the harvester requires an update
+     */
+    private Boolean onGetHarvesterOutdated(GetHarvesterOutdatedEvent event) // NOPMD events must be defined as parameter, even if not used
+    {
+        return isOutdated();
     }
 
 

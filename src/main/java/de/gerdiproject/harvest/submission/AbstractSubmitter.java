@@ -46,7 +46,6 @@ import de.gerdiproject.harvest.submission.events.SubmissionStartedEvent;
 import de.gerdiproject.harvest.utils.CancelableFuture;
 import de.gerdiproject.harvest.utils.cache.DocumentChangesCache;
 import de.gerdiproject.harvest.utils.cache.events.RegisterCacheEvent;
-import de.gerdiproject.json.GsonUtils;
 import de.gerdiproject.json.datacite.DataCiteJson;
 
 /**
@@ -62,6 +61,8 @@ public abstract class AbstractSubmitter
     private int failedDocumentCount;
     private String userName;
     private String password;
+    private boolean canSubmitOutdatedDocs;
+    private boolean canSubmitFailedDocs;
 
     protected final Logger logger; // NOPMD - we want to retrieve the type of the inheriting class
 
@@ -128,7 +129,6 @@ public abstract class AbstractSubmitter
 
     /**
      * Reads cached documents and submits them.
-     *
      */
     public void submitAll()
     {
@@ -142,10 +142,17 @@ public abstract class AbstractSubmitter
         // send event
         EventSystem.sendEvent(new SubmissionStartedEvent(numberOfDocuments));
 
-        // prepare stuff and check if we can submit
-        boolean canSubmit = startSubmission();
+        // check if we can submit
+        boolean canSubmit = canStartSubmission();
 
         if (canSubmit) {
+
+            // listen to abort requests
+            EventSystem.addListener(StartAbortingEvent.class, onStartAborting);
+
+            // log the beginning of the submission
+            logger.info(String.format(SubmissionConstants.SUBMISSION_START, url.toString()));
+
             // start asynchronous submission
             currentSubmissionProcess = startSubmissionProcess();
 
@@ -172,7 +179,7 @@ public abstract class AbstractSubmitter
     /**
      * Creates an asynchronous function that sequentially submits all harvested
      * documents in subsets of adjustable size.
-     *
+     * 
      * @return a function that can be used of asynchronous requests
      */
     protected CancelableFuture<Boolean> startSubmissionProcess()
@@ -186,12 +193,13 @@ public abstract class AbstractSubmitter
                 if (isAborting)
                     break;
 
-                // process all documents that are to be changed or deleted
-                areAllSubmissionsSuccessful &= cache.forEach(
+                boolean wasCacheSubmitted = cache.forEach(
                         (String documentId, DataCiteJson addedDoc) -> {
                             addDocument(documentId, addedDoc);
                             return !isAborting;
                         });
+
+                areAllSubmissionsSuccessful &= wasCacheSubmitted;
             }
 
             // cancel the asynchronous process
@@ -224,18 +232,16 @@ public abstract class AbstractSubmitter
 
             // check if the document alone is bigger than the maximum allowed submission size
             if (currentBatchSize == 0 && documentSize > maxBatchSize) {
-                String documentString = document == null
-                        ? null
-                        : GsonUtils.getGson().toJson(document, document.getClass());
                 logger.error(
                         String.format(
                                 SubmissionConstants.DOCUMENT_TOO_LARGE,
+                                documentId,
                                 documentSize,
-                                maxBatchSize,
-                                documentString));
+                                maxBatchSize));
 
                 // abort here, because we must skip this document
                 processedDocumentCount++;
+                EventSystem.sendEvent(new DocumentsSubmittedEvent(false, 1));
                 return;
             }
 
@@ -278,11 +284,11 @@ public abstract class AbstractSubmitter
 
 
     /**
-     * Attempts to initiate document submission.
+     * Checks if the submission can start
      *
      * @return true, if the submission can proceed
      */
-    protected boolean startSubmission()
+    protected boolean canStartSubmission()
     {
         if (url == null) {
             logger.error(SubmissionConstants.NO_URL_ERROR);
@@ -294,12 +300,16 @@ public abstract class AbstractSubmitter
             return false;
         }
 
-        // listen to abort requests
-        EventSystem.addListener(StartAbortingEvent.class, onStartAborting);
+        // check if the cache was submitted already
+        if (!canSubmitOutdatedDocs && !MainContext.getTimeKeeper().hasUnsubmittedChanges()) {
+            logger.error(SubmissionConstants.OUTDATED_ERROR);
+            return false;
 
-        // log the beginning of the submission
-        logger.info(String.format(SubmissionConstants.SUBMISSION_START, url.toString()));
-
+            // check if the harvest is incomplete
+        } else if (!canSubmitFailedDocs && MainContext.getTimeKeeper().isHarvestIncomplete()) {
+            logger.error(SubmissionConstants.FAILED_HARVEST_ERROR);
+            return false;
+        }
         return true;
     }
 
@@ -314,16 +324,17 @@ public abstract class AbstractSubmitter
         EventSystem.removeListener(StartAbortingEvent.class, onStartAborting);
 
         // log the end of the submission
-        if (failedDocumentCount == 0)
-            logger.info(SubmissionConstants.SUBMISSION_DONE_ALL_OK);
 
-        else if (failedDocumentCount == processedDocumentCount || processedDocumentCount == 0)
+        if (failedDocumentCount == processedDocumentCount || processedDocumentCount == 0)
             logger.warn(SubmissionConstants.SUBMISSION_DONE_ALL_FAILED);
+
+        else if (failedDocumentCount == 0)
+            logger.info(SubmissionConstants.SUBMISSION_DONE_ALL_OK);
 
         else
             logger.warn(String.format(SubmissionConstants.SUBMISSION_DONE_SOME_FAILED, failedDocumentCount));
 
-        EventSystem.sendEvent(new SubmissionFinishedEvent(failedDocumentCount == 0));
+        EventSystem.sendEvent(new SubmissionFinishedEvent(failedDocumentCount == 0 && processedDocumentCount > 0));
 
         // prevents dead-locks if the submission was aborted after it finished
         if (isAborting)
@@ -433,6 +444,8 @@ public abstract class AbstractSubmitter
      * {@linkplain AbstractSubmitter}.
      */
     private final Consumer<StartSubmissionEvent> onStartSubmission = (StartSubmissionEvent e) -> {
+        canSubmitOutdatedDocs = e.canSubmitOutdatedDocuments();
+        canSubmitFailedDocs = e.isCanSubmitFailedDocuments();
         submitAll();
     };
 

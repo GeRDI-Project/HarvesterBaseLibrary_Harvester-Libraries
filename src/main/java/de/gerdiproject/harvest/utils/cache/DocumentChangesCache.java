@@ -51,7 +51,8 @@ public class DocumentChangesCache
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(DocumentChangesCache.class);
 
-    private final File cacheFile;
+    private final File workInProgressFile;
+    private final File stableFile;
     private final Gson gson;
     private int size;
 
@@ -65,17 +66,23 @@ public class DocumentChangesCache
     public DocumentChangesCache(final String filePrefix)
     {
         this.gson = GsonUtils.getGson();
-        this.cacheFile = new File(
+        this.stableFile = new File(
                 String.format(
-                        CacheConstants.ADDITION_CACHE_FILE_PATH,
+                        CacheConstants.UPDATE_CACHE_FILE_PATH,
+                        MainContext.getModuleName(),
+                        filePrefix));
+
+        this.workInProgressFile = new File(
+                String.format(
+                        CacheConstants.UPDATE_CACHE_TEMP_FILE_PATH,
                         MainContext.getModuleName(),
                         filePrefix));
     }
 
 
     /**
-     * Initializes the cache by creating an empty file and setting the size to
-     * zero.
+     * Initializes the cache by creating an empty file and copying all
+     * documentIDs from a versions cache as null entries.
      *
      * @param versionsCache a cache of previously harvested IDs
      */
@@ -83,15 +90,18 @@ public class DocumentChangesCache
     {
         // create new file
         try {
-            CacheUtils.createEmptyFile(cacheFile);
+            // retrieve harvester cache metadata
+
+            FileUtils.createEmptyFile(workInProgressFile);
             final JsonWriter writer = new JsonWriter(
                     new OutputStreamWriter(
-                            new FileOutputStream(cacheFile),
+                            new FileOutputStream(workInProgressFile),
                             MainContext.getCharset()));
 
             final AtomicInteger numberOfCopiedIds = new AtomicInteger(0);
-            boolean isSuccessful = false;
+
             // copy documentIds and count them
+            boolean isSuccessful = false;
             writer.beginObject();
             isSuccessful = versionsCache.forEach((String documentId, String documentHash) -> {
                 try {
@@ -114,7 +124,7 @@ public class DocumentChangesCache
                 this.size = 0;
 
         } catch (IOException e) {
-            LOGGER.error(String.format(CacheConstants.CACHE_CREATE_FAILED, cacheFile.getAbsolutePath()));
+            LOGGER.error(String.format(CacheConstants.CACHE_CREATE_FAILED, workInProgressFile.getAbsolutePath()));
         }
     }
 
@@ -131,9 +141,30 @@ public class DocumentChangesCache
 
 
     /**
-     * Iterates through the file of cached documents and executes a function on
-     * each document. If the function returns false, the whole process is
-     * aborted.
+     * Removes all work-in-progress timestamps and deletes the work-in-progress
+     * cache file.
+     */
+    public void clearWorkInProgress()
+    {
+        FileUtils.deleteFile(workInProgressFile);
+    }
+
+
+    /**
+     * (Over{@literal-})writes a stable cache file of document changes, with the
+     * work in progress changes.
+     * 
+     */
+    public void applyChanges()
+    {
+        FileUtils.replaceFile(stableFile, workInProgressFile);
+    }
+
+
+    /**
+     * Iterates through the stable file of cached documents and executes a
+     * function on each document. If the function returns false, the whole
+     * process is aborted.
      *
      * @param documentFunction a function that accepts a documentId and the
      *            corresponding document JSON object and returns true if it was
@@ -150,7 +181,7 @@ public class DocumentChangesCache
             try {
                 // prepare json reader for the cached document list
                 final JsonReader reader = new JsonReader(
-                        new InputStreamReader(new FileInputStream(cacheFile), MainContext.getCharset()));
+                        new InputStreamReader(new FileInputStream(stableFile), MainContext.getCharset()));
 
                 // iterate through cached documents
                 reader.beginObject();
@@ -203,12 +234,12 @@ public class DocumentChangesCache
      */
     public void putDocument(final String documentId, final IDocument document)
     {
-        final File tempFile = new File(cacheFile.getAbsolutePath() + CacheConstants.TEMP_FILE_EXTENSION);
+        final File tempFile = new File(workInProgressFile.getAbsolutePath() + CacheConstants.TEMP_FILE_EXTENSION);
 
         try {
             // prepare json reader for the cached document list
             final JsonReader reader = new JsonReader(
-                    new InputStreamReader(new FileInputStream(cacheFile), MainContext.getCharset()));
+                    new InputStreamReader(new FileInputStream(workInProgressFile), MainContext.getCharset()));
 
             final JsonWriter writer = new JsonWriter(
                     new OutputStreamWriter(
@@ -268,7 +299,7 @@ public class DocumentChangesCache
         }
 
         // replace current file with temporary file
-        CacheUtils.replaceFile(cacheFile, tempFile);
+        FileUtils.replaceFile(workInProgressFile, tempFile);
     }
 
 
@@ -283,11 +314,11 @@ public class DocumentChangesCache
     {
         DataCiteJson document = null;
 
-        if (cacheFile.exists()) {
+        if (stableFile.exists()) {
             try {
                 // prepare json reader for the cached document list
                 final JsonReader reader = new JsonReader(
-                        new InputStreamReader(new FileInputStream(cacheFile), MainContext.getCharset()));
+                        new InputStreamReader(new FileInputStream(stableFile), MainContext.getCharset()));
 
                 reader.beginObject();
 
@@ -306,7 +337,6 @@ public class DocumentChangesCache
             } catch (IOException e) { // NOPMD - nothing to do here, document is null by default
             }
         }
-
         return document;
     }
 }

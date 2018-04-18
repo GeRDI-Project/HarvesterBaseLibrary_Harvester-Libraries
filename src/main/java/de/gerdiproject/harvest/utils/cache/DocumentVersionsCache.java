@@ -28,11 +28,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.gson.stream.JsonReader;
+import com.google.gson.stream.JsonToken;
 import com.google.gson.stream.JsonWriter;
 
 import de.gerdiproject.harvest.MainContext;
 import de.gerdiproject.harvest.utils.cache.constants.CacheConstants;
-import de.gerdiproject.json.GsonUtils;
+import de.gerdiproject.json.datacite.DataCiteJson;
 
 /**
  * This class wraps a cache file that stores a map of document identifiers to
@@ -47,10 +48,10 @@ public class DocumentVersionsCache
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(DocumentVersionsCache.class);
 
-    private final HarvesterCacheMetadata stableHarvesterMetadata;
-    private final HarvesterCacheMetadata workInProgressHarvesterMetadata;
     private final File stableFile;
     private final File workInProgressFile;
+    private String stableHarvesterHash;
+    private String workInProgressHarvesterHash;
 
 
     /**
@@ -62,14 +63,12 @@ public class DocumentVersionsCache
      */
     public DocumentVersionsCache(final String filePrefix)
     {
-        this.stableHarvesterMetadata = new HarvesterCacheMetadata();
         this.stableFile = new File(
                 String.format(
                         CacheConstants.VERSIONS_CACHE_FILE_PATH,
                         MainContext.getModuleName(),
                         filePrefix));
 
-        this.workInProgressHarvesterMetadata = new HarvesterCacheMetadata();
         this.workInProgressFile = new File(
                 String.format(
                         CacheConstants.VERSIONS_CACHE_TEMP_FILE_PATH,
@@ -80,84 +79,80 @@ public class DocumentVersionsCache
 
     /**
      * Initializes the cache by copying the existing cache file to the WIP file.
+     * 
+     * @param hash the hash value that represents a version of the source data
      */
-    public void init()
+    public void init(String hash)
     {
-        // copy stable document hashes to WIP file, or create empty WIP file, if no stable exists
-        try {
-            // create a new WIP file
-            CacheUtils.createEmptyFile(workInProgressFile);
+        this.stableHarvesterHash = null;
+        this.workInProgressHarvesterHash = hash;
 
-            // open WIP file writer
-            final JsonWriter writer = new JsonWriter(
-                    new OutputStreamWriter(
-                            new FileOutputStream(workInProgressFile),
-                            MainContext.getCharset()));
+        // copy values from stable cache file, if it exists
+        if (stableFile.exists()) {
+            FileUtils.copyFile(stableFile, workInProgressFile);
 
-            // copy values from stable cache file, if it exists
-            if (stableFile.exists()) {
-                // prepare json reader for the cached document list
+            // read harvester hash from stable file
+            try {
                 final JsonReader reader = new JsonReader(
-                        new InputStreamReader(new FileInputStream(stableFile), MainContext.getCharset()));
-
-                // retrieve harvester cache metadata
+                        new InputStreamReader(
+                                new FileInputStream(stableFile),
+                                MainContext.getCharset()));
                 reader.beginObject();
                 reader.nextName();
-                this.stableHarvesterMetadata.set(
-                        GsonUtils.getGson().fromJson(reader, HarvesterCacheMetadata.class));
+                if (reader.peek() != JsonToken.NULL)
+                    this.stableHarvesterHash = reader.nextString();
 
-                // copy the document-hashes-map
-                reader.nextName();
-                reader.beginObject();
-                writer.beginObject();
-
-                while (reader.hasNext())
-                    writer.name(reader.nextName()).value(reader.nextString());
-
-                // write end of document-hashes-map, close writer
-                writer.endObject();
-                writer.close();
-
-                // close reader
                 reader.close();
-            } else {
+            } catch (IOException e) { // NOPMD - Nothing to do here. The stable hash is already null
+            }
+        } else {
+            try {
+                // create a new WIP file
+                FileUtils.createEmptyFile(workInProgressFile);
+
+                final JsonWriter writer = new JsonWriter(
+                        new OutputStreamWriter(
+                                new FileOutputStream(workInProgressFile),
+                                MainContext.getCharset()));
                 // if no stable cache exists, write an empty object to the WIP file
                 writer.beginObject();
+
+                // write empty harvester hash
+                writer.name(CacheConstants.HARVESTER_SOURCE_HASH_JSON);
+                writer.nullValue();
+
+                // write empty document map
+                writer.name(CacheConstants.DOCUMENTS_JSON);
+                writer.beginObject();
+                writer.endObject();
+
                 writer.endObject();
                 writer.close();
+            } catch (IOException e) {
+                LOGGER.error(String.format(CacheConstants.CACHE_INIT_FAILED, this.getClass().getSimpleName()), e);
             }
-        } catch (IOException e) {
-            LOGGER.error(String.format(CacheConstants.CACHE_INIT_FAILED, this.getClass().getSimpleName()), e);
         }
     }
 
 
     /**
-     * Sets the hash value that represents the entire source data of the
-     * harvester.
-     *
-     * @param hash the hash value that represents the entire source data of the
-     *            harvester
-     * @param harvestStartIndex the start index of the harvesting range
-     * @param harvestEndIndex the exclusive end index of the harvesting range
+     * Checks if the harvested documents are outdated.
+     * 
+     * @return true if the harvester hash changed since the last harvest
      */
-    public void setHarvesterMetadata(String hash, int harvestStartIndex, int harvestEndIndex)
+    public boolean isOutdated()
     {
-        workInProgressHarvesterMetadata.setRangeFrom(harvestStartIndex);
-        workInProgressHarvesterMetadata.setRangeTo(harvestEndIndex);
-        workInProgressHarvesterMetadata.setSourceHash(hash);
+        return stableHarvesterHash == null || !stableHarvesterHash.equals(workInProgressHarvesterHash);
     }
 
 
     /**
-     * Checks if the WIP-harvester-metadata is newer than the stable one.
-     *
-     * @return true, if the current harvester metadata differs from the stable
-     *         metadata
+     * Deletes the work-in-progress cache file.
      */
-    public boolean isCacheOutdated()
+    public void clearWorkInProgress()
     {
-        return stableHarvesterMetadata.isUpdateNeeded(workInProgressHarvesterMetadata);
+        FileUtils.deleteFile(workInProgressFile);
+        this.workInProgressHarvesterHash = stableHarvesterHash;
     }
 
 
@@ -167,57 +162,24 @@ public class DocumentVersionsCache
      */
     public void applyChanges()
     {
-        final File tempFile = new File(stableFile.getAbsolutePath() + CacheConstants.TEMP_FILE_EXTENSION);
+        FileUtils.replaceFile(stableFile, workInProgressFile);
+        this.stableHarvesterHash = workInProgressHarvesterHash;
+    }
 
-        try {
-            // prepare json reader for the cached document list
-            final JsonReader reader = new JsonReader(
-                    new InputStreamReader(new FileInputStream(workInProgressFile), MainContext.getCharset()));
 
-            final JsonWriter writer = new JsonWriter(
-                    new OutputStreamWriter(
-                            new FileOutputStream(tempFile),
-                            MainContext.getCharset()));
-
-            // copy the harvester cache metadata
-            writer.beginObject();
-            writer.name(CacheConstants.HARVESTER_VALUES_JSON);
-            GsonUtils.getGson().toJson(
-                    workInProgressHarvesterMetadata,
-                    workInProgressHarvesterMetadata.getClass(),
-                    writer);
-
-            // start the map of document hashes
-            writer.name(CacheConstants.DOCUMENT_HASHES_JSON);
-            writer.beginObject();
-            reader.beginObject();
-
-            // copy key value pairs until the specified key is found
-            while (reader.hasNext()) {
-                writer.name(reader.nextName());
-                writer.value(reader.nextString());
-            }
-
-            // close reader
-            reader.close();
-
-            // close writer
-            writer.endObject();
-            writer.endObject();
-            writer.close();
-
-        } catch (IOException e) {
-            LOGGER.error(String.format(CacheConstants.ENTRY_STREAM_WRITE_ERROR, tempFile.getAbsolutePath()), e);
-            return;
-        }
-
-        // replace stable file with wip file
-        CacheUtils.replaceFile(stableFile, tempFile);
-        stableHarvesterMetadata.set(workInProgressHarvesterMetadata);
-
-        // clear WIP file as it is no longer needed
-        if (!workInProgressFile.delete())
-            LOGGER.error(String.format(CacheConstants.DELETE_FILE_FAILED, workInProgressFile.getAbsolutePath()));
+    /**
+     * Deletes all entries that have null values in a specified changes cache.
+     * 
+     * @param changesCache the cache that is being iterated to look for null
+     *            entries
+     */
+    public void removeDeletedEntries(final DocumentChangesCache changesCache)
+    {
+        changesCache.forEach((String documentId, DataCiteJson document) -> {
+            if (document == null)
+                putDocumentHash(documentId, null);
+            return true;
+        });
     }
 
 
@@ -243,7 +205,7 @@ public class DocumentVersionsCache
                                 new FileInputStream(stableFile),
                                 MainContext.getCharset()));
 
-                // skip the harvester cache metadata if it is the stable file
+                // skip harvester hash
                 reader.beginObject();
                 reader.nextName();
                 reader.skipValue();
@@ -251,7 +213,6 @@ public class DocumentVersionsCache
 
                 // iterate through all entries
                 reader.beginObject();
-
                 while (isSuccessful && reader.hasNext()) {
                     final String documentId = reader.nextName();
                     final String documentHash = reader.nextString();
@@ -267,17 +228,6 @@ public class DocumentVersionsCache
             isSuccessful = false;
 
         return isSuccessful;
-    }
-
-
-    /**
-     * Removes an entry with a specified documentId from the WIP file.
-     *
-     * @param documentId the identifier of the document that is to be removed
-     */
-    public void removeDocumentHash(final String documentId)
-    {
-        putDocumentHash(documentId, null);
     }
 
 
@@ -305,10 +255,21 @@ public class DocumentVersionsCache
                             new FileOutputStream(tempFile),
                             MainContext.getCharset()));
 
+            // copy harvester hash
             reader.beginObject();
             writer.beginObject();
+            writer.name(reader.nextName());
+            if (workInProgressHarvesterHash == null) {
+                writer.nullValue();
+            } else
+                writer.value(workInProgressHarvesterHash);
+
+            reader.skipValue();
 
             // copy key value pairs until the specified key is found
+            writer.name(reader.nextName());
+            reader.beginObject();
+            writer.beginObject();
             boolean doesKeyExist = false;
 
             while (reader.hasNext()) {
@@ -338,15 +299,19 @@ public class DocumentVersionsCache
 
             // close writer
             writer.endObject();
+            writer.endObject();
             writer.close();
 
         } catch (IOException e) {
+            LOGGER.error(String.format(CacheConstants.ENTRY_STREAM_WRITE_ERROR, tempFile.getAbsolutePath()), e);
             return;
         }
 
         // replace current file with temporary file
         if (hasChanges)
-            CacheUtils.replaceFile(workInProgressFile, tempFile);
+            FileUtils.replaceFile(workInProgressFile, tempFile);
+        else if (tempFile.exists())
+            FileUtils.deleteFile(tempFile);
     }
 
 
@@ -360,37 +325,19 @@ public class DocumentVersionsCache
      */
     public String getDocumentHash(String documentId)
     {
-        String documentHash = null;
+        String[] documentHash = {
+                null
+        };
+        forEach((String stableDocId, String stableDocHash) -> {
+            if (stableDocId.equals(documentId)) {
+                documentHash[0] = stableDocHash;
 
-        if (stableFile.exists()) {
-            try {
-                // prepare json reader for the cached document list
-                final JsonReader reader = new JsonReader(
-                        new InputStreamReader(new FileInputStream(stableFile), MainContext.getCharset()));
+                // abort for each prematurely
+                return false;
+            } else
+                return true;
+        });
 
-                // skip the harvesterHash
-                reader.beginObject();
-                reader.nextName();
-                reader.skipValue();
-                reader.nextName();
-                reader.beginObject();
-
-                // search the ID in the document-hashes-map
-                while (reader.hasNext()) {
-                    final String id = reader.nextName();
-                    final String hash = reader.nextString();
-
-                    if (id.equals(documentId)) {
-                        documentHash = hash;
-                        break;
-                    }
-                }
-
-                reader.close();
-            } catch (IOException e) { // NOPMD - nothing to do here, documentHash is null by default
-            }
-        }
-
-        return documentHash;
+        return documentHash[0];
     }
 }

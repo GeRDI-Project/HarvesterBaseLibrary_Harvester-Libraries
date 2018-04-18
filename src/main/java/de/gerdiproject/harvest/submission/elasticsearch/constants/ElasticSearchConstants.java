@@ -23,17 +23,6 @@ package de.gerdiproject.harvest.submission.elasticsearch.constants;
  */
 public class ElasticSearchConstants
 {
-    public static final String NO_MAPPING_ERROR =
-            "No Mappings exist or could be created.\nIs the Elastic Search URL correct and is the server available?";
-    public static final String NO_MAPPING_WARNING = "Elastic-Search Mapping for index '%s' does NOT exist.";
-    public static final String MAPPING_CREATE_SUCCESS = "Created Elastic-Search Mapping for index '%s' and type '%s'.";
-    public static final String MAPPING_CREATE_FAILURE =
-            "Could not create Elastic-Search Mapping for index '%s' and type '%s'.";
-
-    public static final String MAPPINGS_URL = "%s://%s/%s?pretty";
-    public static final String MAPPINGS_URL_WITH_PORT = "%s://%s:%d/%s?pretty";
-    public static final String BASIC_MAPPING = "{\"mappings\":{\"%s\":{\"properties\":{}}}}";
-
     public static final String BATCH_INDEX_INSTRUCTION = "{\"index\":{\"_id\":\"%s\"}}%n%s%n";
     public static final String BATCH_DELETE_INSTRUCTION = "{\"delete\":{\"_id\":\"%s\"}}%n";
     public static final String BULK_SUBMISSION_URL_SUFFIX = "_bulk";
@@ -49,7 +38,7 @@ public class ElasticSearchConstants
     public static final String EMPTY_DATE_RANGE_REPLACEMENT = "";
 
     // SERVER RESPONSE JSON
-    public static final String DOCUMENT_SUBMIT_ERROR = "Could not submit document #%d%n%s";
+    public static final String DOCUMENT_SUBMIT_ERROR = "Could not submit document #%s%n%s";
     public static final String DOCUMENT_SUBMIT_ERROR_REASON = "  %s: %s";
     public static final String DOCUMENT_SUBMIT_ERROR_CAUSE = ", caused by%n  %s: %s";
 

@@ -19,6 +19,7 @@ import java.io.File;
 
 import de.gerdiproject.harvest.IDocument;
 import de.gerdiproject.harvest.MainContext;
+import de.gerdiproject.harvest.application.events.ContextDestroyedEvent;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.harvester.events.GetProviderNameEvent;
 import de.gerdiproject.harvest.save.HarvestSaver;
@@ -66,6 +67,8 @@ public class HarvesterCache
             this.versionsCache = null;
             this.changesCache = null;
         }
+
+        EventSystem.addListener(ContextDestroyedEvent.class, this::onContextDestroyed);
     }
 
 
@@ -135,11 +138,36 @@ public class HarvesterCache
 
 
     /**
-     * Initializes all caches.
+     * Applies all cache changes that were caused by the latest harvest.
+     * 
+     * @param isAborted if true, the harvest was aborted
+     * @param isSuccessful if true, the harvest was completed
      */
-    public void init()
+    public void applyChanges(boolean isSuccessful, boolean isAborted)
     {
-        versionsCache.init();
+        changesCache.applyChanges();
+
+        if (isSuccessful && !isAborted)
+            versionsCache.removeDeletedEntries(changesCache);
+
+        versionsCache.applyChanges();
+    }
+
+
+    /**
+     * Initializes all caches.
+     * 
+     * @param hash the hash value that represents the entire source data of the
+     *            harvester
+     * @param harvestStartIndex the start index of the harvesting range
+     * @param harvestEndIndex the exclusive end index of the harvesting range
+     */
+    public void init(String hash, int harvestStartIndex, int harvestEndIndex)
+    {
+        final String harvesterHash = hash == null
+                ? null
+                : HashGenerator.instance().getShaHash(hash + harvestStartIndex + harvestEndIndex);
+        versionsCache.init(harvesterHash);
         changesCache.init(versionsCache);
     }
 
@@ -185,5 +213,21 @@ public class HarvesterCache
         final String oldHash = versionsCache.getDocumentHash(documentId);
 
         return oldHash == null || !oldHash.equals(currentHash);
+    }
+
+
+    /**
+     * This callback function is called when the web service is terminated. It
+     * cleans up temporary files.
+     * 
+     * @param event the event that triggered the callback
+     */
+    private void onContextDestroyed(ContextDestroyedEvent event) // NOPMD - Event callbacks always require the event
+    {
+        if (versionsCache != null)
+            versionsCache.clearWorkInProgress();
+
+        if (changesCache != null)
+            changesCache.clearWorkInProgress();
     }
 }

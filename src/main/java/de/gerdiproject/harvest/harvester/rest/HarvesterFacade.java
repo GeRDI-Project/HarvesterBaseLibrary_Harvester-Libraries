@@ -16,20 +16,21 @@
 package de.gerdiproject.harvest.harvester.rest;
 
 
-import de.gerdiproject.harvest.state.StateMachine;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.MultivaluedMap;
+
 import de.gerdiproject.harvest.MainContext;
 import de.gerdiproject.harvest.config.Configuration;
 import de.gerdiproject.harvest.config.constants.ConfigurationConstants;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.harvester.constants.HarvesterConstants;
+import de.gerdiproject.harvest.harvester.events.GetHarvesterOutdatedEvent;
 import de.gerdiproject.harvest.harvester.events.GetMaxDocumentCountEvent;
-
-import javax.ws.rs.Produces;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.MultivaluedMap;
+import de.gerdiproject.harvest.state.StateMachine;
 
 
 /**
@@ -47,15 +48,14 @@ public class HarvesterFacade
      * Starts a harvest using the harvester that is registered in the
      * MainContext.
      *
-     * @param formParams
-     *            optional parameters encompass "from" and "to" to set the
-     *            harvest range
+     * @param formParams optional parameters encompass "from" and "to" to set
+     *            the harvest range
      * @return a status string that describes the success or failure of the
      *         harvest
      */
     @POST
     @Produces({
-        MediaType.TEXT_PLAIN
+            MediaType.TEXT_PLAIN
     })
     public String startHarvest(final MultivaluedMap<String, String> formParams)
     {
@@ -71,7 +71,7 @@ public class HarvesterFacade
      */
     @GET
     @Produces({
-        MediaType.TEXT_PLAIN, MediaType.APPLICATION_JSON
+            MediaType.TEXT_PLAIN, MediaType.APPLICATION_JSON
     })
     public String getInfo()
     {
@@ -110,6 +110,24 @@ public class HarvesterFacade
 
 
     /**
+     * Checks if the harvester should be triggered again.
+     * 
+     * @return true if the harvested data is outdated
+     */
+    @GET
+    @Path("outdated")
+    @Produces({
+            MediaType.TEXT_PLAIN, MediaType.APPLICATION_JSON
+    })
+    public String isOutdated()
+    {
+        Boolean isOutDated = EventSystem.sendSynchronousEvent(new GetHarvesterOutdatedEvent());
+
+        return isOutDated == null ? Boolean.toString(false) : isOutDated.toString();
+    }
+
+
+    /**
      * Aborts an ongoing process, such as harvesting, submitting, or saving.
      *
      * @return a status message describing if the abort could be started or not
@@ -117,7 +135,7 @@ public class HarvesterFacade
     @POST
     @Path("abort")
     @Produces({
-        MediaType.TEXT_PLAIN
+            MediaType.TEXT_PLAIN
     })
     public String abort()
     {
@@ -133,7 +151,7 @@ public class HarvesterFacade
     @POST
     @Path("save")
     @Produces({
-        MediaType.TEXT_PLAIN
+            MediaType.TEXT_PLAIN
     })
     public String saveDocuments()
     {
@@ -144,12 +162,13 @@ public class HarvesterFacade
     /**
      * Submits harvested documents.
      *
-     * @return a status message describing if the submission could be started or not
+     * @return a status message describing if the submission could be started or
+     *         not
      */
     @POST
     @Path("submit")
     @Produces({
-        MediaType.TEXT_PLAIN
+            MediaType.TEXT_PLAIN
     })
     public String submitDocuments()
     {
@@ -168,7 +187,7 @@ public class HarvesterFacade
         final String latestChecksum = ""; // TODO get from disk
         // prospector(?)
         final String currentChecksum = harvester.getHash(true);
-
+    
         return String.valueOf(currentChecksum != null && !currentChecksum.equals(latestChecksum));
     }
     */
