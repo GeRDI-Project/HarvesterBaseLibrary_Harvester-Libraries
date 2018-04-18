@@ -67,16 +67,16 @@ public class DocumentChangesCache
     {
         this.gson = GsonUtils.getGson();
         this.stableFile = new File(
-                String.format(
-                        CacheConstants.UPDATE_CACHE_FILE_PATH,
-                        MainContext.getModuleName(),
-                        filePrefix));
+            String.format(
+                CacheConstants.UPDATE_CACHE_FILE_PATH,
+                MainContext.getModuleName(),
+                filePrefix));
 
         this.workInProgressFile = new File(
-                String.format(
-                        CacheConstants.UPDATE_CACHE_TEMP_FILE_PATH,
-                        MainContext.getModuleName(),
-                        filePrefix));
+            String.format(
+                CacheConstants.UPDATE_CACHE_TEMP_FILE_PATH,
+                MainContext.getModuleName(),
+                filePrefix));
     }
 
 
@@ -94,9 +94,9 @@ public class DocumentChangesCache
 
             FileUtils.createEmptyFile(workInProgressFile);
             final JsonWriter writer = new JsonWriter(
-                    new OutputStreamWriter(
-                            new FileOutputStream(workInProgressFile),
-                            MainContext.getCharset()));
+                new OutputStreamWriter(
+                    new FileOutputStream(workInProgressFile),
+                    MainContext.getCharset()));
 
             final AtomicInteger numberOfCopiedIds = new AtomicInteger(0);
 
@@ -104,10 +104,12 @@ public class DocumentChangesCache
             boolean isSuccessful = false;
             writer.beginObject();
             isSuccessful = versionsCache.forEach((String documentId, String documentHash) -> {
-                try {
+                try
+                {
                     writer.name(documentId);
                     writer.nullValue();
-                } catch (IOException e) {
+                } catch (IOException e)
+                {
                     return false;
                 }
                 numberOfCopiedIds.incrementAndGet();
@@ -153,7 +155,7 @@ public class DocumentChangesCache
     /**
      * (Over{@literal-})writes a stable cache file of document changes, with the
      * work in progress changes.
-     * 
+     *
      */
     public void applyChanges()
     {
@@ -181,7 +183,7 @@ public class DocumentChangesCache
             try {
                 // prepare json reader for the cached document list
                 final JsonReader reader = new JsonReader(
-                        new InputStreamReader(new FileInputStream(stableFile), MainContext.getCharset()));
+                    new InputStreamReader(new FileInputStream(stableFile), MainContext.getCharset()));
 
                 // iterate through cached documents
                 reader.beginObject();
@@ -239,12 +241,12 @@ public class DocumentChangesCache
         try {
             // prepare json reader for the cached document list
             final JsonReader reader = new JsonReader(
-                    new InputStreamReader(new FileInputStream(workInProgressFile), MainContext.getCharset()));
+                new InputStreamReader(new FileInputStream(workInProgressFile), MainContext.getCharset()));
 
             final JsonWriter writer = new JsonWriter(
-                    new OutputStreamWriter(
-                            new FileOutputStream(tempFile),
-                            MainContext.getCharset()));
+                new OutputStreamWriter(
+                    new FileOutputStream(tempFile),
+                    MainContext.getCharset()));
 
             reader.beginObject();
             writer.beginObject();
@@ -318,7 +320,7 @@ public class DocumentChangesCache
             try {
                 // prepare json reader for the cached document list
                 final JsonReader reader = new JsonReader(
-                        new InputStreamReader(new FileInputStream(stableFile), MainContext.getCharset()));
+                    new InputStreamReader(new FileInputStream(stableFile), MainContext.getCharset()));
 
                 reader.beginObject();
 
@@ -328,8 +330,10 @@ public class DocumentChangesCache
                     if (id.equals(documentId)) {
                         if (reader.peek() == JsonToken.BEGIN_OBJECT)
                             document = gson.fromJson(reader, DataCiteJson.class);
+
                         break;
                     }
+
                     reader.skipValue();
                 }
 
@@ -337,6 +341,7 @@ public class DocumentChangesCache
             } catch (IOException e) { // NOPMD - nothing to do here, document is null by default
             }
         }
+
         return document;
     }
 }

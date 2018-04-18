@@ -55,7 +55,7 @@ public class HarvesterFacade
      */
     @POST
     @Produces({
-            MediaType.TEXT_PLAIN
+        MediaType.TEXT_PLAIN
     })
     public String startHarvest(final MultivaluedMap<String, String> formParams)
     {
@@ -71,7 +71,7 @@ public class HarvesterFacade
      */
     @GET
     @Produces({
-            MediaType.TEXT_PLAIN, MediaType.APPLICATION_JSON
+        MediaType.TEXT_PLAIN, MediaType.APPLICATION_JSON
     })
     public String getInfo()
     {
@@ -111,13 +111,13 @@ public class HarvesterFacade
 
     /**
      * Checks if the harvester should be triggered again.
-     * 
+     *
      * @return true if the harvested data is outdated
      */
     @GET
     @Path("outdated")
     @Produces({
-            MediaType.TEXT_PLAIN, MediaType.APPLICATION_JSON
+        MediaType.TEXT_PLAIN, MediaType.APPLICATION_JSON
     })
     public String isOutdated()
     {
@@ -135,7 +135,7 @@ public class HarvesterFacade
     @POST
     @Path("abort")
     @Produces({
-            MediaType.TEXT_PLAIN
+        MediaType.TEXT_PLAIN
     })
     public String abort()
     {
@@ -151,7 +151,7 @@ public class HarvesterFacade
     @POST
     @Path("save")
     @Produces({
-            MediaType.TEXT_PLAIN
+        MediaType.TEXT_PLAIN
     })
     public String saveDocuments()
     {
@@ -168,7 +168,7 @@ public class HarvesterFacade
     @POST
     @Path("submit")
     @Produces({
-            MediaType.TEXT_PLAIN
+        MediaType.TEXT_PLAIN
     })
     public String submitDocuments()
     {
@@ -187,7 +187,7 @@ public class HarvesterFacade
         final String latestChecksum = ""; // TODO get from disk
         // prospector(?)
         final String currentChecksum = harvester.getHash(true);
-    
+
         return String.valueOf(currentChecksum != null && !currentChecksum.equals(latestChecksum));
     }
     */

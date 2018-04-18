@@ -50,7 +50,7 @@ public class ProcessTimeMeasure
 
     /**
      * Initializes the time measuring event listeners.
-     * 
+     *
      * @param startEvent the class of an Event that marks the beginning of the
      *            time measurement
      * @param endEvent the class of an Event that marks the end of the time
@@ -73,7 +73,7 @@ public class ProcessTimeMeasure
 
         // create process aborted event callback
         Consumer<AbortingStartedEvent> onProcessAborted =
-                (AbortingStartedEvent event) -> end(ProcessStatus.Aborted);
+            (AbortingStartedEvent event) -> end(ProcessStatus.Aborted);
 
         EventSystem.addListener(startEvent, onProcessStarted);
         EventSystem.addListener(endEvent, onProcessFinished);
@@ -95,7 +95,7 @@ public class ProcessTimeMeasure
     /**
      * Finishes the process time measurement, updating the status to the reason
      * why the process stopped.
-     * 
+     *
      * @param reasonToEnd a new status that represents the reason for the
      *            process end
      */
@@ -111,7 +111,7 @@ public class ProcessTimeMeasure
     /**
      * Sets all fields by copying them from another
      * {@linkplain ProcessTimeMeasure}, if the process is currently not started.
-     * 
+     *
      * @param other another time measure
      */
     public void set(ProcessTimeMeasure other)
@@ -126,7 +126,7 @@ public class ProcessTimeMeasure
 
     /**
      * Sets all fields according to specified values.
-     * 
+     *
      * @param startTimestamp the new timestamp at which the measure started
      * @param endTimestamp the new timestamp at which the measure ended
      * @param status the new status of the measure
@@ -165,7 +165,7 @@ public class ProcessTimeMeasure
 
     /**
      * Returns the status of the measured process.
-     * 
+     *
      * @return the status of the measured process
      */
     public ProcessStatus getStatus()
@@ -179,15 +179,15 @@ public class ProcessTimeMeasure
     {
         if (endTimestamp != -1)
             return String.format(
-                    HarvestTimeKeeperConstants.STATUS_FORMAT,
-                    status.name(),
-                    new Date(endTimestamp).toString());
+                       HarvestTimeKeeperConstants.STATUS_FORMAT,
+                       status.name(),
+                       new Date(endTimestamp).toString());
 
         if (startTimestamp != -1)
             return String.format(
-                    HarvestTimeKeeperConstants.STATUS_FORMAT,
-                    status.name(),
-                    new Date(startTimestamp).toString());
+                       HarvestTimeKeeperConstants.STATUS_FORMAT,
+                       status.name(),
+                       new Date(startTimestamp).toString());
 
         return status.name();
     }

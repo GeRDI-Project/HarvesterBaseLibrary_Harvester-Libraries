@@ -65,17 +65,17 @@ public class ElasticSearchSubmitter extends AbstractSubmitter
 
         // build a string for bulk-posting to Elastic search
         documents.forEach(
-                (String documentId, IDocument document) -> batchRequestBuilder.append(
-                        createBulkInstruction(documentId, document)));
+            (String documentId, IDocument document) -> batchRequestBuilder.append(
+                createBulkInstruction(documentId, document)));
 
 
         // send POST request to Elastic search
         String response = httpRequester.getRestResponse(
-                RestRequestType.POST,
-                url.toString(),
-                batchRequestBuilder.toString(),
-                credentials,
-                MediaType.APPLICATION_JSON);
+                              RestRequestType.POST,
+                              url.toString(),
+                              batchRequestBuilder.toString(),
+                              credentials,
+                              MediaType.APPLICATION_JSON);
 
         // parse JSON response
         ElasticSearchResponse responseJson = GsonUtils.getGson().fromJson(response, ElasticSearchResponse.class);
@@ -110,6 +110,7 @@ public class ElasticSearchSubmitter extends AbstractSubmitter
                 sb.append(indexElement.getErrorText());
             }
         }
+
         return sb.toString();
     }
 
@@ -130,9 +131,9 @@ public class ElasticSearchSubmitter extends AbstractSubmitter
             String jsonString = toElasticSearchJson(doc);
 
             bulkInstruction = String.format(
-                    ElasticSearchConstants.BATCH_INDEX_INSTRUCTION,
-                    documentId,
-                    jsonString);
+                                  ElasticSearchConstants.BATCH_INDEX_INSTRUCTION,
+                                  documentId,
+                                  jsonString);
         } else
             bulkInstruction = String.format(ElasticSearchConstants.BATCH_DELETE_INSTRUCTION, documentId);
 
@@ -154,10 +155,10 @@ public class ElasticSearchSubmitter extends AbstractSubmitter
         final String jsonString = GsonUtils.getGson().toJson(document, document.getClass());
 
         return jsonString.replaceAll(
-                ElasticSearchConstants.DATE_RANGE_REGEX,
-                ElasticSearchConstants.DATE_RANGE_REPLACEMENT).replaceAll(
-                        ElasticSearchConstants.DATE_REGEX,
-                        ElasticSearchConstants.DATE_REPLACEMENT);
+                   ElasticSearchConstants.DATE_RANGE_REGEX,
+                   ElasticSearchConstants.DATE_RANGE_REPLACEMENT).replaceAll(
+                   ElasticSearchConstants.DATE_REGEX,
+                   ElasticSearchConstants.DATE_REPLACEMENT);
     }
 
 

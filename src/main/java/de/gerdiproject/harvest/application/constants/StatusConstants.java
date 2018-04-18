@@ -29,28 +29,28 @@ public class StatusConstants
 {
     public static final String NOT_AVAILABLE = "N/A";
     public static final String FAILED_HARVEST_HEALTH_CHECK = String.format(
-            StateConstants.HARVEST_STATUS,
-            ProcessTimeMeasure.ProcessStatus.Failed.toString());
+                                                                 StateConstants.HARVEST_STATUS,
+                                                                 ProcessTimeMeasure.ProcessStatus.Failed.toString());
 
     public static final String FAILED_SAVE_HEALTH_CHECK = String.format(
-            StateConstants.SAVE_STATUS,
-            ProcessTimeMeasure.ProcessStatus.Failed.toString());
+                                                              StateConstants.SAVE_STATUS,
+                                                              ProcessTimeMeasure.ProcessStatus.Failed.toString());
 
     public static final String FAILED_SUBMISSION_HEALTH_CHECK = String.format(
-            StateConstants.SUBMIT_STATUS,
-            ProcessTimeMeasure.ProcessStatus.Failed.toString());
+                                                                    StateConstants.SUBMIT_STATUS,
+                                                                    ProcessTimeMeasure.ProcessStatus.Failed.toString());
 
     public static final String REST_INFO = "- %s Extended REST Interface -%n%n"
-            + "GET          Returns this overview of possible HTTP calls.%n"
-            + "GET/state    Returns plain text describing what the service is doing.%n"
-            + "GET/health   Returns plain text that serves as a health check.%n"
-            + "GET/progress Returns two slash-separated numbers, representing the%n"
-            + "             progress of the current task, or N/A if idle.%n"
-            + "GET/max-documents Returns the max number of documents that can be%n"
-            + "                  harvested considering the harvesting range.%n"
-            + "GET/data-provider Returns the name of the data provider that is harvested.%n"
-            + "GET/harvested-documents Returns the number of harvested and currently%n"
-            + "                        cached documents.";
+                                           + "GET          Returns this overview of possible HTTP calls.%n"
+                                           + "GET/state    Returns plain text describing what the service is doing.%n"
+                                           + "GET/health   Returns plain text that serves as a health check.%n"
+                                           + "GET/progress Returns two slash-separated numbers, representing the%n"
+                                           + "             progress of the current task, or N/A if idle.%n"
+                                           + "GET/max-documents Returns the max number of documents that can be%n"
+                                           + "                  harvested considering the harvesting range.%n"
+                                           + "GET/data-provider Returns the name of the data provider that is harvested.%n"
+                                           + "GET/harvested-documents Returns the number of harvested and currently%n"
+                                           + "                        cached documents.";
 
 
     /**

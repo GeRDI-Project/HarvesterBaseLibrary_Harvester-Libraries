@@ -28,7 +28,7 @@ import de.gerdiproject.harvest.utils.cache.constants.CacheConstants;
 
 /**
  * A small class with helper functions that are used for file operations.
- * 
+ *
  * @author Robin Weiss
  *
  */
@@ -47,7 +47,7 @@ public class FileUtils
 
     /**
      * Attempts to delete a file from disk if it exists and logs any errors.
-     * 
+     *
      * @param deletedFile the file that is to be deleted
      */
     public static void deleteFile(File deletedFile)
@@ -59,7 +59,7 @@ public class FileUtils
 
     /**
      * Replaces one cache file with another and logs any errors.
-     * 
+     *
      * @param oldFile the file that is to be replaced
      * @param newFile the new file
      */
@@ -74,31 +74,32 @@ public class FileUtils
 
     /**
      * Copies one cache file to another and logs any errors.
-     * 
+     *
      * @param sourceFile the file that is to be copied
      * @param targetFile the destination file
      */
     public static void copyFile(File sourceFile, File targetFile)
     {
         createDirectories(targetFile);
+
         try {
             Files.copy(sourceFile.toPath(), targetFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
         } catch (IOException e) {
             LOGGER.error(
-                    String.format(
-                            CacheConstants.COPY_FILE_FAILED,
-                            sourceFile.getAbsolutePath(),
-                            targetFile.getAbsolutePath()));
+                String.format(
+                    CacheConstants.COPY_FILE_FAILED,
+                    sourceFile.getAbsolutePath(),
+                    targetFile.getAbsolutePath()));
         }
     }
 
 
     /**
      * Attempts to create all directories of a specified file.
-     * 
+     *
      * @param file the file or directory for which all directories are supposed
      *            to be created
-     * 
+     *
      * @return true if the directories exist or were created or the file does
      *         not have directories
      */
@@ -112,7 +113,7 @@ public class FileUtils
 
     /**
      * Creates a new cache file, replacing any file that already exists.
-     * 
+     *
      * @param file the file that is to be created
      */
     public static void createEmptyFile(File file)
@@ -121,11 +122,13 @@ public class FileUtils
 
         // attempt to create parent folder
         boolean creationSuccessful = createDirectories(file);
+
         try {
             creationSuccessful &= file.createNewFile();
         } catch (IOException e) {
             creationSuccessful = false;
         }
+
         if (!creationSuccessful)
             LOGGER.error(String.format(CacheConstants.CACHE_CREATE_FAILED, file.getAbsolutePath()));
     }

@@ -48,7 +48,7 @@ public class HarvestStartedEvent implements IEvent
 
     /**
      * Returns the index of the first document to be harvested.
-     * 
+     *
      * @return the index of the first document to be harvested
      */
     public int getStartIndex()
@@ -59,7 +59,7 @@ public class HarvestStartedEvent implements IEvent
 
     /**
      * Returns the index of the last document that is to be harvested + 1.
-     * 
+     *
      * @return the index of the last document that is to be harvested + 1
      */
     public int getEndIndex()
@@ -70,7 +70,7 @@ public class HarvestStartedEvent implements IEvent
 
     /**
      * Returns the unix timestamp at which the event was created.
-     * 
+     *
      * @return the unix timestamp at which the event was created
      */
     public long getStartTimestamp()

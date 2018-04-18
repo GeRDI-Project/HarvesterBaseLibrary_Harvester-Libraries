@@ -39,18 +39,18 @@ public class SubmissionConstants
     public static final String NO_URL_ERROR = "Cannot submit documents: You need to set up a valid submission URL!";
     public static final String NO_DOCS_ERROR = "Cannot submit documents: There are no documents to submit!";
     public static final String DOCUMENT_TOO_LARGE =
-            "Cannot submit document %s, because its submission size is %d bytes,"
-                    + " which is larger than the maximum permitted size of %d bytes.";
+        "Cannot submit document %s, because its submission size is %d bytes,"
+        + " which is larger than the maximum permitted size of %d bytes.";
     public static final String OUTDATED_ERROR =
-            "Cannot submit documents: There are no changes since the last submission!\n"
-                    + "If you want to submit anyway, set the '"
-                    + ConfigurationConstants.SUBMIT_FORCED
-                    + "'-flag in the configuration.";
+        "Cannot submit documents: There are no changes since the last submission!\n"
+        + "If you want to submit anyway, set the '"
+        + ConfigurationConstants.SUBMIT_FORCED
+        + "'-flag in the configuration.";
     public static final String FAILED_HARVEST_ERROR =
-            "Cannot submit documents: The harvest was not completed successfully!\n"
-                    + "If you want to submit anyway, set the '"
-                    + ConfigurationConstants.SUBMIT_INCOMPLETE
-                    + "'-flag in the configuration.";
+        "Cannot submit documents: The harvest was not completed successfully!\n"
+        + "If you want to submit anyway, set the '"
+        + ConfigurationConstants.SUBMIT_INCOMPLETE
+        + "'-flag in the configuration.";
 
 
     /**

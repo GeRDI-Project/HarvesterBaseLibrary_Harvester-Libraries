@@ -45,7 +45,7 @@ public class HarvesterCache
 
     /**
      * Constructs a cache for a harvester.
-     * 
+     *
      * @param harvesterName the unique name of the harvester
      */
     public HarvesterCache(final String harvesterName)
@@ -55,10 +55,11 @@ public class HarvesterCache
 
         // create cache directory
         final File cacheDirectory =
-                new File(String.format(CacheConstants.CACHE_FOLDER_PATH, MainContext.getModuleName()));
+            new File(String.format(CacheConstants.CACHE_FOLDER_PATH, MainContext.getModuleName()));
 
         // only register cache if its files can be created
         final boolean isDirectoryCreated = cacheDirectory.exists() || cacheDirectory.mkdirs();
+
         if (isDirectoryCreated) {
             this.versionsCache = new DocumentVersionsCache(harvesterName);
             this.changesCache = new DocumentChangesCache(harvesterName);
@@ -74,7 +75,7 @@ public class HarvesterCache
 
     /**
      * Returns the cache that contains updated and new documents.
-     * 
+     *
      * @return the cache that contains updated and new documents
      */
     public DocumentChangesCache getChangesCache()
@@ -86,7 +87,7 @@ public class HarvesterCache
     /**
      * Returns the cache that contains hash values of already harvested
      * documents.
-     * 
+     *
      * @return the cache that contains hash values of already harvested
      *         documents
      */
@@ -112,7 +113,7 @@ public class HarvesterCache
     /**
      * Checks if a document has changed since the last harvest and either skips
      * it, or adds it to the changes cache.
-     * 
+     *
      * @param doc the document that is to be processed
      */
     public void cacheDocument(IDocument doc)
@@ -139,7 +140,7 @@ public class HarvesterCache
 
     /**
      * Applies all cache changes that were caused by the latest harvest.
-     * 
+     *
      * @param isAborted if true, the harvest was aborted
      * @param isSuccessful if true, the harvest was completed
      */
@@ -156,7 +157,7 @@ public class HarvesterCache
 
     /**
      * Initializes all caches.
-     * 
+     *
      * @param hash the hash value that represents the entire source data of the
      *            harvester
      * @param harvestStartIndex the start index of the harvesting range
@@ -165,8 +166,8 @@ public class HarvesterCache
     public void init(String hash, int harvestStartIndex, int harvestEndIndex)
     {
         final String harvesterHash = hash == null
-                ? null
-                : HashGenerator.instance().getShaHash(hash + harvestStartIndex + harvestEndIndex);
+                                     ? null
+                                     : HashGenerator.instance().getShaHash(hash + harvestStartIndex + harvestEndIndex);
         versionsCache.init(harvesterHash);
         changesCache.init(versionsCache);
     }
@@ -175,7 +176,7 @@ public class HarvesterCache
     /**
      * Removes a document from the deletion cache, but does not add it to the
      * changes cache.
-     * 
+     *
      * @param doc the document that is to be skipped
      */
     private void skipDocument(IDocument doc)
@@ -187,9 +188,9 @@ public class HarvesterCache
 
     /**
      * Assembles a unique identifier of a document.
-     * 
+     *
      * @param doc the document of which an ID is to be created
-     * 
+     *
      * @return a unique identifier of a document
      */
     private String getDocumentId(IDocument doc)
@@ -201,9 +202,9 @@ public class HarvesterCache
     /**
      * Checks whether the hash of a document differs from that of the versions
      * cache.
-     * 
+     *
      * @param doc the document that is to be checked
-     * 
+     *
      * @return true, if the hash value of the document has changed
      */
     private boolean hasDocumentChanged(IDocument doc)
@@ -219,7 +220,7 @@ public class HarvesterCache
     /**
      * This callback function is called when the web service is terminated. It
      * cleans up temporary files.
-     * 
+     *
      * @param event the event that triggered the callback
      */
     private void onContextDestroyed(ContextDestroyedEvent event) // NOPMD - Event callbacks always require the event

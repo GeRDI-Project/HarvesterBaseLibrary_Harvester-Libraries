@@ -48,9 +48,9 @@ public abstract class AbstractProgressingState implements IState
      * Event callback for the start of the aborting process.
      */
     private final Consumer<AbortingStartedEvent> onAbortingStarted =
-            (AbortingStartedEvent e) -> {
-                StateMachine.setState(new AbortingState(getName()));
-            };
+    (AbortingStartedEvent e) -> {
+        StateMachine.setState(new AbortingState(getName()));
+    };
 
 
     /**
@@ -88,15 +88,15 @@ public abstract class AbstractProgressingState implements IState
 
         if (isMaxNumberKnown)
             status = String.format(
-                    StateConstants.PROGESS_TEXT_DETAILED,
-                    currentProgress,
-                    maxProgress,
-                    getProgressInPercent(),
-                    getDurationText(estimateRemainingSeconds()));
+                         StateConstants.PROGESS_TEXT_DETAILED,
+                         currentProgress,
+                         maxProgress,
+                         getProgressInPercent(),
+                         getDurationText(estimateRemainingSeconds()));
         else
             status = String.format(
-                    StateConstants.PROGESS_TEXT_NO_MAX_VALUE,
-                    currentProgress);
+                         StateConstants.PROGESS_TEXT_NO_MAX_VALUE,
+                         currentProgress);
 
         return status;
     }
@@ -115,9 +115,9 @@ public abstract class AbstractProgressingState implements IState
     {
         if (isMaxNumberKnown)
             return String.format(
-                    StateConstants.PROGESS_TEXT_SIMPLE,
-                    currentProgress,
-                    maxProgress);
+                       StateConstants.PROGESS_TEXT_SIMPLE,
+                       currentProgress,
+                       maxProgress);
         else
             return String.valueOf(currentProgress);
     }
@@ -217,12 +217,12 @@ public abstract class AbstractProgressingState implements IState
         // log updated progress in percent
         if (isMaxNumberKnown && newProgressInPercent > oldProgressInPercent) {
             LOGGER.debug(
-                    String.format(
-                            StateConstants.PROGESS_TEXT,
-                            getName(),
-                            newProgressInPercent,
-                            currentProgress,
-                            maxProgress));
+                String.format(
+                    StateConstants.PROGESS_TEXT,
+                    getName(),
+                    newProgressInPercent,
+                    currentProgress,
+                    maxProgress));
         }
     }
 }

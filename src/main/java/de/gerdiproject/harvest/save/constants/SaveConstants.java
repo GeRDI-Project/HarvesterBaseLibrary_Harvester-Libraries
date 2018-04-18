@@ -32,7 +32,7 @@ public class SaveConstants
     public static final String SAVE_FOLDER_NAME = "harvestedIndices/";
     public static final String SAVE_FILE_NAME = SAVE_FOLDER_NAME + "%s_result_%d.json";
     public static final String SAVE_FILE_NAME_PARTIAL =
-            SAVE_FOLDER_NAME + "%s_partialResult_%d-%d_%d.json";
+        SAVE_FOLDER_NAME + "%s_partialResult_%d-%d_%d.json";
     public static final String SAVE_FAILED_EMPTY = "Could not save documents: There are no changes to save!";
 
 

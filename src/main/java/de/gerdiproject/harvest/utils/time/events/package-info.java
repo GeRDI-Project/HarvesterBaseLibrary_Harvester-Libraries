@@ -16,7 +16,7 @@
  */
 /**
  * This package contains events that are sent by time measuring related classes.
- * 
+ *
  * @author Robin Weiss
  */
 package de.gerdiproject.harvest.utils.time.events;

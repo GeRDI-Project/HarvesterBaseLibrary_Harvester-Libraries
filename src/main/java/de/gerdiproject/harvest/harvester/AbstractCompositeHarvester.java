@@ -197,9 +197,11 @@ public abstract class AbstractCompositeHarvester extends AbstractHarvester
 
         for (AbstractHarvester h : subHarvesters) {
             hasOutdatedSubHarvesters |= h.isOutdated();
+
             if (hasOutdatedSubHarvesters)
                 break;
         }
+
         return hasOutdatedSubHarvesters;
     }
 

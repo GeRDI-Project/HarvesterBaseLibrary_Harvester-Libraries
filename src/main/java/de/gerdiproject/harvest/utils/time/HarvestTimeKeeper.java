@@ -79,8 +79,8 @@ public class HarvestTimeKeeper
     private void loadFromDisk()
     {
         final String stableFilePath = String.format(
-                CacheConstants.HARVEST_TIME_KEEPER_CACHE_FILE_PATH,
-                MainContext.getModuleName());
+                                          CacheConstants.HARVEST_TIME_KEEPER_CACHE_FILE_PATH,
+                                          MainContext.getModuleName());
 
         final DiskIO diskReader = new DiskIO();
         final HarvestTimeKeeper parsedKeeper = diskReader.getObject(stableFilePath, HarvestTimeKeeper.class);
@@ -129,25 +129,25 @@ public class HarvestTimeKeeper
     /**
      * Returns true if the harvest was finished prematurely due to an exception
      * or a user triggered abort.
-     * 
+     *
      * @return true if the harvest was aborted or it failed
      */
     public boolean isHarvestIncomplete()
     {
         return harvestMeasure.getStatus() == ProcessStatus.Failed
-                || harvestMeasure.getStatus() == ProcessStatus.Aborted;
+               || harvestMeasure.getStatus() == ProcessStatus.Aborted;
     }
 
 
     /**
      * Returns true if there are unsubmitted documents.
-     * 
+     *
      * @return true ifthere are unsubmitted documents
      */
     public boolean hasUnsubmittedChanges()
     {
         return harvestMeasure.getStatus() != ProcessStatus.NotStarted
-                && submissionMeasure.getStatus() != ProcessStatus.Finished;
+               && submissionMeasure.getStatus() != ProcessStatus.Finished;
     }
 
 
@@ -157,8 +157,8 @@ public class HarvestTimeKeeper
     private void saveToDisk()
     {
         final String stableFilePath = String.format(
-                CacheConstants.HARVEST_TIME_KEEPER_CACHE_FILE_PATH,
-                MainContext.getModuleName());
+                                          CacheConstants.HARVEST_TIME_KEEPER_CACHE_FILE_PATH,
+                                          MainContext.getModuleName());
 
         final DiskIO diskWriter = new DiskIO();
         diskWriter.writeObjectToFile(stableFilePath, this);
@@ -172,7 +172,7 @@ public class HarvestTimeKeeper
     /**
      * Callback function for the successful beginning of a harvest. Resets the
      * timestamps of the saving and submission process.
-     * 
+     *
      * @param event the event that triggered the callback
      */
     private void onHarvestStarted(HarvestStartedEvent event) // NOPMD - Event callbacks always require the event
@@ -186,7 +186,7 @@ public class HarvestTimeKeeper
      * This callback function is called when the status of a time measure
      * process is being changed. It updates time keeper cache file when a
      * process is finished.
-     * 
+     *
      * @param event the event that triggered the listener
      */
     private void onContextDestroyed(ContextDestroyedEvent event) // NOPMD - Event callbacks always require the event

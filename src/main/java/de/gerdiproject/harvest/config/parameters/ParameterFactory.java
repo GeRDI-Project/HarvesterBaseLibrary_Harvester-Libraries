@@ -116,12 +116,12 @@ public final class ParameterFactory
     public static BooleanParameter createAutoSave()
     {
         final List<Class<? extends IState>> allowedStates = Arrays.asList(
-                InitializationState.class,
-                ErrorState.class,
-                IdleState.class,
-                HarvestingState.class,
-                SavingState.class,
-                SubmittingState.class);
+                                                                InitializationState.class,
+                                                                ErrorState.class,
+                                                                IdleState.class,
+                                                                HarvestingState.class,
+                                                                SavingState.class,
+                                                                SubmittingState.class);
         return new BooleanParameter(ConfigurationConstants.AUTO_SAVE, allowedStates, true);
     }
 
@@ -136,12 +136,12 @@ public final class ParameterFactory
     public static BooleanParameter createAutoSubmit()
     {
         final List<Class<? extends IState>> allowedStates = Arrays.asList(
-                InitializationState.class,
-                ErrorState.class,
-                IdleState.class,
-                HarvestingState.class,
-                SavingState.class,
-                SubmittingState.class);
+                                                                InitializationState.class,
+                                                                ErrorState.class,
+                                                                IdleState.class,
+                                                                HarvestingState.class,
+                                                                SavingState.class,
+                                                                SubmittingState.class);
         return new BooleanParameter(ConfigurationConstants.AUTO_SUBMIT, allowedStates, false);
     }
 
@@ -156,10 +156,10 @@ public final class ParameterFactory
     public static BooleanParameter createWriteToDisk()
     {
         final List<Class<? extends IState>> allowedStates = Arrays.asList(
-                ErrorState.class,
-                IdleState.class,
-                SavingState.class,
-                SubmittingState.class);
+                                                                ErrorState.class,
+                                                                IdleState.class,
+                                                                SavingState.class,
+                                                                SubmittingState.class);
         return new BooleanParameter(ConfigurationConstants.WRITE_HTTP_TO_DISK, allowedStates, false);
     }
 
@@ -174,10 +174,10 @@ public final class ParameterFactory
     public static BooleanParameter createReadFromDisk()
     {
         final List<Class<? extends IState>> allowedStates = Arrays.asList(
-                ErrorState.class,
-                IdleState.class,
-                SavingState.class,
-                SubmittingState.class);
+                                                                ErrorState.class,
+                                                                IdleState.class,
+                                                                SavingState.class,
+                                                                SubmittingState.class);
         return new BooleanParameter(ConfigurationConstants.READ_HTTP_FROM_DISK, allowedStates, false);
     }
 
@@ -192,11 +192,11 @@ public final class ParameterFactory
     public static AbstractParameter<?> createForceHarvest()
     {
         final List<Class<? extends IState>> allowedStates = Arrays.asList(
-                InitializationState.class,
-                ErrorState.class,
-                IdleState.class,
-                SavingState.class,
-                SubmittingState.class);
+                                                                InitializationState.class,
+                                                                ErrorState.class,
+                                                                IdleState.class,
+                                                                SavingState.class,
+                                                                SubmittingState.class);
         return new BooleanParameter(ConfigurationConstants.FORCE_HARVEST, allowedStates, false);
     }
 
@@ -211,11 +211,11 @@ public final class ParameterFactory
     public static AbstractParameter<?> createDeleteUnfinishedSaves()
     {
         final List<Class<? extends IState>> allowedStates = Arrays.asList(
-                InitializationState.class,
-                ErrorState.class,
-                IdleState.class,
-                HarvestingState.class,
-                SubmittingState.class);
+                                                                InitializationState.class,
+                                                                ErrorState.class,
+                                                                IdleState.class,
+                                                                HarvestingState.class,
+                                                                SubmittingState.class);
         return new BooleanParameter(ConfigurationConstants.DELETE_UNFINISHED_SAVE, allowedStates, true);
     }
 
@@ -230,11 +230,11 @@ public final class ParameterFactory
     public static UrlParameter createSubmissionUrl()
     {
         final List<Class<? extends IState>> allowedStates = Arrays.asList(
-                InitializationState.class,
-                ErrorState.class,
-                IdleState.class,
-                HarvestingState.class,
-                SavingState.class);
+                                                                InitializationState.class,
+                                                                ErrorState.class,
+                                                                IdleState.class,
+                                                                HarvestingState.class,
+                                                                SavingState.class);
         return new UrlParameter(ConfigurationConstants.SUBMISSION_URL, allowedStates, null);
     }
 
@@ -247,11 +247,11 @@ public final class ParameterFactory
     public static StringParameter createSubmissionUserName()
     {
         final List<Class<? extends IState>> allowedStates = Arrays.asList(
-                InitializationState.class,
-                ErrorState.class,
-                IdleState.class,
-                HarvestingState.class,
-                SavingState.class);
+                                                                InitializationState.class,
+                                                                ErrorState.class,
+                                                                IdleState.class,
+                                                                HarvestingState.class,
+                                                                SavingState.class);
         return new StringParameter(ConfigurationConstants.SUBMISSION_USER_NAME, allowedStates, null);
     }
 
@@ -264,11 +264,11 @@ public final class ParameterFactory
     public static PasswordParameter createSubmissionPassword()
     {
         final List<Class<? extends IState>> allowedStates = Arrays.asList(
-                InitializationState.class,
-                ErrorState.class,
-                IdleState.class,
-                HarvestingState.class,
-                SavingState.class);
+                                                                InitializationState.class,
+                                                                ErrorState.class,
+                                                                IdleState.class,
+                                                                HarvestingState.class,
+                                                                SavingState.class);
         return new PasswordParameter(ConfigurationConstants.SUBMISSION_PASSWORD, allowedStates);
     }
 
@@ -283,11 +283,11 @@ public final class ParameterFactory
     public static IntegerParameter createSubmissionSize()
     {
         final List<Class<? extends IState>> allowedStates = Arrays.asList(
-                InitializationState.class,
-                ErrorState.class,
-                IdleState.class,
-                HarvestingState.class,
-                SavingState.class);
+                                                                InitializationState.class,
+                                                                ErrorState.class,
+                                                                IdleState.class,
+                                                                HarvestingState.class,
+                                                                SavingState.class);
         return new IntegerParameter(ConfigurationConstants.SUBMISSION_SIZE, allowedStates, 1048576);
     }
 
@@ -302,11 +302,11 @@ public final class ParameterFactory
     private static BooleanParameter createSubmitOutdated()
     {
         final List<Class<? extends IState>> allowedStates = Arrays.asList(
-                InitializationState.class,
-                ErrorState.class,
-                IdleState.class,
-                HarvestingState.class,
-                SavingState.class);
+                                                                InitializationState.class,
+                                                                ErrorState.class,
+                                                                IdleState.class,
+                                                                HarvestingState.class,
+                                                                SavingState.class);
         return new BooleanParameter(ConfigurationConstants.SUBMIT_FORCED, allowedStates, false);
     }
 
@@ -321,11 +321,11 @@ public final class ParameterFactory
     private static BooleanParameter createSubmitIncomplete()
     {
         final List<Class<? extends IState>> allowedStates = Arrays.asList(
-                InitializationState.class,
-                ErrorState.class,
-                IdleState.class,
-                HarvestingState.class,
-                SavingState.class);
+                                                                InitializationState.class,
+                                                                ErrorState.class,
+                                                                IdleState.class,
+                                                                HarvestingState.class,
+                                                                SavingState.class);
         return new BooleanParameter(ConfigurationConstants.SUBMIT_INCOMPLETE, allowedStates, false);
     }
 
@@ -340,9 +340,9 @@ public final class ParameterFactory
     public static IntegerParameter createHarvestStartIndex()
     {
         return new IntegerParameter(
-                ConfigurationConstants.HARVEST_START_INDEX,
-                ConfigurationConstants.HARVESTER_PARAM_ALLOWED_STATES,
-                0);
+                   ConfigurationConstants.HARVEST_START_INDEX,
+                   ConfigurationConstants.HARVESTER_PARAM_ALLOWED_STATES,
+                   0);
     }
 
 
@@ -356,9 +356,9 @@ public final class ParameterFactory
     public static IntegerParameter createHarvestEndIndex()
     {
         return new IntegerParameter(
-                ConfigurationConstants.HARVEST_END_INDEX,
-                ConfigurationConstants.HARVESTER_PARAM_ALLOWED_STATES,
-                Integer.MAX_VALUE);
+                   ConfigurationConstants.HARVEST_END_INDEX,
+                   ConfigurationConstants.HARVESTER_PARAM_ALLOWED_STATES,
+                   Integer.MAX_VALUE);
     }
 
 

@@ -35,7 +35,7 @@ public class StartSubmissionEvent implements IEvent
 
     /**
      * Constructor that sets submission flags.
-     * 
+     *
      * @param canSubmitOutdated true if partially harvested documents of failed
      *            or aborted harvests should be submitted
      * @param canSubmitFailedDocs true if the submission should be executed even
@@ -63,7 +63,7 @@ public class StartSubmissionEvent implements IEvent
     /**
      * Returns true if the submission should be executed even if there are no
      * changes.
-     * 
+     *
      * @return true if the submission should be executed even if there are no
      *         changes
      */
@@ -76,7 +76,7 @@ public class StartSubmissionEvent implements IEvent
     /**
      * Returns true if partially harvested documents of failed or aborted
      * harvests should be submitted.
-     * 
+     *
      * @return true if partially harvested documents of failed or aborted
      *         harvests should be submitted
      */

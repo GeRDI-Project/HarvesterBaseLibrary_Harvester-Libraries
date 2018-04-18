@@ -61,15 +61,15 @@ public class SavingState extends AbstractProgressingState
         super(numberOfDocsToBeSaved);
 
         this.onSaveFinished =
-                (SaveFinishedEvent e) -> {
-                    if (isAutoTriggered
-                            && MainContext.getConfiguration().getParameterValue(
-                                    ConfigurationConstants.AUTO_SUBMIT,
-                                    Boolean.class))
-                        EventSystem.sendEvent(new StartSubmissionEvent());
-                    else
-                        StateMachine.setState(new IdleState());
-                };
+        (SaveFinishedEvent e) -> {
+            if (isAutoTriggered
+                && MainContext.getConfiguration().getParameterValue(
+                    ConfigurationConstants.AUTO_SUBMIT,
+                    Boolean.class))
+                EventSystem.sendEvent(new StartSubmissionEvent());
+            else
+                StateMachine.setState(new IdleState());
+        };
     }
 
 
@@ -99,12 +99,12 @@ public class SavingState extends AbstractProgressingState
     {
         HarvestTimeKeeper timeKeeper = MainContext.getTimeKeeper();
         return String.format(
-                StateConstants.IDLE_STATUS,
-                timeKeeper.getHarvestMeasure().toString(),
-                super.getStatusString(),
-                timeKeeper.getSubmissionMeasure().toString()
+                   StateConstants.IDLE_STATUS,
+                   timeKeeper.getHarvestMeasure().toString(),
+                   super.getStatusString(),
+                   timeKeeper.getSubmissionMeasure().toString()
 
-        );
+               );
     }
 
 
@@ -135,8 +135,8 @@ public class SavingState extends AbstractProgressingState
     {
         // TODO implement pause
         return String.format(
-                StateConstants.CANNOT_RESUME_PREFIX + StateConstants.SAVE_IN_PROGRESS,
-                StateConstants.SAVE_PROCESS);
+                   StateConstants.CANNOT_RESUME_PREFIX + StateConstants.SAVE_IN_PROGRESS,
+                   StateConstants.SAVE_PROCESS);
     }
 
 

@@ -27,7 +27,7 @@ import de.gerdiproject.json.GsonUtils;
  * This singleton class generates hash values of strings and objects.
  *
  * https://stackoverflow.com/questions/9655181/how{@literal -}to{@literal -}convert{@literal -}a{@literal -}byte{@literal -}array{@literal -}to{@literal -}a{@literal -}hex{@literal -}string{@literal -}in{@literal -}java
- * 
+ *
  * @author Robin Weiss
  */
 public class HashGenerator

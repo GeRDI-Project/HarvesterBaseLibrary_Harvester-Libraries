@@ -53,20 +53,20 @@ public class ConfigurationConstants
     public static final String CHANGED_PARAM = "Set parameter '%s' to '%s'.";
 
     public static final String CANNOT_CHANGE_PARAM_INVALID_STATE =
-            "Cannot change parameter '%s' during the %s-process.";
+        "Cannot change parameter '%s' during the %s-process.";
 
     public static final String CANNOT_CHANGE_PARAM_INVALID_VALUE =
-            "Cannot change parameter '%s' to '%s'. Allowed values are: %s";
+        "Cannot change parameter '%s' to '%s'. Allowed values are: %s";
 
     public static final String CANNOT_CHANGE_PARAM_INVALID_URL =
-            "Cannot change parameter '%s'. '%s' is not a valid URL!";
+        "Cannot change parameter '%s'. '%s' is not a valid URL!";
 
     public static final String NO_CHANGES = "No parameters were changed!";
     public static final String UNKNOWN_PARAM = "Cannot change parameter '%s'. Unknown parameter!";
 
     public static final String BOOLEAN_VALID_VALUES_TEXT = "0, 1, true, false";
     public static final List<String> BOOLEAN_VALID_VALUES_LIST =
-            Collections.unmodifiableList(Arrays.asList("1", "0", "true", "false"));
+        Collections.unmodifiableList(Arrays.asList("1", "0", "true", "false"));
 
     public static final String INTEGER_VALUE_MAX = "max";
     public static final String INTEGER_VALUE_MIN = "min";
@@ -82,24 +82,24 @@ public class ConfigurationConstants
     public static final String LOAD_FAILED = "Could not load configuration from '%s': %s";
     public static final String NO_EXISTS = "No configuration exists!";
     public static final String REST_INFO = "- %s Configuration -%n%n%s%n"
-            + "GET   Returns either the entire configuration in pretty text, or%n"
-            + "      if '?key=xxx' is added, returns the value of parameter 'xxx'.%n"
-            + "POST  Saves the current configuration to disk.%n"
-            + "PUT   Sets x-www-form-urlencoded parameters for the harvester.%n"
-            + "      Valid values: %s.%n";
+                                           + "GET   Returns either the entire configuration in pretty text, or%n"
+                                           + "      if '?key=xxx' is added, returns the value of parameter 'xxx'.%n"
+                                           + "POST  Saves the current configuration to disk.%n"
+                                           + "PUT   Sets x-www-form-urlencoded parameters for the harvester.%n"
+                                           + "      Valid values: %s.%n";
     public static final String REST_INFO_FAILED =
-            "Could not initialize Configuration.\nPlease, look at the server logs for details.";
+        "Could not initialize Configuration.\nPlease, look at the server logs for details.";
 
     public static final String PARSE_ERROR = "Could not read configuration parameter value '%s' from key '%s'!";
 
     public static final List<Class<? extends IState>> HARVESTER_PARAM_ALLOWED_STATES =
-            Collections.unmodifiableList(
-                    Arrays.asList(
-                            InitializationState.class,
-                            ErrorState.class,
-                            IdleState.class,
-                            SavingState.class,
-                            SubmittingState.class));
+        Collections.unmodifiableList(
+            Arrays.asList(
+                InitializationState.class,
+                ErrorState.class,
+                IdleState.class,
+                SavingState.class,
+                SubmittingState.class));
 
     public static final String URL_PREFIX = "%URL_PARAMETER%";
     public static final String GLOBAL_PARAMETERS_JSON = "globalParameters";

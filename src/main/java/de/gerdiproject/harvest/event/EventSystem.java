@@ -153,7 +153,7 @@ public class EventSystem
      * @param <T> the type of the dispatched event
      */
     @SuppressWarnings({
-            "unchecked"
+        "unchecked"
     }) // this warning is suppressed, because the public functions guarantee that the consumer consumes events of the same class as the corresponding key
     private <T extends IEvent> void executeAsynchronousCallbacks(T event)
     {
@@ -224,7 +224,7 @@ public class EventSystem
     {
         synchronized (instance.synchronousCallbackMap) {
             Function<? extends ISynchronousEvent<?>, ?> callback =
-                    instance.synchronousCallbackMap.get(event.getClass());
+                instance.synchronousCallbackMap.get(event.getClass());
 
             if (callback != null)
                 return ((Function<T, R>) callback).apply(event);

@@ -99,7 +99,7 @@ public class HarvestSaver
 
         // start asynchronous save
         currentSavingProcess =
-                new CancelableFuture<>(createSaveProcess(startTimestamp, finishTimestamp, isAutoTriggered));
+            new CancelableFuture<>(createSaveProcess(startTimestamp, finishTimestamp, isAutoTriggered));
 
         // exception handler
         currentSavingProcess.thenApply((isSuccessful) -> {
@@ -180,7 +180,8 @@ public class HarvestSaver
             int documentCount = getNumberOfChangedDocuments();
             EventSystem.sendEvent(new SaveStartedEvent(isAutoTriggered, documentCount));
 
-            if (documentCount == 0) {
+            if (documentCount == 0)
+            {
                 LOGGER.error(SaveConstants.SAVE_FAILED_EMPTY);
                 return false;
             }
@@ -192,19 +193,21 @@ public class HarvestSaver
             // check if file was created
             boolean isSuccessful = saveFile != null;
 
-            if (isSuccessful) {
+            if (isSuccessful)
+            {
                 LOGGER.info(String.format(SaveConstants.SAVE_START, saveFile.getAbsolutePath()));
+
                 try {
                     // prepare json writer for the save file
                     JsonWriter writer = new JsonWriter(
-                            new OutputStreamWriter(new FileOutputStream(saveFile), MainContext.getCharset()));
+                        new OutputStreamWriter(new FileOutputStream(saveFile), MainContext.getCharset()));
 
                     // transfer data to target file
                     writeDocuments(
-                            writer,
-                            startTimestamp,
-                            finishTimestamp,
-                            config.getParameterValue(ConfigurationConstants.READ_HTTP_FROM_DISK, Boolean.class));
+                        writer,
+                        startTimestamp,
+                        finishTimestamp,
+                        config.getParameterValue(ConfigurationConstants.READ_HTTP_FROM_DISK, Boolean.class));
                 } catch (IOException e) {
                     LOGGER.error(SaveConstants.SAVE_INTERRUPTED, e);
                     isSuccessful = false;
@@ -236,11 +239,11 @@ public class HarvestSaver
         if (from > 0 || to != Integer.MAX_VALUE) {
 
             fileName = String.format(
-                    SaveConstants.SAVE_FILE_NAME_PARTIAL,
-                    MainContext.getModuleName(),
-                    from,
-                    to,
-                    startTimestamp);
+                           SaveConstants.SAVE_FILE_NAME_PARTIAL,
+                           MainContext.getModuleName(),
+                           from,
+                           to,
+                           startTimestamp);
         } else
             fileName = String.format(SaveConstants.SAVE_FILE_NAME, MainContext.getModuleName(), startTimestamp);
 
@@ -285,12 +288,14 @@ public class HarvestSaver
 
         // iterate through cached array
         final Gson gson = GsonUtils.getGson();
+
         for (DocumentChangesCache cachedDocuments : cacheList) {
 
             cachedDocuments.forEach((String documentId, DataCiteJson document) -> {
                 if (isAborting)
                     return false;
-                else {
+                else
+                {
                     // write a document to the array
                     if (document != null)
                         gson.toJson(document, DataCiteJson.class, writer);
@@ -321,6 +326,7 @@ public class HarvestSaver
     protected int getNumberOfChangedDocuments()
     {
         int docCount = 0;
+
         for (final DocumentChangesCache cache : cacheList)
             docCount += cache.size();
 

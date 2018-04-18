@@ -36,25 +36,25 @@ public class CacheConstants
 
     public static final String UPDATE_CACHE_FILE_NAME = "%s_updatedDocuments" + JSON_FILE_EXTENSION;
     public static final String UPDATE_CACHE_FILE_PATH = CACHE_FOLDER_PATH
-            + UPDATE_CACHE_FILE_NAME
-            + JSON_FILE_EXTENSION;
+                                                        + UPDATE_CACHE_FILE_NAME
+                                                        + JSON_FILE_EXTENSION;
 
     public static final String UPDATE_CACHE_TEMP_FILE_PATH = CACHE_FOLDER_PATH
-            + "%s_updatedDocumentsPending"
-            + JSON_FILE_EXTENSION;
+                                                             + "%s_updatedDocumentsPending"
+                                                             + JSON_FILE_EXTENSION;
 
     public static final String HARVEST_TIME_KEEPER_CACHE_FILE_PATH = CACHE_FOLDER_PATH
-            + "processTimes"
-            + JSON_FILE_EXTENSION;
+                                                                     + "processTimes"
+                                                                     + JSON_FILE_EXTENSION;
 
     public static final String VERSIONS_CACHE_FILE_PATH = CACHE_FOLDER_PATH
-            + "%s_documentVersions"
-            + JSON_FILE_EXTENSION;
+                                                          + "%s_documentVersions"
+                                                          + JSON_FILE_EXTENSION;
 
 
     public static final String VERSIONS_CACHE_TEMP_FILE_PATH = CACHE_FOLDER_PATH
-            + "%s_documentVersionsPending"
-            + JSON_FILE_EXTENSION;
+                                                               + "%s_documentVersionsPending"
+                                                               + JSON_FILE_EXTENSION;
 
 
     public static final String DELETE_FILE_SUCCESS = "Deleted file '%s'.";

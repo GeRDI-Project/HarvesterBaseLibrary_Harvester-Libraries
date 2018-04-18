@@ -76,7 +76,8 @@ public class ConfigurationAdapter implements JsonDeserializer<Configuration>, Js
         globalParameters.forEach((String key, AbstractParameter<?> value) -> {
             JsonElement valueJson = globalParamsJson.get(key);
 
-            if (valueJson != null) {
+            if (valueJson != null)
+            {
                 if (valueJson.getAsJsonPrimitive().isString())
                     globalParameters.get(key).setValue(valueJson.getAsString(), null);
 
@@ -88,7 +89,7 @@ public class ConfigurationAdapter implements JsonDeserializer<Configuration>, Js
 
         // fill harvester parameters
         Set<Entry<String, JsonElement>> harvesterParamsJson =
-                configJson.get(ConfigurationConstants.HARVESTER_PARAMETERS_JSON).getAsJsonObject().entrySet();
+            configJson.get(ConfigurationConstants.HARVESTER_PARAMETERS_JSON).getAsJsonObject().entrySet();
 
         for (Entry<String, JsonElement> paramJson : harvesterParamsJson) {
             String key = paramJson.getKey();
@@ -118,10 +119,10 @@ public class ConfigurationAdapter implements JsonDeserializer<Configuration>, Js
                 harvesterParameters.put(key, param);
             else
                 throw new JsonParseException(
-                        String.format(
-                                ConfigurationConstants.PARSE_ERROR,
-                                GsonUtils.getPrettyGson().toJson(paramJson.getValue()),
-                                key));
+                    String.format(
+                        ConfigurationConstants.PARSE_ERROR,
+                        GsonUtils.getPrettyGson().toJson(paramJson.getValue()),
+                        key));
         }
 
         return new Configuration(globalParameters, harvesterParameters);

@@ -79,7 +79,8 @@ public class StateEventHandlerConstants
     public static final Consumer<HarvestFinishedEvent> ON_HARVEST_FINISHED = (HarvestFinishedEvent e) -> {
         // was the harvest successful? then choose the next automatic
         // post-processing state
-        if (e.isSuccessful()) {
+        if (e.isSuccessful())
+        {
             LOGGER.info(StateConstants.HARVEST_DONE);
 
             final Configuration config = MainContext.getConfiguration();
@@ -139,12 +140,12 @@ public class StateEventHandlerConstants
      * {@linkplain ErrorState}.
      */
     public static final Consumer<HarvesterInitializedEvent> ON_HARVESTER_INITIALIZED =
-            (HarvesterInitializedEvent e) -> {
-                if (e.isSuccessful())
-                    StateMachine.setState(new IdleState());
-                else
-                    StateMachine.setState(new ErrorState());
-            };
+    (HarvesterInitializedEvent e) -> {
+        if (e.isSuccessful())
+            StateMachine.setState(new IdleState());
+        else
+            StateMachine.setState(new ErrorState());
+    };
 
 
     /**
@@ -152,5 +153,5 @@ public class StateEventHandlerConstants
      * finishes.
      */
     public static final Consumer<SubmissionFinishedEvent> ON_SUBMISSION_FINISHED =
-            (SubmissionFinishedEvent e) -> StateMachine.setState(new IdleState());
+        (SubmissionFinishedEvent e) -> StateMachine.setState(new IdleState());
 }

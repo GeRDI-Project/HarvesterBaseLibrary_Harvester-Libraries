@@ -151,7 +151,7 @@ public abstract class AbstractHarvester
 
     /**
      * Creates or updates a cache for harvested documents.
-     * 
+     *
      * @return a cache for harvested documents
      */
     protected HarvesterCache initCache()
@@ -264,6 +264,7 @@ public abstract class AbstractHarvester
             else
                 documentsCache.cacheDocument(document);
         }
+
         EventSystem.sendEvent(new DocumentHarvestedEvent(document));
     }
 
@@ -355,6 +356,7 @@ public abstract class AbstractHarvester
                 skipAllDocuments();
                 return;
             }
+
             // cancel harvest if previous changes were not submitted
             if (MainContext.getTimeKeeper().hasUnsubmittedChanges()) {
                 logger.info(String.format(HarvesterConstants.HARVESTER_SKIPPED_SUBMIT, name));
@@ -377,11 +379,11 @@ public abstract class AbstractHarvester
             finishHarvestSuccessfully();
             return isSuccessful;
         })
-                // exception handler
-                .exceptionally(throwable -> {
-                    finishHarvestExceptionally(throwable.getCause());
-                    return false;
-                });
+        // exception handler
+        .exceptionally(throwable -> {
+            finishHarvestExceptionally(throwable.getCause());
+            return false;
+        });
     }
 
 
@@ -473,6 +475,7 @@ public abstract class AbstractHarvester
             applyCacheChanges();
             EventSystem.sendEvent(new AbortingFinishedEvent());
         }
+
         isAborting = false;
 
         logger.warn(String.format(HarvesterConstants.HARVESTER_ABORTED, name));
@@ -501,7 +504,7 @@ public abstract class AbstractHarvester
 
     /**
      * Checks if the data provider has new data.
-     * 
+     *
      * @return true if the previously harvested documents are outdated or the
      *         harvesting range changed
      */
@@ -596,9 +599,9 @@ public abstract class AbstractHarvester
     /**
      * Synchronous event callback that returns true if the harvester requires an
      * update.
-     * 
+     *
      * @param event the event that triggered this callback function
-     * 
+     *
      * @return true if the harvester requires an update
      */
     private Boolean onGetHarvesterOutdated(GetHarvesterOutdatedEvent event) // NOPMD events must be defined as parameter, even if not used

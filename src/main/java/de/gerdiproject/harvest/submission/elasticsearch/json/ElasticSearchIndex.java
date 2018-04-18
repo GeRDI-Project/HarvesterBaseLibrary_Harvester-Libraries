@@ -59,9 +59,9 @@ public class ElasticSearchIndex
     {
         if (error != null)
             return String.format(
-                    ElasticSearchConstants.DOCUMENT_SUBMIT_ERROR,
-                    id,
-                    error.toString());
+                       ElasticSearchConstants.DOCUMENT_SUBMIT_ERROR,
+                       id,
+                       error.toString());
         else
             return "";
     }

@@ -32,7 +32,7 @@ public class ElasticSearchConstants
     public static final String DATE_REPLACEMENT = "\"value\":\\{\"gte\":$1,\"lte\":$1\\}";
 
     public static final String DATE_RANGE_REGEX =
-            "\"value\":\"(\\d\\d\\d\\d-\\d\\d-\\d\\dT\\d\\d:\\d\\d[^\"]*?Z)?/(\\d\\d\\d\\d-\\d\\d-\\d\\dT\\d\\d:\\d\\d[^\"]*?Z)?\"";
+        "\"value\":\"(\\d\\d\\d\\d-\\d\\d-\\d\\dT\\d\\d:\\d\\d[^\"]*?Z)?/(\\d\\d\\d\\d-\\d\\d-\\d\\dT\\d\\d:\\d\\d[^\"]*?Z)?\"";
     public static final String DATE_RANGE_REPLACEMENT = "\"value\":\\{\"gte\":\"$1\",\"lte\":\"$2\"\\}";
     public static final String EMPTY_DATE_RANGE_REGEX = "(\"gte\":\"\",)|(,\"lte\":\"\")";
     public static final String EMPTY_DATE_RANGE_REPLACEMENT = "";

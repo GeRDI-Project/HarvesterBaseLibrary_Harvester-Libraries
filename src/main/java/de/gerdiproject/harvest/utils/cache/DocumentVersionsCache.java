@@ -64,22 +64,22 @@ public class DocumentVersionsCache
     public DocumentVersionsCache(final String filePrefix)
     {
         this.stableFile = new File(
-                String.format(
-                        CacheConstants.VERSIONS_CACHE_FILE_PATH,
-                        MainContext.getModuleName(),
-                        filePrefix));
+            String.format(
+                CacheConstants.VERSIONS_CACHE_FILE_PATH,
+                MainContext.getModuleName(),
+                filePrefix));
 
         this.workInProgressFile = new File(
-                String.format(
-                        CacheConstants.VERSIONS_CACHE_TEMP_FILE_PATH,
-                        MainContext.getModuleName(),
-                        filePrefix));
+            String.format(
+                CacheConstants.VERSIONS_CACHE_TEMP_FILE_PATH,
+                MainContext.getModuleName(),
+                filePrefix));
     }
 
 
     /**
      * Initializes the cache by copying the existing cache file to the WIP file.
-     * 
+     *
      * @param hash the hash value that represents a version of the source data
      */
     public void init(String hash)
@@ -94,11 +94,12 @@ public class DocumentVersionsCache
             // read harvester hash from stable file
             try {
                 final JsonReader reader = new JsonReader(
-                        new InputStreamReader(
-                                new FileInputStream(stableFile),
-                                MainContext.getCharset()));
+                    new InputStreamReader(
+                        new FileInputStream(stableFile),
+                        MainContext.getCharset()));
                 reader.beginObject();
                 reader.nextName();
+
                 if (reader.peek() != JsonToken.NULL)
                     this.stableHarvesterHash = reader.nextString();
 
@@ -111,9 +112,9 @@ public class DocumentVersionsCache
                 FileUtils.createEmptyFile(workInProgressFile);
 
                 final JsonWriter writer = new JsonWriter(
-                        new OutputStreamWriter(
-                                new FileOutputStream(workInProgressFile),
-                                MainContext.getCharset()));
+                    new OutputStreamWriter(
+                        new FileOutputStream(workInProgressFile),
+                        MainContext.getCharset()));
                 // if no stable cache exists, write an empty object to the WIP file
                 writer.beginObject();
 
@@ -137,7 +138,7 @@ public class DocumentVersionsCache
 
     /**
      * Checks if the harvested documents are outdated.
-     * 
+     *
      * @return true if the harvester hash changed since the last harvest
      */
     public boolean isOutdated()
@@ -169,7 +170,7 @@ public class DocumentVersionsCache
 
     /**
      * Deletes all entries that have null values in a specified changes cache.
-     * 
+     *
      * @param changesCache the cache that is being iterated to look for null
      *            entries
      */
@@ -201,9 +202,9 @@ public class DocumentVersionsCache
             try {
                 // prepare json reader for the cached document list
                 final JsonReader reader = new JsonReader(
-                        new InputStreamReader(
-                                new FileInputStream(stableFile),
-                                MainContext.getCharset()));
+                    new InputStreamReader(
+                        new FileInputStream(stableFile),
+                        MainContext.getCharset()));
 
                 // skip harvester hash
                 reader.beginObject();
@@ -213,6 +214,7 @@ public class DocumentVersionsCache
 
                 // iterate through all entries
                 reader.beginObject();
+
                 while (isSuccessful && reader.hasNext()) {
                     final String documentId = reader.nextName();
                     final String documentHash = reader.nextString();
@@ -248,20 +250,22 @@ public class DocumentVersionsCache
         try {
             // prepare json reader for the cached document list
             final JsonReader reader = new JsonReader(
-                    new InputStreamReader(new FileInputStream(workInProgressFile), MainContext.getCharset()));
+                new InputStreamReader(new FileInputStream(workInProgressFile), MainContext.getCharset()));
 
             final JsonWriter writer = new JsonWriter(
-                    new OutputStreamWriter(
-                            new FileOutputStream(tempFile),
-                            MainContext.getCharset()));
+                new OutputStreamWriter(
+                    new FileOutputStream(tempFile),
+                    MainContext.getCharset()));
 
             // copy harvester hash
             reader.beginObject();
             writer.beginObject();
             writer.name(reader.nextName());
-            if (workInProgressHarvesterHash == null) {
+
+            if (workInProgressHarvesterHash == null)
                 writer.nullValue();
-            } else
+
+            else
                 writer.value(workInProgressHarvesterHash);
 
             reader.skipValue();
@@ -326,11 +330,13 @@ public class DocumentVersionsCache
     public String getDocumentHash(String documentId)
     {
         String[] documentHash = {
-                null
+            null
         };
         forEach((String stableDocId, String stableDocHash) -> {
-            if (stableDocId.equals(documentId)) {
-                documentHash[0] = stableDocHash;
+            if (stableDocId.equals(documentId))
+            {
+                documentHash[0]
+                = stableDocHash;
 
                 // abort for each prematurely
                 return false;
