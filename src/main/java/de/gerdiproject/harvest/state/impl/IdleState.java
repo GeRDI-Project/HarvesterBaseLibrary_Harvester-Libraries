@@ -166,7 +166,7 @@ public class IdleState implements IState
             return true;
 
         Boolean isOutdated = EventSystem.sendSynchronousEvent(new GetHarvesterOutdatedEvent());
-        return isOutdated == null ? true : isOutdated;
+        return isOutdated == null || isOutdated;
     }
 
 
