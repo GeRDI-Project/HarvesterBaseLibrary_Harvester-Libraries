@@ -148,6 +148,7 @@ public class DocumentChangesCache
      */
     public void clearWorkInProgress()
     {
+        FileUtils.deleteFile(new File(workInProgressFile.getAbsolutePath() + CacheConstants.TEMP_FILE_EXTENSION));
         FileUtils.deleteFile(workInProgressFile);
     }
 
