@@ -21,6 +21,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
@@ -76,7 +77,7 @@ public abstract class AbstractHarvester
     protected boolean isMainHarvester;
     protected boolean isAborting;
     protected boolean isFailing;
-    protected boolean forceHarvest;
+    protected AtomicBoolean forceHarvest;
     protected String name;
     protected String hash;
     protected final HttpRequester httpRequester;
@@ -111,6 +112,7 @@ public abstract class AbstractHarvester
 
         startIndex = new AtomicInteger(0);
         endIndex = new AtomicInteger(0);
+        forceHarvest = new AtomicBoolean(false);
     }
 
 
@@ -259,7 +261,7 @@ public abstract class AbstractHarvester
             if (document instanceof ICleanable)
                 ((ICleanable) document).clean();
 
-            if (forceHarvest)
+            if (forceHarvest.get())
                 documentsCache.addDocument(document);
             else
                 documentsCache.cacheDocument(document);
@@ -335,6 +337,17 @@ public abstract class AbstractHarvester
 
 
     /**
+     * Changes the force harvest flag.
+     *
+     * @param state the new state of the flag
+     */
+    protected void setForceHarvest(boolean state)
+    {
+        forceHarvest.set(state);
+    }
+
+
+    /**
      * Starts an asynchronous harvest with the implemented harvestInternal()
      * method and saves the result and date for this session
      */
@@ -349,7 +362,7 @@ public abstract class AbstractHarvester
         final int from = startIndex.get() == Integer.MAX_VALUE ? maxDocumentCount.get() : startIndex.get();
         final int to = endIndex.get() == Integer.MAX_VALUE ? maxDocumentCount.get() : endIndex.get();
 
-        if (!forceHarvest) {
+        if (!forceHarvest.get()) {
             // cancel harvest if the checksum changed since the last harvest
             if (!isOutdated()) {
                 logger.info(String.format(HarvesterConstants.HARVESTER_SKIPPED_OUTDATED, name));
@@ -358,7 +371,7 @@ public abstract class AbstractHarvester
             }
 
             // cancel harvest if previous changes were not submitted
-            if (MainContext.getTimeKeeper().hasUnsubmittedChanges()) {
+            if (isMainHarvester && MainContext.getTimeKeeper().hasUnsubmittedChanges()) {
                 logger.info(String.format(HarvesterConstants.HARVESTER_SKIPPED_SUBMIT, name));
                 skipAllDocuments();
                 return;
@@ -564,7 +577,7 @@ public abstract class AbstractHarvester
             setEndIndex((Integer) value);
 
         else if (key.equals(ConfigurationConstants.FORCE_HARVEST))
-            forceHarvest = (Boolean) value;
+            setForceHarvest((Boolean) value);
 
         else if (value != null)
             setProperty(key, value.toString());

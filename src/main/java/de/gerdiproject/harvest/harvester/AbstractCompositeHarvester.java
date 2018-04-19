@@ -84,6 +84,14 @@ public abstract class AbstractCompositeHarvester extends AbstractHarvester
     }
 
 
+    @Override
+    protected void setForceHarvest(boolean state)
+    {
+        super.setForceHarvest(state);
+        subHarvesters.forEach((AbstractHarvester subHarvester) -> subHarvester.setForceHarvest(state));
+    }
+
+
     /**
      * Takes an index of all documents combined and adapts the harvesting ranges
      * of all sub-harvesters accordingly.
