@@ -23,6 +23,7 @@ import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.event.IEvent;
 import de.gerdiproject.harvest.state.events.AbortingStartedEvent;
 import de.gerdiproject.harvest.utils.time.constants.HarvestTimeKeeperConstants;
+import de.gerdiproject.harvest.utils.time.events.ProcessTimeMeasureFinishedEvent;
 
 /**
  * This class listens to events that transport information about a process and
@@ -35,6 +36,7 @@ public class ProcessTimeMeasure
     private long startTimestamp;
     private long endTimestamp;
     private ProcessStatus status;
+    private transient ProcessTimeMeasureFinishedEvent finishedEvent;
 
 
     /**
@@ -75,6 +77,8 @@ public class ProcessTimeMeasure
         Consumer<AbortingStartedEvent> onProcessAborted =
             (AbortingStartedEvent event) -> end(ProcessStatus.Aborted);
 
+        finishedEvent = new ProcessTimeMeasureFinishedEvent(this);
+
         EventSystem.addListener(startEvent, onProcessStarted);
         EventSystem.addListener(endEvent, onProcessFinished);
         EventSystem.addListener(AbortingStartedEvent.class, onProcessAborted);
@@ -104,6 +108,7 @@ public class ProcessTimeMeasure
         if (status == ProcessStatus.Started) {
             this.endTimestamp = System.currentTimeMillis();
             this.status = reasonToEnd;
+            EventSystem.sendEvent(finishedEvent);
         }
     }
 

@@ -31,7 +31,7 @@ public class DocumentsHarvestedEvent implements IEvent
     /**
      * Returns an event that signifies that a single document was harvested.
      *
-     * @return
+     * @return an event that signifies that a single document was harvested
      */
     public static DocumentsHarvestedEvent singleHarvestedDocument()
     {
@@ -40,7 +40,7 @@ public class DocumentsHarvestedEvent implements IEvent
 
 
     /**
-     * Simple constructor..
+     * Simple constructor that sets up the payload.
      *
      * @param numberOfDocuments the number of harvested documents
      */

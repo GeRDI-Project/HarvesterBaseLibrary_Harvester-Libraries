@@ -16,7 +16,6 @@
 package de.gerdiproject.harvest.utils.time;
 
 import de.gerdiproject.harvest.MainContext;
-import de.gerdiproject.harvest.application.events.ContextDestroyedEvent;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.harvester.events.HarvestFinishedEvent;
 import de.gerdiproject.harvest.harvester.events.HarvestStartedEvent;
@@ -27,6 +26,7 @@ import de.gerdiproject.harvest.submission.events.SubmissionStartedEvent;
 import de.gerdiproject.harvest.utils.cache.constants.CacheConstants;
 import de.gerdiproject.harvest.utils.data.DiskIO;
 import de.gerdiproject.harvest.utils.time.ProcessTimeMeasure.ProcessStatus;
+import de.gerdiproject.harvest.utils.time.events.ProcessTimeMeasureFinishedEvent;
 
 /**
  * This class keeps timestamps of important events, such as harvests,
@@ -69,7 +69,7 @@ public class HarvestTimeKeeper
         submissionMeasure.init(SubmissionStartedEvent.class, SubmissionFinishedEvent.class);
 
         EventSystem.addListener(HarvestStartedEvent.class, this::onHarvestStarted);
-        EventSystem.addListener(ContextDestroyedEvent.class, this::onContextDestroyed);
+        EventSystem.addListener(ProcessTimeMeasureFinishedEvent.class, this::onProcessTimeMeasureFinished);
     }
 
 
@@ -86,9 +86,16 @@ public class HarvestTimeKeeper
         final HarvestTimeKeeper parsedKeeper = diskReader.getObject(stableFilePath, HarvestTimeKeeper.class);
 
         if (parsedKeeper != null) {
-            harvestMeasure.set(parsedKeeper.harvestMeasure);
-            saveMeasure.set(parsedKeeper.saveMeasure);
-            submissionMeasure.set(parsedKeeper.submissionMeasure);
+
+            // copy status if it is not started
+            if (parsedKeeper.harvestMeasure.getStatus() != ProcessStatus.Started)
+                harvestMeasure.set(parsedKeeper.harvestMeasure);
+
+            if (parsedKeeper.saveMeasure.getStatus() != ProcessStatus.Started)
+                saveMeasure.set(parsedKeeper.saveMeasure);
+
+            if (parsedKeeper.submissionMeasure.getStatus() != ProcessStatus.Started)
+                submissionMeasure.set(parsedKeeper.submissionMeasure);
         }
     }
 
@@ -183,13 +190,12 @@ public class HarvestTimeKeeper
 
 
     /**
-     * This callback function is called when the status of a time measure
-     * process is being changed. It updates time keeper cache file when a
-     * process is finished.
+     * This callback function is called when the measurement of a process comes
+     * to an end. This function saves this Time Keeper to a cache file on disk.
      *
      * @param event the event that triggered the listener
      */
-    private void onContextDestroyed(ContextDestroyedEvent event) // NOPMD - Event callbacks always require the event
+    private void onProcessTimeMeasureFinished(ProcessTimeMeasureFinishedEvent event) // NOPMD - Event callbacks always require the event
     {
         saveToDisk();
     }

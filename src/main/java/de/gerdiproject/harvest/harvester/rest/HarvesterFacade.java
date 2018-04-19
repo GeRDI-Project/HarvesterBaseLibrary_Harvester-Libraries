@@ -28,7 +28,6 @@ import de.gerdiproject.harvest.config.Configuration;
 import de.gerdiproject.harvest.config.constants.ConfigurationConstants;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.harvester.constants.HarvesterConstants;
-import de.gerdiproject.harvest.harvester.events.GetHarvesterOutdatedEvent;
 import de.gerdiproject.harvest.harvester.events.GetMaxDocumentCountEvent;
 import de.gerdiproject.harvest.state.StateMachine;
 
@@ -121,9 +120,7 @@ public class HarvesterFacade
     })
     public String isOutdated()
     {
-        Boolean isOutDated = EventSystem.sendSynchronousEvent(new GetHarvesterOutdatedEvent());
-
-        return isOutDated == null ? Boolean.toString(false) : isOutDated.toString();
+        return String.valueOf(StateMachine.getCurrentState().isOutdated());
     }
 
 

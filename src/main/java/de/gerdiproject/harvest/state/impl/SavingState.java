@@ -152,4 +152,11 @@ public class SavingState extends AbstractProgressingState
     {
         return StateConstants.CANNOT_SUBMIT_PREFIX + StateConstants.SAVE_IN_PROGRESS;
     }
+
+
+    @Override
+    public boolean isOutdated()
+    {
+        return MainContext.getTimeKeeper().isHarvestIncomplete();
+    }
 }

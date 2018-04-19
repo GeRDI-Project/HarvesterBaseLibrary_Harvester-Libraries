@@ -606,6 +606,7 @@ public abstract class AbstractHarvester
      */
     private Boolean onGetHarvesterOutdated(GetHarvesterOutdatedEvent event) // NOPMD events must be defined as parameter, even if not used
     {
+        init();
         return isOutdated();
     }
 

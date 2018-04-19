@@ -32,13 +32,14 @@ public interface IState
 
 
     /**
-     * Returns a textual representation of the current progress
-     * or status of the state.
+     * Returns a textual representation of the current progress or status of the
+     * state.
      *
-     * @return a textual representation of the current progress
-     * or status of the state
+     * @return a textual representation of the current progress or status of the
+     *         state
      */
     String getStatusString();
+
 
     /**
      * Returns a minimalistic representation the state's progress.
@@ -49,15 +50,15 @@ public interface IState
 
 
     /**
-     * This function is called when the {@linkplain StateMachine} transitions into
-     * this state.
+     * This function is called when the {@linkplain StateMachine} transitions
+     * into this state.
      */
     void onStateEnter();
 
 
     /**
-     * This function is called when the {@linkplain StateMachine} transitions out of
-     * this state.
+     * This function is called when the {@linkplain StateMachine} transitions
+     * out of this state.
      */
     void onStateLeave();
 
@@ -108,4 +109,12 @@ public interface IState
      * @return a status message about the success or failure of the operation
      */
     String save();
+
+
+    /**
+     * Attempts to find out if there is new metadata ready to harvest.
+     *
+     * @return true if there is new metadata to harvest
+     */
+    boolean isOutdated();
 }

@@ -25,5 +25,4 @@ import de.gerdiproject.harvest.event.ISynchronousEvent;
  */
 public class GetHarvesterOutdatedEvent implements ISynchronousEvent<Boolean>
 {
-
 }

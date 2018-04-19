@@ -134,4 +134,11 @@ public class HarvestingState extends AbstractProgressingState
     {
         return StateConstants.CANNOT_SAVE_PREFIX + StateConstants.HARVEST_IN_PROGRESS;
     }
+
+
+    @Override
+    public boolean isOutdated()
+    {
+        return true;
+    }
 }
