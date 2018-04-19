@@ -19,7 +19,6 @@ package de.gerdiproject.harvest.harvester;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -36,7 +35,7 @@ import de.gerdiproject.harvest.config.constants.ConfigurationConstants;
 import de.gerdiproject.harvest.config.events.HarvesterParameterChangedEvent;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.harvester.constants.HarvesterConstants;
-import de.gerdiproject.harvest.harvester.events.DocumentHarvestedEvent;
+import de.gerdiproject.harvest.harvester.events.DocumentsHarvestedEvent;
 import de.gerdiproject.harvest.harvester.events.GetHarvesterOutdatedEvent;
 import de.gerdiproject.harvest.harvester.events.GetMaxDocumentCountEvent;
 import de.gerdiproject.harvest.harvester.events.GetProviderNameEvent;
@@ -267,20 +266,7 @@ public abstract class AbstractHarvester
                 documentsCache.cacheDocument(document);
         }
 
-        EventSystem.sendEvent(new DocumentHarvestedEvent(document));
-    }
-
-
-    /**
-     * Adds multiple documents to the search index and logs the progress. If a
-     * document is null, it is not added to the search index, but the progress
-     * is incremented regardlessly.
-     *
-     * @param documents the documents that are to be added to the search index
-     */
-    protected void addDocuments(List<IDocument> documents)
-    {
-        documents.forEach((IDocument doc) -> addDocument(doc));
+        EventSystem.sendEvent(DocumentsHarvestedEvent.singleHarvestedDocument());
     }
 
 
@@ -542,6 +528,7 @@ public abstract class AbstractHarvester
     protected void skipAllDocuments()
     {
         documentsCache.skipAllDocuments();
+        EventSystem.sendEvent(new DocumentsHarvestedEvent(getMaxNumberOfDocuments()));
     }
 
 

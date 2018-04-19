@@ -19,7 +19,7 @@ import java.util.function.Consumer;
 
 import de.gerdiproject.harvest.MainContext;
 import de.gerdiproject.harvest.event.EventSystem;
-import de.gerdiproject.harvest.harvester.events.DocumentHarvestedEvent;
+import de.gerdiproject.harvest.harvester.events.DocumentsHarvestedEvent;
 import de.gerdiproject.harvest.harvester.events.HarvestFinishedEvent;
 import de.gerdiproject.harvest.save.events.SaveStartedEvent;
 import de.gerdiproject.harvest.state.AbstractProgressingState;
@@ -38,7 +38,8 @@ public class HarvestingState extends AbstractProgressingState
     /**
      * Constructor that requires the maximum amount of harvestable documents.
      *
-     * @param maxNumberOfHarvestedDocuments the maximum amount of harvestable documents
+     * @param maxNumberOfHarvestedDocuments the maximum amount of harvestable
+     *            documents
      */
     public HarvestingState(int maxNumberOfHarvestedDocuments)
     {
@@ -48,8 +49,8 @@ public class HarvestingState extends AbstractProgressingState
     /**
      * Event callback: If a document is harvested, add 1 to the progress.
      */
-    private final Consumer<DocumentHarvestedEvent> onDocumentHarvested = (DocumentHarvestedEvent e) -> addProgress(1);
-
+    private final Consumer<DocumentsHarvestedEvent> onDocumentHarvested =
+        (DocumentsHarvestedEvent e) -> addProgress(e.getDocumentCount());
 
 
     @Override
@@ -60,7 +61,7 @@ public class HarvestingState extends AbstractProgressingState
         EventSystem.addListener(HarvestFinishedEvent.class, StateEventHandlerConstants.ON_HARVEST_FINISHED);
         EventSystem.addListener(SubmissionStartedEvent.class, StateEventHandlerConstants.ON_SUBMISSION_STARTED);
         EventSystem.addListener(SaveStartedEvent.class, StateEventHandlerConstants.ON_SAVE_STARTED);
-        EventSystem.addListener(DocumentHarvestedEvent.class, onDocumentHarvested);
+        EventSystem.addListener(DocumentsHarvestedEvent.class, onDocumentHarvested);
     }
 
 
@@ -72,7 +73,7 @@ public class HarvestingState extends AbstractProgressingState
         EventSystem.removeListener(HarvestFinishedEvent.class, StateEventHandlerConstants.ON_HARVEST_FINISHED);
         EventSystem.removeListener(SubmissionStartedEvent.class, StateEventHandlerConstants.ON_SUBMISSION_STARTED);
         EventSystem.removeListener(SaveStartedEvent.class, StateEventHandlerConstants.ON_SAVE_STARTED);
-        EventSystem.removeListener(DocumentHarvestedEvent.class, onDocumentHarvested);
+        EventSystem.removeListener(DocumentsHarvestedEvent.class, onDocumentHarvested);
     }
 
 
@@ -91,8 +92,7 @@ public class HarvestingState extends AbstractProgressingState
                    StateConstants.IDLE_STATUS,
                    super.getStatusString(),
                    timeKeeper.getSaveMeasure().toString(),
-                   timeKeeper.getSubmissionMeasure().toString()
-               );
+                   timeKeeper.getSubmissionMeasure().toString());
     }
 
 
