@@ -87,52 +87,62 @@ public class DocumentVersionsCache
         this.stableHarvesterHash = null;
         this.workInProgressHarvesterHash = hash;
 
-        // copy values from stable cache file, if it exists
-        if (stableFile.exists()) {
-            FileUtils.copyFile(stableFile, workInProgressFile);
+        try {
+            // create a new WIP file
+            FileUtils.createEmptyFile(workInProgressFile);
 
-            // read harvester hash from stable file
-            try {
-                final JsonReader reader = new JsonReader(
-                    new InputStreamReader(
-                        new FileInputStream(stableFile),
-                        MainContext.getCharset()));
-                reader.beginObject();
-                reader.nextName();
+            final JsonWriter writer = new JsonWriter(
+                new OutputStreamWriter(
+                    new FileOutputStream(workInProgressFile),
+                    MainContext.getCharset()));
+            // if no stable cache exists, write an empty object to the WIP file
+            writer.beginObject();
 
-                if (reader.peek() != JsonToken.NULL)
-                    this.stableHarvesterHash = reader.nextString();
+            // write empty harvester hash
+            writer.name(CacheConstants.HARVESTER_SOURCE_HASH_JSON);
+            writer.value(workInProgressHarvesterHash);
 
-                reader.close();
-            } catch (IOException e) { // NOPMD - Nothing to do here. The stable hash is already null
+            // write empty document map
+            writer.name(CacheConstants.DOCUMENTS_JSON);
+            writer.beginObject();
+
+            // copy documents from stable file
+            if (stableFile.exists()) {
+                try {
+                    final JsonReader reader = new JsonReader(
+                        new InputStreamReader(
+                            new FileInputStream(stableFile),
+                            MainContext.getCharset()));
+                    reader.beginObject();
+
+                    // retrieve source hash
+                    reader.nextName();
+
+                    if (reader.peek() != JsonToken.NULL)
+                        this.stableHarvesterHash = reader.nextString();
+                    else
+                        reader.skipValue();
+
+                    // retrieve document hashes
+                    reader.nextName();
+                    reader.beginObject();
+
+                    while (reader.hasNext())
+                        writer.name(reader.nextName()).value(reader.nextString());
+
+                    reader.close();
+                } catch (IOException e) { // NOPMD - Nothing to do here. The stable hash is already null
+                }
             }
-        } else {
-            try {
-                // create a new WIP file
-                FileUtils.createEmptyFile(workInProgressFile);
 
-                final JsonWriter writer = new JsonWriter(
-                    new OutputStreamWriter(
-                        new FileOutputStream(workInProgressFile),
-                        MainContext.getCharset()));
-                // if no stable cache exists, write an empty object to the WIP file
-                writer.beginObject();
+            writer.endObject();
 
-                // write empty harvester hash
-                writer.name(CacheConstants.HARVESTER_SOURCE_HASH_JSON);
-                writer.nullValue();
-
-                // write empty document map
-                writer.name(CacheConstants.DOCUMENTS_JSON);
-                writer.beginObject();
-                writer.endObject();
-
-                writer.endObject();
-                writer.close();
-            } catch (IOException e) {
-                LOGGER.error(String.format(CacheConstants.CACHE_INIT_FAILED, this.getClass().getSimpleName()), e);
-            }
+            writer.endObject();
+            writer.close();
+        } catch (IOException e) {
+            LOGGER.error(String.format(CacheConstants.CACHE_INIT_FAILED, this.getClass().getSimpleName()), e);
         }
+
     }
 
 
