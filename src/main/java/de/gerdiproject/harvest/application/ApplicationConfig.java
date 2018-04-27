@@ -17,6 +17,7 @@ package de.gerdiproject.harvest.application;
 
 
 import java.util.Set;
+
 import javax.ws.rs.core.Application;
 
 
@@ -48,6 +49,7 @@ public class ApplicationConfig extends Application
         resources.add(de.gerdiproject.harvest.harvester.rest.HarvesterFacade.class);
         resources.add(de.gerdiproject.harvest.config.rest.ConfigurationFacade.class);
         resources.add(de.gerdiproject.harvest.application.rest.StatusFacade.class);
+        resources.add(de.gerdiproject.harvest.scheduler.rest.SchedulerFacade.class);
     }
 
 }

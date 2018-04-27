@@ -30,6 +30,7 @@ import de.gerdiproject.harvest.config.parameters.AbstractParameter;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.harvester.AbstractHarvester;
 import de.gerdiproject.harvest.harvester.events.HarvesterInitializedEvent;
+import de.gerdiproject.harvest.scheduler.Scheduler;
 import de.gerdiproject.harvest.utils.CancelableFuture;
 import de.gerdiproject.harvest.utils.time.HarvestTimeKeeper;
 
@@ -50,6 +51,7 @@ public class MainContext
     private AbstractHarvester harvester;
     private Charset charset;
     private Configuration configuration;
+    private Scheduler scheduler;
 
     private static MainContext instance = new MainContext();
 
@@ -145,6 +147,10 @@ public class MainContext
             // update the harvesting range
             config.updateParameter(ConfigurationConstants.HARVEST_START_INDEX);
             config.updateParameter(ConfigurationConstants.HARVEST_END_INDEX);
+
+            // init scheduler
+            instance.scheduler = new Scheduler();
+            instance.scheduler.init();
 
             return true;
         });
