@@ -47,7 +47,7 @@ import de.gerdiproject.harvest.utils.data.DiskIO;
  */
 public class Scheduler
 {
-    private Logger LOGGER = LoggerFactory.getLogger(Scheduler.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(Scheduler.class);
     private Timer timer;
     private final Map<String, TimerTask> registeredTasks;
 
@@ -206,7 +206,7 @@ public class Scheduler
             timer = new Timer();
 
             return Response.
-                   ok(String.format(SchedulerConstants.DELETE_ALL, cronTab))
+                   ok(SchedulerConstants.DELETE_ALL)
                    .build();
         }
 
@@ -238,7 +238,7 @@ public class Scheduler
      *
      * @return one cron tab or all, separated by linebreaks
      */
-    private String onGetSchedule(GetScheduleEvent event)
+    private String onGetSchedule(GetScheduleEvent event) // NOPMD event payloads must always exist
     {
         final StringBuilder sb = new StringBuilder();
 
@@ -278,7 +278,7 @@ public class Scheduler
      *
      * @param event the event that triggered the callback
      */
-    private void onContextDestroyed(ContextDestroyedEvent event)
+    private void onContextDestroyed(ContextDestroyedEvent event)  // NOPMD event payloads must always exist
     {
         // stop all running task threads
         timer.cancel();

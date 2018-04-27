@@ -113,7 +113,7 @@ public class CronUtils
             nextMinute = minutes[0];
 
         // check if the next matching hour is within the current (false) or next day (true)
-        isOverflowing = nextHour < currHour || (nextHour == currHour && isOverflowing);
+        isOverflowing = nextHour < currHour || nextHour == currHour && isOverflowing;
 
         // both month day and week day restrictions are summarized as a day of a month
         byte nextDay;
@@ -135,7 +135,7 @@ public class CronUtils
                 byte nextWeekDay = getNextMatch(weekDays, currWeekDay);
 
                 // calculate how many days pass until the next viable week day
-                int daysUntilNextWeekDay = (nextWeekDay > currWeekDay || (nextWeekDay == currWeekDay && !isOverflowing))
+                int daysUntilNextWeekDay = nextWeekDay > currWeekDay || nextWeekDay == currWeekDay && !isOverflowing
                                            ? nextWeekDay - currWeekDay
                                            : nextWeekDay + 1 + CronConstants.WEEK_DAYS_MAX_CRON - currWeekDay;
 
@@ -153,7 +153,7 @@ public class CronUtils
 
                 // check if the next week day comes before the next month day, if both are restricted
                 if (!isMonthDayRestricted
-                    || (isMonthDayWrapped == isWeekDayWrapped && nextMonthDay2 < nextMonthDay)
+                    || isMonthDayWrapped == isWeekDayWrapped && nextMonthDay2 < nextMonthDay
                     || isMonthDayWrapped)
                     nextDay = nextMonthDay2;
             }
@@ -161,14 +161,14 @@ public class CronUtils
 
         // check if the next matching day is within the current (false) or next month (true)
         isOverflowing =
-            nextDay < currMonthDay || (nextDay == currMonthDay && isOverflowing);
+            nextDay < currMonthDay || nextDay == currMonthDay && isOverflowing;
 
         // get next matching month
         byte nextMonth = getNextMatch(months, isOverflowing ? (byte)(currMonth + 1) : currMonth);
 
         // check if the next matching month is within the current (false) or next year (true)
         isOverflowing =
-            nextMonth < currMonth || (nextMonth == currMonth && isOverflowing);
+            nextMonth < currMonth || nextMonth == currMonth && isOverflowing;
 
         // increment the year if the next month falls out if range
         int nextYear = isOverflowing ? currYear + 1 : currYear;
@@ -230,7 +230,7 @@ public class CronUtils
         int days = CronConstants.MAX_DAYS_IN_MONTH_MAP.get(month);
 
         // if the month is February check if we have a leap year
-        if (month == 2 && (year % 4 == 0 && !(year % 100 == 0 && year % 400 != 0)))
+        if (month == 2 && year % 4 == 0 && !(year % 100 == 0 && year % 400 != 0))
             days++;
 
         return days;

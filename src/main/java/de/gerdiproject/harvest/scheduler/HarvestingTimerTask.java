@@ -34,7 +34,7 @@ import de.gerdiproject.harvest.state.StateMachine;
  */
 public class HarvestingTimerTask extends TimerTask
 {
-    private final Logger LOGGER = LoggerFactory.getLogger(Scheduler.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(Scheduler.class);
 
 
     @Override
