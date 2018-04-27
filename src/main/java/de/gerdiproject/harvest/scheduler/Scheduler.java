@@ -22,6 +22,10 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
 
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -147,30 +151,38 @@ public class Scheduler
      *
      * @param event the event that triggered the callback
      *
-     * @return a status message
+     * @return an HTTP response
      */
-    private String onAddTask(AddSchedulerTaskEvent event)
+    private Response onAddTask(AddSchedulerTaskEvent event)
     {
         try {
             final String cronTab = event.getCronTab();
 
             if (cronTab == null)
-                return SchedulerConstants.ERROR_ADD_NULL;
+                throw new IllegalArgumentException(SchedulerConstants.ERROR_ADD_NULL);
 
             // check for duplicate cron tabs
             if (registeredTasks.containsKey(cronTab))
-                return String.format(SchedulerConstants.ERROR_ADD_ALREADY_EXISTS, cronTab);
+                throw new IllegalArgumentException(String.format(SchedulerConstants.ERROR_ADD_ALREADY_EXISTS, cronTab));
 
             scheduleTask(cronTab);
 
         } catch (IllegalArgumentException e) {
-            return e.getMessage();
+            return Response
+                   .status(Status.BAD_REQUEST)
+                   .entity(e.getMessage())
+                   .type(MediaType.TEXT_PLAIN)
+                   .build();
         }
 
         // save the updated schedule
         saveToDisk();
 
-        return String.format(SchedulerConstants.ADD_OK, event.getCronTab());
+        return Response
+               .status(Status.CREATED)
+               .entity(String.format(SchedulerConstants.ADD_OK, event.getCronTab()))
+               .type(MediaType.TEXT_PLAIN)
+               .build();
     }
 
 
@@ -179,9 +191,9 @@ public class Scheduler
      *
      * @param event the event that triggered the callback
      *
-     * @return a status message
+     * @return an HTTP response to the request
      */
-    private String onDeleteSchedule(DeleteSchedulerTaskEvent event)
+    private Response onDeleteSchedule(DeleteSchedulerTaskEvent event)
     {
         final String cronTab = event.getCronTab();
 
@@ -193,12 +205,18 @@ public class Scheduler
             saveToDisk();
             timer = new Timer();
 
-            return String.format(SchedulerConstants.DELETE_ALL, cronTab);
+            return Response.
+                   ok(String.format(SchedulerConstants.DELETE_ALL, cronTab))
+                   .build();
         }
 
-        // check if id is withing bounds
+        // check if id is within bounds
         if (!registeredTasks.containsKey(cronTab))
-            return String.format(SchedulerConstants.DELETE_FAILED, cronTab);
+            return Response
+                   .status(Status.BAD_REQUEST)
+                   .entity(String.format(SchedulerConstants.DELETE_FAILED, cronTab))
+                   .type(MediaType.TEXT_PLAIN)
+                   .build();
 
         // remove and cancel task
         final TimerTask removedTask = registeredTasks.remove(cronTab);
@@ -207,7 +225,9 @@ public class Scheduler
         // save the updated schedule
         saveToDisk();
 
-        return String.format(SchedulerConstants.DELETE_OK, cronTab);
+        return Response.
+               ok(String.format(SchedulerConstants.DELETE_OK, cronTab))
+               .build();
     }
 
 

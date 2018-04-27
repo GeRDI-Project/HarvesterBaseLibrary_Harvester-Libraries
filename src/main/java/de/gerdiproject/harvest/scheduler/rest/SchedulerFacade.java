@@ -23,6 +23,8 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
 
 import de.gerdiproject.harvest.MainContext;
 import de.gerdiproject.harvest.event.EventSystem;
@@ -75,13 +77,16 @@ public class SchedulerFacade
     @Produces({
         MediaType.TEXT_PLAIN
     })
-    public String addTask(@QueryParam("cron") String cronTab)
+    public Response addTask(@QueryParam("cron") String cronTab)
     {
-        final String response = EventSystem.sendSynchronousEvent(
-                                    new AddSchedulerTaskEvent(cronTab));
+        final Response response = EventSystem.sendSynchronousEvent(
+                                      new AddSchedulerTaskEvent(cronTab));
 
         if (response == null)
-            return StateConstants.INIT_IN_PROGRESS;
+            return Response
+                   .status(Status.SERVICE_UNAVAILABLE)
+                   .entity(StateConstants.INIT_IN_PROGRESS)
+                   .type(MediaType.TEXT_PLAIN).build();
         else
             return response;
     }
@@ -98,13 +103,16 @@ public class SchedulerFacade
     @Produces({
         MediaType.TEXT_PLAIN
     })
-    public String deleteTask(@QueryParam("cron") String cronTab)
+    public Response deleteTask(@QueryParam("cron") String cronTab)
     {
-        final String response = EventSystem.sendSynchronousEvent(
-                                    new DeleteSchedulerTaskEvent(cronTab));
+        final Response response = EventSystem.sendSynchronousEvent(
+                                      new DeleteSchedulerTaskEvent(cronTab));
 
         if (response == null)
-            return StateConstants.INIT_IN_PROGRESS;
+            return Response
+                   .status(Status.SERVICE_UNAVAILABLE)
+                   .entity(StateConstants.INIT_IN_PROGRESS)
+                   .type(MediaType.TEXT_PLAIN).build();
         else
             return response;
     }

@@ -16,16 +16,18 @@
  */
 package de.gerdiproject.harvest.scheduler.events;
 
+import javax.ws.rs.core.Response;
+
 import de.gerdiproject.harvest.event.ISynchronousEvent;
 import de.gerdiproject.harvest.scheduler.Scheduler;
 
 /**
  * Synchronous event for removing a task from the {@linkplain Scheduler} and
- * returning possible error messages.
+ * returning a HTTP response
  *
  * @author Robin Weiss
  */
-public class DeleteSchedulerTaskEvent implements ISynchronousEvent<String>
+public class DeleteSchedulerTaskEvent implements ISynchronousEvent<Response>
 {
     private final String cronTab;
 

@@ -40,7 +40,8 @@ public class SchedulerConstants
                                            + "Active Harvesting Schedules:%n"
                                            + "%s%n%n"
                                            + "POST?cron=XXX    Adds a new harvest task with the cron tab XXX%n"
-                                           + "DELETE?cron=XXX  Deletes the harvest task with the cron tab XXX%n";
+                                           + "DELETE?cron=XXX  Deletes the harvest task with the cron tab XXX%n"
+                                           + "DELETE           Deletes all harvest tasks";
 
     public static final String CACHE_PATH = CacheConstants.CACHE_FOLDER_PATH + "schedule.json";
     public static final String ERROR_RESCHEDULE = "Cannot re-schedule task: %s";
