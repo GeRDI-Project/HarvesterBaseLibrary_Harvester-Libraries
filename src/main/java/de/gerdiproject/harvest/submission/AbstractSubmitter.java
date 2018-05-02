@@ -110,23 +110,24 @@ public abstract class AbstractSubmitter
         if (canSubmit) {
             // start asynchronous submission
             currentSubmissionProcess = new CancelableFuture<>(
-                    createSubmissionProcess(cachedDocuments, submissionUrl, credentials, batchSize));
+                createSubmissionProcess(cachedDocuments, submissionUrl, credentials, batchSize));
 
             // finished handler
             currentSubmissionProcess.thenApply((isSuccessful) -> {
                 onSubmissionFinished();
                 return isSuccessful;
             })
-                    // exception handler
-                    .exceptionally(throwable -> {
-                        if (isAborting)
-                            onSubmissionAborted();
-                        else {
-                            logger.error(SubmissionConstants.SUBMISSION_INTERRUPTED, throwable);
-                            onSubmissionFinished();
-                        }
-                        return false;
-                    });
+            // exception handler
+            .exceptionally(throwable -> {
+                if (isAborting)
+                    onSubmissionAborted();
+                else
+                {
+                    logger.error(SubmissionConstants.SUBMISSION_INTERRUPTED, throwable);
+                    onSubmissionFinished();
+                }
+                return false;
+            });
         } else // fail the submission
             onSubmissionFinished();
     }
@@ -155,13 +156,14 @@ public abstract class AbstractSubmitter
 
             // prepare json reader for the cached document list
             JsonReader reader = new JsonReader(
-                    new InputStreamReader(new FileInputStream(cachedDocuments), MainContext.getCharset()));
+                new InputStreamReader(new FileInputStream(cachedDocuments), MainContext.getCharset()));
 
             // iterate through cached array
             List<IDocument> documentList = new LinkedList<IDocument>();
             reader.beginArray();
 
-            while (reader.hasNext()) {
+            while (reader.hasNext())
+            {
                 // abort submission if the flag is set
                 if (isAborting) {
                     areAllSubmissionsSuccessful = false;
@@ -186,7 +188,8 @@ public abstract class AbstractSubmitter
             reader.close();
 
             // send remainder of documents
-            if (documentList.size() > 0) {
+            if (documentList.size() > 0)
+            {
                 areAllSubmissionsSuccessful &= trySubmitBatch(documentList, submissionUrl, credentials);
                 documentList.clear();
             }
@@ -290,10 +293,10 @@ public abstract class AbstractSubmitter
     {
         if (documents == null || documents.isEmpty()) {
             logger.error(
-                    String.format(
-                            SubmissionConstants.SUBMIT_PARTIAL_FAILED,
-                            String.valueOf(submittedDocumentCount),
-                            SubmissionConstants.UNKNOWN_DOCUMENT_COUNT) + SubmissionConstants.NO_DOCS_ERROR);
+                String.format(
+                    SubmissionConstants.SUBMIT_PARTIAL_FAILED,
+                    String.valueOf(submittedDocumentCount),
+                    SubmissionConstants.UNKNOWN_DOCUMENT_COUNT) + SubmissionConstants.NO_DOCS_ERROR);
             return false;
         }
 
@@ -306,20 +309,20 @@ public abstract class AbstractSubmitter
 
             // log success and send an event
             logger.info(
-                    String.format(
-                            SubmissionConstants.SUBMIT_PARTIAL_OK,
-                            submittedDocumentCount,
-                            submittedDocumentCount + numberOfDocs));
+                String.format(
+                    SubmissionConstants.SUBMIT_PARTIAL_OK,
+                    submittedDocumentCount,
+                    submittedDocumentCount + numberOfDocs));
             failedDocumentCount -= numberOfDocs;
             isSuccessful = true;
         } catch (Exception e) {
             // log the failure
             logger.error(
-                    String.format(
-                            SubmissionConstants.SUBMIT_PARTIAL_FAILED,
-                            String.valueOf(submittedDocumentCount),
-                            String.valueOf(submittedDocumentCount + numberOfDocs)),
-                    e);
+                String.format(
+                    SubmissionConstants.SUBMIT_PARTIAL_FAILED,
+                    String.valueOf(submittedDocumentCount),
+                    String.valueOf(submittedDocumentCount + numberOfDocs)),
+                e);
             isSuccessful = false;
         }
 
@@ -345,9 +348,8 @@ public abstract class AbstractSubmitter
 
         if (userName == null || password == null || userName.isEmpty())
             return null;
-        else {
+        else
             return Base64.getEncoder().encodeToString((userName + ":" + password).getBytes(MainContext.getCharset()));
-        }
     }
 
 

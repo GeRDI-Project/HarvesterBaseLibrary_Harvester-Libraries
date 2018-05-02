@@ -97,7 +97,7 @@ public class HarvestSaver
 
         // start asynchronous save
         currentSavingProcess =
-                new CancelableFuture<>(createSaveProcess(cachedDocuments, startTimestamp, finishTimestamp, sourceHash));
+            new CancelableFuture<>(createSaveProcess(cachedDocuments, startTimestamp, finishTimestamp, sourceHash));
 
         // exception handler
         currentSavingProcess.thenApply((isSuccessful) -> {
@@ -140,10 +140,10 @@ public class HarvestSaver
     {
         // clean up unfinished save file
         if (saveFile != null
-                && saveFile.exists()
-                && MainContext.getConfiguration().getParameterValue(
-                        ConfigurationConstants.DELETE_UNFINISHED_SAVE,
-                        Boolean.class)) {
+            && saveFile.exists()
+            && MainContext.getConfiguration().getParameterValue(
+                ConfigurationConstants.DELETE_UNFINISHED_SAVE,
+                Boolean.class)) {
             try {
                 boolean wasDeleted = saveFile.delete();
 
@@ -193,24 +193,25 @@ public class HarvestSaver
             // check if file was created
             boolean isSuccessful = saveFile != null;
 
-            if (isSuccessful) {
+            if (isSuccessful)
+            {
                 try {
                     // prepare json reader for the cached document list
                     JsonReader reader = new JsonReader(
-                            new InputStreamReader(new FileInputStream(cachedDocuments), MainContext.getCharset()));
+                        new InputStreamReader(new FileInputStream(cachedDocuments), MainContext.getCharset()));
 
                     // prepare json writer for the save file
                     JsonWriter writer = new JsonWriter(
-                            new OutputStreamWriter(new FileOutputStream(saveFile), MainContext.getCharset()));
+                        new OutputStreamWriter(new FileOutputStream(saveFile), MainContext.getCharset()));
 
                     // transfer data to target file
                     writeDocuments(
-                            reader,
-                            writer,
-                            startTimestamp,
-                            finishTimestamp,
-                            sourceHash,
-                            config.getParameterValue(ConfigurationConstants.READ_HTTP_FROM_DISK, Boolean.class));
+                        reader,
+                        writer,
+                        startTimestamp,
+                        finishTimestamp,
+                        sourceHash,
+                        config.getParameterValue(ConfigurationConstants.READ_HTTP_FROM_DISK, Boolean.class));
                 } catch (IOException e) {
                     LOGGER.error(CacheConstants.SAVE_FAILED_ERROR, e);
                     isSuccessful = false;
@@ -242,14 +243,13 @@ public class HarvestSaver
         if (from > 0 || to != Integer.MAX_VALUE) {
 
             fileName = String.format(
-                    CacheConstants.SAVE_FILE_NAME_PARTIAL,
-                    MainContext.getModuleName(),
-                    from,
-                    to,
-                    startTimestamp);
-        } else {
+                           CacheConstants.SAVE_FILE_NAME_PARTIAL,
+                           MainContext.getModuleName(),
+                           from,
+                           to,
+                           startTimestamp);
+        } else
             fileName = String.format(CacheConstants.SAVE_FILE_NAME, MainContext.getModuleName(), startTimestamp);
-        }
 
         // create file and directories
         File saveFile = new File(fileName);

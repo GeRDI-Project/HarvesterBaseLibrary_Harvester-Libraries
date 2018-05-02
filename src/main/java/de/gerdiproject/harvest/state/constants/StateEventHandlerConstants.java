@@ -80,7 +80,8 @@ public class StateEventHandlerConstants
     public static final Consumer<HarvestFinishedEvent> ON_HARVEST_FINISHED = (HarvestFinishedEvent e) -> {
         // was the harvest successful? then choose the next automatic
         // post-processing state
-        if (e.isSuccessful()) {
+        if (e.isSuccessful())
+        {
             LOGGER.info(StateConstants.HARVEST_DONE);
 
             final Configuration config = MainContext.getConfiguration();

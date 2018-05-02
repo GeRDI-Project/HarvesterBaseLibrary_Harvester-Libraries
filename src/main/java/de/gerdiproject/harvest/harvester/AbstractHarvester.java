@@ -311,11 +311,11 @@ public abstract class AbstractHarvester
             finishHarvestSuccessfully();
             return isSuccessful;
         })
-                // exception handler
-                .exceptionally(throwable -> {
-                    finishHarvestExceptionally(throwable.getCause());
-                    return false;
-                });
+        // exception handler
+        .exceptionally(throwable -> {
+            finishHarvestExceptionally(throwable.getCause());
+            return false;
+        });
     }
 
 
@@ -336,6 +336,7 @@ public abstract class AbstractHarvester
         // dead-lock fix: clear aborting status
         if (isAborting) {
             isAborting = false;
+
             if (isMainHarvester)
                 EventSystem.sendEvent(new AbortingFinishedEvent());
         }

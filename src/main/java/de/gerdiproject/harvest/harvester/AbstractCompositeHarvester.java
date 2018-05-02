@@ -203,6 +203,7 @@ public abstract class AbstractCompositeHarvester extends AbstractHarvester
     protected void abortHarvest()
     {
         isAborting = true;
+
         if (currentHarvestingProcess != null)
             subHarvesters.forEach((AbstractHarvester sub) -> sub.abortHarvest());
     }
