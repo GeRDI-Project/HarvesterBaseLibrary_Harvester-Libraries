@@ -95,7 +95,6 @@ public class CronUtils
         final int currYear = cal.get(Calendar.YEAR);
         final byte currMonth = (byte)(cal.get(Calendar.MONTH) + 1);
         final byte currMonthDay = (byte) cal.get(Calendar.DAY_OF_MONTH);
-        final byte currWeekDay = (byte)(cal.get(Calendar.DAY_OF_WEEK) - 1);
         final byte currHour = (byte) cal.get(Calendar.HOUR_OF_DAY);
         final byte currMinute = (byte) cal.get(Calendar.MINUTE);
 
@@ -116,48 +115,7 @@ public class CronUtils
         isOverflowing = nextHour < currHour || nextHour == currHour && isOverflowing;
 
         // both month day and week day restrictions are summarized as a day of a month
-        byte nextDay;
-        {
-            final int daysInThisMonth = getDaysInMonth(currMonth, currYear);
-
-            // find the next matching day of the month
-            byte nextMonthDay = getNextMatch(monthDays, isOverflowing ? (byte)(currMonthDay + 1) : currMonthDay);
-
-            // if the next possible day falls into the next month, choose the earliest month day
-            if (nextMonthDay > currMonthDay && daysInThisMonth < nextMonthDay)
-                nextMonthDay = monthDays[0];
-
-            nextDay = nextMonthDay;
-
-            // check if week days are (also) restricted
-            if (isWeekDayRestricted) {
-                // find the next matching week day
-                byte nextWeekDay = getNextMatch(weekDays, currWeekDay);
-
-                // calculate how many days pass until the next viable week day
-                int daysUntilNextWeekDay = nextWeekDay > currWeekDay || nextWeekDay == currWeekDay && !isOverflowing
-                                           ? nextWeekDay - currWeekDay
-                                           : nextWeekDay + 1 + CronConstants.WEEK_DAYS_MAX_CRON - currWeekDay;
-
-                // calculate the day of the month of the matching week day
-                byte nextMonthDay2 = (byte)(currMonthDay + daysUntilNextWeekDay);
-
-                // wrap the day of the month, if the week day falls into the next month
-                if (nextMonthDay2 > currMonthDay && daysInThisMonth < nextMonthDay2)
-                    nextMonthDay2 -= daysInThisMonth;
-
-                // check if the next days are in the next matching month
-                boolean isMonthDayWrapped = nextMonthDay < currMonthDay || nextMonthDay > daysInThisMonth;
-                boolean isWeekDayWrapped = nextMonthDay2 < currMonthDay;
-
-
-                // check if the next week day comes before the next month day, if both are restricted
-                if (!isMonthDayRestricted
-                    || isMonthDayWrapped == isWeekDayWrapped && nextMonthDay2 < nextMonthDay
-                    || isMonthDayWrapped)
-                    nextDay = nextMonthDay2;
-            }
-        }
+        byte nextDay = calculateNextDay(monthDays, weekDays, cal, isOverflowing);
 
         // check if the next matching day is within the current (false) or next month (true)
         isOverflowing =
@@ -234,6 +192,74 @@ public class CronUtils
             days++;
 
         return days;
+    }
+
+
+    /**
+     * Uses the week days and month days defined by a cron tab and calculates the month day of the earliest matching
+     * day.
+     *
+     * @param monthDays an array of viable month days [0,31]
+     * @param weekDays an array of viable week days [0,6]
+     * @param cal a the date of the earliest possible match
+     * @param isOverflowing if true, the day must already be one day later, because the earliest matching hour lies within the next day
+     *
+     * @return a month day [0-31] of the earliest matching day restrictions
+     */
+    private static byte calculateNextDay(final byte[] monthDays, final byte[] weekDays, final Calendar cal, boolean isOverflowing)
+    {
+        final int currYear = cal.get(Calendar.YEAR);
+        final byte currMonth = (byte)(cal.get(Calendar.MONTH) + 1);
+        final byte currMonthDay = (byte) cal.get(Calendar.DAY_OF_MONTH);
+        final byte currWeekDay = (byte)(cal.get(Calendar.DAY_OF_WEEK) - 1);
+
+        final boolean isMonthDayRestricted = monthDays[0] == CronConstants.DAYS_MIN_CRON
+                                             && monthDays[monthDays.length - 1] == CronConstants.DAYS_MAX_CRON;
+
+        final boolean isWeekDayRestricted = weekDays[0] == CronConstants.WEEK_DAYS_MIN_CRON
+                                            && weekDays[weekDays.length - 1] == CronConstants.WEEK_DAYS_MAX_CRON;
+
+        final int daysInThisMonth = getDaysInMonth(currMonth, currYear);
+
+        // find the next matching day of the month
+        byte nextMonthDay = getNextMatch(monthDays, isOverflowing ? (byte)(currMonthDay + 1) : currMonthDay);
+
+        // if the next possible day falls into the next month, choose the earliest month day
+        if (nextMonthDay > currMonthDay && daysInThisMonth < nextMonthDay)
+            nextMonthDay = monthDays[0];
+
+        byte nextDay = nextMonthDay;
+
+        // check if week days are (also) restricted
+        if (isWeekDayRestricted) {
+            // find the next matching week day
+            byte nextWeekDay = getNextMatch(weekDays, currWeekDay);
+
+            // calculate how many days pass until the next viable week day
+            int daysUntilNextWeekDay = nextWeekDay > currWeekDay || nextWeekDay == currWeekDay && !isOverflowing
+                                       ? nextWeekDay - currWeekDay
+                                       : nextWeekDay + 1 + CronConstants.WEEK_DAYS_MAX_CRON - currWeekDay;
+
+            // calculate the day of the month of the matching week day
+            byte nextMonthDay2 = (byte)(currMonthDay + daysUntilNextWeekDay);
+
+            // wrap the day of the month, if the week day falls into the next month
+            if (nextMonthDay2 > currMonthDay && daysInThisMonth < nextMonthDay2)
+                nextMonthDay2 -= daysInThisMonth;
+
+            // check if the next days are in the next matching month
+            boolean isMonthDayWrapped = nextMonthDay < currMonthDay || nextMonthDay > daysInThisMonth;
+            boolean isWeekDayWrapped = nextMonthDay2 < currMonthDay;
+
+
+            // check if the next week day comes before the next month day, if both are restricted
+            if (!isMonthDayRestricted
+                || isMonthDayWrapped == isWeekDayWrapped && nextMonthDay2 < nextMonthDay
+                || isMonthDayWrapped)
+                nextDay = nextMonthDay2;
+        }
+
+        return nextDay;
     }
 
 
