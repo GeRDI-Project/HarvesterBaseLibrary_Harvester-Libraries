@@ -34,6 +34,7 @@ import de.gerdiproject.harvest.save.HarvestSaver;
 import de.gerdiproject.harvest.state.StateMachine;
 import de.gerdiproject.harvest.state.impl.InitializationState;
 import de.gerdiproject.harvest.submission.AbstractSubmitter;
+import de.gerdiproject.harvest.scheduler.Scheduler;
 import de.gerdiproject.harvest.utils.CancelableFuture;
 import de.gerdiproject.harvest.utils.HashGenerator;
 import de.gerdiproject.harvest.utils.time.HarvestTimeKeeper;
@@ -56,6 +57,7 @@ public class MainContext
     private Charset charset;
     private Configuration configuration;
     private AbstractSubmitter submitter;
+    private Scheduler scheduler;
 
     private static MainContext instance = new MainContext();
 
@@ -166,6 +168,10 @@ public class MainContext
             // update the harvesting range
             config.updateParameter(ConfigurationConstants.HARVEST_START_INDEX);
             config.updateParameter(ConfigurationConstants.HARVEST_END_INDEX);
+
+            // init scheduler
+            instance.scheduler = new Scheduler();
+            instance.scheduler.init();
 
             return true;
         });
