@@ -28,7 +28,8 @@ import de.gerdiproject.harvest.state.impl.SavingState;
 import de.gerdiproject.harvest.state.impl.SubmittingState;
 
 /**
- * This static class is a collection of constants, commonly used for classes that deal with the {@linkplain Configuration}.
+ * This static class is a collection of constants, commonly used for classes
+ * that deal with the {@linkplain Configuration}.
  *
  * @author Robin Weiss
  */
@@ -44,18 +45,28 @@ public class ConfigurationConstants
     public static final String SUBMISSION_USER_NAME = "submissionUserName";
     public static final String SUBMISSION_PASSWORD = "submissionPassword";
     public static final String SUBMISSION_SIZE = "submissionSize";
-    public static final String KEEP_CACHE = "keepCachedDocuments";
+    public static final String SUBMIT_INCOMPLETE = "submitIncomplete";
+    public static final String SUBMIT_FORCED = "submitOutdated";
+    public static final String FORCE_HARVEST = "forceHarvest";
     public static final String DELETE_UNFINISHED_SAVE = "deleteFailedSaves";
 
     public static final String CHANGED_PARAM = "Set parameter '%s' to '%s'.";
-    public static final String CANNOT_CHANGE_PARAM_INVALID_STATE = "Cannot change parameter '%s' during the %s-process.";
-    public static final String CANNOT_CHANGE_PARAM_INVALID_VALUE = "Cannot change parameter '%s' to '%s'. Allowed values are: %s";
-    public static final String CANNOT_CHANGE_PARAM_INVALID_URL = "Cannot change parameter '%s'. '%s' is not a valid URL!";
+
+    public static final String CANNOT_CHANGE_PARAM_INVALID_STATE =
+        "Cannot change parameter '%s' during the %s-process.";
+
+    public static final String CANNOT_CHANGE_PARAM_INVALID_VALUE =
+        "Cannot change parameter '%s' to '%s'. Allowed values are: %s";
+
+    public static final String CANNOT_CHANGE_PARAM_INVALID_URL =
+        "Cannot change parameter '%s'. '%s' is not a valid URL!";
+
     public static final String NO_CHANGES = "No parameters were changed!";
     public static final String UNKNOWN_PARAM = "Cannot change parameter '%s'. Unknown parameter!";
 
     public static final String BOOLEAN_VALID_VALUES_TEXT = "0, 1, true, false";
-    public static final List<String> BOOLEAN_VALID_VALUES_LIST = Collections.unmodifiableList(Arrays.asList("1", "0", "true", "false"));
+    public static final List<String> BOOLEAN_VALID_VALUES_LIST =
+        Collections.unmodifiableList(Arrays.asList("1", "0", "true", "false"));
 
     public static final String INTEGER_VALUE_MAX = "max";
     public static final String INTEGER_VALUE_MIN = "min";
@@ -76,18 +87,19 @@ public class ConfigurationConstants
                                            + "POST  Saves the current configuration to disk.%n"
                                            + "PUT   Sets x-www-form-urlencoded parameters for the harvester.%n"
                                            + "      Valid values: %s.%n";
-    public static final String REST_INFO_FAILED = "Could not initialize Configuration.\nPlease, look at the server logs for details.";
+    public static final String REST_INFO_FAILED =
+        "Could not initialize Configuration.\nPlease, look at the server logs for details.";
 
     public static final String PARSE_ERROR = "Could not read configuration parameter value '%s' from key '%s'!";
 
     public static final List<Class<? extends IState>> HARVESTER_PARAM_ALLOWED_STATES =
-        Collections.unmodifiableList(Arrays.asList(
-                                         InitializationState.class,
-                                         ErrorState.class,
-                                         IdleState.class,
-                                         SavingState.class,
-                                         SubmittingState.class
-                                     ));
+        Collections.unmodifiableList(
+            Arrays.asList(
+                InitializationState.class,
+                ErrorState.class,
+                IdleState.class,
+                SavingState.class,
+                SubmittingState.class));
 
     public static final String URL_PREFIX = "%URL_PARAMETER%";
     public static final String GLOBAL_PARAMETERS_JSON = "globalParameters";
@@ -96,8 +108,8 @@ public class ConfigurationConstants
 
 
     /**
-     * Private constructor, because this class just serves
-     * as a place to define constants.
+     * Private constructor, because this class just serves as a place to define
+     * constants.
      */
     private ConfigurationConstants()
     {

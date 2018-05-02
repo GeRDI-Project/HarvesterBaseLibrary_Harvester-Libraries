@@ -15,6 +15,8 @@
  */
 package de.gerdiproject.harvest.harvester.events;
 
+import java.time.Instant;
+
 import de.gerdiproject.harvest.event.IEvent;
 
 /**
@@ -24,6 +26,7 @@ import de.gerdiproject.harvest.event.IEvent;
  */
 public class HarvestStartedEvent implements IEvent
 {
+    private final long startTimestamp;
     private final int startIndex;
     private final int endIndex;
 
@@ -32,17 +35,20 @@ public class HarvestStartedEvent implements IEvent
      * Simple constructor that requires the harvesting range.
      *
      * @param startIndex the index of the first document to be harvested
-     * @param endIndex the index of the last document that is to be harvested + 1
+     * @param endIndex the index of the last document that is to be harvested +
+     *            1
      */
     public HarvestStartedEvent(int startIndex, int endIndex)
     {
         this.startIndex = startIndex;
         this.endIndex = endIndex;
+        this.startTimestamp = Instant.now().toEpochMilli();
     }
 
 
     /**
      * Returns the index of the first document to be harvested.
+     *
      * @return the index of the first document to be harvested
      */
     public int getStartIndex()
@@ -53,10 +59,24 @@ public class HarvestStartedEvent implements IEvent
 
     /**
      * Returns the index of the last document that is to be harvested + 1.
+     *
      * @return the index of the last document that is to be harvested + 1
      */
     public int getEndIndex()
     {
         return endIndex;
     }
+
+
+    /**
+     * Returns the unix timestamp at which the event was created.
+     *
+     * @return the unix timestamp at which the event was created
+     */
+    public long getStartTimestamp()
+    {
+        return startTimestamp;
+    }
+
+
 }

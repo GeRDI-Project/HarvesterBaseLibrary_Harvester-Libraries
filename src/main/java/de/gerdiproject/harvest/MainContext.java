@@ -30,14 +30,19 @@ import de.gerdiproject.harvest.config.parameters.AbstractParameter;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.harvester.AbstractHarvester;
 import de.gerdiproject.harvest.harvester.events.HarvesterInitializedEvent;
+import de.gerdiproject.harvest.save.HarvestSaver;
+import de.gerdiproject.harvest.state.StateMachine;
+import de.gerdiproject.harvest.state.impl.InitializationState;
+import de.gerdiproject.harvest.submission.AbstractSubmitter;
 import de.gerdiproject.harvest.scheduler.Scheduler;
 import de.gerdiproject.harvest.utils.CancelableFuture;
+import de.gerdiproject.harvest.utils.HashGenerator;
 import de.gerdiproject.harvest.utils.time.HarvestTimeKeeper;
 
 
 /**
- * This class provides static methods for retrieving application
- * singleton utility and configuration classes.
+ * This class provides static methods for retrieving application singleton
+ * utility and configuration classes.
  *
  * @author Robin Weiss
  */
@@ -47,10 +52,11 @@ public class MainContext
 
     private static final Logger LOGGER = LoggerFactory.getLogger(MainContext.class);
 
-    private final HarvestTimeKeeper timeKeeper;
+    private HarvestTimeKeeper timeKeeper;
     private AbstractHarvester harvester;
     private Charset charset;
     private Configuration configuration;
+    private AbstractSubmitter submitter;
     private Scheduler scheduler;
 
     private static MainContext instance = new MainContext();
@@ -61,7 +67,6 @@ public class MainContext
      */
     private MainContext()
     {
-        timeKeeper = new HarvestTimeKeeper();
     }
 
 
@@ -116,19 +121,35 @@ public class MainContext
      * @param moduleName name of this application
      * @param harvesterClass an AbstractHarvester subclass
      * @param charset the default charset for processing strings
-     * @param harvesterParams additional parameters, specific to the harvester, or null
+     * @param harvesterParams additional parameters, specific to the harvester,
+     *            or null
+     * @param submitter the class responsible for submitting documents to a
+     *            search index
      *
      * @see de.gerdiproject.harvest.harvester.AbstractHarvester
      */
-    public static <T extends AbstractHarvester> void init(String moduleName, Class<T> harvesterClass, Charset charset, List<AbstractParameter<?>> harvesterParams)
+    public static <T extends AbstractHarvester> void init(String moduleName, Class<T> harvesterClass, Charset charset, List<AbstractParameter<?>> harvesterParams, AbstractSubmitter submitter)
     {
-        // set global parameters
         instance.moduleName = moduleName;
         instance.charset = charset;
+        instance.timeKeeper = new HarvestTimeKeeper();
+        instance.timeKeeper.init();
+
+        StateMachine.setState(new InitializationState());
 
         // init harvester
         CancelableFuture<Boolean> initProcess = new CancelableFuture<>(() -> {
             LOGGER.info(ApplicationConstants.INIT_HARVESTER_START);
+
+            // init HashGenerator
+            HashGenerator.init(charset);
+
+            // initialize saver and submitter
+            HarvestSaver.init();
+            instance.submitter = submitter;
+            instance.submitter.init();
+
+            // initialize harvester
             instance.harvester = harvesterClass.newInstance();
             instance.harvester.setAsMainHarvester();
 
@@ -155,14 +176,14 @@ public class MainContext
             return true;
         });
 
-        initProcess.thenApply(onHarvesterInitializedSuccess)
-        .exceptionally(onHarvesterInitializedFailed);
+        initProcess.thenApply(onHarvesterInitializedSuccess).exceptionally(onHarvesterInitializedFailed);
     }
 
 
     /**
-     * This function is called when the asynchronous harvester initialization completes successfully.
-     * It logs the success and changes the state machine's current state.
+     * This function is called when the asynchronous harvester initialization
+     * completes successfully. It logs the success and changes the state
+     * machine's current state.
      */
     private static Function<Boolean, Boolean> onHarvesterInitializedSuccess = (Boolean state) -> {
 
@@ -177,8 +198,9 @@ public class MainContext
 
 
     /**
-     * This function is called when the asynchronous harvester fails to be initialized.
-     * It logs the exception that caused the failure and changes the state machine's current state.
+     * This function is called when the asynchronous harvester fails to be
+     * initialized. It logs the exception that caused the failure and changes
+     * the state machine's current state.
      */
     private static Function<Throwable, Boolean> onHarvesterInitializedFailed = (Throwable reason) -> {
 

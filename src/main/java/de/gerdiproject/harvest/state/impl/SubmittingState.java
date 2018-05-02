@@ -36,13 +36,16 @@ public class SubmittingState extends AbstractProgressingState
     /**
      * Event callback that is called when some documents are submitted.
      */
-    private final Consumer<DocumentsSubmittedEvent> onDocumentsSubmitted = (DocumentsSubmittedEvent e) -> addProgress(e.getNumberOfSubmittedDocuments());
+    private final Consumer<DocumentsSubmittedEvent> onDocumentsSubmitted =
+        (DocumentsSubmittedEvent e) -> addProgress(e.getNumberOfSubmittedDocuments());
 
 
     /**
-     * Constructor that requires the number of documents that are to be submitted.
+     * Constructor that requires the number of documents that are to be
+     * submitted.
      *
-     * @param numberOfDocsToBeSubmitted the number of documents that are to be submitted
+     * @param numberOfDocsToBeSubmitted the number of documents that are to be
+     *            submitted
      */
     public SubmittingState(int numberOfDocsToBeSubmitted)
     {
@@ -58,8 +61,7 @@ public class SubmittingState extends AbstractProgressingState
                    StateConstants.IDLE_STATUS,
                    timeKeeper.getHarvestMeasure().toString(),
                    timeKeeper.getSaveMeasure().toString(),
-                   super.getStatusString()
-               );
+                   super.getStatusString());
     }
 
 
@@ -124,5 +126,12 @@ public class SubmittingState extends AbstractProgressingState
     public String getName()
     {
         return StateConstants.SUBMIT_PROCESS;
+    }
+
+
+    @Override
+    public boolean isOutdated()
+    {
+        return MainContext.getTimeKeeper().isHarvestIncomplete();
     }
 }

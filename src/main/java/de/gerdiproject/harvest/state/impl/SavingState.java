@@ -23,9 +23,9 @@ import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.save.events.DocumentSavedEvent;
 import de.gerdiproject.harvest.save.events.SaveFinishedEvent;
 import de.gerdiproject.harvest.state.AbstractProgressingState;
+import de.gerdiproject.harvest.state.StateMachine;
 import de.gerdiproject.harvest.state.constants.StateConstants;
 import de.gerdiproject.harvest.state.constants.StateEventHandlerConstants;
-import de.gerdiproject.harvest.state.events.ChangeStateEvent;
 import de.gerdiproject.harvest.submission.events.StartSubmissionEvent;
 import de.gerdiproject.harvest.submission.events.SubmissionStartedEvent;
 import de.gerdiproject.harvest.utils.time.HarvestTimeKeeper;
@@ -62,10 +62,13 @@ public class SavingState extends AbstractProgressingState
 
         this.onSaveFinished =
         (SaveFinishedEvent e) -> {
-            if (isAutoTriggered && MainContext.getConfiguration().getParameterValue(ConfigurationConstants.AUTO_SUBMIT, Boolean.class))
+            if (isAutoTriggered
+                && MainContext.getConfiguration().getParameterValue(
+                    ConfigurationConstants.AUTO_SUBMIT,
+                    Boolean.class))
                 EventSystem.sendEvent(new StartSubmissionEvent());
             else
-                EventSystem.sendEvent(new ChangeStateEvent(new IdleState()));
+                StateMachine.setState(new IdleState());
         };
     }
 
@@ -148,5 +151,12 @@ public class SavingState extends AbstractProgressingState
     public String submit()
     {
         return StateConstants.CANNOT_SUBMIT_PREFIX + StateConstants.SAVE_IN_PROGRESS;
+    }
+
+
+    @Override
+    public boolean isOutdated()
+    {
+        return MainContext.getTimeKeeper().isHarvestIncomplete();
     }
 }

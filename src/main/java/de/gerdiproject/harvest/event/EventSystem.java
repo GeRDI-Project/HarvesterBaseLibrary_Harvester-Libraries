@@ -26,7 +26,8 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 /**
- * This singleton class provides a means to dispatch and listen to {@linkplain IEvent}s.
+ * This singleton class provides a means to dispatch and listen to
+ * {@linkplain IEvent}s.
  *
  * @author Robin Weiss
  */
@@ -38,7 +39,6 @@ public class EventSystem
     private final AtomicBoolean isProcessingEvents;
 
     private final static EventSystem instance = new EventSystem();
-
 
 
     /**
@@ -54,10 +54,12 @@ public class EventSystem
 
 
     /**
-     * Adds a callback function that is to be executed when a specified event is dispatched.
+     * Adds a callback function that is to be executed when a specified event is
+     * dispatched.
      *
      * @param eventClass the class of the event
-     * @param callback the callback function that is executed when the event is dispatched
+     * @param callback the callback function that is executed when the event is
+     *            dispatched
      * @param <T> the type of the event
      */
     public static <T extends IEvent> void addListener(Class<T> eventClass, Consumer<T> callback)
@@ -81,7 +83,8 @@ public class EventSystem
      * Removes a callback function for a specified event.
      *
      * @param eventClass the class of the event
-     * @param callback the callback function that is to be removed from the event
+     * @param callback the callback function that is to be removed from the
+     *            event
      * @param <T> the type of the event
      */
     public static <T extends IEvent> void removeListener(Class<T> eventClass, Consumer<T> callback)
@@ -111,9 +114,9 @@ public class EventSystem
 
 
     /**
-     * Dispatches a specified asynchronous event by adding it to a queue.
-     * If the event is the only one in the queue, its callback functions will be called immediately.
-     * Otherwise, all other queued events will be processed first.
+     * Dispatches a specified asynchronous event by adding it to a queue. If the
+     * event is the only one in the queue, its callback functions will be called
+     * immediately. Otherwise, all other queued events will be processed first.
      *
      * @param event the event that is dispatched
      * @param <T> the type of the dispatched event
@@ -126,8 +129,8 @@ public class EventSystem
 
 
     /**
-     * If no other dequeueing process is in progress, this method
-     * empties the asynchronous event queue in order, executing all corresponding callbacks.
+     * If no other dequeueing process is in progress, this method empties the
+     * asynchronous event queue in order, executing all corresponding callbacks.
      */
     private void processAsynchronousEventQueue()
     {
@@ -143,12 +146,15 @@ public class EventSystem
 
 
     /**
-     * Executes all functions that were to added to the specified event via the addListener() function.
+     * Executes all functions that were to added to the specified event via the
+     * addListener() function.
      *
      * @param event the event that was dispatched
      * @param <T> the type of the dispatched event
      */
-    @SuppressWarnings({"unchecked"}) // this warning is suppressed, because the public functions guarantee that the consumer consumes events of the same class as the corresponding key
+    @SuppressWarnings({
+        "unchecked"
+    }) // this warning is suppressed, because the public functions guarantee that the consumer consumes events of the same class as the corresponding key
     private <T extends IEvent> void executeAsynchronousCallbacks(T event)
     {
         final List<Consumer<? extends IEvent>> eventList;
@@ -164,18 +170,20 @@ public class EventSystem
 
                 // traverse list from back to front, in case a listener gets removed by a callback function
                 while (i != 0)
-                    ((Consumer<T>)eventList.get(--i)).accept(event);
+                    ((Consumer<T>) eventList.get(--i)).accept(event);
             }
         }
     }
 
 
     /**
-     * Adds a callback function that executes and returns a value when a specified synchronous event is dispatched.
-     * Due to the synchronous nature, only one callback function may be registered per event class.
+     * Adds a callback function that executes and returns a value when a
+     * specified synchronous event is dispatched. Due to the synchronous nature,
+     * only one callback function may be registered per event class.
      *
      * @param eventClass the class of the synchronous event
-     * @param callback the callback function that is executed and returns when the event is dispatched
+     * @param callback the callback function that is executed and returns when
+     *            the event is dispatched
      * @param <T> the type of the synchronous event
      * @param <R> the type of the return value of the callback function
      */
@@ -202,7 +210,8 @@ public class EventSystem
 
 
     /**
-     * Dispatches a synchronous event that executes a unique callback function and returns its calculated value.
+     * Dispatches a synchronous event that executes a unique callback function
+     * and returns its calculated value.
      *
      * @param event a synchronous event
      * @param <T> the type of the synchronous event
@@ -214,10 +223,11 @@ public class EventSystem
     public static <R, T extends ISynchronousEvent<R>> R sendSynchronousEvent(T event)
     {
         synchronized (instance.synchronousCallbackMap) {
-            Function<? extends ISynchronousEvent<?>, ?> callback = instance.synchronousCallbackMap.get(event.getClass());
+            Function<? extends ISynchronousEvent<?>, ?> callback =
+                instance.synchronousCallbackMap.get(event.getClass());
 
             if (callback != null)
-                return ((Function<T, R>)callback).apply(event);
+                return ((Function<T, R>) callback).apply(event);
             else
                 return null;
         }

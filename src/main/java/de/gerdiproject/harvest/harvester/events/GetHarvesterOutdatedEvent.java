@@ -1,5 +1,5 @@
 /**
- * Copyright © 2017 Robin Weiss (http://www.gerdi-project.de)
+ * Copyright © 2018 Robin Weiss (http://www.gerdi-project.de)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,11 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package de.gerdiproject.harvest.harvester.events;
+
+import de.gerdiproject.harvest.event.ISynchronousEvent;
+
 /**
- * This package contains classes and packages that are related to caching
- * harvested documents on disk via
- * {@linkplain de.gerdiproject.harvest.utils.cache.HarvesterCache}s.
+ * This synchronous event returns true if either the harvesting range or the
+ * source hash have changed since the last harvest.
  *
  * @author Robin Weiss
  */
-package de.gerdiproject.harvest.utils.cache;
+public class GetHarvesterOutdatedEvent implements ISynchronousEvent<Boolean>
+{
+}

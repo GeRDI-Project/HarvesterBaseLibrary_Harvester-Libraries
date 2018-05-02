@@ -16,18 +16,6 @@
 package de.gerdiproject.harvest;
 
 
-import de.gerdiproject.harvest.application.constants.ApplicationConstants;
-import de.gerdiproject.harvest.application.events.ContextDestroyedEvent;
-import de.gerdiproject.harvest.application.events.ContextInitializedEvent;
-import de.gerdiproject.harvest.config.parameters.AbstractParameter;
-import de.gerdiproject.harvest.event.EventSystem;
-import de.gerdiproject.harvest.harvester.AbstractHarvester;
-import de.gerdiproject.harvest.state.StateMachine;
-import de.gerdiproject.harvest.submission.AbstractSubmitter;
-import de.gerdiproject.harvest.submission.elasticsearch.ElasticSearchSubmitter;
-import de.gerdiproject.harvest.utils.cache.DocumentsCache;
-import de.gerdiproject.json.GsonUtils;
-
 import java.lang.reflect.ParameterizedType;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
@@ -40,10 +28,21 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonDeserializer;
 import com.google.gson.JsonSerializer;
 
+import de.gerdiproject.harvest.application.constants.ApplicationConstants;
+import de.gerdiproject.harvest.application.events.ContextDestroyedEvent;
+import de.gerdiproject.harvest.application.events.ContextInitializedEvent;
+import de.gerdiproject.harvest.config.parameters.AbstractParameter;
+import de.gerdiproject.harvest.event.EventSystem;
+import de.gerdiproject.harvest.harvester.AbstractHarvester;
+import de.gerdiproject.harvest.submission.AbstractSubmitter;
+import de.gerdiproject.harvest.submission.elasticsearch.ElasticSearchSubmitter;
+import de.gerdiproject.json.GsonUtils;
+
 
 /**
  * This class registers a Logger and Harvester when the server is started. A
- * sub-class with the @WebListener annotation must be implemented in order for the harvester micro service to work.
+ * sub-class with the @WebListener annotation must be implemented in order for
+ * the harvester micro service to work.
  *
  * @param <T> an AbstractHarvester sub-class
  *
@@ -77,12 +76,13 @@ public class ContextListener<T extends AbstractHarvester> implements ServletCont
         if (harvesterIndex != -1)
             name = name.substring(0, harvesterIndex);
 
-        return name + ApplicationConstants.HARVESTER_SERVICE_NAME_SUFFIX ;
+        return name + ApplicationConstants.HARVESTER_SERVICE_NAME_SUFFIX;
     }
 
 
     /**
      * Retrieves the charset that is used for harvesting and file operations.
+     *
      * @return a charset
      */
     protected Charset getCharset()
@@ -92,9 +92,10 @@ public class ContextListener<T extends AbstractHarvester> implements ServletCont
 
 
     /**
-     * Creates a GsonBuilder that is to be shared across the service.
-     * If you have custom  JSON (de-)serialization adapters, you can register
-     * them to the GsonBuilder when overriding this method.
+     * Creates a GsonBuilder that is to be shared across the service. If you
+     * have custom JSON (de-)serialization adapters, you can register them to
+     * the GsonBuilder when overriding this method.
+     *
      * @see JsonDeserializer
      * @see JsonSerializer
      *
@@ -107,9 +108,11 @@ public class ContextListener<T extends AbstractHarvester> implements ServletCont
 
 
     /**
-     * Returns additional parameters that are specific to the harvester implementation.
+     * Returns additional parameters that are specific to the harvester
+     * implementation.
      *
-     * @return a list of parameters, or null, if no additional parameters are needed
+     * @return a list of parameters, or null, if no additional parameters are
+     *         needed
      */
     protected List<AbstractParameter<?>> getHarvesterSpecificParameters()
     {
@@ -141,19 +144,13 @@ public class ContextListener<T extends AbstractHarvester> implements ServletCont
         // init Json utilities
         GsonUtils.init(createGsonBuilder());
 
-        // init state machine
-        StateMachine.init();
-
         // init main context
         MainContext.init(
             getServiceName(),
             harvesterClass,
             getCharset(),
-            getHarvesterSpecificParameters()
-        );
-
-        // init documents cache and sender
-        DocumentsCache.init(createSubmitter());
+            getHarvesterSpecificParameters(),
+            createSubmitter());
 
         EventSystem.sendEvent(new ContextInitializedEvent());
     }
@@ -170,6 +167,6 @@ public class ContextListener<T extends AbstractHarvester> implements ServletCont
         EventSystem.sendEvent(new ContextDestroyedEvent());
 
         String goodbyeMsg = String.format(ApplicationConstants.CONTEXT_DESTROYED, getServiceName());
-        System.out.println(goodbyeMsg);  // NOPMD The logger does not work at this point
+        System.out.println(goodbyeMsg); // NOPMD The logger does not work at this point
     }
 }

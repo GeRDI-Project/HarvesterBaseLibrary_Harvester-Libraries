@@ -18,6 +18,7 @@ package de.gerdiproject.harvest.state.impl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import de.gerdiproject.harvest.MainContext;
 import de.gerdiproject.harvest.application.constants.StatusConstants;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.state.IState;
@@ -38,9 +39,9 @@ public class AbortingState implements IState
     private final String processName;
 
 
-
     /**
      * Constructs the state with the name of the aborted process.
+     *
      * @param processName the name of the process that is aborted
      */
     public AbortingState(String processName)
@@ -127,5 +128,12 @@ public class AbortingState implements IState
     public String getName()
     {
         return StateConstants.ABORTING_PROCESS;
+    }
+
+
+    @Override
+    public boolean isOutdated()
+    {
+        return MainContext.getTimeKeeper().isHarvestIncomplete();
     }
 }
