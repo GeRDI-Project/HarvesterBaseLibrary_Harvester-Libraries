@@ -16,31 +16,60 @@
 package de.gerdiproject.harvest.utils.cache.constants;
 
 
-
-import de.gerdiproject.harvest.utils.cache.DocumentsCache;
+import de.gerdiproject.harvest.utils.cache.HarvesterCache;
 
 /**
- * This static class is a collection of constants, used by the {@linkplain DocumentsCache}.
+ * This static class is a collection of constants, used by
+ * {@linkplain HarvesterCache}s.
  *
  * @author Robin Weiss
  */
 public class CacheConstants
 {
     public static final String JSON_FILE_EXTENSION = ".json";
+    public static final String TEMP_FILE_EXTENSION = ".tmp";
 
-    public static final String SAVE_FILE_NAME = "harvestedIndices/%s_result_%d" + JSON_FILE_EXTENSION;
-    public static final String SAVE_FILE_NAME_PARTIAL = "harvestedIndices/%s_partialResult_%d-%d_%d" + JSON_FILE_EXTENSION;
-    public static final String SAVE_FAILED_DIRECTORY = "Could not save documents: Unable to create directories!";
-    public static final String SAVE_FAILED_ERROR = "Could not save harvested documents!";
     public static final String START_CACHE_ERROR = "Error starting the cache writer";
     public static final String FINISH_CACHE_ERROR = "Error closing the cache writer";
 
     public static final String CACHE_FOLDER_PATH = "cachedIndex/%s/";
-    public static final String CACHE_FILE_PATH = CACHE_FOLDER_PATH + "cachedDocuments_%d" + JSON_FILE_EXTENSION;
-    public static final String CACHE_FILE_REGEX = "cachedDocuments_\\d+\\" + JSON_FILE_EXTENSION;
 
-    public static final String DELETE_FILE_SUCCESS = "Deleted old cache file '%s'.";
-    public static final String DELETE_FILE_FAILED = "Could not deleted old cache file '%s'!";
+    public static final String UPDATE_CACHE_FILE_NAME = "%s_updatedDocuments" + JSON_FILE_EXTENSION;
+    public static final String UPDATE_CACHE_FILE_PATH = CACHE_FOLDER_PATH
+                                                        + UPDATE_CACHE_FILE_NAME
+                                                        + JSON_FILE_EXTENSION;
+
+    public static final String UPDATE_CACHE_TEMP_FILE_PATH = CACHE_FOLDER_PATH
+                                                             + "%s_updatedDocumentsPending"
+                                                             + JSON_FILE_EXTENSION;
+
+    public static final String HARVEST_TIME_KEEPER_CACHE_FILE_PATH = CACHE_FOLDER_PATH
+                                                                     + "processTimes"
+                                                                     + JSON_FILE_EXTENSION;
+
+    public static final String VERSIONS_CACHE_FILE_PATH = CACHE_FOLDER_PATH
+                                                          + "%s_documentVersions"
+                                                          + JSON_FILE_EXTENSION;
+
+
+    public static final String VERSIONS_CACHE_TEMP_FILE_PATH = CACHE_FOLDER_PATH
+                                                               + "%s_documentVersionsPending"
+                                                               + JSON_FILE_EXTENSION;
+
+
+    public static final String DELETE_FILE_SUCCESS = "Deleted file '%s'.";
+    public static final String DELETE_FILE_FAILED = "Could not delete file '%s'!";
+
+    public static final String CACHE_CREATE_FAILED = "Could not create file '%s'!";
+    public static final String CACHE_INIT_FAILED = "Could not initialize %s!";
+    public static final String COPY_FILE_FAILED = "Could not copy file '%s' to '%s'!";
+
+    // DocumentVersionsCache
+    public static final String HARVESTER_VALUES_JSON = "harvesterValues";
+    public static final String HARVESTER_SOURCE_HASH_JSON = "sourceHash";
+    public static final String HARVESTER_FROM_JSON = "rangeFrom";
+    public static final String HARVESTER_TO_JSON = "rangeTo";
+    public static final String DOCUMENTS_JSON = "documents";
 
     // AbstractStreamHarvester
     public static final String CACHE_ENTRY_STREAM_PATH = CACHE_FOLDER_PATH + "StreamHarvester/%s" + JSON_FILE_EXTENSION;
@@ -48,8 +77,8 @@ public class CacheConstants
 
 
     /**
-     * Private constructor, because this class just serves
-     * as a place to define constants.
+     * Private constructor, because this class just serves as a place to define
+     * constants.
      */
     private CacheConstants()
     {

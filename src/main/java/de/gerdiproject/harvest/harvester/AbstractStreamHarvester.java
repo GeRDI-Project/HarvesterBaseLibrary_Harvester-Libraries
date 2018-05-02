@@ -54,7 +54,7 @@ public abstract class AbstractStreamHarvester<T> extends AbstractHarvester
 {
     // this warning is suppressed, because the only generic Superclass MUST be T. The cast will always succeed.
     @SuppressWarnings("unchecked")
-    private final Class<T> entryClass = (Class<T>) ((ParameterizedType) getClass().getGenericSuperclass()).getActualTypeArguments()[0];
+    private final Class<T> entryClass = (Class<T>)((ParameterizedType) getClass().getGenericSuperclass()).getActualTypeArguments()[0];
 
     private final AtomicInteger entryCount;
     protected final int numberOfDocumentsPerEntry;

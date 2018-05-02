@@ -23,13 +23,13 @@ import org.slf4j.LoggerFactory;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.state.constants.StateConstants;
 import de.gerdiproject.harvest.state.events.AbortingStartedEvent;
-import de.gerdiproject.harvest.state.events.ChangeStateEvent;
 import de.gerdiproject.harvest.state.events.StartAbortingEvent;
 import de.gerdiproject.harvest.state.impl.AbortingState;
 
 /**
- * This abstract class is a state representing a process that has a clearly defined start and end time.
- * This allows for an estimation of remaining time and thus, for more information to the user.
+ * This abstract class is a state representing a process that has a clearly
+ * defined start and end time. This allows for an estimation of remaining time
+ * and thus, for more information to the user.
  *
  * @author Robin Weiss
  */
@@ -49,8 +49,7 @@ public abstract class AbstractProgressingState implements IState
      */
     private final Consumer<AbortingStartedEvent> onAbortingStarted =
     (AbortingStartedEvent e) -> {
-        AbortingState nextState = new AbortingState(getName());
-        EventSystem.sendEvent(new ChangeStateEvent(nextState));
+        StateMachine.setState(new AbortingState(getName()));
     };
 
 
@@ -104,12 +103,12 @@ public abstract class AbstractProgressingState implements IState
 
 
     /**
-     * Returns a minimalistic progress representation of two values separated
-     * by a slash. If the maximum progress number is unknown, only the number
-     * of the current progress is returned.
+     * Returns a minimalistic progress representation of two values separated by
+     * a slash. If the maximum progress number is unknown, only the number of
+     * the current progress is returned.
      *
-     * @return current- and max value separated by a slash, or only the current value,
-     * if the max value is unknown
+     * @return current- and max value separated by a slash, or only the current
+     *         value, if the max value is unknown
      */
     @Override
     public String getProgress()
@@ -133,8 +132,8 @@ public abstract class AbstractProgressingState implements IState
 
 
     /**
-     * Estimates the remaining seconds of the state by regarding the
-     * already passed time in relation to the progress.
+     * Estimates the remaining seconds of the state by regarding the already
+     * passed time in relation to the progress.
      *
      * @return the remaining seconds or -1, if the time cannot be estimated
      */
@@ -170,8 +169,7 @@ public abstract class AbstractProgressingState implements IState
     /**
      * Creates a duration string out of a specified number of seconds
      *
-     * @param durationInSeconds
-     *            the duration in seconds (duh!)
+     * @param durationInSeconds the duration in seconds (duh!)
      * @return a formatted duration string, or "unknown" if the duration is
      *         negative
      */
@@ -218,13 +216,13 @@ public abstract class AbstractProgressingState implements IState
 
         // log updated progress in percent
         if (isMaxNumberKnown && newProgressInPercent > oldProgressInPercent) {
-            LOGGER.debug(String.format(
-                             StateConstants.PROGESS_TEXT,
-                             getName(),
-                             newProgressInPercent,
-                             currentProgress,
-                             maxProgress)
-                        );
+            LOGGER.debug(
+                String.format(
+                    StateConstants.PROGESS_TEXT,
+                    getName(),
+                    newProgressInPercent,
+                    currentProgress,
+                    maxProgress));
         }
     }
 }

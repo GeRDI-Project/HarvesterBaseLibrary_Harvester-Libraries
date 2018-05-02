@@ -23,7 +23,8 @@ import de.gerdiproject.harvest.state.constants.StateConstants;
 import de.gerdiproject.harvest.state.constants.StateEventHandlerConstants;
 
 /**
- * This state represents the initialization of harvesters at the beginning of the server start.
+ * This state represents the initialization of harvesters at the beginning of
+ * the server start.
  *
  * @author Robin Weiss
  */
@@ -39,7 +40,9 @@ public class InitializationState implements IState
     @Override
     public void onStateLeave()
     {
-        EventSystem.removeListener(HarvesterInitializedEvent.class, StateEventHandlerConstants.ON_HARVESTER_INITIALIZED);
+        EventSystem.removeListener(
+            HarvesterInitializedEvent.class,
+            StateEventHandlerConstants.ON_HARVESTER_INITIALIZED);
     }
 
 
@@ -109,5 +112,12 @@ public class InitializationState implements IState
     public String getName()
     {
         return StateConstants.INIT_PROCESS;
+    }
+
+
+    @Override
+    public boolean isOutdated()
+    {
+        return true;
     }
 }

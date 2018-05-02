@@ -16,16 +16,13 @@
 package de.gerdiproject.harvest.harvester;
 
 
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Collection;
 import java.util.List;
 
 import de.gerdiproject.harvest.IDocument;
-import de.gerdiproject.harvest.MainContext;
 import de.gerdiproject.harvest.harvester.constants.HarvesterConstants;
+import de.gerdiproject.harvest.utils.HashGenerator;
 
 
 /**
@@ -169,19 +166,6 @@ public abstract class AbstractListHarvester<T> extends AbstractHarvester
     @Override
     protected String initHash() throws NoSuchAlgorithmException, NullPointerException
     {
-        final MessageDigest md = MessageDigest.getInstance(HarvesterConstants.SHA_HASH_ALGORITHM);
-        md.update(entries.toString().getBytes(MainContext.getCharset()));
-
-        final byte[] digest = md.digest();
-
-        final StringWriter buffer = new StringWriter(digest.length * 2);
-        final PrintWriter pw = new PrintWriter(buffer);
-
-        for (byte b : digest)
-            pw.printf(HarvesterConstants.OCTAT_FORMAT, b);
-
-        pw.close();
-
-        return buffer.toString();
+        return HashGenerator.instance().getShaHash(entries.toString());
     }
 }

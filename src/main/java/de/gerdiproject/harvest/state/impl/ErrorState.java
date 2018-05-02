@@ -23,7 +23,8 @@ import de.gerdiproject.harvest.state.constants.StateConstants;
 import de.gerdiproject.harvest.state.constants.StateEventHandlerConstants;
 
 /**
- * This state is a dead-end that occurs when the harvester cannot be initialized.
+ * This state is a dead-end that occurs when the harvester cannot be
+ * initialized.
  *
  * @author Robin Weiss
  */
@@ -46,7 +47,9 @@ public class ErrorState implements IState
     @Override
     public void onStateLeave()
     {
-        EventSystem.removeListener(HarvesterInitializedEvent.class, StateEventHandlerConstants.ON_HARVESTER_INITIALIZED);
+        EventSystem.removeListener(
+            HarvesterInitializedEvent.class,
+            StateEventHandlerConstants.ON_HARVESTER_INITIALIZED);
     }
 
 
@@ -103,5 +106,12 @@ public class ErrorState implements IState
     public String getName()
     {
         return StateConstants.ERROR_PROCESS;
+    }
+
+
+    @Override
+    public boolean isOutdated()
+    {
+        return true;
     }
 }

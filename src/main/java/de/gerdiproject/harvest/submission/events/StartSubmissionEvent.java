@@ -16,13 +16,74 @@
 package de.gerdiproject.harvest.submission.events;
 
 
+import de.gerdiproject.harvest.MainContext;
+import de.gerdiproject.harvest.config.Configuration;
+import de.gerdiproject.harvest.config.constants.ConfigurationConstants;
 import de.gerdiproject.harvest.event.IEvent;
 
 /**
- * This event aims to send all harvested documents to be processed and submitted.
+ * This event aims to send all harvested documents to be processed and
+ * submitted.
  *
  * @author Robin Weiss
  */
 public class StartSubmissionEvent implements IEvent
 {
+    private final boolean canSubmitOutdatedDocs;
+    private final boolean canSubmitFailedDocs;
+
+
+    /**
+     * Constructor that sets submission flags.
+     *
+     * @param canSubmitOutdated true if partially harvested documents of failed
+     *            or aborted harvests should be submitted
+     * @param canSubmitFailedDocs true if the submission should be executed even
+     *            if there are no changes
+     */
+    public StartSubmissionEvent(boolean canSubmitOutdated, boolean canSubmitFailedDocs)
+    {
+        this.canSubmitOutdatedDocs = canSubmitOutdated;
+        this.canSubmitFailedDocs = canSubmitFailedDocs;
+    }
+
+
+    /**
+     * Constructor that sets submission flags by retrieving them from the
+     * {@linkplain Configuration}.
+     */
+    public StartSubmissionEvent()
+    {
+        final Configuration config = MainContext.getConfiguration();
+        this.canSubmitOutdatedDocs = config.getParameterValue(ConfigurationConstants.SUBMIT_FORCED, Boolean.class);
+        this.canSubmitFailedDocs = config.getParameterValue(ConfigurationConstants.SUBMIT_INCOMPLETE, Boolean.class);
+    }
+
+
+    /**
+     * Returns true if the submission should be executed even if there are no
+     * changes.
+     *
+     * @return true if the submission should be executed even if there are no
+     *         changes
+     */
+    public boolean canSubmitOutdatedDocuments()
+    {
+        return canSubmitOutdatedDocs;
+    }
+
+
+    /**
+     * Returns true if partially harvested documents of failed or aborted
+     * harvests should be submitted.
+     *
+     * @return true if partially harvested documents of failed or aborted
+     *         harvests should be submitted
+     */
+    public boolean isCanSubmitFailedDocuments()
+    {
+        return canSubmitFailedDocs;
+    }
+
+
 }

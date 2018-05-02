@@ -15,8 +15,11 @@
  */
 package de.gerdiproject.harvest.submission.constants;
 
+import de.gerdiproject.harvest.config.constants.ConfigurationConstants;
+
 /**
- * This static class is a collection of constants that relate to the submission of documents.
+ * This static class is a collection of constants that relate to the submission
+ * of documents.
  *
  * @author Robin Weiss
  */
@@ -34,12 +37,25 @@ public class SubmissionConstants
     public static final String UNKNOWN_DOCUMENT_COUNT = "???";
 
     public static final String NO_URL_ERROR = "Cannot submit documents: You need to set up a valid submission URL!";
-    public static final String NO_DOCS_ERROR = "There are no documents to submit!";
+    public static final String NO_DOCS_ERROR = "Cannot submit documents: There are no documents to submit!";
+    public static final String DOCUMENT_TOO_LARGE =
+        "Cannot submit document %s, because its submission size is %d bytes,"
+        + " which is larger than the maximum permitted size of %d bytes.";
+    public static final String OUTDATED_ERROR =
+        "Cannot submit documents: There are no changes since the last submission!\n"
+        + "If you want to submit anyway, set the '"
+        + ConfigurationConstants.SUBMIT_FORCED
+        + "'-flag in the configuration.";
+    public static final String FAILED_HARVEST_ERROR =
+        "Cannot submit documents: The harvest was not completed successfully!\n"
+        + "If you want to submit anyway, set the '"
+        + ConfigurationConstants.SUBMIT_INCOMPLETE
+        + "'-flag in the configuration.";
 
 
     /**
-     * Private constructor, because this class just serves
-     * as a place to define constants.
+     * Private constructor, because this class just serves as a place to define
+     * constants.
      */
     private SubmissionConstants()
     {

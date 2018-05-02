@@ -39,12 +39,13 @@ import org.slf4j.LoggerFactory;
 import de.gerdiproject.harvest.MainContext;
 import de.gerdiproject.harvest.application.constants.StatusConstants;
 import de.gerdiproject.harvest.event.EventSystem;
+import de.gerdiproject.harvest.harvester.events.GetHarvesterOutdatedEvent;
 import de.gerdiproject.harvest.harvester.events.HarvestStartedEvent;
 import de.gerdiproject.harvest.harvester.events.StartHarvestEvent;
 import de.gerdiproject.harvest.save.events.SaveStartedEvent;
 import de.gerdiproject.harvest.save.events.StartSaveEvent;
-import de.gerdiproject.harvest.state.StateMachine;
 import de.gerdiproject.harvest.state.IState;
+import de.gerdiproject.harvest.state.StateMachine;
 import de.gerdiproject.harvest.state.constants.StateConstants;
 import de.gerdiproject.harvest.state.constants.StateEventHandlerConstants;
 import de.gerdiproject.harvest.submission.events.StartSubmissionEvent;
@@ -89,8 +90,7 @@ public class IdleState implements IState
                    StateConstants.IDLE_STATUS,
                    timeKeeper.getHarvestMeasure().toString(),
                    timeKeeper.getSaveMeasure().toString(),
-                   timeKeeper.getSubmissionMeasure().toString()
-               );
+                   timeKeeper.getSubmissionMeasure().toString());
     }
 
 
@@ -157,4 +157,17 @@ public class IdleState implements IState
     {
         return StateConstants.IDLE_PROCESS;
     }
+
+
+    @Override
+    public boolean isOutdated()
+    {
+        if (MainContext.getTimeKeeper().isHarvestIncomplete())
+            return true;
+
+        Boolean isOutdated = EventSystem.sendSynchronousEvent(new GetHarvesterOutdatedEvent());
+        return isOutdated == null || isOutdated;
+    }
+
+
 }

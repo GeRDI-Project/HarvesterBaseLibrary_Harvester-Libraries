@@ -20,7 +20,8 @@ import de.gerdiproject.harvest.state.constants.StateConstants;
 import de.gerdiproject.harvest.utils.time.ProcessTimeMeasure;
 
 /**
- * This static class is a collection of constants that are used by the {@linkplain StatusFacade}.
+ * This static class is a collection of constants that are used by the
+ * {@linkplain StatusFacade}.
  *
  * @author Robin Weiss
  */
@@ -41,7 +42,7 @@ public class StatusConstants
 
     public static final String REST_INFO = "- %s Extended REST Interface -%n%n"
                                            + "GET          Returns this overview of possible HTTP calls.%n"
-                                           + "GET/status   Returns plain text describing what the service is doing.%n"
+                                           + "GET/state    Returns plain text describing what the service is doing.%n"
                                            + "GET/health   Returns plain text that serves as a health check.%n"
                                            + "GET/progress Returns two slash-separated numbers, representing the%n"
                                            + "             progress of the current task, or N/A if idle.%n"
@@ -51,9 +52,10 @@ public class StatusConstants
                                            + "GET/harvested-documents Returns the number of harvested and currently%n"
                                            + "                        cached documents.";
 
+
     /**
-     * Private constructor, because this class just serves
-     * as a place to define constants.
+     * Private constructor, because this class just serves as a place to define
+     * constants.
      */
     private StatusConstants()
     {

@@ -43,7 +43,7 @@ import de.gerdiproject.json.GsonUtils;
  */
 public class WebDataRetriever implements IDataRetriever
 {
-    private static final Logger LOGGER = LoggerFactory.getLogger(DiskIO.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(WebDataRetriever.class);
 
 
     @Override
