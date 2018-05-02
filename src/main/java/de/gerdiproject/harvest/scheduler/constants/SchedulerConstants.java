@@ -28,6 +28,7 @@ public class SchedulerConstants
     public static final String TASK_MESSAGE = "Scheduler attempts to start a harvest: %s";
     public static final String DELETE_OK = "Removed task: %s";
     public static final String DELETE_FAILED = "Cannot remove task, because it does not exist: %s!";
+    public static final String DELETE_ALL = "Deleted all scheduled tasks!";
 
     public static final String ADD_OK = "Successfully added task: %s";
     public static final String ERROR_ADD_ALREADY_EXISTS = "Cannot add task, because it already exists: %s";
@@ -45,10 +46,9 @@ public class SchedulerConstants
 
     public static final String CACHE_PATH = CacheConstants.CACHE_FOLDER_PATH + "schedule.json";
     public static final String ERROR_RESCHEDULE = "Cannot re-schedule task: %s";
+    public static final String LOAD_OK = "Successfully loaded schedule from disk!";
     public static final String ERROR_LOAD = "Cannot load cron tab from disk: %s";
     public static final String NEXT_DATE = "Scheduled Tak '%s' will be next executed at %s";
-    public static final String DELETE_ALL = "Deleted all scheduled tasks!";
-    public static final String LOAD_OK = "Successfully loaded schedule from disk!";
 
 
     /**
