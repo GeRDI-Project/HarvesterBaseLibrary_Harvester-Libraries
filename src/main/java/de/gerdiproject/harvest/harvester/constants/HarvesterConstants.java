@@ -54,10 +54,12 @@ public class HarvesterConstants
                                            + "POST/submit  Submits harvested documents to a DataBase%n"
                                            + "POST/save    Saves harvested documents to disk%n"
                                            + "%n"
-                                           + "GET/config  Displays a table of parameters and a means of%n"
-                                           + "            configuring them%n"
-                                           + "GET/status  Additional GET requests for retrieving concrete%n"
-                                           + "            harvester status values";
+                                           + "GET/config    Displays a table of parameters and a means of%n"
+                                           + "              configuring them%n"
+                                           + "GET/status    Additional GET requests for retrieving concrete%n"
+                                           + "              harvester status values%n"
+                                           + "GET/schedule  Displays a configurable set of cron jobs that%n"
+                                           + "              can trigger harvests automatically";
     public static final String UNKNOWN_NUMBER = "???";
     public static final String MAX_RANGE_NUMBER = "%d (" + ConfigurationConstants.INTEGER_VALUE_MAX + ")";
 
