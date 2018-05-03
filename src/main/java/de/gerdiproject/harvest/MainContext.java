@@ -31,10 +31,10 @@ import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.harvester.AbstractHarvester;
 import de.gerdiproject.harvest.harvester.events.HarvesterInitializedEvent;
 import de.gerdiproject.harvest.save.HarvestSaver;
+import de.gerdiproject.harvest.scheduler.Scheduler;
 import de.gerdiproject.harvest.state.StateMachine;
 import de.gerdiproject.harvest.state.impl.InitializationState;
 import de.gerdiproject.harvest.submission.AbstractSubmitter;
-import de.gerdiproject.harvest.scheduler.Scheduler;
 import de.gerdiproject.harvest.utils.CancelableFuture;
 import de.gerdiproject.harvest.utils.HashGenerator;
 import de.gerdiproject.harvest.utils.time.HarvestTimeKeeper;
@@ -153,12 +153,10 @@ public class MainContext
             instance.harvester = harvesterClass.newInstance();
             instance.harvester.setAsMainHarvester();
 
-            // try to load the configuration from disk
-            Configuration config = Configuration.createFromDisk();
-
-            // create a new configuration
-            if (config == null)
-                config = new Configuration(harvesterParams);
+            // initialize the configuration
+            final Configuration config = new Configuration(harvesterParams);
+            config.loadFromEnvironmentVariables();
+            config.loadFromCache();
 
             instance.configuration = config;
 

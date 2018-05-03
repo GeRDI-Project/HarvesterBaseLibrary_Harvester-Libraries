@@ -87,6 +87,7 @@ public class ConfigurationConstants
                                            + "POST  Saves the current configuration to disk.%n"
                                            + "PUT   Sets x-www-form-urlencoded parameters for the harvester.%n"
                                            + "      Valid values: %s.%n";
+
     public static final String REST_INFO_FAILED =
         "Could not initialize Configuration.\nPlease, look at the server logs for details.";
 
@@ -105,6 +106,10 @@ public class ConfigurationConstants
     public static final String GLOBAL_PARAMETERS_JSON = "globalParameters";
     public static final String HARVESTER_PARAMETERS_JSON = "harvesterParameters";
     public static final String BASIC_PARAMETER_FORMAT = "%%1$-%ds :  %%2$s%%n";
+
+    public static final String ENVIRONMENT_VARIABLE_SET_START = "Searching for configuration from environment variables...";
+    public static final String ENVIRONMENT_VARIABLE_SET_END = "Set %d parameter(s) from environment variables.";
+    public static final String ENVIRONMENT_VARIABLE = "GERDI_%S_%S";
 
 
     /**
