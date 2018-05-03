@@ -47,14 +47,22 @@ public class CacheConstants
                                                                      + "processTimes"
                                                                      + JSON_FILE_EXTENSION;
 
-    public static final String VERSIONS_CACHE_FILE_PATH = CACHE_FOLDER_PATH
-                                                          + "%s_documentVersions"
-                                                          + JSON_FILE_EXTENSION;
+    public static final String OLD_VERSIONS_CACHE_FILE_PATH = CACHE_FOLDER_PATH
+                                                              + "%s_documentVersions"
+                                                              + JSON_FILE_EXTENSION;
+
+    public static final String OLD_VERSIONS_CACHE_TEMP_FILE_PATH = CACHE_FOLDER_PATH
+                                                                   + "%s_documentVersionsPending"
+                                                                   + JSON_FILE_EXTENSION;
 
 
-    public static final String VERSIONS_CACHE_TEMP_FILE_PATH = CACHE_FOLDER_PATH
-                                                               + "%s_documentVersionsPending"
-                                                               + JSON_FILE_EXTENSION;
+    public static final String STABLE_FOLDER_PATH = CACHE_FOLDER_PATH + "documents/%s";
+    public static final String TEMP_FOLDER_PATH = CACHE_FOLDER_PATH + "documents_temp/%s";
+
+    public static final String VERSION_FILE_PATH = "%s/versions/%s/%s.json";
+    public static final String DOCUMENT_FILE_PATH = "%s/latestChanges/%s/%s.json";
+    public static final String SOURCE_HASH_FILE_PATH = "%s/versions/sourceHash.json";
+
 
 
     public static final String DELETE_FILE_SUCCESS = "Deleted file '%s'.";
