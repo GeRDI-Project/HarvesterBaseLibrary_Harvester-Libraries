@@ -51,6 +51,27 @@ import de.gerdiproject.json.GsonUtils;
 public class DiskIO implements IDataRetriever
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(DiskIO.class);
+    private boolean isLogging;
+
+
+    /**
+     * Default constructor that enables logging.
+     */
+    public DiskIO()
+    {
+        this.isLogging = true;
+    }
+
+
+    /**
+     * Constructor that allows to enable or disable logging.
+     *
+     * @param isLogging if true, logging is enabled
+     */
+    public DiskIO(boolean isLogging)
+    {
+        this.isLogging = isLogging;
+    }
 
 
     /**
@@ -92,10 +113,12 @@ public class DiskIO implements IDataRetriever
         }
 
         // log the status
-        if (isSuccessful)
-            LOGGER.info(statusMessage);
-        else
-            LOGGER.error(statusMessage);
+        if (isLogging) {
+            if (isSuccessful)
+                LOGGER.info(statusMessage);
+            else
+                LOGGER.error(statusMessage);
+        }
 
         return statusMessage;
     }
@@ -145,7 +168,8 @@ public class DiskIO implements IDataRetriever
 
             reader.close();
         } catch (IOException e) {
-            LOGGER.warn(String.format(DataOperationConstants.LOAD_FAILED, filePath, e.toString()));
+            if (isLogging)
+                LOGGER.warn(String.format(DataOperationConstants.LOAD_FAILED, filePath, e.toString()));
         }
 
         return fileContent;
@@ -164,7 +188,8 @@ public class DiskIO implements IDataRetriever
             fileContent = parser.parse(reader);
             reader.close();
         } catch (IOException | IllegalStateException | JsonIOException | JsonSyntaxException e) {
-            LOGGER.warn(String.format(DataOperationConstants.LOAD_FAILED, filePath, e.toString()));
+            if (isLogging)
+                LOGGER.warn(String.format(DataOperationConstants.LOAD_FAILED, filePath, e.toString()));
         }
 
         return fileContent;
@@ -182,7 +207,8 @@ public class DiskIO implements IDataRetriever
             reader.close();
 
         } catch (IOException | IllegalStateException | JsonIOException | JsonSyntaxException e) {
-            LOGGER.warn(String.format(DataOperationConstants.LOAD_FAILED, filePath, e.toString()));
+            if (isLogging)
+                LOGGER.warn(String.format(DataOperationConstants.LOAD_FAILED, filePath, e.toString()));
         }
 
         return object;
@@ -200,7 +226,8 @@ public class DiskIO implements IDataRetriever
             reader.close();
 
         } catch (IOException | IllegalStateException | JsonIOException | JsonSyntaxException e) {
-            LOGGER.warn(String.format(DataOperationConstants.LOAD_FAILED, filePath, e.toString()));
+            if (isLogging)
+                LOGGER.warn(String.format(DataOperationConstants.LOAD_FAILED, filePath, e.toString()));
         }
 
         return object;
@@ -234,5 +261,26 @@ public class DiskIO implements IDataRetriever
     {
         // try to read from disk
         return new InputStreamReader(new FileInputStream(filePath), MainContext.getCharset());
+    }
+
+
+    /**
+     * Checks if logging is enabled.
+     * @return true, if logging is enabled
+     */
+    public boolean isLogging()
+    {
+        return isLogging;
+    }
+
+
+    /**
+     * Changes whether or not logging is enabled.
+     *
+     * @param isLogging if true, logging will be enabled
+     */
+    public void setLogging(boolean isLogging)
+    {
+        this.isLogging = isLogging;
     }
 }
