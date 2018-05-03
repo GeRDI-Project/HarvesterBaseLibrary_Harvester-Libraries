@@ -26,6 +26,7 @@ import de.gerdiproject.harvest.state.impl.IdleState;
 import de.gerdiproject.harvest.state.impl.InitializationState;
 import de.gerdiproject.harvest.state.impl.SavingState;
 import de.gerdiproject.harvest.state.impl.SubmittingState;
+import de.gerdiproject.harvest.utils.cache.constants.CacheConstants;
 
 /**
  * This static class is a collection of constants, commonly used for classes
@@ -77,7 +78,7 @@ public class ConfigurationConstants
     public static final String URL_VALID_VALUES_TEXT = "<a valid URL>";
 
     public static final String CONFIG_PARAMETERS = "Harvester Parameters:%n%s%nGlobal Parameters:%n%s";
-    public static final String CONFIG_PATH = "config/%sConfig.json";
+    public static final String CONFIG_PATH = CacheConstants.CACHE_FOLDER_PATH + "config.json";
     public static final String LOAD_OK = "Loaded configuration from '%s'.";
     public static final String LOAD_FAILED = "Could not load configuration from '%s': %s";
     public static final String NO_EXISTS = "No configuration exists!";
