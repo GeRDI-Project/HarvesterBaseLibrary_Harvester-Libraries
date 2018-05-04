@@ -18,116 +18,141 @@ package de.gerdiproject.harvest.utils.cache;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
+import java.nio.file.DirectoryStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiFunction;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.google.gson.Gson;
-import com.google.gson.JsonElement;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonToken;
-import com.google.gson.stream.JsonWriter;
 
 import de.gerdiproject.harvest.IDocument;
 import de.gerdiproject.harvest.MainContext;
 import de.gerdiproject.harvest.utils.cache.constants.CacheConstants;
+import de.gerdiproject.harvest.utils.data.DiskIO;
 import de.gerdiproject.json.GsonUtils;
 import de.gerdiproject.json.datacite.DataCiteJson;
 
 /**
- * This class wraps a cache file that stores a map of document identifiers to
+ * This class manages a cache folder that represents a mapping of document identifiers to
  * document JSON. It is used for determining which files need to be added or
- * changed for the submission
+ * changed for the submission.
  *
  * @author Robin Weiss
  */
 public class DocumentChangesCache
 {
-    private static final Logger LOGGER = LoggerFactory.getLogger(DocumentChangesCache.class);
+    private final DiskIO diskIo;
+    private final String stableFolderPath;
+    private final String wipFolderPath;
 
-    private final File workInProgressFile;
-    private final File stableFile;
-    private final Gson gson;
     private int size;
 
 
     /**
-     * Constructor that requires the file name prefix of the cache file that is
-     * to be created.
+     * Constructor that requires the harvester name for the creation of a dedicated
+     * folder.
      *
-     * @param filePrefix the file name prefix of the changes cache file
+     * @param harvesterName the name of the harvester for which the cache is created
      */
-    public DocumentChangesCache(final String filePrefix)
+    public DocumentChangesCache(final String harvesterName)
     {
-        this.gson = GsonUtils.getGson();
-        this.stableFile = new File(
+        this.stableFolderPath =
+            String.format(
+                CacheConstants.STABLE_CHANGES_FOLDER_PATH,
+                MainContext.getModuleName(),
+                harvesterName);
+
+        this.wipFolderPath =
+            String.format(
+                CacheConstants.TEMP_CHANGES_FOLDER_PATH,
+                MainContext.getModuleName(),
+                harvesterName);
+
+        this.diskIo = new DiskIO(false);
+
+        // if outdated caches exist, migrate them to folder structure
+        migrateToNewSystem(harvesterName);
+    }
+
+
+    /**
+     * Migrates the changes cache file from RestfulHarvester-Library
+     * version 6.5.0 and below to the new folder structure, introduced in 6.5.1.
+     *
+     * @param filePrefix the filePrefix of the cache file
+     */
+    @SuppressWarnings("deprecation")
+    public void migrateToNewSystem(final String filePrefix)
+    {
+        final File stableFile = new File(
             String.format(
                 CacheConstants.UPDATE_CACHE_FILE_PATH,
                 MainContext.getModuleName(),
                 filePrefix));
 
-        this.workInProgressFile = new File(
-            String.format(
-                CacheConstants.UPDATE_CACHE_TEMP_FILE_PATH,
-                MainContext.getModuleName(),
-                filePrefix));
+        // skip if there is no old cache file
+        if (stableFile.exists()) {
+            final Gson gson = GsonUtils.getGson();
+
+            try {
+                // prepare json reader for the cached document list
+                final JsonReader reader = new JsonReader(
+                    new InputStreamReader(new FileInputStream(stableFile), MainContext.getCharset()));
+
+                // iterate through cached documents
+                reader.beginObject();
+
+                while (reader.hasNext()) {
+                    final String documentId = reader.nextName();
+                    final File file = getDocumentFile(documentId, true);
+
+                    if (reader.peek() == JsonToken.NULL) {
+                        FileUtils.createEmptyFile(file);
+                        reader.skipValue();
+                    } else
+                        diskIo.writeObjectToFile(file, gson.fromJson(reader, DataCiteJson.class));
+                }
+
+                // close reader
+                reader.close();
+
+                // delete old file
+                FileUtils.deleteFile(stableFile);
+
+            } catch (IOException e) { // NOPMD if something goes wrong, do not convert the cache
+            }
+        }
     }
 
 
     /**
-     * Initializes the cache by creating an empty file and copying all
-     * documentIDs from a versions cache as null entries.
+     * Initializes the cache by copying all documentIDs from a
+     * versions cache folder as empty files.
      *
      * @param versionsCache a cache of previously harvested IDs
      */
     public void init(DocumentVersionsCache versionsCache)
     {
         // create new file
-        try {
-            // retrieve harvester cache metadata
+        final AtomicInteger numberOfCopiedIds = new AtomicInteger(0);
 
-            FileUtils.createEmptyFile(workInProgressFile);
-            final JsonWriter writer = new JsonWriter(
-                new OutputStreamWriter(
-                    new FileOutputStream(workInProgressFile),
-                    MainContext.getCharset()));
+        // copy documentIds and count them
+        boolean isSuccessful = false;
+        isSuccessful = versionsCache.forEach((String documentId, String documentHash) -> {
+            FileUtils.createEmptyFile(getDocumentFile(documentId, false));
+            numberOfCopiedIds.incrementAndGet();
+            return true;
+        });
 
-            final AtomicInteger numberOfCopiedIds = new AtomicInteger(0);
-
-            // copy documentIds and count them
-            boolean isSuccessful = false;
-            writer.beginObject();
-            isSuccessful = versionsCache.forEach((String documentId, String documentHash) -> {
-                try
-                {
-                    writer.name(documentId);
-                    writer.nullValue();
-                } catch (IOException e)
-                {
-                    return false;
-                }
-                numberOfCopiedIds.incrementAndGet();
-                return true;
-            });
-
-            // close writer
-            writer.endObject();
-            writer.close();
-
-            if (isSuccessful)
-                this.size = numberOfCopiedIds.get();
-            else
-                this.size = 0;
-
-        } catch (IOException e) {
-            LOGGER.error(String.format(CacheConstants.CACHE_CREATE_FAILED, workInProgressFile.getAbsolutePath()));
-        }
+        if (isSuccessful)
+            this.size = numberOfCopiedIds.get();
+        else
+            this.size = 0;
     }
 
 
@@ -143,29 +168,16 @@ public class DocumentChangesCache
 
 
     /**
-     * Removes all work-in-progress timestamps and deletes the work-in-progress
-     * cache file.
-     */
-    public void clearWorkInProgress()
-    {
-        FileUtils.deleteFile(new File(workInProgressFile.getAbsolutePath() + CacheConstants.TEMP_FILE_EXTENSION));
-        FileUtils.deleteFile(workInProgressFile);
-    }
-
-
-    /**
-     * (Over{@literal-})writes a stable cache file of document changes, with the
-     * work in progress changes.
-     *
+     * Replaces the stable folder with the work-in-progress changes.
      */
     public void applyChanges()
     {
-        FileUtils.replaceFile(stableFile, workInProgressFile);
+        FileUtils.replaceFile(new File(stableFolderPath), new File(wipFolderPath));
     }
 
 
     /**
-     * Iterates through the stable file of cached documents and executes a
+     * Iterates through the stable folder of cached documents and executes a
      * function on each document. If the function returns false, the whole
      * process is aborted.
      *
@@ -177,47 +189,60 @@ public class DocumentChangesCache
      */
     public boolean forEach(BiFunction<String, DataCiteJson, Boolean> documentFunction)
     {
-        // prepare variables
-        boolean isFunctionSuccessful = true;
+        boolean isSuccessful = true;
 
-        if (size > 0) {
-            try {
-                // prepare json reader for the cached document list
-                final JsonReader reader = new JsonReader(
-                    new InputStreamReader(new FileInputStream(stableFile), MainContext.getCharset()));
+        final File stableDir = new File(stableFolderPath);
 
-                // iterate through cached documents
-                reader.beginObject();
+        if (stableDir.exists() && size > 0) {
+            try
+                (DirectoryStream<Path> prefixStream = Files.newDirectoryStream(stableDir.toPath())) {
+                for (Path prefixFolderPath : prefixStream) {
+                    final File prefixFolder = prefixFolderPath.toFile();
 
-                while (isFunctionSuccessful && reader.hasNext()) {
-                    final String documentId = reader.nextName();
-                    final DataCiteJson addedDoc;
+                    // skip files of the top folder
+                    if (!prefixFolder.isDirectory())
+                        continue;
 
-                    if (reader.peek() == JsonToken.NULL) {
-                        addedDoc = null;
-                        reader.skipValue();
-                    } else
-                        addedDoc = gson.fromJson(reader, DataCiteJson.class);
+                    // iterate through the sub folder
+                    final String documentIdPrefix = prefixFolder.getName();
 
-                    isFunctionSuccessful = documentFunction.apply(documentId, addedDoc);
+                    // iterate through the sub folder
+                    try
+                        (DirectoryStream<Path> suffixStream = Files.newDirectoryStream(prefixFolderPath)) {
+                        for (Path suffixFile : suffixStream) {
+                            // the file name without extension is the suffix of the document ID
+                            String documentIdSuffix = suffixFile.getFileName().toString();
+                            documentIdSuffix = documentIdSuffix.substring(0, documentIdSuffix.lastIndexOf('.'));
+
+                            // assemble documentID
+                            final String documentId = documentIdPrefix + documentIdSuffix;
+
+                            final File documentFile = getDocumentFile(documentId, true);
+                            final DataCiteJson document = documentFile.length() == 0
+                                                          ? null
+                                                          : diskIo.getObject(documentFile, DataCiteJson.class);
+
+                            isSuccessful = documentFunction.apply(documentId, document);
+
+                            if (!isSuccessful)
+                                break;
+                        }
+                    }
+
+                    if (!isSuccessful)
+                        break;
                 }
-
-                // close reader
-                if (!isFunctionSuccessful)
-                    reader.endObject();
-
-                reader.close();
             } catch (IOException e) {
-                isFunctionSuccessful = false;
+                isSuccessful = false;
             }
         }
 
-        return isFunctionSuccessful;
+        return isSuccessful;
     }
 
 
     /**
-     * Removes a document entry from the cache.
+     * Removes a document from the cache.
      *
      * @param documentId the ID of the document that is to be removed
      */
@@ -228,121 +253,63 @@ public class DocumentChangesCache
 
 
     /**
-     * Adds a key-value pair to the cache. The key is the unique documentId and
-     * the value is the JSON representation of the document.
+     * Adds or replaces a document in the work-in-progress folder.
+     * The key is the unique documentID and the value is the JSON representation of the document.
      *
      * @param documentId the unique document identifier
      * @param document the JSON representation of the document or null, if the
-     *            document is to be removed
+     *            document is only to be removed
      */
     public void putDocument(final String documentId, final IDocument document)
     {
-        final File tempFile = new File(workInProgressFile.getAbsolutePath() + CacheConstants.TEMP_FILE_EXTENSION);
+        final File documentFile = getDocumentFile(documentId, false);
 
-        try {
-            // prepare json reader for the cached document list
-            final JsonReader reader = new JsonReader(
-                new InputStreamReader(new FileInputStream(workInProgressFile), MainContext.getCharset()));
-
-            final JsonWriter writer = new JsonWriter(
-                new OutputStreamWriter(
-                    new FileOutputStream(tempFile),
-                    MainContext.getCharset()));
-
-            reader.beginObject();
-            writer.beginObject();
-
-            // copy key value pairs until the specified key is found
-            while (reader.hasNext()) {
-                final String readKey = reader.nextName();
-                final JsonElement readValue = gson.fromJson(reader, JsonElement.class);
-
-                if (readKey.equals(documentId)) {
-                    size--;
-                    break;
-                } else {
-                    writer.name(readKey);
-
-                    if (readValue.isJsonNull())
-                        writer.nullValue();
-                    else
-                        gson.toJson(readValue, JsonElement.class, writer);
-                }
-            }
-
-            // add specified key-value pair
-            if (document != null) {
-                writer.name(documentId);
-                gson.toJson(document, document.getClass(), writer);
-                size++;
-            }
-
-            // if any old key-value pairs remain in the source file, copy them
-            while (reader.hasNext()) {
-                final String readKey = reader.nextName();
-                final JsonElement readValue = gson.fromJson(reader, JsonElement.class);
-                writer.name(readKey);
-
-                if (readValue.isJsonNull())
-                    writer.nullValue();
-                else
-                    gson.toJson(readValue, JsonElement.class, writer);
-            }
-
-            // close reader
-            reader.close();
-
-            // close writer
-            writer.endObject();
-            writer.close();
-
-        } catch (IOException e) {
-            LOGGER.error(String.format(CacheConstants.ENTRY_STREAM_WRITE_ERROR, tempFile.getAbsolutePath()));
-            return;
+        // decrement size when we remove the previous document, if it existed
+        if (documentFile.exists()) {
+            FileUtils.deleteFile(documentFile);
+            size--;
         }
 
-        // replace current file with temporary file
-        FileUtils.replaceFile(workInProgressFile, tempFile);
+        // write new file, increment size
+        if (document != null) {
+            diskIo.writeObjectToFile(documentFile, document);
+            size++;
+        }
     }
 
 
     /**
-     * Retrieves the document JSON for a specified document ID from the cache
-     * file, or null if this document is to be deleted.
+     * Retrieves the document object for a specified document ID from the cache
+     * folder, or null if this document does not exist or is empty.
      *
      * @param documentId the identifier of the document which is to be retrieved
-     * @return a JSON document or null, if no entry exists for the document
+     * @return a JSON document or null, if no document exists
      */
     public DataCiteJson getDocument(String documentId)
     {
-        DataCiteJson document = null;
+        final File retrievedDoc = getDocumentFile(documentId, true);
 
-        if (stableFile.exists()) {
-            try {
-                // prepare json reader for the cached document list
-                final JsonReader reader = new JsonReader(
-                    new InputStreamReader(new FileInputStream(stableFile), MainContext.getCharset()));
+        if (retrievedDoc.exists() && retrievedDoc.length() > 0)
+            return diskIo.getObject(retrievedDoc, DataCiteJson.class);
+        else
+            return null;
+    }
 
-                reader.beginObject();
-
-                while (reader.hasNext()) {
-                    final String id = reader.nextName();
-
-                    if (id.equals(documentId)) {
-                        if (reader.peek() == JsonToken.BEGIN_OBJECT)
-                            document = gson.fromJson(reader, DataCiteJson.class);
-
-                        break;
-                    }
-
-                    reader.skipValue();
-                }
-
-                reader.close();
-            } catch (IOException e) { // NOPMD - nothing to do here, document is null by default
-            }
-        }
-
-        return document;
+    /**
+     * Assembles the file path to a document file.
+     *
+     * @param documentId the documentID of which the document object is retrieved
+     * @param isStable if true, the file points to the stable folder
+     *
+     * @return a path to the document file with the specified documentId
+     */
+    private File getDocumentFile(final String documentId, boolean isStable)
+    {
+        return new File(
+                   String.format(
+                       CacheConstants.DOCUMENT_HASH_FILE_PATH,
+                       isStable ? stableFolderPath : wipFolderPath,
+                       documentId.substring(0, 2),
+                       documentId.substring(2)));
     }
 }
