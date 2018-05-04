@@ -18,7 +18,9 @@ package de.gerdiproject.harvest.utils.cache;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 
 import org.slf4j.Logger;
@@ -52,8 +54,28 @@ public class FileUtils
      */
     public static void deleteFile(File deletedFile)
     {
-        if (deletedFile.exists() && !deletedFile.delete())
-            LOGGER.error(String.format(CacheConstants.DELETE_FILE_FAILED, deletedFile.getAbsolutePath()));
+        if (deletedFile.exists()) {
+            boolean wasDeleted;
+
+            if (deletedFile.isDirectory()) {
+
+                // delete contained files and directories recursively
+                try
+                    (DirectoryStream<Path> dirStream = Files.newDirectoryStream(deletedFile.toPath())) {
+                    for (Path fileInDir : dirStream)
+                        deleteFile(fileInDir.toFile());
+
+                } catch (IOException e) {
+                    wasDeleted = false;
+                }
+            }
+
+            // delete file or directory itself
+            wasDeleted = deletedFile.delete();
+
+            if (!wasDeleted)
+                LOGGER.error(String.format(CacheConstants.DELETE_FILE_FAILED, deletedFile.getAbsolutePath()));
+        }
     }
 
 
@@ -131,5 +153,48 @@ public class FileUtils
 
         if (!creationSuccessful)
             LOGGER.error(String.format(CacheConstants.CACHE_CREATE_FAILED, file.getAbsolutePath()));
+    }
+
+
+    /**
+     * Merges one directory into another one.
+     *
+     * @param sourceDirectory the directory that is to be integrated
+     * @param targetDirectory the directory into which the other folder is merged
+     * @param replaceFiles if true, sourceDirectory files with the same name as in the
+     * target directory, will be replaced
+     */
+    public static void integrateDirectory(File sourceDirectory, File targetDirectory, boolean replaceFiles)
+    {
+        if (!sourceDirectory.isDirectory() || !targetDirectory.isDirectory())
+            LOGGER.error(String.format(CacheConstants.DIR_MERGE_FAILED_NOT_DIRS, sourceDirectory.getAbsolutePath(), targetDirectory.getAbsolutePath()));
+
+        try
+            (DirectoryStream<Path> sourceStream = Files.newDirectoryStream(sourceDirectory.toPath())) {
+            for (Path sourceFilePath : sourceStream) {
+                final File sourceFile = sourceFilePath.toFile();
+                final File targetFile = new File(targetDirectory, sourceFile.getName());
+
+                // recursively integrate subdirectories
+                if (sourceFile.isDirectory()) {
+                    createDirectories(targetFile);
+                    integrateDirectory(sourceFile, targetFile, replaceFiles);
+                } else {
+                    // delete existing file, if in replace-mode
+                    if (replaceFiles)
+                        deleteFile(targetFile);
+
+                    // copy single file
+                    if (!targetFile.exists())
+                        copyFile(sourceFile, targetFile);
+                }
+            }
+        } catch (IOException e) {
+            LOGGER.error(String.format(
+                             CacheConstants.DIR_MERGE_FAILED,
+                             sourceDirectory.getAbsolutePath(),
+                             targetDirectory.getAbsolutePath()),
+                         e);
+        }
     }
 }
