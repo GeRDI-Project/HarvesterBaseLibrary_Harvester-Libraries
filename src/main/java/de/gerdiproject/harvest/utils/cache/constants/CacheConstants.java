@@ -77,7 +77,6 @@ public class CacheConstants
     public static final String HARVESTER_SOURCE_HASH_JSON = "sourceHash";
     public static final String HARVESTER_FROM_JSON = "rangeFrom";
     public static final String HARVESTER_TO_JSON = "rangeTo";
-    public static final String DOCUMENTS_JSON = "documents";
 
     // AbstractStreamHarvester
     public static final String CACHE_ENTRY_STREAM_PATH = CACHE_FOLDER_PATH + "StreamHarvester/%s" + JSON_FILE_EXTENSION;

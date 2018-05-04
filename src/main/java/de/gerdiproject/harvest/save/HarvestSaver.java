@@ -46,7 +46,6 @@ import de.gerdiproject.harvest.state.events.StartAbortingEvent;
 import de.gerdiproject.harvest.utils.CancelableFuture;
 import de.gerdiproject.harvest.utils.cache.DocumentChangesCache;
 import de.gerdiproject.harvest.utils.cache.FileUtils;
-import de.gerdiproject.harvest.utils.cache.constants.CacheConstants;
 import de.gerdiproject.harvest.utils.cache.events.RegisterCacheEvent;
 import de.gerdiproject.json.GsonUtils;
 import de.gerdiproject.json.datacite.DataCiteJson;
@@ -283,7 +282,7 @@ public class HarvestSaver
         writer.name(SaveConstants.IS_FROM_DISK_JSON);
         writer.value(readFromDisk);
 
-        writer.name(CacheConstants.DOCUMENTS_JSON);
+        writer.name(SaveConstants.DOCUMENTS_JSON);
         writer.beginArray();
 
         // iterate through cached array
