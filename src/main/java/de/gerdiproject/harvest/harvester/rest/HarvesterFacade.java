@@ -171,21 +171,4 @@ public class HarvesterFacade
     {
         return StateMachine.getCurrentState().submit();
     }
-
-
-    /*
-    @GET
-    @Path("isLatest")
-    @Produces({
-        MediaType.TEXT_PLAIN, MediaType.APPLICATION_JSON
-    })
-    public String isLatestVersion()
-    {
-        final String latestChecksum = ""; // TODO get from disk
-        // prospector(?)
-        final String currentChecksum = harvester.getHash(true);
-
-        return String.valueOf(currentChecksum != null && !currentChecksum.equals(latestChecksum));
-    }
-    */
 }
