@@ -44,6 +44,27 @@ import de.gerdiproject.json.GsonUtils;
 public class WebDataRetriever implements IDataRetriever
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(WebDataRetriever.class);
+    private boolean isLogging;
+
+
+    /**
+     * Default constructor that enables logging.
+     */
+    public WebDataRetriever()
+    {
+        this.isLogging = true;
+    }
+
+
+    /**
+     * Constructor that allows to enable or disable logging.
+     *
+     * @param isLogging if true, logging is enabled
+     */
+    public WebDataRetriever(boolean isLogging)
+    {
+        this.isLogging = isLogging;
+    }
 
 
     @Override
@@ -80,7 +101,8 @@ public class WebDataRetriever implements IDataRetriever
             reader.close();
 
         } catch (Exception e) {
-            LOGGER.warn(String.format(DataOperationConstants.WEB_ERROR_JSON, url, e.toString()));
+            if (isLogging)
+                LOGGER.warn(String.format(DataOperationConstants.WEB_ERROR_JSON, url, e.toString()));
         }
 
         return responseText;
@@ -104,7 +126,8 @@ public class WebDataRetriever implements IDataRetriever
             reader.close();
 
         } catch (Exception e) {
-            LOGGER.warn(String.format(DataOperationConstants.WEB_ERROR_JSON, url, e.toString()));
+            if (isLogging)
+                LOGGER.warn(String.format(DataOperationConstants.WEB_ERROR_JSON, url, e.toString()));
         }
 
         return jsonResponse;
@@ -124,7 +147,8 @@ public class WebDataRetriever implements IDataRetriever
             reader.close();
 
         } catch (IOException | IllegalStateException | JsonIOException | JsonSyntaxException e) {
-            LOGGER.warn(String.format(DataOperationConstants.WEB_ERROR_JSON, url, e.toString()));
+            if (isLogging)
+                LOGGER.warn(String.format(DataOperationConstants.WEB_ERROR_JSON, url, e.toString()));
         }
 
         return object;
@@ -144,7 +168,8 @@ public class WebDataRetriever implements IDataRetriever
             reader.close();
 
         } catch (IOException | IllegalStateException | JsonIOException | JsonSyntaxException e) {
-            LOGGER.warn(String.format(DataOperationConstants.WEB_ERROR_JSON, url, e.toString()));
+            if (isLogging)
+                LOGGER.warn(String.format(DataOperationConstants.WEB_ERROR_JSON, url, e.toString()));
         }
 
         return object;
@@ -166,9 +191,31 @@ public class WebDataRetriever implements IDataRetriever
             response.close();
 
         } catch (Exception e) {
-            LOGGER.warn(String.format(DataOperationConstants.WEB_ERROR_JSON, url, e.toString()));
+            if (isLogging)
+                LOGGER.warn(String.format(DataOperationConstants.WEB_ERROR_JSON, url, e.toString()));
         }
 
         return htmlResponse;
+    }
+
+
+    /**
+     * Checks if logging is enabled.
+     * @return true, if logging is enabled
+     */
+    public boolean isLogging()
+    {
+        return isLogging;
+    }
+
+
+    /**
+     * Changes whether or not logging is enabled.
+     *
+     * @param isLogging if true, logging will be enabled
+     */
+    public void setLogging(boolean isLogging)
+    {
+        this.isLogging = isLogging;
     }
 }

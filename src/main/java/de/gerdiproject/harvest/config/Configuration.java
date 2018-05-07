@@ -16,16 +16,6 @@
 package de.gerdiproject.harvest.config;
 
 
-import de.gerdiproject.harvest.MainContext;
-import de.gerdiproject.harvest.config.adapter.ConfigurationAdapter;
-import de.gerdiproject.harvest.config.constants.ConfigurationConstants;
-import de.gerdiproject.harvest.config.events.GlobalParameterChangedEvent;
-import de.gerdiproject.harvest.config.events.HarvesterParameterChangedEvent;
-import de.gerdiproject.harvest.config.parameters.AbstractParameter;
-import de.gerdiproject.harvest.config.parameters.ParameterFactory;
-import de.gerdiproject.harvest.event.EventSystem;
-import de.gerdiproject.harvest.state.StateMachine;
-import de.gerdiproject.harvest.utils.data.DiskIO;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -35,6 +25,18 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.gson.JsonParseException;
+
+import de.gerdiproject.harvest.MainContext;
+import de.gerdiproject.harvest.application.constants.ApplicationConstants;
+import de.gerdiproject.harvest.config.adapter.ConfigurationAdapter;
+import de.gerdiproject.harvest.config.constants.ConfigurationConstants;
+import de.gerdiproject.harvest.config.events.GlobalParameterChangedEvent;
+import de.gerdiproject.harvest.config.events.HarvesterParameterChangedEvent;
+import de.gerdiproject.harvest.config.parameters.AbstractParameter;
+import de.gerdiproject.harvest.config.parameters.ParameterFactory;
+import de.gerdiproject.harvest.event.EventSystem;
+import de.gerdiproject.harvest.state.StateMachine;
+import de.gerdiproject.harvest.utils.data.DiskIO;
 
 
 
@@ -57,6 +59,7 @@ public class Configuration
 
     /**
      * This constructor is used by the JSON deserialization (see {@linkplain ConfigurationAdapter}.
+     * It does not call parameter update events.
      *
      * @param globalParameters a map of global parameters
      * @param harvesterParameters a map of harvester specific parameters
@@ -68,8 +71,6 @@ public class Configuration
 
         this.globalParameterFormat = getPaddedKeyFormat(globalParameters);
         this.harvesterParameterFormat = getPaddedKeyFormat(harvesterParameters);
-
-        updateAllParameters();
     }
 
 
@@ -141,33 +142,82 @@ public class Configuration
 
 
     /**
-     * Attempts to load a configuration file from disk.<br>
-     *
-     * @return a configuration that was loaded from disk, or null if no config exists
+     * Attempts to load a configuration file from disk.
      */
-    public static Configuration createFromDisk()
+    public void loadFromCache()
     {
-        Configuration config = null;
-
         // read JSON from disk
-        String path = getConfigFilePath();
-        String configJson = new DiskIO().getString(path);
-
+        final String path = getConfigFilePath();
+        final String configJson = new DiskIO(false).getString(path);
 
         if (configJson == null)
             LOGGER.error(String.format(ConfigurationConstants.LOAD_FAILED, path, ConfigurationConstants.NO_EXISTS));
         else {
             // deserialize JSON string
             try {
-                config = ConfigurationAdapter.getGson().fromJson(configJson, Configuration.class);
+                final Configuration config = ConfigurationAdapter.getGson().fromJson(configJson, Configuration.class);
+
+                // copy harvester parameters
+                config.harvesterParameters.forEach((String key, AbstractParameter<?> param) -> {
+                    if (harvesterParameters.containsKey(key))
+                        setParameter(key, param.getStringValue());
+                });
+
+                // copy global parameters
+                config.globalParameters.forEach((String key, AbstractParameter<?> param) -> {
+                    if (globalParameters.containsKey(key))
+                        setParameter(key, param.getStringValue());
+                });
+
                 LOGGER.info(String.format(ConfigurationConstants.LOAD_OK, path));
 
             } catch (JsonParseException e) {
                 LOGGER.error(String.format(ConfigurationConstants.LOAD_FAILED, path, e.toString()));
             }
         }
+    }
 
-        return config;
+
+    /**
+     * Attempts to load configuration parameters from environment variables.
+     */
+    public void loadFromEnvironmentVariables()
+    {
+        LOGGER.info(ConfigurationConstants.ENVIRONMENT_VARIABLE_SET_START);
+
+        int suffixIndex = MainContext.getModuleName().indexOf(ApplicationConstants.HARVESTER_SERVICE_NAME_SUFFIX);
+        final String moduleName = (suffixIndex != -1)
+                                  ? MainContext.getModuleName().substring(0, suffixIndex)
+                                  : MainContext.getModuleName();
+
+        final AtomicInteger changeCount = new AtomicInteger(0);
+        final Map<String, String> environmentVariables = System.getenv();
+
+        // copy harvester parameters
+        harvesterParameters.forEach((String key, AbstractParameter<?> param) -> {
+            final String envVal = environmentVariables.get(
+                String.format(ConfigurationConstants.ENVIRONMENT_VARIABLE, moduleName, key));
+
+            if (envVal != null)
+            {
+                LOGGER.debug(setParameter(key, envVal));
+                changeCount.incrementAndGet();
+            }
+        });
+
+        // copy global parameters
+        globalParameters.forEach((String key, AbstractParameter<?> param) -> {
+            final String envVal = environmentVariables.get(
+                String.format(ConfigurationConstants.ENVIRONMENT_VARIABLE, moduleName, key));
+
+            if (envVal != null)
+            {
+                LOGGER.debug(setParameter(key, envVal));
+                changeCount.incrementAndGet();
+            }
+        });
+
+        LOGGER.info(String.format(ConfigurationConstants.ENVIRONMENT_VARIABLE_SET_END, changeCount.get()));
     }
 
 

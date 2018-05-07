@@ -82,7 +82,7 @@ public class HarvestTimeKeeper
                                           CacheConstants.HARVEST_TIME_KEEPER_CACHE_FILE_PATH,
                                           MainContext.getModuleName());
 
-        final DiskIO diskReader = new DiskIO();
+        final DiskIO diskReader = new DiskIO(false);
         final HarvestTimeKeeper parsedKeeper = diskReader.getObject(stableFilePath, HarvestTimeKeeper.class);
 
         if (parsedKeeper != null) {

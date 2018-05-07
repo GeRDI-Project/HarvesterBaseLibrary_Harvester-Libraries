@@ -32,7 +32,7 @@ public class CacheConstants
     public static final String START_CACHE_ERROR = "Error starting the cache writer";
     public static final String FINISH_CACHE_ERROR = "Error closing the cache writer";
 
-    public static final String CACHE_FOLDER_PATH = "cachedIndex/%s/";
+    public static final String CACHE_FOLDER_PATH = "cache/%s/";
 
     public static final String UPDATE_CACHE_FILE_NAME = "%s_updatedDocuments" + JSON_FILE_EXTENSION;
     public static final String UPDATE_CACHE_FILE_PATH = CACHE_FOLDER_PATH
