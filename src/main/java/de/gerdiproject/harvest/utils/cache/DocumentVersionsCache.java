@@ -20,17 +20,11 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.nio.file.DirectoryStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.function.BiFunction;
 
 import com.google.gson.stream.JsonReader;
 
 import de.gerdiproject.harvest.MainContext;
 import de.gerdiproject.harvest.utils.cache.constants.CacheConstants;
-import de.gerdiproject.harvest.utils.data.DiskIO;
-import de.gerdiproject.json.datacite.DataCiteJson;
 
 /**
  * This class manages a cache folder that represents a mapping of document identifiers to
@@ -43,13 +37,8 @@ import de.gerdiproject.json.datacite.DataCiteJson;
  *
  * @author Robin Weiss
  */
-public class DocumentVersionsCache
+public class DocumentVersionsCache extends AbstractCache<String>
 {
-    private final DiskIO diskIo;
-    private final String stableFolderPath;
-    private final String wipFolderPath;
-
-
     /**
      * Constructor that requires the harvester name for the creation of a folder.
      *
@@ -57,77 +46,16 @@ public class DocumentVersionsCache
      */
     public DocumentVersionsCache(final String harvesterName)
     {
-        this.stableFolderPath =
+        super(
             String.format(
                 CacheConstants.STABLE_VERSIONS_FOLDER_PATH,
                 MainContext.getModuleName(),
-                harvesterName);
-
-        this.wipFolderPath =
+                harvesterName),
             String.format(
                 CacheConstants.TEMP_VERSIONS_FOLDER_PATH,
                 MainContext.getModuleName(),
-                harvesterName);
-
-        this.diskIo = new DiskIO(false);
-
-        // if outdated caches exist, migrate them to folder structure
-        migrateToNewSystem(harvesterName);
-    }
-
-
-    /**
-     * Migrates the versions cache file from RestfulHarvester-Library
-     * version 6.5.0 and below to the new folder structure, introduced in 6.5.1.
-     *
-     * @param filePrefix the filePrefix of the cache file
-     */
-    @SuppressWarnings("deprecation")
-    private void migrateToNewSystem(final String filePrefix)
-    {
-        final File stableFile = new File(
-            String.format(
-                CacheConstants.VERSIONS_CACHE_FILE_PATH,
-                MainContext.getModuleName(),
-                filePrefix));
-
-        if (stableFile.exists()) {
-            try {
-                // prepare json reader for the cached document list
-                final JsonReader reader = new JsonReader(
-                    new InputStreamReader(
-                        new FileInputStream(stableFile),
-                        MainContext.getCharset()));
-
-                // retrieve harvester hash
-                reader.beginObject();
-                reader.nextName();
-                final String sourceHash = reader.nextString();
-
-                final File stableHarvesterHash =
-                    new File(String.format(
-                                 CacheConstants.SOURCE_HASH_FILE_PATH,
-                                 stableFolderPath));
-                diskIo.writeStringToFile(stableHarvesterHash, sourceHash);
-                reader.nextName();
-
-                // iterate through all entries
-                reader.beginObject();
-
-                while (reader.hasNext()) {
-                    final String documentId = reader.nextName();
-                    final String documentHash = reader.nextString();
-                    diskIo.writeStringToFile(getVersionFile(documentId, true), documentHash);
-                }
-
-                // delete old file
-                FileUtils.deleteFile(stableFile);
-
-                // close reader
-                reader.close();
-            } catch (IOException e) { // NOPMD if we could not migrate, we don't want to
-            }
-        }
+                harvesterName),
+            String.class);
     }
 
 
@@ -180,145 +108,59 @@ public class DocumentVersionsCache
     }
 
 
-    /**
-     * Applies all changes that had been made to the work-in-progress file to
-     * the stable file.
-     */
+    @Override
     public void applyChanges()
     {
-        FileUtils.integrateDirectory(new File(stableFolderPath), new File(wipFolderPath), true);
+        FileUtils.integrateDirectory(new File(wipFolderPath), new File(stableFolderPath), true);
     }
 
 
-    /**
-     * Deletes all document hashes that have null values in a specified changes cache.
-     *
-     * @param changesCache the cache that is being iterated to look for null
-     *            entries
-     */
-    public void removeDeletedEntries(final DocumentChangesCache changesCache)
+    @Override
+    @SuppressWarnings("deprecation")
+    protected void migrateToNewSystem()
     {
-        changesCache.forEach((String documentId, DataCiteJson document) -> {
-            if (document == null)
-                putDocumentHash(documentId, null);
-            return true;
-        });
-    }
+        final String harvesterName = new File(stableFolderPath).getParentFile().getName();
+        final File stableFile = new File(
+            String.format(
+                CacheConstants.VERSIONS_CACHE_FILE_PATH,
+                MainContext.getModuleName(),
+                harvesterName));
 
+        if (stableFile.exists()) {
+            try {
+                // prepare json reader for the cached document list
+                final JsonReader reader = new JsonReader(
+                    new InputStreamReader(
+                        new FileInputStream(stableFile),
+                        MainContext.getCharset()));
 
-    /**
-     * Iterates through all files of the stable folder and executes a
-     * specified function on each retrieved documentId-documentHash pair.
-     * If the function returns false, the process is aborted.
-     *
-     * @param entryFunction a function that accepts a documentId and
-     *            documentHash and returns true if the iteration should continue
-     *
-     * @return true if all entries were processed
-     */
-    public boolean forEach(BiFunction<String, String, Boolean> entryFunction)
-    {
-        boolean isSuccessful = false;
+                // retrieve harvester hash
+                reader.beginObject();
+                reader.nextName();
+                final String sourceHash = reader.nextString();
 
-        final File stableDir = new File(stableFolderPath);
+                final File stableHarvesterHash =
+                    new File(String.format(
+                                 CacheConstants.SOURCE_HASH_FILE_PATH,
+                                 stableFolderPath));
+                diskIo.writeStringToFile(stableHarvesterHash, sourceHash);
+                reader.nextName();
 
-        if (stableDir.exists()) {
-            try
-                (DirectoryStream<Path> prefixStream = Files.newDirectoryStream(stableDir.toPath())) {
-                for (Path prefixFolderPath : prefixStream) {
-                    final File prefixFolder = prefixFolderPath.toFile();
+                // iterate through all entries
+                reader.beginObject();
 
-                    // skip files of the top folder
-                    if (!prefixFolder.isDirectory())
-                        continue;
-
-                    // the folder name makes the first two characters of the documentId
-                    final String documentIdPrefix = prefixFolder.getName();
-
-                    // iterate through the sub folder
-                    try
-                        (DirectoryStream<Path> suffixStream = Files.newDirectoryStream(prefixFolderPath)) {
-                        for (Path suffixFile : suffixStream) {
-
-                            // the file name without extension is the suffix of the document ID
-                            String documentIdSuffix = suffixFile.getFileName().toString();
-                            documentIdSuffix = documentIdSuffix.substring(0, documentIdSuffix.lastIndexOf('.'));
-
-                            // assemble documentID
-                            final String documentId = documentIdPrefix + documentIdSuffix;
-
-                            // read file content as hash
-                            final String documentHash = diskIo.getString(suffixFile.toString());
-
-                            // apply the iterator function
-                            isSuccessful = entryFunction.apply(documentId, documentHash);
-
-                            if (!isSuccessful)
-                                break;
-                        }
-                    }
-
-                    if (!isSuccessful)
-                        break;
+                while (reader.hasNext()) {
+                    final String documentId = reader.nextName();
+                    final String documentHash = reader.nextString();
+                    diskIo.writeObjectToFile(getFile(documentId, true), documentHash);
                 }
-            } catch (IOException e) {
-                isSuccessful = false;
+
+                reader.close();
+
+                // delete old file
+                FileUtils.deleteFile(stableFile);
+            } catch (IOException e) { // NOPMD if we could not migrate, we don't want to
             }
         }
-
-        return isSuccessful;
-    }
-
-
-    /**
-     * Adds or removes a version file in the work-in-progress folder. If
-     * the documentHash is null, the file with the corresponding id is deleted.
-     *
-     * @param documentId the identifier of the document that is to be
-     *            changed/added
-     * @param documentHash the value that is to be assigned to the documentId,
-     *            or null if the documentId is to be removed
-     */
-    public void putDocumentHash(final String documentId, final String documentHash)
-    {
-        final File documentFile = getVersionFile(documentId, false);
-        FileUtils.deleteFile(documentFile);
-
-        if (documentHash != null)
-            diskIo.writeStringToFile(documentFile, documentHash);
-    }
-
-
-    /**
-     * Retrieves the document hash for a specified document ID from the stable
-     * cache folder.
-     *
-     * @param documentId the identifier of the document of which the hash is
-     *            retrieved
-     * @return a hash value or null, if no entry exists for the document
-     */
-    public String getDocumentHash(String documentId)
-    {
-        final File documentFile = getVersionFile(documentId, true);
-        return diskIo.getString(documentFile);
-    }
-
-
-    /**
-     * Assembles the file path to a version file.
-     *
-     * @param documentId the document of which the version file path is retrieved
-     * @param isStable if true, the file points to the stable folder
-     *
-     * @return a path to the version file of the document with the specified documentId
-     */
-    private File getVersionFile(final String documentId, boolean isStable)
-    {
-        return new File(
-                   String.format(
-                       CacheConstants.DOCUMENT_HASH_FILE_PATH,
-                       isStable ? stableFolderPath : wipFolderPath,
-                       documentId.substring(0, 2),
-                       documentId.substring(2)));
     }
 }

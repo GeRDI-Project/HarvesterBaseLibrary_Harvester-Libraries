@@ -27,6 +27,7 @@ import de.gerdiproject.harvest.submission.AbstractSubmitter;
 import de.gerdiproject.harvest.utils.HashGenerator;
 import de.gerdiproject.harvest.utils.cache.constants.CacheConstants;
 import de.gerdiproject.harvest.utils.cache.events.RegisterCacheEvent;
+import de.gerdiproject.json.datacite.DataCiteJson;
 
 /**
  * This class serves as a cache for harvested documents. The cached documents
@@ -103,7 +104,7 @@ public class HarvesterCache
     public void skipAllDocuments()
     {
         versionsCache.forEach((String documentId, String documentHash) -> {
-            changesCache.removeDocument(documentId);
+            changesCache.removeFile(documentId);
             return true;
         });
     }
@@ -132,8 +133,11 @@ public class HarvesterCache
     public void addDocument(IDocument doc)
     {
         final String documentId = getDocumentId(doc);
-        changesCache.putDocument(documentId, doc);
-        versionsCache.putDocumentHash(documentId, HashGenerator.instance().getShaHash(doc));
+
+        if (doc instanceof DataCiteJson)
+            changesCache.putFile(documentId, (DataCiteJson) doc);
+
+        versionsCache.putFile(documentId, HashGenerator.instance().getShaHash(doc));
     }
 
 
@@ -147,8 +151,13 @@ public class HarvesterCache
     {
         changesCache.applyChanges();
 
-        if (isSuccessful && !isAborted)
-            versionsCache.removeDeletedEntries(changesCache);
+        if (isSuccessful && !isAborted) {
+            changesCache.forEach((String documentId, DataCiteJson document) -> {
+                if (document == null)
+                    versionsCache.removeFile(documentId);
+                return true;
+            });
+        }
 
         versionsCache.applyChanges();
     }
@@ -181,7 +190,7 @@ public class HarvesterCache
     private void skipDocument(IDocument doc)
     {
         final String documentId = getDocumentId(doc);
-        changesCache.removeDocument(documentId);
+        changesCache.removeFile(documentId);
     }
 
 
@@ -209,7 +218,7 @@ public class HarvesterCache
     private boolean hasDocumentChanged(IDocument doc)
     {
         final String documentId = getDocumentId(doc);
-        final String oldHash = versionsCache.getDocumentHash(documentId);
+        final String oldHash = versionsCache.getFileContent(documentId);
 
         if (oldHash == null)
             return true;
