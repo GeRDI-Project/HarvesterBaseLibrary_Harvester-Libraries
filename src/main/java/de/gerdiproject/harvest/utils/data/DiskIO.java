@@ -36,7 +36,6 @@ import org.slf4j.LoggerFactory;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonIOException;
-import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
 
 import de.gerdiproject.harvest.MainContext;
@@ -51,27 +50,6 @@ import de.gerdiproject.json.GsonUtils;
 public class DiskIO implements IDataRetriever
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(DiskIO.class);
-    private boolean isLogging;
-
-
-    /**
-     * Default constructor that enables logging.
-     */
-    public DiskIO()
-    {
-        this.isLogging = true;
-    }
-
-
-    /**
-     * Constructor that allows to enable or disable logging.
-     *
-     * @param isLogging if true, logging is enabled
-     */
-    public DiskIO(boolean isLogging)
-    {
-        this.isLogging = isLogging;
-    }
 
 
     /**
@@ -85,59 +63,56 @@ public class DiskIO implements IDataRetriever
      */
     public String writeStringToFile(String filePath, String fileContent)
     {
-        String statusMessage;
-        boolean isSuccessful = false;
-
-        try {
-            File file = new File(filePath);
-
-            // create directories
-            boolean isDirectoryCreated = file.getParentFile().exists() || file.getParentFile().mkdirs();
-
-            if (!isDirectoryCreated)
-                statusMessage = String.format(DataOperationConstants.SAVE_FAILED, filePath, DataOperationConstants.SAVE_FAILED_NO_FOLDERS);
-            else {
-                // write content to file
-                BufferedWriter writer = new BufferedWriter(
-                    new OutputStreamWriter(new FileOutputStream(file), StandardCharsets.UTF_8));
-                writer.write(fileContent);
-
-                writer.close();
-
-                // set status message
-                isSuccessful = true;
-                statusMessage = String.format(DataOperationConstants.SAVE_OK, filePath);
-            }
-        } catch (IOException | SecurityException e) {
-            statusMessage = String.format(DataOperationConstants.SAVE_FAILED, filePath, e.getMessage());
-        }
-
-        // log the status
-        if (isLogging) {
-            if (isSuccessful)
-                LOGGER.info(statusMessage);
-            else
-                LOGGER.error(statusMessage);
-        }
-
-        return statusMessage;
+        return writeStringToFile(new File(filePath), fileContent);
     }
 
 
     /**
-     * Writes a JSON element to a file on disk.
-     * @param filePath
-     *      the complete path to the file
-     * @param json
-     *      the JSON element that is to be written to the file
+     * Writes a string to a file on disk.
+     * @param file the file to which the String is written
+     * @param fileContent
+     *      the string that is to be written to the file
      *
      * @return a String that describes the status of the operation
      */
-    public String writeJsonToFile(String filePath, JsonElement json)
+    public String writeStringToFile(File file, String fileContent)
     {
-        // deliberately write an empty object to disk
-        String jsonString = (json == null) ? "{}" : GsonUtils.getGson().toJson(json);
-        return writeStringToFile(filePath, jsonString);
+        final String filePath = file.getAbsolutePath();
+
+        String statusMessage;
+        boolean isSuccessful = false;
+
+        // create directories
+        boolean isDirectoryCreated = file.getParentFile().exists() || file.getParentFile().mkdirs();
+
+        if (!isDirectoryCreated)
+            statusMessage = String.format(
+                                DataOperationConstants.SAVE_FAILED_NO_FOLDERS,
+                                filePath);
+        else {
+            // write content to file
+            try
+                (BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file), StandardCharsets.UTF_8))) {
+                writer.write(fileContent);
+
+                // set status message
+                isSuccessful = true;
+                statusMessage = String.format(DataOperationConstants.SAVE_OK, filePath);
+
+            } catch (IOException | SecurityException e) {
+                LOGGER.warn(String.format(DataOperationConstants.SAVE_FAILED, filePath), e);
+                statusMessage = String.format(DataOperationConstants.SAVE_FAILED, filePath);
+            }
+
+        }
+
+        // log the status
+        if (isSuccessful)
+            LOGGER.debug(statusMessage);
+        else
+            LOGGER.warn(statusMessage);
+
+        return statusMessage;
     }
 
 
@@ -157,80 +132,125 @@ public class DiskIO implements IDataRetriever
     }
 
 
-    @Override
-    public String getString(String filePath)
+    /**
+     * Attempts to transform an object to a JSON object and writes it to a file on disk.
+     * @param file
+     *      the file to which the object should be written
+     * @param obj
+     *      the object that is to be written to the file
+     *
+     * @return a String that describes the status of the operation
+     */
+    public String writeObjectToFile(File file, Object obj)
+    {
+        String jsonString = (obj == null) ? "{}" : GsonUtils.getGson().toJson(obj);
+        return writeStringToFile(file, jsonString);
+    }
+
+
+    /**
+     * Tries to parse the content of a specified file as a string.
+     *
+     * @param file the file that is to be parsed
+     * @return a string, or null if the file could not be parsed
+     */
+    public String getString(File file)
     {
         String fileContent = null;
 
-        try {
-            BufferedReader reader = new BufferedReader(createDiskReader(filePath));
+        try
+            (BufferedReader reader = new BufferedReader(createDiskReader(file))) {
             fileContent = reader.lines().collect(Collectors.joining("\n"));
 
-            reader.close();
+        } catch (FileNotFoundException e) { // NOPMD if the file is not found, do not log anything
+
         } catch (IOException e) {
-            if (isLogging)
-                LOGGER.warn(String.format(DataOperationConstants.LOAD_FAILED, filePath, e.toString()));
+            LOGGER.warn(String.format(DataOperationConstants.LOAD_FAILED, file.getAbsolutePath()), e);
         }
 
         return fileContent;
+    }
+
+
+    /**
+     * Tries to parse the content of a specified file as an object.
+     *
+     * @param file a JSON file representing the object
+     * @param targetClass the class of the object that is read
+     * @param <T> the type of the object that is to be read
+     *
+     * @return an object, or null if the file could not be parsed
+     */
+    public <T> T getObject(File file, Class<T> targetClass)
+    {
+        T object = null;
+
+        try
+            (Reader reader = createDiskReader(file)) {
+            object = GsonUtils.getGson().fromJson(reader, targetClass);
+
+        } catch (FileNotFoundException e) { // NOPMD if the file is not found, do not log anything
+
+        } catch (IOException | IllegalStateException | JsonIOException | JsonSyntaxException e) {
+            LOGGER.warn(String.format(DataOperationConstants.LOAD_FAILED, file.getAbsolutePath()), e);
+        }
+
+        return object;
+    }
+
+
+    /**
+     * Tries to parse the content of a specified file as an object.
+     *
+     * @param file a JSON file representing the object
+     * @param targetType the type of the object that is read
+     * @param <T> the type of the object that is to be read
+     *
+     * @return an object, or null if the file could not be parsed
+     */
+    public <T> T getObject(File file, Type targetType)
+    {
+        T object = null;
+
+        try
+            (Reader reader = createDiskReader(file)) {
+            object = GsonUtils.getGson().fromJson(reader, targetType);
+
+        } catch (FileNotFoundException e) { // NOPMD if the file is not found, do not log anything
+
+        } catch (IOException | IllegalStateException | JsonIOException | JsonSyntaxException e) {
+            LOGGER.warn(String.format(DataOperationConstants.LOAD_FAILED, file.getAbsolutePath()), e);
+        }
+
+        return object;
+    }
+
+
+    @Override
+    public String getString(String filePath)
+    {
+        return getString(new File(filePath));
     }
 
 
     @Override
     public JsonElement getJson(String filePath)
     {
-        JsonElement fileContent = null;
-
-        try {
-            Reader reader = createDiskReader(filePath);
-            JsonParser parser = new JsonParser();
-
-            fileContent = parser.parse(reader);
-            reader.close();
-        } catch (IOException | IllegalStateException | JsonIOException | JsonSyntaxException e) {
-            if (isLogging)
-                LOGGER.warn(String.format(DataOperationConstants.LOAD_FAILED, filePath, e.toString()));
-        }
-
-        return fileContent;
+        return getObject(new File(filePath), JsonElement.class);
     }
 
 
     @Override
     public <T> T getObject(String filePath, Class<T> targetClass)
     {
-        T object = null;
-
-        try {
-            Reader reader = createDiskReader(filePath);
-            object = GsonUtils.getGson().fromJson(reader, targetClass);
-            reader.close();
-
-        } catch (IOException | IllegalStateException | JsonIOException | JsonSyntaxException e) {
-            if (isLogging)
-                LOGGER.warn(String.format(DataOperationConstants.LOAD_FAILED, filePath, e.toString()));
-        }
-
-        return object;
+        return getObject(new File(filePath), targetClass);
     }
 
 
     @Override
     public <T> T getObject(String filePath, Type targetType)
     {
-        T object = null;
-
-        try {
-            Reader reader = createDiskReader(filePath);
-            object = GsonUtils.getGson().fromJson(reader, targetType);
-            reader.close();
-
-        } catch (IOException | IllegalStateException | JsonIOException | JsonSyntaxException e) {
-            if (isLogging)
-                LOGGER.warn(String.format(DataOperationConstants.LOAD_FAILED, filePath, e.toString()));
-        }
-
-        return object;
+        return getObject(new File(filePath), targetType);
     }
 
 
@@ -250,37 +270,16 @@ public class DiskIO implements IDataRetriever
 
     /**
      * Reads a file.
-     * @param filePath
-     *      the complete path to the file that is to be read
+     * @param file
+     *      the file that is to be read
      * @return a reader
      *      that can parse the file
      * @throws FileNotFoundException
      *      this exception is thrown if the specified file does not exist
      */
-    private Reader createDiskReader(String filePath) throws FileNotFoundException
+    private Reader createDiskReader(File file) throws FileNotFoundException
     {
         // try to read from disk
-        return new InputStreamReader(new FileInputStream(filePath), MainContext.getCharset());
-    }
-
-
-    /**
-     * Checks if logging is enabled.
-     * @return true, if logging is enabled
-     */
-    public boolean isLogging()
-    {
-        return isLogging;
-    }
-
-
-    /**
-     * Changes whether or not logging is enabled.
-     *
-     * @param isLogging if true, logging will be enabled
-     */
-    public void setLogging(boolean isLogging)
-    {
-        this.isLogging = isLogging;
+        return new InputStreamReader(new FileInputStream(file), MainContext.getCharset());
     }
 }

@@ -41,6 +41,8 @@ public class SaveConstants
     public static final String SAVE_FAILED = "Saving failed!";
     public static final String SAVE_INTERRUPTED = "Saving interrupted unexpectedly!";
 
+    public static final String DOCUMENTS_JSON = "documents";
+
 
     /**
      * Private constructor, because this class just serves as a place to define

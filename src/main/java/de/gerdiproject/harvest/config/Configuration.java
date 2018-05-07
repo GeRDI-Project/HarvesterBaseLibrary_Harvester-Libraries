@@ -148,7 +148,7 @@ public class Configuration
     {
         // read JSON from disk
         final String path = getConfigFilePath();
-        final String configJson = new DiskIO(false).getString(path);
+        final String configJson = new DiskIO().getString(path);
 
         if (configJson == null)
             LOGGER.error(String.format(ConfigurationConstants.LOAD_FAILED, path, ConfigurationConstants.NO_EXISTS));
@@ -235,7 +235,7 @@ public class Configuration
         String configJson = ConfigurationAdapter.getGson().toJson(this);
 
         // write to disk
-        return  new DiskIO().writeStringToFile(path, configJson);
+        return new DiskIO().writeStringToFile(path, configJson);
     }
 
 

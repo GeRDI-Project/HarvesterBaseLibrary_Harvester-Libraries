@@ -24,18 +24,18 @@ import de.gerdiproject.harvest.utils.data.HttpRequester;
  */
 public class DataOperationConstants
 {
-    public static final String SAVE_OK = "Saved file: '%s'";
-    public static final String SAVE_FAILED = "Could not save file '%s': %s";
-    public static final String SAVE_FAILED_NO_FOLDERS = "Failed to create directories!";
-    public static final String LOAD_FAILED = "Could not load file '%s': %s";
+    public static final String SAVE_OK = "Saved file: %s";
+    public static final String SAVE_FAILED = "Could not write to file: %s";
+    public static final String SAVE_FAILED_NO_FOLDERS = "Could not write to file '%s': Failed to create directories!";
+    public static final String LOAD_FAILED = "Could not load file: %s";
 
     public static final String FILE_PATH = "savedHttpResponses/%s/%sresponse.%s";
     public static final String FILE_ENDING_JSON = "json";
     public static final String FILE_ENDING_HTML = "html";
 
-    public static final String WEB_ERROR_JSON = "Could not load and parse '%s': %s";
+    public static final String WEB_ERROR_JSON = "Could not load and parse from web: %s";
 
-    public static final String WEB_ERROR_HEADER = "Could retrieve %s-request header from URL '%s'.";
+    public static final String WEB_ERROR_HEADER = "Could retrieve %s-request header from URL: %s";
     public static final String WEB_ERROR_REST_RESPONSE = "%s-request error for URL '%s' with body '%s'.";
     public static final String WEB_ERROR_REST_HTTP = "%s-request for URL '%s' with body '%s' returned HTTP Status-Code %d.";
     public static final String REQUEST_PROPERTY_CHARSET = "charset";
