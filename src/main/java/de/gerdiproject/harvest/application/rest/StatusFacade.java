@@ -16,24 +16,26 @@
 package de.gerdiproject.harvest.application.rest;
 
 
-import de.gerdiproject.harvest.state.IState;
-import de.gerdiproject.harvest.state.StateMachine;
-import de.gerdiproject.harvest.state.impl.ErrorState;
-import de.gerdiproject.harvest.utils.cache.events.GetCacheCountEvent;
+import java.time.Instant;
+
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
+
 import de.gerdiproject.harvest.MainContext;
 import de.gerdiproject.harvest.application.constants.StatusConstants;
 import de.gerdiproject.harvest.application.enums.HealthStatus;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.harvester.events.GetMaxDocumentCountEvent;
 import de.gerdiproject.harvest.harvester.events.GetProviderNameEvent;
-
-
-import java.time.Instant;
-
-import javax.ws.rs.Produces;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.core.MediaType;
+import de.gerdiproject.harvest.state.IState;
+import de.gerdiproject.harvest.state.StateMachine;
+import de.gerdiproject.harvest.state.constants.StateConstants;
+import de.gerdiproject.harvest.state.impl.ErrorState;
+import de.gerdiproject.harvest.utils.cache.events.GetCacheCountEvent;
 
 
 /**
@@ -84,9 +86,26 @@ public final class StatusFacade
     @Produces({
         MediaType.TEXT_PLAIN
     })
-    public String getDataProvider()
+    public Response getDataProvider()
     {
-        return EventSystem.sendSynchronousEvent(new GetProviderNameEvent());
+        String providerName = EventSystem.sendSynchronousEvent(new GetProviderNameEvent());
+
+        final String entity;
+        final Status status;
+
+        if (providerName == null) {
+            entity = StateConstants.INIT_IN_PROGRESS;
+            status = Status.SERVICE_UNAVAILABLE;
+        } else {
+            entity = providerName;
+            status = Status.OK;
+        }
+
+        return Response
+               .status(status)
+               .entity(entity)
+               .type(MediaType.TEXT_PLAIN)
+               .build();
     }
 
 
@@ -101,14 +120,29 @@ public final class StatusFacade
     @Produces({
         MediaType.TEXT_PLAIN
     })
-    public String getMaxDocumentCount()
+    public Response getMaxDocumentCount()
     {
         Integer maxDocs = EventSystem.sendSynchronousEvent(new GetMaxDocumentCountEvent());
 
-        if (maxDocs == null || maxDocs < 0)
-            return StatusConstants.NOT_AVAILABLE;
-        else
-            return maxDocs.toString();
+        final String entity;
+        final Status status;
+
+        if (maxDocs == null) {
+            entity = StateConstants.INIT_IN_PROGRESS;
+            status = Status.SERVICE_UNAVAILABLE;
+        } else if (maxDocs < 0) {
+            entity = StatusConstants.NOT_AVAILABLE;
+            status = Status.BAD_REQUEST;
+        } else {
+            entity = maxDocs.toString();
+            status = Status.OK;
+        }
+
+        return Response
+               .status(status)
+               .entity(entity)
+               .type(MediaType.TEXT_PLAIN)
+               .build();
     }
 
     /**
@@ -122,14 +156,26 @@ public final class StatusFacade
     @Produces({
         MediaType.TEXT_PLAIN
     })
-    public String getHarvestedDocumentCount()
+    public Response getHarvestedDocumentCount()
     {
         Integer cachedDocs = EventSystem.sendSynchronousEvent(new GetCacheCountEvent());
 
-        if (cachedDocs == null)
-            return StatusConstants.NOT_AVAILABLE;
-        else
-            return cachedDocs.toString();
+        final String entity;
+        final Status status;
+
+        if (cachedDocs == null) {
+            entity = StateConstants.INIT_IN_PROGRESS;
+            status = Status.SERVICE_UNAVAILABLE;
+        } else {
+            entity = cachedDocs.toString();
+            status = Status.OK;
+        }
+
+        return Response
+               .status(status)
+               .entity(entity)
+               .type(MediaType.TEXT_PLAIN)
+               .build();
     }
 
     /**
@@ -143,9 +189,19 @@ public final class StatusFacade
     @Produces({
         MediaType.TEXT_PLAIN
     })
-    public String getProgress()
+    public Response getProgress()
     {
-        return StateMachine.getCurrentState().getProgress();
+        final String entity = StateMachine.getCurrentState().getProgress();
+
+        final Status status = entity.equals(StatusConstants.NOT_AVAILABLE)
+                              ? Status.BAD_REQUEST
+                              : Status.OK;
+
+        return Response
+               .status(status)
+               .entity(entity)
+               .type(MediaType.TEXT_PLAIN)
+               .build();
     }
 
 
@@ -160,14 +216,26 @@ public final class StatusFacade
     @Produces({
         MediaType.TEXT_PLAIN
     })
-    public String getHarvestStartTimestamp()
+    public Response getHarvestStartTimestamp()
     {
         long timestamp = MainContext.getTimeKeeper().getHarvestMeasure().getStartTimestamp();
 
-        if (timestamp == -1L)
-            return StatusConstants.NOT_AVAILABLE;
-        else
-            return Instant.ofEpochMilli(timestamp).toString();
+        final String entity;
+        final Status status;
+
+        if (timestamp == -1L) {
+            entity = StatusConstants.NOT_AVAILABLE;
+            status = Status.BAD_REQUEST;
+        } else {
+            entity = Instant.ofEpochMilli(timestamp).toString();
+            status = Status.OK;
+        }
+
+        return Response
+               .status(status)
+               .entity(entity)
+               .type(MediaType.TEXT_PLAIN)
+               .build();
     }
 
 
@@ -181,7 +249,7 @@ public final class StatusFacade
     @Produces({
         MediaType.TEXT_PLAIN
     })
-    public String getHealth()
+    public Response getHealth()
     {
         final IState currentState = StateMachine.getCurrentState();
         HealthStatus health = HealthStatus.OK;
@@ -208,6 +276,14 @@ public final class StatusFacade
             }
         }
 
-        return health.toString();
+        final Status status =  health == HealthStatus.OK
+                               ? Status.OK
+                               : Status.INTERNAL_SERVER_ERROR;
+
+        return Response
+               .status(status)
+               .entity(health.toString())
+               .type(MediaType.TEXT_PLAIN)
+               .build();
     }
 }
