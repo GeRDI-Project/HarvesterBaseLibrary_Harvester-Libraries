@@ -216,7 +216,7 @@ public abstract class AbstractProgressingState implements IState
 
         // log updated progress in percent
         if (isMaxNumberKnown && newProgressInPercent > oldProgressInPercent) {
-            LOGGER.debug(
+            LOGGER.info(
                 String.format(
                     StateConstants.PROGESS_TEXT,
                     getName(),

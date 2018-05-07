@@ -16,15 +16,6 @@
 package de.gerdiproject.harvest.utils.data;
 
 
-import de.gerdiproject.harvest.ContextListener;
-import de.gerdiproject.harvest.MainContext;
-import de.gerdiproject.harvest.config.Configuration;
-import de.gerdiproject.harvest.config.constants.ConfigurationConstants;
-import de.gerdiproject.harvest.config.events.GlobalParameterChangedEvent;
-import de.gerdiproject.harvest.config.parameters.AbstractParameter;
-import de.gerdiproject.harvest.event.EventSystem;
-import de.gerdiproject.harvest.utils.data.constants.DataOperationConstants;
-
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -38,6 +29,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 
+import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.xml.ws.http.HTTPException;
 
@@ -47,7 +39,14 @@ import org.slf4j.LoggerFactory;
 
 import com.google.gson.JsonObject;
 
-import javax.ws.rs.core.HttpHeaders;
+import de.gerdiproject.harvest.ContextListener;
+import de.gerdiproject.harvest.MainContext;
+import de.gerdiproject.harvest.config.Configuration;
+import de.gerdiproject.harvest.config.constants.ConfigurationConstants;
+import de.gerdiproject.harvest.config.events.GlobalParameterChangedEvent;
+import de.gerdiproject.harvest.config.parameters.AbstractParameter;
+import de.gerdiproject.harvest.event.EventSystem;
+import de.gerdiproject.harvest.utils.data.constants.DataOperationConstants;
 
 
 /**
@@ -148,7 +147,7 @@ public class HttpRequester
 
         // write whole response to disk, if the option is enabled
         if (isResponseReadFromWeb && writeToDisk)
-            diskIO.writeJsonToFile(urlToFilePath(url, DataOperationConstants.FILE_ENDING_JSON), jsonObj);
+            diskIO.writeObjectToFile(urlToFilePath(url, DataOperationConstants.FILE_ENDING_JSON), jsonObj);
 
 
         // only return the object if it is not empty

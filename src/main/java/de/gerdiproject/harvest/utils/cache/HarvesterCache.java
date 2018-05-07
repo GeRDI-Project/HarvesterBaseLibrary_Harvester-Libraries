@@ -27,6 +27,7 @@ import de.gerdiproject.harvest.submission.AbstractSubmitter;
 import de.gerdiproject.harvest.utils.HashGenerator;
 import de.gerdiproject.harvest.utils.cache.constants.CacheConstants;
 import de.gerdiproject.harvest.utils.cache.events.RegisterCacheEvent;
+import de.gerdiproject.json.datacite.DataCiteJson;
 
 /**
  * This class serves as a cache for harvested documents. The cached documents
@@ -41,6 +42,7 @@ public class HarvesterCache
     private final DocumentVersionsCache versionsCache;
     private final DocumentChangesCache changesCache;
     private final String harvesterId;
+    private final File harvesterCacheFolder;
 
 
     /**
@@ -50,26 +52,24 @@ public class HarvesterCache
      */
     public HarvesterCache(final String harvesterName)
     {
+        // set harvesterID
         final String providerName = EventSystem.sendSynchronousEvent(new GetProviderNameEvent());
         this.harvesterId = providerName + harvesterName;
 
-        // create cache directory
-        final File cacheDirectory =
-            new File(String.format(CacheConstants.CACHE_FOLDER_PATH, MainContext.getModuleName()));
+        // set cache folder
+        this.harvesterCacheFolder = new File(
+            String.format(
+                CacheConstants.TEMP_CHANGES_FOLDER_PATH,
+                MainContext.getModuleName(),
+                harvesterName
+            )).getParentFile();
 
-        // only register cache if its files can be created
-        final boolean isDirectoryCreated = cacheDirectory.exists() || cacheDirectory.mkdirs();
-
-        if (isDirectoryCreated) {
-            this.versionsCache = new DocumentVersionsCache(harvesterName);
-            this.changesCache = new DocumentChangesCache(harvesterName);
-            EventSystem.sendEvent(new RegisterCacheEvent(this));
-        } else {
-            this.versionsCache = null;
-            this.changesCache = null;
-        }
+        // set versions and changes caches
+        this.versionsCache = new DocumentVersionsCache(harvesterName);
+        this.changesCache = new DocumentChangesCache(harvesterName);
 
         EventSystem.addListener(ContextDestroyedEvent.class, this::onContextDestroyed);
+        EventSystem.sendEvent(new RegisterCacheEvent(this));
     }
 
 
@@ -104,7 +104,7 @@ public class HarvesterCache
     public void skipAllDocuments()
     {
         versionsCache.forEach((String documentId, String documentHash) -> {
-            changesCache.removeDocument(documentId);
+            changesCache.removeFile(documentId);
             return true;
         });
     }
@@ -133,8 +133,11 @@ public class HarvesterCache
     public void addDocument(IDocument doc)
     {
         final String documentId = getDocumentId(doc);
-        changesCache.putDocument(documentId, doc);
-        versionsCache.putDocumentHash(documentId, HashGenerator.instance().getShaHash(doc));
+
+        if (doc instanceof DataCiteJson)
+            changesCache.putFile(documentId, (DataCiteJson) doc);
+
+        versionsCache.putFile(documentId, HashGenerator.instance().getShaHash(doc));
     }
 
 
@@ -148,8 +151,13 @@ public class HarvesterCache
     {
         changesCache.applyChanges();
 
-        if (isSuccessful && !isAborted)
-            versionsCache.removeDeletedEntries(changesCache);
+        if (isSuccessful && !isAborted) {
+            changesCache.forEach((String documentId, DataCiteJson document) -> {
+                if (document == null)
+                    versionsCache.removeFile(documentId);
+                return true;
+            });
+        }
 
         versionsCache.applyChanges();
     }
@@ -182,7 +190,7 @@ public class HarvesterCache
     private void skipDocument(IDocument doc)
     {
         final String documentId = getDocumentId(doc);
-        changesCache.removeDocument(documentId);
+        changesCache.removeFile(documentId);
     }
 
 
@@ -210,10 +218,13 @@ public class HarvesterCache
     private boolean hasDocumentChanged(IDocument doc)
     {
         final String documentId = getDocumentId(doc);
-        final String currentHash = HashGenerator.instance().getShaHash(doc);
-        final String oldHash = versionsCache.getDocumentHash(documentId);
+        final String oldHash = versionsCache.getFileContent(documentId);
 
-        return oldHash == null || !oldHash.equals(currentHash);
+        if (oldHash == null)
+            return true;
+
+        final String currentHash = HashGenerator.instance().getShaHash(doc);
+        return !oldHash.equals(currentHash);
     }
 
 
@@ -225,10 +236,6 @@ public class HarvesterCache
      */
     private void onContextDestroyed(ContextDestroyedEvent event) // NOPMD - Event callbacks always require the event
     {
-        if (versionsCache != null)
-            versionsCache.clearWorkInProgress();
-
-        if (changesCache != null)
-            changesCache.clearWorkInProgress();
+        FileUtils.deleteFile(harvesterCacheFolder);
     }
 }
