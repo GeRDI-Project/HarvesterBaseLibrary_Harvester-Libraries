@@ -56,6 +56,7 @@ public class FileUtils
     {
         if (deletedFile.exists()) {
             boolean wasDeleted;
+            Exception ioException = null;
 
             if (deletedFile.isDirectory()) {
 
@@ -67,14 +68,19 @@ public class FileUtils
 
                 } catch (IOException e) {
                     wasDeleted = false;
+                    ioException = e;
                 }
             }
 
             // delete file or directory itself
             wasDeleted = deletedFile.delete();
 
-            if (!wasDeleted)
-                LOGGER.error(String.format(CacheConstants.DELETE_FILE_FAILED, deletedFile.getAbsolutePath()));
+            if (!wasDeleted) {
+                if (ioException != null)
+                    LOGGER.error(String.format(CacheConstants.DELETE_FILE_FAILED, deletedFile.getAbsolutePath()), ioException);
+                else
+                    LOGGER.error(String.format(CacheConstants.DELETE_FILE_FAILED, deletedFile.getAbsolutePath()));
+            }
         }
     }
 
@@ -129,7 +135,7 @@ public class FileUtils
     {
         final File directory = file.isDirectory() ? file : file.getParentFile();
 
-        return directory == null || directory.exists() || file.getParentFile().mkdirs();
+        return directory == null || directory.exists() || file.mkdirs();
     }
 
 
@@ -144,15 +150,21 @@ public class FileUtils
 
         // attempt to create parent folder
         boolean creationSuccessful = createDirectories(file);
+        Exception ioException = null;
 
         try {
             creationSuccessful &= file.createNewFile();
         } catch (IOException e) {
             creationSuccessful = false;
+            ioException = e;
         }
 
-        if (!creationSuccessful)
-            LOGGER.error(String.format(CacheConstants.CACHE_CREATE_FAILED, file.getAbsolutePath()));
+        if (!creationSuccessful) {
+            if (ioException != null)
+                LOGGER.error(String.format(CacheConstants.CACHE_CREATE_FAILED, file.getAbsolutePath()), ioException);
+            else
+                LOGGER.error(String.format(CacheConstants.CACHE_CREATE_FAILED, file.getAbsolutePath()));
+        }
     }
 
 
@@ -166,8 +178,17 @@ public class FileUtils
      */
     public static void integrateDirectory(File sourceDirectory, File targetDirectory, boolean replaceFiles)
     {
-        if (!sourceDirectory.isDirectory() || !targetDirectory.isDirectory())
-            LOGGER.error(String.format(CacheConstants.DIR_MERGE_FAILED_NOT_DIRS, sourceDirectory.getAbsolutePath(), targetDirectory.getAbsolutePath()));
+        // make sure the target directory exists
+        createDirectories(targetDirectory);
+
+        // make sure both files are directories
+        if (!sourceDirectory.isDirectory() || !targetDirectory.isDirectory()) {
+            LOGGER.error(String.format(
+                             CacheConstants.DIR_MERGE_FAILED_NOT_DIRS,
+                             sourceDirectory.getAbsolutePath(),
+                             targetDirectory.getAbsolutePath()));
+            return;
+        }
 
         try
             (DirectoryStream<Path> sourceStream = Files.newDirectoryStream(sourceDirectory.toPath())) {
@@ -176,10 +197,10 @@ public class FileUtils
                 final File targetFile = new File(targetDirectory, sourceFile.getName());
 
                 // recursively integrate subdirectories
-                if (sourceFile.isDirectory()) {
-                    createDirectories(targetFile);
+                if (sourceFile.isDirectory())
                     integrateDirectory(sourceFile, targetFile, replaceFiles);
-                } else {
+
+                else {
                     // delete existing file, if in replace-mode
                     if (replaceFiles)
                         deleteFile(targetFile);
@@ -195,6 +216,10 @@ public class FileUtils
                              sourceDirectory.getAbsolutePath(),
                              targetDirectory.getAbsolutePath()),
                          e);
+            return;
         }
+
+        // delete source folder
+        deleteFile(sourceDirectory);
     }
 }
