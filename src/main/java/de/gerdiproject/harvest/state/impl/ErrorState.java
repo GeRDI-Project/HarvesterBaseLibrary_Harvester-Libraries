@@ -15,6 +15,10 @@
  */
 package de.gerdiproject.harvest.state.impl;
 
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
+
 import de.gerdiproject.harvest.application.constants.StatusConstants;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.harvester.events.HarvesterInitializedEvent;
@@ -54,51 +58,41 @@ public class ErrorState implements IState
 
 
     @Override
-    public String startHarvest()
+    public Response startHarvest()
     {
-        return StateConstants.ERROR_DETAILED;
+        return createServerErrorResponse();
     }
 
 
     @Override
-    public String abort()
+    public Response abort()
     {
-        return StateConstants.ERROR_DETAILED;
+        return createServerErrorResponse();
     }
 
 
     @Override
-    public String pause()
+    public Response submit()
     {
-        return StateConstants.ERROR_DETAILED;
+        return createServerErrorResponse();
     }
 
 
     @Override
-    public String resume()
+    public Response save()
     {
-        return StateConstants.ERROR_DETAILED;
+        return createServerErrorResponse();
     }
 
 
     @Override
-    public String submit()
+    public Response getProgress()
     {
-        return StateConstants.ERROR_DETAILED;
-    }
-
-
-    @Override
-    public String save()
-    {
-        return StateConstants.ERROR_DETAILED;
-    }
-
-
-    @Override
-    public String getProgress()
-    {
-        return StatusConstants.NOT_AVAILABLE;
+        return Response
+               .status(Status.BAD_REQUEST)
+               .entity(StatusConstants.NOT_AVAILABLE)
+               .type(MediaType.TEXT_PLAIN)
+               .build();
     }
 
 
@@ -110,8 +104,23 @@ public class ErrorState implements IState
 
 
     @Override
-    public boolean isOutdated()
+    public Response isOutdated()
     {
-        return true;
+        return createServerErrorResponse();
+    }
+
+
+    /**
+     * Creates a response, notifying the requester about the server error.
+     *
+     * @return a response, notifying the requester about the server error.
+     */
+    private Response createServerErrorResponse()
+    {
+        return Response
+               .status(Status.INTERNAL_SERVER_ERROR)
+               .entity(StateConstants.ERROR_DETAILED)
+               .type(MediaType.TEXT_PLAIN)
+               .build();
     }
 }

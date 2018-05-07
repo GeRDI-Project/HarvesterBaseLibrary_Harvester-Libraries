@@ -16,10 +16,6 @@
 package de.gerdiproject.harvest.config.rest;
 
 
-import de.gerdiproject.harvest.MainContext;
-import de.gerdiproject.harvest.config.Configuration;
-import de.gerdiproject.harvest.config.constants.ConfigurationConstants;
-
 import java.util.List;
 import java.util.Map.Entry;
 
@@ -32,6 +28,12 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
+
+import de.gerdiproject.harvest.MainContext;
+import de.gerdiproject.harvest.config.Configuration;
+import de.gerdiproject.harvest.config.constants.ConfigurationConstants;
 
 
 /**
@@ -56,21 +58,23 @@ public final class ConfigurationFacade
     @Produces({
         MediaType.TEXT_PLAIN
     })
-    public String getValue(@QueryParam("key") String key)
+    public Response getValue(@QueryParam("key") String key)
     {
-        if (key == null) {
-            if (MainContext.getConfiguration() == null)
-                return ConfigurationConstants.REST_INFO_FAILED;
-            else
-                return MainContext.getConfiguration().getInfoString();
-        } else {
-            String value = null;
+        if (MainContext.getConfiguration() == null)
+            return createServerErrorResponse();
 
-            if (MainContext.getConfiguration() != null)
-                value = MainContext.getConfiguration().getParameterStringValue(key);
+        final String entity;
 
-            return value == null ? "" : value;
-        }
+        // if there is no key, return an info string
+        if (key == null)
+            entity = MainContext.getConfiguration().getInfoString();
+        else
+            entity = MainContext.getConfiguration().getParameterStringValue(key);
+
+        return Response.status(Status.OK)
+               .entity(entity == null ? "" : entity)
+               .type(MediaType.TEXT_PLAIN)
+               .build();
     }
 
 
@@ -83,12 +87,15 @@ public final class ConfigurationFacade
     @Produces({
         MediaType.TEXT_PLAIN
     })
-    public String saveToDisk()
+    public Response saveToDisk()
     {
         if (MainContext.getConfiguration() == null)
-            return ConfigurationConstants.REST_INFO_FAILED;
+            return createServerErrorResponse();
         else
-            return MainContext.getConfiguration().saveToDisk();
+            return Response.status(Status.OK)
+                   .entity(MainContext.getConfiguration().saveToDisk())
+                   .type(MediaType.TEXT_PLAIN)
+                   .build();
     }
 
 
@@ -106,17 +113,17 @@ public final class ConfigurationFacade
     @Consumes({
         MediaType.APPLICATION_FORM_URLENCODED
     })
-    public String setParameters(final MultivaluedMap<String, String> formParams)
+    public Response setParameters(final MultivaluedMap<String, String> formParams)
     {
+        final Configuration config = MainContext.getConfiguration();
+
+        if (config == null)
+            return createServerErrorResponse();
+
+        // assemble response string
         final StringBuilder sb = new StringBuilder();
 
         if (formParams != null) {
-            final Configuration config = MainContext.getConfiguration();
-
-            if (config == null)
-                return ConfigurationConstants.REST_INFO_FAILED;
-
-
             for (Entry<String, List<String>> entry : formParams.entrySet()) {
                 String key = entry.getKey();
                 List<String> values = entry.getValue();
@@ -127,8 +134,29 @@ public final class ConfigurationFacade
 
         // if nothing was attempted to be changed, inform the user
         if (sb.length() == 0)
-            sb.append(ConfigurationConstants.NO_CHANGES);
+            return Response.status(Status.BAD_REQUEST)
+                   .entity(ConfigurationConstants.NO_CHANGES)
+                   .type(MediaType.TEXT_PLAIN)
+                   .build();
+        else
+            return Response.status(Status.OK)
+                   .entity(sb.toString())
+                   .type(MediaType.TEXT_PLAIN)
+                   .build();
+    }
 
-        return sb.toString();
+
+    /**
+     * Creates a server error response if the configuration is unavailable.
+     *
+     * @return a server error response if the configuration is unavailable
+     */
+    private Response createServerErrorResponse()
+    {
+        return Response
+               .status(Status.INTERNAL_SERVER_ERROR)
+               .entity(ConfigurationConstants.REST_INFO_FAILED)
+               .type(MediaType.TEXT_PLAIN)
+               .build();
     }
 }

@@ -191,17 +191,7 @@ public final class StatusFacade
     })
     public Response getProgress()
     {
-        final String entity = StateMachine.getCurrentState().getProgress();
-
-        final Status status = entity.equals(StatusConstants.NOT_AVAILABLE)
-                              ? Status.BAD_REQUEST
-                              : Status.OK;
-
-        return Response
-               .status(status)
-               .entity(entity)
-               .type(MediaType.TEXT_PLAIN)
-               .build();
+        return StateMachine.getCurrentState().getProgress();
     }
 
 

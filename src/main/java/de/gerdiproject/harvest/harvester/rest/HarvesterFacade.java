@@ -22,6 +22,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.core.Response;
 
 import de.gerdiproject.harvest.MainContext;
 import de.gerdiproject.harvest.config.Configuration;
@@ -56,7 +57,7 @@ public class HarvesterFacade
     @Produces({
         MediaType.TEXT_PLAIN
     })
-    public String startHarvest(final MultivaluedMap<String, String> formParams)
+    public Response startHarvest(final MultivaluedMap<String, String> formParams)
     {
         return StateMachine.getCurrentState().startHarvest();
     }
@@ -118,9 +119,9 @@ public class HarvesterFacade
     @Produces({
         MediaType.TEXT_PLAIN, MediaType.APPLICATION_JSON
     })
-    public String isOutdated()
+    public Response isOutdated()
     {
-        return String.valueOf(StateMachine.getCurrentState().isOutdated());
+        return StateMachine.getCurrentState().isOutdated();
     }
 
 
@@ -134,7 +135,7 @@ public class HarvesterFacade
     @Produces({
         MediaType.TEXT_PLAIN
     })
-    public String abort()
+    public Response abort()
     {
         return StateMachine.getCurrentState().abort();
     }
@@ -150,7 +151,7 @@ public class HarvesterFacade
     @Produces({
         MediaType.TEXT_PLAIN
     })
-    public String saveDocuments()
+    public Response saveDocuments()
     {
         return StateMachine.getCurrentState().save();
     }
@@ -167,7 +168,7 @@ public class HarvesterFacade
     @Produces({
         MediaType.TEXT_PLAIN
     })
-    public String submitDocuments()
+    public Response submitDocuments()
     {
         return StateMachine.getCurrentState().submit();
     }

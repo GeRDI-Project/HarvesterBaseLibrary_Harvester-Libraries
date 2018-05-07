@@ -17,6 +17,11 @@ package de.gerdiproject.harvest.state;
 
 import java.util.function.Consumer;
 
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.ResponseBuilder;
+import javax.ws.rs.core.Response.Status;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -111,23 +116,36 @@ public abstract class AbstractProgressingState implements IState
      *         value, if the max value is unknown
      */
     @Override
-    public String getProgress()
+    public Response getProgress()
     {
+        final String entity;
+
         if (isMaxNumberKnown)
-            return String.format(
-                       StateConstants.PROGESS_TEXT_SIMPLE,
-                       currentProgress,
-                       maxProgress);
+            entity = String.format(
+                         StateConstants.PROGESS_TEXT_SIMPLE,
+                         currentProgress,
+                         maxProgress);
         else
-            return String.valueOf(currentProgress);
+            entity = String.valueOf(currentProgress);
+
+        return Response
+               .status(Status.OK)
+               .entity(entity)
+               .type(MediaType.TEXT_PLAIN)
+               .build();
     }
 
 
     @Override
-    public String abort()
+    public Response abort()
     {
         EventSystem.sendEvent(new StartAbortingEvent());
-        return String.format(StateConstants.ABORT_STATUS, getName());
+
+        return Response
+               .status(Status.OK)
+               .entity(String.format(StateConstants.ABORT_STATUS, getName()))
+               .type(MediaType.TEXT_PLAIN)
+               .build();
     }
 
 
@@ -224,5 +242,29 @@ public abstract class AbstractProgressingState implements IState
                     currentProgress,
                     maxProgress));
         }
+    }
+
+    /**
+     * Creates a response, replying that the service is not available at the moment.
+     * If available, a Retry-Again header is set with the remaining seconds of the process.
+     *
+     * @param prefix a prefix for the error response, explaining what has failed
+     * @param suffix a suffix for the error response, explaining why it has failed
+     *
+     * @return a response, replying that the service is not available at the moment
+     */
+    protected Response createBusyResponse(final String prefix, final String suffix)
+    {
+        final ResponseBuilder rb = Response
+                                   .status(Status.SERVICE_UNAVAILABLE)
+                                   .entity(prefix + suffix)
+                                   .type(MediaType.TEXT_PLAIN);
+
+        long remainingSeconds = estimateRemainingSeconds();
+
+        if (remainingSeconds != -1)
+            rb.header(StateConstants.RETRY_AFTER_HEADER, remainingSeconds);
+
+        return rb.build();
     }
 }

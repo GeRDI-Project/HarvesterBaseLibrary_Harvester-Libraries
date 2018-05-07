@@ -15,6 +15,10 @@
  */
 package de.gerdiproject.harvest.state.impl;
 
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
+
 import de.gerdiproject.harvest.application.constants.StatusConstants;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.harvester.events.HarvesterInitializedEvent;
@@ -54,57 +58,44 @@ public class InitializationState implements IState
 
 
     @Override
-    public String startHarvest()
+    public Response startHarvest()
     {
-        return StateConstants.CANNOT_START_PREFIX + StateConstants.INIT_IN_PROGRESS;
+        return createServiceUnavailableResponse(StateConstants.CANNOT_START_PREFIX);
     }
 
 
     @Override
-    public String abort()
+    public Response abort()
     {
-        return String.format(
-                   StateConstants.CANNOT_ABORT_PREFIX + StateConstants.INIT_IN_PROGRESS,
-                   StateConstants.INIT_PROCESS);
+        return createServiceUnavailableResponse(
+                   String.format(
+                       StateConstants.CANNOT_ABORT_PREFIX,
+                       StateConstants.INIT_PROCESS));
     }
 
 
     @Override
-    public String pause()
+    public Response submit()
     {
-        return String.format(
-                   StateConstants.CANNOT_PAUSE_PREFIX + StateConstants.INIT_IN_PROGRESS,
-                   StateConstants.INIT_PROCESS);
+        return createServiceUnavailableResponse(StateConstants.CANNOT_SUBMIT_PREFIX);
     }
 
 
     @Override
-    public String resume()
+    public Response save()
     {
-        return String.format(
-                   StateConstants.CANNOT_RESUME_PREFIX + StateConstants.INIT_IN_PROGRESS,
-                   StateConstants.INIT_PROCESS);
+        return createServiceUnavailableResponse(StateConstants.CANNOT_SAVE_PREFIX);
     }
 
 
     @Override
-    public String submit()
+    public Response getProgress()
     {
-        return StateConstants.CANNOT_SUBMIT_PREFIX + StateConstants.INIT_IN_PROGRESS;
-    }
-
-
-    @Override
-    public String save()
-    {
-        return StateConstants.CANNOT_SAVE_PREFIX + StateConstants.INIT_IN_PROGRESS;
-    }
-
-
-    @Override
-    public String getProgress()
-    {
-        return StatusConstants.NOT_AVAILABLE;
+        return Response
+               .status(Status.BAD_REQUEST)
+               .entity(StatusConstants.NOT_AVAILABLE)
+               .type(MediaType.TEXT_PLAIN)
+               .build();
     }
 
 
@@ -116,8 +107,25 @@ public class InitializationState implements IState
 
 
     @Override
-    public boolean isOutdated()
+    public Response isOutdated()
     {
-        return true;
+        return createServiceUnavailableResponse(StateConstants.CANNOT_GET_VALUE_PREFIX);
+    }
+
+
+    /**
+     * Creates a response, replying that the service is not available at the moment.
+     *
+     * @param prefix a prefix for the error response
+     *
+     * @return a response, replying that the service is not available at the moment
+     */
+    private Response createServiceUnavailableResponse(final String prefix)
+    {
+        return Response
+               .status(Status.SERVICE_UNAVAILABLE)
+               .entity(prefix + StateConstants.INIT_IN_PROGRESS)
+               .type(MediaType.TEXT_PLAIN)
+               .build();
     }
 }

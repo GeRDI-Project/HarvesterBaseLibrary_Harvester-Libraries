@@ -15,10 +15,13 @@
  */
 package de.gerdiproject.harvest.state.impl;
 
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import de.gerdiproject.harvest.MainContext;
 import de.gerdiproject.harvest.application.constants.StatusConstants;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.state.IState;
@@ -76,51 +79,41 @@ public class AbortingState implements IState
 
 
     @Override
-    public String startHarvest()
+    public Response startHarvest()
     {
-        return String.format(StateConstants.ABORT_DETAILED, processName);
+        return createServiceUnavailableResponse();
     }
 
 
     @Override
-    public String abort()
+    public Response abort()
     {
-        return String.format(StateConstants.ABORT_DETAILED, processName);
+        return createServiceUnavailableResponse();
     }
 
 
     @Override
-    public String pause()
+    public Response submit()
     {
-        return String.format(StateConstants.ABORT_DETAILED, processName);
+        return createServiceUnavailableResponse();
     }
 
 
     @Override
-    public String resume()
+    public Response save()
     {
-        return String.format(StateConstants.ABORT_DETAILED, processName);
+        return createServiceUnavailableResponse();
     }
 
 
     @Override
-    public String submit()
+    public Response getProgress()
     {
-        return String.format(StateConstants.ABORT_DETAILED, processName);
-    }
-
-
-    @Override
-    public String save()
-    {
-        return String.format(StateConstants.ABORT_DETAILED, processName);
-    }
-
-
-    @Override
-    public String getProgress()
-    {
-        return StatusConstants.NOT_AVAILABLE;
+        return Response
+               .status(Status.BAD_REQUEST)
+               .entity(StatusConstants.NOT_AVAILABLE)
+               .type(MediaType.TEXT_PLAIN)
+               .build();
     }
 
 
@@ -132,8 +125,22 @@ public class AbortingState implements IState
 
 
     @Override
-    public boolean isOutdated()
+    public Response isOutdated()
     {
-        return MainContext.getTimeKeeper().isHarvestIncomplete();
+        return createServiceUnavailableResponse();
+    }
+
+    /**
+     * Creates a response, replying that the service is not available at the moment.
+     *
+     * @return a response, replying that the service is not available at the moment
+     */
+    private Response createServiceUnavailableResponse()
+    {
+        return Response
+               .status(Status.SERVICE_UNAVAILABLE)
+               .entity(String.format(StateConstants.ABORT_DETAILED, processName))
+               .type(MediaType.TEXT_PLAIN)
+               .build();
     }
 }

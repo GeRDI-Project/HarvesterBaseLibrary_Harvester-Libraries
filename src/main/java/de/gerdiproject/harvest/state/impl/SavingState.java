@@ -17,6 +17,8 @@ package de.gerdiproject.harvest.state.impl;
 
 import java.util.function.Consumer;
 
+import javax.ws.rs.core.Response;
+
 import de.gerdiproject.harvest.MainContext;
 import de.gerdiproject.harvest.config.constants.ConfigurationConstants;
 import de.gerdiproject.harvest.event.EventSystem;
@@ -116,47 +118,37 @@ public class SavingState extends AbstractProgressingState
 
 
     @Override
-    public String startHarvest()
+    public Response startHarvest()
     {
-        return StateConstants.CANNOT_START_PREFIX + StateConstants.SAVE_IN_PROGRESS;
+        return createBusyResponse(
+                   StateConstants.CANNOT_START_PREFIX,
+                   StateConstants.SAVE_IN_PROGRESS);
     }
 
 
     @Override
-    public String pause()
+    public Response save()
     {
-        // TODO implement pause
-        return null;
+        return createBusyResponse(
+                   StateConstants.CANNOT_SAVE_PREFIX,
+                   StateConstants.SAVE_IN_PROGRESS);
     }
 
 
     @Override
-    public String resume()
+    public Response submit()
     {
-        // TODO implement pause
-        return String.format(
-                   StateConstants.CANNOT_RESUME_PREFIX + StateConstants.SAVE_IN_PROGRESS,
-                   StateConstants.SAVE_PROCESS);
+        return createBusyResponse(
+                   StateConstants.CANNOT_SUBMIT_PREFIX,
+                   StateConstants.SAVE_IN_PROGRESS);
     }
 
 
     @Override
-    public String save()
+    public Response isOutdated()
     {
-        return StateConstants.CANNOT_SAVE_PREFIX + StateConstants.SAVE_IN_PROGRESS;
-    }
-
-
-    @Override
-    public String submit()
-    {
-        return StateConstants.CANNOT_SUBMIT_PREFIX + StateConstants.SAVE_IN_PROGRESS;
-    }
-
-
-    @Override
-    public boolean isOutdated()
-    {
-        return MainContext.getTimeKeeper().isHarvestIncomplete();
+        return createBusyResponse(
+                   StateConstants.CANNOT_GET_VALUE_PREFIX,
+                   StateConstants.SAVE_IN_PROGRESS);
     }
 }

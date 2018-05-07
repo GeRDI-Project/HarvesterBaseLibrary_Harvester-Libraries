@@ -33,6 +33,10 @@
  */
 package de.gerdiproject.harvest.state.impl;
 
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -95,60 +99,66 @@ public class IdleState implements IState
 
 
     @Override
-    public String startHarvest()
+    public Response startHarvest()
     {
         EventSystem.sendEvent(new StartHarvestEvent());
-        return StateConstants.HARVEST_STARTED;
+        return Response
+               .status(Status.ACCEPTED)
+               .entity(StateConstants.HARVEST_STARTED)
+               .type(MediaType.TEXT_PLAIN)
+               .build();
     }
 
 
     @Override
-    public String abort()
+    public Response abort()
     {
-        return String.format(
-                   StateConstants.CANNOT_ABORT_PREFIX + StateConstants.NO_HARVEST_IN_PROGRESS,
-                   StateConstants.HARVESTING_PROCESS);
+        final String entity = String.format(
+                                  StateConstants.CANNOT_ABORT_PREFIX
+                                  + StateConstants.NO_HARVEST_IN_PROGRESS,
+                                  StateConstants.HARVESTING_PROCESS);
+
+        return Response
+               .status(Status.BAD_REQUEST)
+               .entity(entity)
+               .type(MediaType.TEXT_PLAIN)
+               .build();
     }
 
 
     @Override
-    public String pause()
-    {
-        return String.format(
-                   StateConstants.CANNOT_PAUSE_PREFIX + StateConstants.NO_HARVEST_IN_PROGRESS,
-                   StateConstants.HARVESTING_PROCESS);
-    }
-
-
-    @Override
-    public String resume()
-    {
-        return String.format(
-                   StateConstants.CANNOT_RESUME_PREFIX + StateConstants.NO_HARVEST_IN_PROGRESS,
-                   StateConstants.HARVESTING_PROCESS);
-    }
-
-
-    @Override
-    public String submit()
+    public Response submit()
     {
         EventSystem.sendEvent(new StartSubmissionEvent());
-        return StateConstants.SUBMITTING_STATUS;
+        return Response
+               .status(Status.ACCEPTED)
+               .entity(StateConstants.SUBMITTING_STATUS)
+               .type(MediaType.TEXT_PLAIN)
+               .build();
     }
 
 
     @Override
-    public String save()
+    public Response save()
     {
         EventSystem.sendEvent(new StartSaveEvent(false));
-        return StateConstants.SAVING_STATUS;
+
+        return Response
+               .status(Status.ACCEPTED)
+               .entity(StateConstants.SAVING_STATUS)
+               .type(MediaType.TEXT_PLAIN)
+               .build();
     }
 
 
     @Override
-    public String getProgress()
+    public Response getProgress()
     {
-        return StatusConstants.NOT_AVAILABLE;
+        return Response
+               .status(Status.BAD_REQUEST)
+               .entity(StatusConstants.NOT_AVAILABLE)
+               .type(MediaType.TEXT_PLAIN)
+               .build();
     }
 
 
@@ -160,14 +170,30 @@ public class IdleState implements IState
 
 
     @Override
-    public boolean isOutdated()
+    public Response isOutdated()
     {
+        final Boolean isOutdated;
+
         if (MainContext.getTimeKeeper().isHarvestIncomplete())
-            return true;
+            isOutdated = true;
+        else
+            isOutdated = EventSystem.sendSynchronousEvent(new GetHarvesterOutdatedEvent());
 
-        Boolean isOutdated = EventSystem.sendSynchronousEvent(new GetHarvesterOutdatedEvent());
-        return isOutdated == null || isOutdated;
+        final String entity;
+        final Status status;
+
+        if (isOutdated == null) {
+            entity = StateConstants.INIT_IN_PROGRESS;
+            status = Status.SERVICE_UNAVAILABLE;
+        } else {
+            entity = isOutdated.toString();
+            status = Status.OK;
+        }
+
+        return Response
+               .status(status)
+               .entity(entity)
+               .type(MediaType.TEXT_PLAIN)
+               .build();
     }
-
-
 }

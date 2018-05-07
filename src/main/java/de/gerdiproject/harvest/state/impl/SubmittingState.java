@@ -17,6 +17,8 @@ package de.gerdiproject.harvest.state.impl;
 
 import java.util.function.Consumer;
 
+import javax.ws.rs.core.Response;
+
 import de.gerdiproject.harvest.MainContext;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.state.AbstractProgressingState;
@@ -84,41 +86,29 @@ public class SubmittingState extends AbstractProgressingState
 
 
     @Override
-    public String startHarvest()
+    public Response startHarvest()
     {
-        return StateConstants.CANNOT_START_PREFIX + StateConstants.SUBMIT_IN_PROGRESS;
+        return createBusyResponse(
+                   StateConstants.CANNOT_START_PREFIX,
+                   StateConstants.SUBMIT_IN_PROGRESS);
     }
 
 
     @Override
-    public String pause()
+    public Response submit()
     {
-        // TODO implement pause
-        return null;
+        return createBusyResponse(
+                   StateConstants.CANNOT_SUBMIT_PREFIX,
+                   StateConstants.SUBMIT_IN_PROGRESS);
     }
 
 
     @Override
-    public String resume()
+    public Response save()
     {
-        // TODO implement pause
-        return String.format(
-                   StateConstants.CANNOT_RESUME_PREFIX + StateConstants.SUBMIT_IN_PROGRESS,
-                   StateConstants.INIT_PROCESS);
-    }
-
-
-    @Override
-    public String submit()
-    {
-        return StateConstants.CANNOT_SUBMIT_PREFIX + StateConstants.SUBMIT_IN_PROGRESS;
-    }
-
-
-    @Override
-    public String save()
-    {
-        return StateConstants.CANNOT_SAVE_PREFIX + StateConstants.SUBMIT_IN_PROGRESS;
+        return createBusyResponse(
+                   StateConstants.CANNOT_SAVE_PREFIX,
+                   StateConstants.SUBMIT_IN_PROGRESS);
     }
 
 
@@ -130,8 +120,10 @@ public class SubmittingState extends AbstractProgressingState
 
 
     @Override
-    public boolean isOutdated()
+    public Response isOutdated()
     {
-        return MainContext.getTimeKeeper().isHarvestIncomplete();
+        return createBusyResponse(
+                   StateConstants.CANNOT_GET_VALUE_PREFIX,
+                   StateConstants.SUBMIT_IN_PROGRESS);
     }
 }

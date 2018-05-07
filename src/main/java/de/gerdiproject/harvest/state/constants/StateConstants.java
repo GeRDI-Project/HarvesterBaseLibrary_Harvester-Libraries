@@ -42,6 +42,7 @@ public class StateConstants
     public static final String CANNOT_RESUME_PREFIX = "Cannot resume %s: ";
     public static final String CANNOT_SUBMIT_PREFIX = "Cannot submit documents: ";
     public static final String CANNOT_SAVE_PREFIX = "Cannot save documents: ";
+    public static final String CANNOT_GET_VALUE_PREFIX = "Cannot retrieve value: ";
 
     public static final String INIT_IN_PROGRESS = "Please wait for the harvester to be initialized!";
     public static final String SUBMIT_IN_PROGRESS = "Please wait for all documents to be submitted!";
@@ -84,6 +85,7 @@ public class StateConstants
     public static final String PROGESS_TEXT_SIMPLE = "%d/%d";
     public static final String PROGESS_TEXT_DETAILED = "%d / %d (%.2f%%)  Remaining Time: %s";
     public static final String PROGESS_TEXT_NO_MAX_VALUE = "%d documents";
+    public static final String RETRY_AFTER_HEADER = "Retry-After";
 
 
     /**

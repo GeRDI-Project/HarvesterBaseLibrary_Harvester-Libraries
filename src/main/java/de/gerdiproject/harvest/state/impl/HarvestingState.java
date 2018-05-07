@@ -17,6 +17,8 @@ package de.gerdiproject.harvest.state.impl;
 
 import java.util.function.Consumer;
 
+import javax.ws.rs.core.Response;
+
 import de.gerdiproject.harvest.MainContext;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.harvester.events.DocumentsHarvestedEvent;
@@ -97,48 +99,29 @@ public class HarvestingState extends AbstractProgressingState
 
 
     @Override
-    public String startHarvest()
+    public Response startHarvest()
     {
-        return StateConstants.CANNOT_START_PREFIX + StateConstants.HARVEST_IN_PROGRESS;
+        return createBusyResponse(StateConstants.CANNOT_START_PREFIX, StateConstants.HARVEST_IN_PROGRESS);
     }
 
 
     @Override
-    public String pause()
+    public Response submit()
     {
-        // TODO implement pause
-        return null;
+        return createBusyResponse(StateConstants.CANNOT_SUBMIT_PREFIX, StateConstants.HARVEST_IN_PROGRESS);
     }
 
 
     @Override
-    public String resume()
+    public Response save()
     {
-        // TODO implement pause
-        return String.format(
-                   StateConstants.CANNOT_RESUME_PREFIX + StateConstants.RESUME_IN_PROGRESS,
-                   StateConstants.HARVESTING_PROCESS,
-                   StateConstants.HARVESTING_PROCESS);
+        return createBusyResponse(StateConstants.CANNOT_SAVE_PREFIX, StateConstants.HARVEST_IN_PROGRESS);
     }
 
 
     @Override
-    public String submit()
+    public Response isOutdated()
     {
-        return StateConstants.CANNOT_SUBMIT_PREFIX + StateConstants.HARVEST_IN_PROGRESS;
-    }
-
-
-    @Override
-    public String save()
-    {
-        return StateConstants.CANNOT_SAVE_PREFIX + StateConstants.HARVEST_IN_PROGRESS;
-    }
-
-
-    @Override
-    public boolean isOutdated()
-    {
-        return true;
+        return createBusyResponse(StateConstants.CANNOT_GET_VALUE_PREFIX, StateConstants.HARVEST_IN_PROGRESS);
     }
 }
