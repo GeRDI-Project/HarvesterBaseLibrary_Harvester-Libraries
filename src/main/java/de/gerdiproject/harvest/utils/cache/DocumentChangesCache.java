@@ -123,7 +123,7 @@ public class DocumentChangesCache extends AbstractCache<DataCiteJson>
 
 
     @Override
-    @SuppressWarnings("deprecation")
+    @Deprecated
     protected void migrateToNewSystem()
     {
         final String harvesterName = new File(stableFolderPath).getParentFile().getName();

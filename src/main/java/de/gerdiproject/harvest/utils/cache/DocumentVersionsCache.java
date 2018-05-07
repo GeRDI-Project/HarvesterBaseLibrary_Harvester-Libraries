@@ -116,7 +116,7 @@ public class DocumentVersionsCache extends AbstractCache<String>
 
 
     @Override
-    @SuppressWarnings("deprecation")
+    @Deprecated
     protected void migrateToNewSystem()
     {
         final String harvesterName = new File(stableFolderPath).getParentFile().getName();

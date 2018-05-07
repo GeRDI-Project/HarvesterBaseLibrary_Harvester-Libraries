@@ -70,6 +70,7 @@ public abstract class AbstractCache <T>
      * Migrates the changes cache file from RestfulHarvester-Library
      * version 6.5.0 and below to the new folder structure, introduced in 6.5.1.
      */
+    @Deprecated
     protected abstract void migrateToNewSystem();
 
 
