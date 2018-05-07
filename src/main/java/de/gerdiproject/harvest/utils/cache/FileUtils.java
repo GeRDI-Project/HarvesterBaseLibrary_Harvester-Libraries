@@ -135,7 +135,7 @@ public class FileUtils
     {
         final File directory = file.isDirectory() ? file : file.getParentFile();
 
-        return directory == null || directory.exists() || file.mkdirs();
+        return directory == null || directory.exists() || directory.mkdirs();
     }
 
 
