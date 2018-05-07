@@ -59,7 +59,7 @@ public abstract class AbstractCache <T>
         this.stableFolderPath = stableFolderPath;
         this.wipFolderPath = wipFolderPath;
         this.fileContentClass = fileContentClass;
-        this.diskIo = new DiskIO(false);
+        this.diskIo = new DiskIO();
 
         // if outdated caches exist, migrate them to folder structure
         migrateToNewSystem();

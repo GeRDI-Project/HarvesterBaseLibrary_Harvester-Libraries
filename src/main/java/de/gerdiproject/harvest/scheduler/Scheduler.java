@@ -82,7 +82,7 @@ public class Scheduler
      */
     private void loadFromDisk()
     {
-        final DiskIO diskReader = new DiskIO(false);
+        final DiskIO diskReader = new DiskIO();
         String[] cachedCronTabs = diskReader.getObject(
                                       String.format(SchedulerConstants.CACHE_PATH, MainContext.getModuleName()),
                                       String[].class);

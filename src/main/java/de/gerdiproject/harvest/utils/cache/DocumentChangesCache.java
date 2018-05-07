@@ -137,10 +137,9 @@ public class DocumentChangesCache extends AbstractCache<DataCiteJson>
         if (stableFile.exists()) {
             final Gson gson = GsonUtils.getGson();
 
-            try {
-                // prepare json reader for the cached document list
-                final JsonReader reader = new JsonReader(
-                    new InputStreamReader(new FileInputStream(stableFile), MainContext.getCharset()));
+            try
+                (JsonReader reader = new JsonReader(
+                    new InputStreamReader(new FileInputStream(stableFile), MainContext.getCharset()))) {
 
                 // iterate through cached documents
                 reader.beginObject();
@@ -156,13 +155,11 @@ public class DocumentChangesCache extends AbstractCache<DataCiteJson>
                         diskIo.writeObjectToFile(file, gson.fromJson(reader, DataCiteJson.class));
                 }
 
-                reader.close();
-
-                // delete old file
-                FileUtils.deleteFile(stableFile);
-
-            } catch (IOException e) { // NOPMD if something goes wrong, do not convert the cache
+            } catch (IOException e) {
+                return;
             }
+
+            FileUtils.deleteFile(stableFile);
         }
     }
 }

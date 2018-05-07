@@ -127,12 +127,11 @@ public class DocumentVersionsCache extends AbstractCache<String>
                 harvesterName));
 
         if (stableFile.exists()) {
-            try {
-                // prepare json reader for the cached document list
-                final JsonReader reader = new JsonReader(
+            try
+                (JsonReader reader = new JsonReader(
                     new InputStreamReader(
                         new FileInputStream(stableFile),
-                        MainContext.getCharset()));
+                        MainContext.getCharset()))) {
 
                 // retrieve harvester hash
                 reader.beginObject();
@@ -155,12 +154,12 @@ public class DocumentVersionsCache extends AbstractCache<String>
                     diskIo.writeObjectToFile(getFile(documentId, true), documentHash);
                 }
 
-                reader.close();
-
-                // delete old file
-                FileUtils.deleteFile(stableFile);
-            } catch (IOException e) { // NOPMD if we could not migrate, we don't want to
+            } catch (IOException e) {
+                return;
             }
+
+            // delete old file
+            FileUtils.deleteFile(stableFile);
         }
     }
 }

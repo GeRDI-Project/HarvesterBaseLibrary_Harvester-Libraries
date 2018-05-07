@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.lang.reflect.Type;
+import java.net.MalformedURLException;
 import java.net.URL;
 
 import org.jsoup.Jsoup;
@@ -44,27 +45,6 @@ import de.gerdiproject.json.GsonUtils;
 public class WebDataRetriever implements IDataRetriever
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(WebDataRetriever.class);
-    private boolean isLogging;
-
-
-    /**
-     * Default constructor that enables logging.
-     */
-    public WebDataRetriever()
-    {
-        this.isLogging = true;
-    }
-
-
-    /**
-     * Constructor that allows to enable or disable logging.
-     *
-     * @param isLogging if true, logging is enabled
-     */
-    public WebDataRetriever(boolean isLogging)
-    {
-        this.isLogging = isLogging;
-    }
 
 
     @Override
@@ -72,11 +52,8 @@ public class WebDataRetriever implements IDataRetriever
     {
         String responseText = null;
 
-        try {
-            // send web request
-            InputStream response = new URL(url).openStream();
-
-            BufferedReader reader = new BufferedReader(new InputStreamReader(response, MainContext.getCharset()));
+        try
+            (BufferedReader reader = new BufferedReader(createWebReader(url))) {
 
             // read the first line of the response
             String line = reader.readLine();
@@ -96,13 +73,8 @@ public class WebDataRetriever implements IDataRetriever
 
                 responseText = responseBuilder.toString();
             }
-
-            // close the response reader
-            reader.close();
-
         } catch (Exception e) {
-            if (isLogging)
-                LOGGER.warn(String.format(DataOperationConstants.WEB_ERROR_JSON, url, e.toString()));
+            LOGGER.warn(String.format(DataOperationConstants.WEB_ERROR_JSON, url), e);
         }
 
         return responseText;
@@ -114,20 +86,15 @@ public class WebDataRetriever implements IDataRetriever
     {
         JsonElement jsonResponse = null;
 
-        try {
-            // send web request
-            InputStream response = new URL(url).openStream();
-            InputStreamReader reader = new InputStreamReader(response, MainContext.getCharset());
+        try
+            (InputStreamReader reader = createWebReader(url)) {
             JsonParser parser = new JsonParser();
 
             // parse the json object
             jsonResponse = parser.parse(reader);
 
-            reader.close();
-
         } catch (Exception e) {
-            if (isLogging)
-                LOGGER.warn(String.format(DataOperationConstants.WEB_ERROR_JSON, url, e.toString()));
+            LOGGER.warn(String.format(DataOperationConstants.WEB_ERROR_JSON, url), e);
         }
 
         return jsonResponse;
@@ -139,16 +106,12 @@ public class WebDataRetriever implements IDataRetriever
     {
         T object = null;
 
-        try {
-            InputStream response = new URL(url).openStream();
-            InputStreamReader reader = new InputStreamReader(response, MainContext.getCharset());
-
+        try
+            (InputStreamReader reader = createWebReader(url)) {
             object = GsonUtils.getGson().fromJson(reader, targetClass);
-            reader.close();
 
         } catch (IOException | IllegalStateException | JsonIOException | JsonSyntaxException e) {
-            if (isLogging)
-                LOGGER.warn(String.format(DataOperationConstants.WEB_ERROR_JSON, url, e.toString()));
+            LOGGER.warn(String.format(DataOperationConstants.WEB_ERROR_JSON, url), e);
         }
 
         return object;
@@ -160,16 +123,12 @@ public class WebDataRetriever implements IDataRetriever
     {
         T object = null;
 
-        try {
-            InputStream response = new URL(url).openStream();
-            InputStreamReader reader = new InputStreamReader(response, MainContext.getCharset());
-
+        try
+            (InputStreamReader reader = createWebReader(url)) {
             object = GsonUtils.getGson().fromJson(reader, targetType);
-            reader.close();
 
         } catch (IOException | IllegalStateException | JsonIOException | JsonSyntaxException e) {
-            if (isLogging)
-                LOGGER.warn(String.format(DataOperationConstants.WEB_ERROR_JSON, url, e.toString()));
+            LOGGER.warn(String.format(DataOperationConstants.WEB_ERROR_JSON, url), e);
         }
 
         return object;
@@ -181,41 +140,30 @@ public class WebDataRetriever implements IDataRetriever
     {
         Document htmlResponse = null;
 
-        try {
-            // send web request
-            InputStream response = new URL(url).openStream();
-
+        try
+            (InputStream response = new URL(url).openStream()) {
             // parse the html object
             htmlResponse = Jsoup.parse(response, MainContext.getCharset().displayName(), url);
 
-            response.close();
-
         } catch (Exception e) {
-            if (isLogging)
-                LOGGER.warn(String.format(DataOperationConstants.WEB_ERROR_JSON, url, e.toString()));
+            LOGGER.warn(String.format(DataOperationConstants.WEB_ERROR_JSON, url), e);
         }
 
         return htmlResponse;
     }
 
-
     /**
-     * Checks if logging is enabled.
-     * @return true, if logging is enabled
-     */
-    public boolean isLogging()
-    {
-        return isLogging;
-    }
-
-
-    /**
-     * Changes whether or not logging is enabled.
+     * Creates an input stream reader of a specified URL.
      *
-     * @param isLogging if true, logging will be enabled
+     * @param url the URL of which the response is to be read
+     *
+     * @return a reader of the URL response
+     *
+     * @throws MalformedURLException thrown when the URL is malformed
+     * @throws IOException thrown for various reasons when the reader is created
      */
-    public void setLogging(boolean isLogging)
+    private InputStreamReader createWebReader(String url) throws MalformedURLException, IOException
     {
-        this.isLogging = isLogging;
+        return new InputStreamReader(new URL(url).openStream(), MainContext.getCharset());
     }
 }

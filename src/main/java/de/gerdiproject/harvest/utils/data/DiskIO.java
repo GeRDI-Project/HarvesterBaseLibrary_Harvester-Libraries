@@ -50,27 +50,7 @@ import de.gerdiproject.json.GsonUtils;
 public class DiskIO implements IDataRetriever
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(DiskIO.class);
-    private boolean isLogging;
 
-
-    /**
-     * Default constructor that enables logging.
-     */
-    public DiskIO()
-    {
-        this.isLogging = true;
-    }
-
-
-    /**
-     * Constructor that allows to enable or disable logging.
-     *
-     * @param isLogging if true, logging is enabled
-     */
-    public DiskIO(boolean isLogging)
-    {
-        this.isLogging = isLogging;
-    }
 
     /**
      * Writes a string to a file on disk.
@@ -102,35 +82,35 @@ public class DiskIO implements IDataRetriever
         String statusMessage;
         boolean isSuccessful = false;
 
-        try {
-            // create directories
-            boolean isDirectoryCreated = file.getParentFile().exists() || file.getParentFile().mkdirs();
+        // create directories
+        boolean isDirectoryCreated = file.getParentFile().exists() || file.getParentFile().mkdirs();
 
-            if (!isDirectoryCreated)
-                statusMessage = String.format(DataOperationConstants.SAVE_FAILED, filePath, DataOperationConstants.SAVE_FAILED_NO_FOLDERS);
-            else {
-                // write content to file
-                BufferedWriter writer = new BufferedWriter(
-                    new OutputStreamWriter(new FileOutputStream(file), StandardCharsets.UTF_8));
+        if (!isDirectoryCreated)
+            statusMessage = String.format(
+                                DataOperationConstants.SAVE_FAILED_NO_FOLDERS,
+                                filePath);
+        else {
+            // write content to file
+            try
+                (BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file), StandardCharsets.UTF_8))) {
                 writer.write(fileContent);
-
-                writer.close();
 
                 // set status message
                 isSuccessful = true;
                 statusMessage = String.format(DataOperationConstants.SAVE_OK, filePath);
+
+            } catch (IOException | SecurityException e) {
+                LOGGER.warn(String.format(DataOperationConstants.SAVE_FAILED, filePath), e);
+                statusMessage = String.format(DataOperationConstants.SAVE_FAILED, filePath);
             }
-        } catch (IOException | SecurityException e) {
-            statusMessage = String.format(DataOperationConstants.SAVE_FAILED, filePath, e.getMessage());
+
         }
 
         // log the status
-        if (isLogging) {
-            if (isSuccessful)
-                LOGGER.info(statusMessage);
-            else
-                LOGGER.error(statusMessage);
-        }
+        if (isSuccessful)
+            LOGGER.debug(statusMessage);
+        else
+            LOGGER.warn(statusMessage);
 
         return statusMessage;
     }
@@ -178,14 +158,14 @@ public class DiskIO implements IDataRetriever
     {
         String fileContent = null;
 
-        try {
-            BufferedReader reader = new BufferedReader(createDiskReader(file));
+        try
+            (BufferedReader reader = new BufferedReader(createDiskReader(file))) {
             fileContent = reader.lines().collect(Collectors.joining("\n"));
 
-            reader.close();
+        } catch (FileNotFoundException e) { // NOPMD if the file is not found, do not log anything
+
         } catch (IOException e) {
-            if (isLogging)
-                LOGGER.warn(String.format(DataOperationConstants.LOAD_FAILED, file.getAbsolutePath(), e.toString()));
+            LOGGER.warn(String.format(DataOperationConstants.LOAD_FAILED, file.getAbsolutePath()), e);
         }
 
         return fileContent;
@@ -205,14 +185,14 @@ public class DiskIO implements IDataRetriever
     {
         T object = null;
 
-        try {
-            Reader reader = createDiskReader(file);
+        try
+            (Reader reader = createDiskReader(file)) {
             object = GsonUtils.getGson().fromJson(reader, targetClass);
-            reader.close();
+
+        } catch (FileNotFoundException e) { // NOPMD if the file is not found, do not log anything
 
         } catch (IOException | IllegalStateException | JsonIOException | JsonSyntaxException e) {
-            if (isLogging)
-                LOGGER.warn(String.format(DataOperationConstants.LOAD_FAILED, file.getAbsolutePath(), e.toString()));
+            LOGGER.warn(String.format(DataOperationConstants.LOAD_FAILED, file.getAbsolutePath()), e);
         }
 
         return object;
@@ -232,14 +212,14 @@ public class DiskIO implements IDataRetriever
     {
         T object = null;
 
-        try {
-            Reader reader = createDiskReader(file);
+        try
+            (Reader reader = createDiskReader(file)) {
             object = GsonUtils.getGson().fromJson(reader, targetType);
-            reader.close();
+
+        } catch (FileNotFoundException e) { // NOPMD if the file is not found, do not log anything
 
         } catch (IOException | IllegalStateException | JsonIOException | JsonSyntaxException e) {
-            if (isLogging)
-                LOGGER.warn(String.format(DataOperationConstants.LOAD_FAILED, file.getAbsolutePath(), e.toString()));
+            LOGGER.warn(String.format(DataOperationConstants.LOAD_FAILED, file.getAbsolutePath()), e);
         }
 
         return object;
@@ -301,26 +281,5 @@ public class DiskIO implements IDataRetriever
     {
         // try to read from disk
         return new InputStreamReader(new FileInputStream(file), MainContext.getCharset());
-    }
-
-
-    /**
-     * Checks if logging is enabled.
-     * @return true, if logging is enabled
-     */
-    public boolean isLogging()
-    {
-        return isLogging;
-    }
-
-
-    /**
-     * Changes whether or not logging is enabled.
-     *
-     * @param isLogging if true, logging will be enabled
-     */
-    public void setLogging(boolean isLogging)
-    {
-        this.isLogging = isLogging;
     }
 }
