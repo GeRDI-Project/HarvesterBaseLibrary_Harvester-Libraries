@@ -224,6 +224,7 @@ public class DiskIO implements IDataRetriever
      *
      * @param file a JSON file representing the object
      * @param targetType the type of the object that is read
+     * @param <T> the type of the object that is to be read
      *
      * @return an object, or null if the file could not be parsed
      */
