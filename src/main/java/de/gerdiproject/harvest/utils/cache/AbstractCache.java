@@ -29,8 +29,8 @@ import de.gerdiproject.harvest.utils.data.DiskIO;
 
 /**
  * This abstract class represents two cache folders, one which is called
- * the "stable" and one which is called the "work-in-progress" folder.
- * Each of these folders may contain subfolders with names that consist
+ * "stable" and one which is called "work-in-progress" folder.
+ * Both folders may contain subfolders with names that consist
  * of the first two characters of a documentID. Inside these folders are
  * files that are named after the rest of the documentID. The content
  * of these files can be determined by setting the Template.
