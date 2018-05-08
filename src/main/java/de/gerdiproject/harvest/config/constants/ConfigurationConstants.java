@@ -89,9 +89,6 @@ public class ConfigurationConstants
                                            + "PUT   Sets x-www-form-urlencoded parameters for the harvester.%n"
                                            + "      Valid values: %s.%n";
 
-    public static final String REST_INFO_FAILED =
-        "Could not initialize Configuration.\nPlease, look at the server logs for details.";
-
     public static final String PARSE_ERROR = "Could not read configuration parameter value '%s' from key '%s'!";
 
     public static final List<Class<? extends IState>> HARVESTER_PARAM_ALLOWED_STATES =

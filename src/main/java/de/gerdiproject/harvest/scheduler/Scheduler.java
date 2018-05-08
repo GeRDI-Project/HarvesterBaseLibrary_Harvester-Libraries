@@ -22,7 +22,6 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
 
-import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
@@ -38,6 +37,7 @@ import de.gerdiproject.harvest.scheduler.events.DeleteSchedulerTaskEvent;
 import de.gerdiproject.harvest.scheduler.events.GetScheduleEvent;
 import de.gerdiproject.harvest.scheduler.events.ScheduledTaskExecutedEvent;
 import de.gerdiproject.harvest.scheduler.utils.CronUtils;
+import de.gerdiproject.harvest.utils.ServerResponseFactory;
 import de.gerdiproject.harvest.utils.data.DiskIO;
 
 /**
@@ -168,21 +168,15 @@ public class Scheduler
             scheduleTask(cronTab);
 
         } catch (IllegalArgumentException e) {
-            return Response
-                   .status(Status.BAD_REQUEST)
-                   .entity(e.getMessage())
-                   .type(MediaType.TEXT_PLAIN)
-                   .build();
+            return ServerResponseFactory.createBadRequestResponse(e.getMessage());
         }
 
         // save the updated schedule
         saveToDisk();
 
-        return Response
-               .status(Status.CREATED)
-               .entity(String.format(SchedulerConstants.ADD_OK, event.getCronTab()))
-               .type(MediaType.TEXT_PLAIN)
-               .build();
+        return ServerResponseFactory.createResponse(
+                   Status.CREATED,
+                   String.format(SchedulerConstants.ADD_OK, event.getCronTab()));
     }
 
 
@@ -205,18 +199,14 @@ public class Scheduler
             saveToDisk();
             timer = new Timer();
 
-            return Response.
-                   ok(SchedulerConstants.DELETE_ALL)
-                   .build();
+            return ServerResponseFactory.createOkResponse(SchedulerConstants.DELETE_ALL);
         }
 
         // check if id is within bounds
         if (!registeredTasks.containsKey(cronTab))
-            return Response
-                   .status(Status.BAD_REQUEST)
-                   .entity(String.format(SchedulerConstants.DELETE_FAILED, cronTab))
-                   .type(MediaType.TEXT_PLAIN)
-                   .build();
+            return ServerResponseFactory.createBadRequestResponse(
+                       String.format(SchedulerConstants.DELETE_FAILED, cronTab)
+                   );
 
         // remove and cancel task
         final TimerTask removedTask = registeredTasks.remove(cronTab);
@@ -225,9 +215,9 @@ public class Scheduler
         // save the updated schedule
         saveToDisk();
 
-        return Response.
-               ok(String.format(SchedulerConstants.DELETE_OK, cronTab))
-               .build();
+        return ServerResponseFactory.createOkResponse(
+                   String.format(SchedulerConstants.DELETE_OK, cronTab)
+               );
     }
 
 

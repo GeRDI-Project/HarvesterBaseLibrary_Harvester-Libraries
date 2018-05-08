@@ -17,9 +17,7 @@ package de.gerdiproject.harvest.submission;
 
 import java.net.URL;
 import java.util.Base64;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
@@ -44,8 +42,8 @@ import de.gerdiproject.harvest.submission.events.StartSubmissionEvent;
 import de.gerdiproject.harvest.submission.events.SubmissionFinishedEvent;
 import de.gerdiproject.harvest.submission.events.SubmissionStartedEvent;
 import de.gerdiproject.harvest.utils.CancelableFuture;
-import de.gerdiproject.harvest.utils.cache.DocumentChangesCache;
-import de.gerdiproject.harvest.utils.cache.events.RegisterCacheEvent;
+import de.gerdiproject.harvest.utils.cache.HarvesterCache;
+import de.gerdiproject.harvest.utils.cache.HarvesterCacheManager;
 import de.gerdiproject.json.datacite.DataCiteJson;
 
 /**
@@ -56,7 +54,6 @@ import de.gerdiproject.json.datacite.DataCiteJson;
  */
 public abstract class AbstractSubmitter
 {
-    private final List<DocumentChangesCache> cacheList = Collections.synchronizedList(new LinkedList<>());
     private CancelableFuture<Boolean> currentSubmissionProcess;
     private int failedDocumentCount;
     private String userName;
@@ -121,7 +118,6 @@ public abstract class AbstractSubmitter
      */
     public void init()
     {
-        EventSystem.addListener(RegisterCacheEvent.class, onRegisterCache);
         EventSystem.addListener(StartSubmissionEvent.class, onStartSubmission);
         EventSystem.addListener(GlobalParameterChangedEvent.class, this::onGlobalParameterChanged);
     }
@@ -189,13 +185,15 @@ public abstract class AbstractSubmitter
             boolean areAllSubmissionsSuccessful = true;
 
             // go through all registered caches and process their documents
-            for (final DocumentChangesCache cache : cacheList)
+            final List<HarvesterCache> cacheList = HarvesterCacheManager.instance().getHarvesterCaches();
+
+            for (final HarvesterCache cache : cacheList)
             {
                 // stop cache iteration if aborting
                 if (isAborting)
                     break;
 
-                boolean wasCacheSubmitted = cache.forEach(
+                boolean wasCacheSubmitted = cache.getChangesCache().forEach(
                 (String documentId, DataCiteJson addedDoc) -> {
                     addDocument(documentId, addedDoc);
                     return !isAborting;
@@ -422,26 +420,13 @@ public abstract class AbstractSubmitter
      */
     protected int getNumberOfSubmittableChanges()
     {
-        int docCount = 0;
-
-        for (final DocumentChangesCache cache : cacheList)
-            docCount += cache.size();
-
-        return docCount;
+        return HarvesterCacheManager.instance().getNumberOfHarvestedDocuments();
     }
 
 
     //////////////////////////////
     // Event Callback Functions //
     //////////////////////////////
-
-
-    /**
-     * Event listener for registering a new documents cache.
-     */
-    private final Consumer<RegisterCacheEvent> onRegisterCache = (RegisterCacheEvent e) -> {
-        cacheList.add(e.getCache().getChangesCache());
-    };
 
 
     /**

@@ -16,24 +16,25 @@
 package de.gerdiproject.harvest.application.rest;
 
 
-import de.gerdiproject.harvest.state.IState;
-import de.gerdiproject.harvest.state.StateMachine;
-import de.gerdiproject.harvest.state.impl.ErrorState;
-import de.gerdiproject.harvest.utils.cache.events.GetCacheCountEvent;
+import java.time.Instant;
+
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
+
 import de.gerdiproject.harvest.MainContext;
 import de.gerdiproject.harvest.application.constants.StatusConstants;
 import de.gerdiproject.harvest.application.enums.HealthStatus;
-import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.harvester.events.GetMaxDocumentCountEvent;
 import de.gerdiproject.harvest.harvester.events.GetProviderNameEvent;
-
-
-import java.time.Instant;
-
-import javax.ws.rs.Produces;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.core.MediaType;
+import de.gerdiproject.harvest.state.IState;
+import de.gerdiproject.harvest.state.StateMachine;
+import de.gerdiproject.harvest.state.impl.ErrorState;
+import de.gerdiproject.harvest.utils.ServerResponseFactory;
+import de.gerdiproject.harvest.utils.cache.HarvesterCacheManager;
 
 
 /**
@@ -84,9 +85,9 @@ public final class StatusFacade
     @Produces({
         MediaType.TEXT_PLAIN
     })
-    public String getDataProvider()
+    public Response getDataProvider()
     {
-        return EventSystem.sendSynchronousEvent(new GetProviderNameEvent());
+        return ServerResponseFactory.createSynchronousEventResponse(new GetProviderNameEvent());
     }
 
 
@@ -101,14 +102,16 @@ public final class StatusFacade
     @Produces({
         MediaType.TEXT_PLAIN
     })
-    public String getMaxDocumentCount()
+    public Response getMaxDocumentCount()
     {
-        Integer maxDocs = EventSystem.sendSynchronousEvent(new GetMaxDocumentCountEvent());
+        Response resp =
+            ServerResponseFactory.createSynchronousEventResponse(
+                new GetMaxDocumentCountEvent());
 
-        if (maxDocs == null || maxDocs < 0)
-            return StatusConstants.NOT_AVAILABLE;
+        if (resp.getEntity().equals("-1"))
+            return ServerResponseFactory.createBadRequestResponse();
         else
-            return maxDocs.toString();
+            return resp;
     }
 
     /**
@@ -122,14 +125,9 @@ public final class StatusFacade
     @Produces({
         MediaType.TEXT_PLAIN
     })
-    public String getHarvestedDocumentCount()
+    public Response getHarvestedDocumentCount()
     {
-        Integer cachedDocs = EventSystem.sendSynchronousEvent(new GetCacheCountEvent());
-
-        if (cachedDocs == null)
-            return StatusConstants.NOT_AVAILABLE;
-        else
-            return cachedDocs.toString();
+        return ServerResponseFactory.createOkResponse(HarvesterCacheManager.instance().getNumberOfHarvestedDocuments());
     }
 
     /**
@@ -143,7 +141,7 @@ public final class StatusFacade
     @Produces({
         MediaType.TEXT_PLAIN
     })
-    public String getProgress()
+    public Response getProgress()
     {
         return StateMachine.getCurrentState().getProgress();
     }
@@ -160,14 +158,15 @@ public final class StatusFacade
     @Produces({
         MediaType.TEXT_PLAIN
     })
-    public String getHarvestStartTimestamp()
+    public Response getHarvestStartTimestamp()
     {
         long timestamp = MainContext.getTimeKeeper().getHarvestMeasure().getStartTimestamp();
 
         if (timestamp == -1L)
-            return StatusConstants.NOT_AVAILABLE;
+            return ServerResponseFactory.createBadRequestResponse();
+
         else
-            return Instant.ofEpochMilli(timestamp).toString();
+            return ServerResponseFactory.createOkResponse(Instant.ofEpochMilli(timestamp).toString());
     }
 
 
@@ -181,7 +180,7 @@ public final class StatusFacade
     @Produces({
         MediaType.TEXT_PLAIN
     })
-    public String getHealth()
+    public Response getHealth()
     {
         final IState currentState = StateMachine.getCurrentState();
         HealthStatus health = HealthStatus.OK;
@@ -208,6 +207,10 @@ public final class StatusFacade
             }
         }
 
-        return health.toString();
+        final Status status =  health == HealthStatus.OK
+                               ? Status.OK
+                               : Status.INTERNAL_SERVER_ERROR;
+
+        return ServerResponseFactory.createResponse(status, health);
     }
 }

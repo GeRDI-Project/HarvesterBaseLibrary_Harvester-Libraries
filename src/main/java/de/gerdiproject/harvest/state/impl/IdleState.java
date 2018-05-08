@@ -33,11 +33,13 @@
  */
 package de.gerdiproject.harvest.state.impl;
 
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import de.gerdiproject.harvest.MainContext;
-import de.gerdiproject.harvest.application.constants.StatusConstants;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.harvester.events.GetHarvesterOutdatedEvent;
 import de.gerdiproject.harvest.harvester.events.HarvestStartedEvent;
@@ -50,6 +52,7 @@ import de.gerdiproject.harvest.state.constants.StateConstants;
 import de.gerdiproject.harvest.state.constants.StateEventHandlerConstants;
 import de.gerdiproject.harvest.submission.events.StartSubmissionEvent;
 import de.gerdiproject.harvest.submission.events.SubmissionStartedEvent;
+import de.gerdiproject.harvest.utils.ServerResponseFactory;
 import de.gerdiproject.harvest.utils.time.HarvestTimeKeeper;
 
 /**
@@ -95,60 +98,50 @@ public class IdleState implements IState
 
 
     @Override
-    public String startHarvest()
+    public Response startHarvest()
     {
         EventSystem.sendEvent(new StartHarvestEvent());
-        return StateConstants.HARVEST_STARTED;
+        return ServerResponseFactory.createResponse(
+                   Status.ACCEPTED,
+                   StateConstants.HARVEST_STARTED);
     }
 
 
     @Override
-    public String abort()
+    public Response abort()
     {
-        return String.format(
-                   StateConstants.CANNOT_ABORT_PREFIX + StateConstants.NO_HARVEST_IN_PROGRESS,
-                   StateConstants.HARVESTING_PROCESS);
+        final String message = String.format(
+                                   StateConstants.CANNOT_ABORT_PREFIX
+                                   + StateConstants.NO_HARVEST_IN_PROGRESS,
+                                   StateConstants.HARVESTING_PROCESS);
+        return ServerResponseFactory.createBadRequestResponse(message);
     }
 
 
     @Override
-    public String pause()
-    {
-        return String.format(
-                   StateConstants.CANNOT_PAUSE_PREFIX + StateConstants.NO_HARVEST_IN_PROGRESS,
-                   StateConstants.HARVESTING_PROCESS);
-    }
-
-
-    @Override
-    public String resume()
-    {
-        return String.format(
-                   StateConstants.CANNOT_RESUME_PREFIX + StateConstants.NO_HARVEST_IN_PROGRESS,
-                   StateConstants.HARVESTING_PROCESS);
-    }
-
-
-    @Override
-    public String submit()
+    public Response submit()
     {
         EventSystem.sendEvent(new StartSubmissionEvent());
-        return StateConstants.SUBMITTING_STATUS;
+        return ServerResponseFactory.createResponse(
+                   Status.ACCEPTED,
+                   StateConstants.SUBMITTING_STATUS);
     }
 
 
     @Override
-    public String save()
+    public Response save()
     {
         EventSystem.sendEvent(new StartSaveEvent(false));
-        return StateConstants.SAVING_STATUS;
+        return ServerResponseFactory.createResponse(
+                   Status.ACCEPTED,
+                   StateConstants.SAVING_STATUS);
     }
 
 
     @Override
-    public String getProgress()
+    public Response getProgress()
     {
-        return StatusConstants.NOT_AVAILABLE;
+        return ServerResponseFactory.createBadRequestResponse();
     }
 
 
@@ -160,14 +153,8 @@ public class IdleState implements IState
 
 
     @Override
-    public boolean isOutdated()
+    public Response isOutdated()
     {
-        if (MainContext.getTimeKeeper().isHarvestIncomplete())
-            return true;
-
-        Boolean isOutdated = EventSystem.sendSynchronousEvent(new GetHarvesterOutdatedEvent());
-        return isOutdated == null || isOutdated;
+        return ServerResponseFactory.createSynchronousEventResponse(new GetHarvesterOutdatedEvent());
     }
-
-
 }

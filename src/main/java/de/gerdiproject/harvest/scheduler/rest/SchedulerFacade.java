@@ -24,7 +24,6 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
 
 import de.gerdiproject.harvest.MainContext;
 import de.gerdiproject.harvest.event.EventSystem;
@@ -34,6 +33,7 @@ import de.gerdiproject.harvest.scheduler.events.AddSchedulerTaskEvent;
 import de.gerdiproject.harvest.scheduler.events.DeleteSchedulerTaskEvent;
 import de.gerdiproject.harvest.scheduler.events.GetScheduleEvent;
 import de.gerdiproject.harvest.state.constants.StateConstants;
+import de.gerdiproject.harvest.utils.ServerResponseFactory;
 
 /**
  * This class serves as a REST interface to the {@linkplain Scheduler}.
@@ -79,16 +79,8 @@ public class SchedulerFacade
     })
     public Response addTask(@QueryParam("cron") String cronTab)
     {
-        final Response response = EventSystem.sendSynchronousEvent(
-                                      new AddSchedulerTaskEvent(cronTab));
-
-        if (response == null)
-            return Response
-                   .status(Status.SERVICE_UNAVAILABLE)
-                   .entity(StateConstants.INIT_IN_PROGRESS)
-                   .type(MediaType.TEXT_PLAIN).build();
-        else
-            return response;
+        return ServerResponseFactory.createSynchronousEventResponse(
+                   new AddSchedulerTaskEvent(cronTab));
     }
 
 
@@ -105,15 +97,7 @@ public class SchedulerFacade
     })
     public Response deleteTask(@QueryParam("cron") String cronTab)
     {
-        final Response response = EventSystem.sendSynchronousEvent(
-                                      new DeleteSchedulerTaskEvent(cronTab));
-
-        if (response == null)
-            return Response
-                   .status(Status.SERVICE_UNAVAILABLE)
-                   .entity(StateConstants.INIT_IN_PROGRESS)
-                   .type(MediaType.TEXT_PLAIN).build();
-        else
-            return response;
+        return ServerResponseFactory.createSynchronousEventResponse(
+                   new DeleteSchedulerTaskEvent(cronTab));
     }
 }

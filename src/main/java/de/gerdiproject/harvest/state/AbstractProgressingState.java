@@ -17,6 +17,8 @@ package de.gerdiproject.harvest.state;
 
 import java.util.function.Consumer;
 
+import javax.ws.rs.core.Response;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,6 +27,7 @@ import de.gerdiproject.harvest.state.constants.StateConstants;
 import de.gerdiproject.harvest.state.events.AbortingStartedEvent;
 import de.gerdiproject.harvest.state.events.StartAbortingEvent;
 import de.gerdiproject.harvest.state.impl.AbortingState;
+import de.gerdiproject.harvest.utils.ServerResponseFactory;
 
 /**
  * This abstract class is a state representing a process that has a clearly
@@ -111,23 +114,29 @@ public abstract class AbstractProgressingState implements IState
      *         value, if the max value is unknown
      */
     @Override
-    public String getProgress()
+    public Response getProgress()
     {
+        final String entity;
+
         if (isMaxNumberKnown)
-            return String.format(
-                       StateConstants.PROGESS_TEXT_SIMPLE,
-                       currentProgress,
-                       maxProgress);
+            entity = String.format(
+                         StateConstants.PROGESS_TEXT_SIMPLE,
+                         currentProgress,
+                         maxProgress);
         else
-            return String.valueOf(currentProgress);
+            entity = String.valueOf(currentProgress);
+
+        return ServerResponseFactory.createOkResponse(entity);
     }
 
 
     @Override
-    public String abort()
+    public Response abort()
     {
         EventSystem.sendEvent(new StartAbortingEvent());
-        return String.format(StateConstants.ABORT_STATUS, getName());
+
+        return ServerResponseFactory.createOkResponse(
+                   String.format(StateConstants.ABORT_STATUS, getName()));
     }
 
 
@@ -137,7 +146,7 @@ public abstract class AbstractProgressingState implements IState
      *
      * @return the remaining seconds or -1, if the time cannot be estimated
      */
-    private long estimateRemainingSeconds()
+    protected long estimateRemainingSeconds()
     {
         // only estimate if some progress was made
         if (currentProgress > 0) {

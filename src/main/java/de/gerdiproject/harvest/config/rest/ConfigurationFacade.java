@@ -16,10 +16,6 @@
 package de.gerdiproject.harvest.config.rest;
 
 
-import de.gerdiproject.harvest.MainContext;
-import de.gerdiproject.harvest.config.Configuration;
-import de.gerdiproject.harvest.config.constants.ConfigurationConstants;
-
 import java.util.List;
 import java.util.Map.Entry;
 
@@ -32,6 +28,12 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.core.Response;
+
+import de.gerdiproject.harvest.MainContext;
+import de.gerdiproject.harvest.config.Configuration;
+import de.gerdiproject.harvest.config.constants.ConfigurationConstants;
+import de.gerdiproject.harvest.utils.ServerResponseFactory;
 
 
 /**
@@ -56,21 +58,22 @@ public final class ConfigurationFacade
     @Produces({
         MediaType.TEXT_PLAIN
     })
-    public String getValue(@QueryParam("key") String key)
+    public Response getValue(@QueryParam("key") String key)
     {
-        if (key == null) {
-            if (MainContext.getConfiguration() == null)
-                return ConfigurationConstants.REST_INFO_FAILED;
-            else
-                return MainContext.getConfiguration().getInfoString();
-        } else {
-            String value = null;
+        final Configuration config = MainContext.getConfiguration();
 
-            if (MainContext.getConfiguration() != null)
-                value = MainContext.getConfiguration().getParameterStringValue(key);
+        if (config == null)
+            return ServerResponseFactory.createServerErrorResponse();
 
-            return value == null ? "" : value;
-        }
+        // if there is no key, return an info string
+        final String entity;
+
+        if (key == null)
+            entity = config.getInfoString();
+        else
+            entity = config.getParameterStringValue(key);
+
+        return ServerResponseFactory.createOkResponse(entity);
     }
 
 
@@ -83,12 +86,15 @@ public final class ConfigurationFacade
     @Produces({
         MediaType.TEXT_PLAIN
     })
-    public String saveToDisk()
+    public Response saveToDisk()
     {
-        if (MainContext.getConfiguration() == null)
-            return ConfigurationConstants.REST_INFO_FAILED;
+        final Configuration config = MainContext.getConfiguration();
+
+        if (config == null)
+            return ServerResponseFactory.createServerErrorResponse();
         else
-            return MainContext.getConfiguration().saveToDisk();
+            return ServerResponseFactory.createOkResponse(
+                       config.saveToDisk());
     }
 
 
@@ -106,17 +112,17 @@ public final class ConfigurationFacade
     @Consumes({
         MediaType.APPLICATION_FORM_URLENCODED
     })
-    public String setParameters(final MultivaluedMap<String, String> formParams)
+    public Response setParameters(final MultivaluedMap<String, String> formParams)
     {
+        final Configuration config = MainContext.getConfiguration();
+
+        if (config == null)
+            return ServerResponseFactory.createServerErrorResponse();
+
+        // assemble response string
         final StringBuilder sb = new StringBuilder();
 
         if (formParams != null) {
-            final Configuration config = MainContext.getConfiguration();
-
-            if (config == null)
-                return ConfigurationConstants.REST_INFO_FAILED;
-
-
             for (Entry<String, List<String>> entry : formParams.entrySet()) {
                 String key = entry.getKey();
                 List<String> values = entry.getValue();
@@ -127,8 +133,9 @@ public final class ConfigurationFacade
 
         // if nothing was attempted to be changed, inform the user
         if (sb.length() == 0)
-            sb.append(ConfigurationConstants.NO_CHANGES);
-
-        return sb.toString();
+            return ServerResponseFactory.createBadRequestResponse(
+                       ConfigurationConstants.NO_CHANGES);
+        else
+            return ServerResponseFactory.createOkResponse(sb.toString());
     }
 }

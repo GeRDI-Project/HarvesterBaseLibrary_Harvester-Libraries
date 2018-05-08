@@ -15,12 +15,14 @@
  */
 package de.gerdiproject.harvest.state.impl;
 
-import de.gerdiproject.harvest.application.constants.StatusConstants;
+import javax.ws.rs.core.Response;
+
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.harvester.events.HarvesterInitializedEvent;
 import de.gerdiproject.harvest.state.IState;
 import de.gerdiproject.harvest.state.constants.StateConstants;
 import de.gerdiproject.harvest.state.constants.StateEventHandlerConstants;
+import de.gerdiproject.harvest.utils.ServerResponseFactory;
 
 /**
  * This state is a dead-end that occurs when the harvester cannot be
@@ -54,51 +56,37 @@ public class ErrorState implements IState
 
 
     @Override
-    public String startHarvest()
+    public Response startHarvest()
     {
-        return StateConstants.ERROR_DETAILED;
+        return ServerResponseFactory.createFubarResponse();
     }
 
 
     @Override
-    public String abort()
+    public Response abort()
     {
-        return StateConstants.ERROR_DETAILED;
+        return ServerResponseFactory.createFubarResponse();
     }
 
 
     @Override
-    public String pause()
+    public Response submit()
     {
-        return StateConstants.ERROR_DETAILED;
+        return ServerResponseFactory.createFubarResponse();
     }
 
 
     @Override
-    public String resume()
+    public Response save()
     {
-        return StateConstants.ERROR_DETAILED;
+        return ServerResponseFactory.createFubarResponse();
     }
 
 
     @Override
-    public String submit()
+    public Response getProgress()
     {
-        return StateConstants.ERROR_DETAILED;
-    }
-
-
-    @Override
-    public String save()
-    {
-        return StateConstants.ERROR_DETAILED;
-    }
-
-
-    @Override
-    public String getProgress()
-    {
-        return StatusConstants.NOT_AVAILABLE;
+        return ServerResponseFactory.createFubarResponse();
     }
 
 
@@ -110,8 +98,8 @@ public class ErrorState implements IState
 
 
     @Override
-    public boolean isOutdated()
+    public Response isOutdated()
     {
-        return true;
+        return ServerResponseFactory.createFubarResponse();
     }
 }

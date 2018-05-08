@@ -41,7 +41,11 @@ public class HarvestingTimerTask extends TimerTask
     public void run()
     {
         // start a harvest
-        final String status = StateMachine.getCurrentState().startHarvest();
+        final String status = StateMachine
+                              .getCurrentState()
+                              .startHarvest()
+                              .getEntity()
+                              .toString();
 
         // log the feedback
         LOGGER.info(String.format(SchedulerConstants.TASK_MESSAGE, status));

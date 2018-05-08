@@ -15,17 +15,18 @@
  */
 package de.gerdiproject.harvest.state.impl;
 
+import javax.ws.rs.core.Response;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import de.gerdiproject.harvest.MainContext;
-import de.gerdiproject.harvest.application.constants.StatusConstants;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.state.IState;
 import de.gerdiproject.harvest.state.StateMachine;
 import de.gerdiproject.harvest.state.constants.StateConstants;
 import de.gerdiproject.harvest.state.constants.StateEventHandlerConstants;
 import de.gerdiproject.harvest.state.events.AbortingFinishedEvent;
+import de.gerdiproject.harvest.utils.ServerResponseFactory;
 
 /**
  * This state indicates some process is aborting.
@@ -76,51 +77,37 @@ public class AbortingState implements IState
 
 
     @Override
-    public String startHarvest()
+    public Response startHarvest()
     {
-        return String.format(StateConstants.ABORT_DETAILED, processName);
+        return createServiceUnavailableResponse();
     }
 
 
     @Override
-    public String abort()
+    public Response abort()
     {
-        return String.format(StateConstants.ABORT_DETAILED, processName);
+        return createServiceUnavailableResponse();
     }
 
 
     @Override
-    public String pause()
+    public Response submit()
     {
-        return String.format(StateConstants.ABORT_DETAILED, processName);
+        return createServiceUnavailableResponse();
     }
 
 
     @Override
-    public String resume()
+    public Response save()
     {
-        return String.format(StateConstants.ABORT_DETAILED, processName);
+        return createServiceUnavailableResponse();
     }
 
 
     @Override
-    public String submit()
+    public Response getProgress()
     {
-        return String.format(StateConstants.ABORT_DETAILED, processName);
-    }
-
-
-    @Override
-    public String save()
-    {
-        return String.format(StateConstants.ABORT_DETAILED, processName);
-    }
-
-
-    @Override
-    public String getProgress()
-    {
-        return StatusConstants.NOT_AVAILABLE;
+        return ServerResponseFactory.createBadRequestResponse();
     }
 
 
@@ -132,8 +119,18 @@ public class AbortingState implements IState
 
 
     @Override
-    public boolean isOutdated()
+    public Response isOutdated()
     {
-        return MainContext.getTimeKeeper().isHarvestIncomplete();
+        return createServiceUnavailableResponse();
+    }
+
+    /**
+     * Creates a response, replying that the service is not available at the moment.
+     *
+     * @return a response, replying that the service is not available at the moment
+     */
+    private Response createServiceUnavailableResponse()
+    {
+        return ServerResponseFactory.createBusyResponse(String.format(StateConstants.ABORT_DETAILED, processName), -1);
     }
 }

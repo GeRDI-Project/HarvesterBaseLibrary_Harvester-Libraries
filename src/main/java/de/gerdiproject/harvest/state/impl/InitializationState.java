@@ -15,12 +15,14 @@
  */
 package de.gerdiproject.harvest.state.impl;
 
-import de.gerdiproject.harvest.application.constants.StatusConstants;
+import javax.ws.rs.core.Response;
+
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.harvester.events.HarvesterInitializedEvent;
 import de.gerdiproject.harvest.state.IState;
 import de.gerdiproject.harvest.state.constants.StateConstants;
 import de.gerdiproject.harvest.state.constants.StateEventHandlerConstants;
+import de.gerdiproject.harvest.utils.ServerResponseFactory;
 
 /**
  * This state represents the initialization of harvesters at the beginning of
@@ -54,57 +56,37 @@ public class InitializationState implements IState
 
 
     @Override
-    public String startHarvest()
+    public Response startHarvest()
     {
-        return StateConstants.CANNOT_START_PREFIX + StateConstants.INIT_IN_PROGRESS;
+        return ServerResponseFactory.createInitResponse();
     }
 
 
     @Override
-    public String abort()
+    public Response abort()
     {
-        return String.format(
-                   StateConstants.CANNOT_ABORT_PREFIX + StateConstants.INIT_IN_PROGRESS,
-                   StateConstants.INIT_PROCESS);
+        return ServerResponseFactory.createInitResponse();
     }
 
 
     @Override
-    public String pause()
+    public Response submit()
     {
-        return String.format(
-                   StateConstants.CANNOT_PAUSE_PREFIX + StateConstants.INIT_IN_PROGRESS,
-                   StateConstants.INIT_PROCESS);
+        return ServerResponseFactory.createInitResponse();
     }
 
 
     @Override
-    public String resume()
+    public Response save()
     {
-        return String.format(
-                   StateConstants.CANNOT_RESUME_PREFIX + StateConstants.INIT_IN_PROGRESS,
-                   StateConstants.INIT_PROCESS);
+        return ServerResponseFactory.createInitResponse();
     }
 
 
     @Override
-    public String submit()
+    public Response getProgress()
     {
-        return StateConstants.CANNOT_SUBMIT_PREFIX + StateConstants.INIT_IN_PROGRESS;
-    }
-
-
-    @Override
-    public String save()
-    {
-        return StateConstants.CANNOT_SAVE_PREFIX + StateConstants.INIT_IN_PROGRESS;
-    }
-
-
-    @Override
-    public String getProgress()
-    {
-        return StatusConstants.NOT_AVAILABLE;
+        return ServerResponseFactory.createBadRequestResponse();
     }
 
 
@@ -116,8 +98,8 @@ public class InitializationState implements IState
 
 
     @Override
-    public boolean isOutdated()
+    public Response isOutdated()
     {
-        return true;
+        return ServerResponseFactory.createInitResponse();
     }
 }

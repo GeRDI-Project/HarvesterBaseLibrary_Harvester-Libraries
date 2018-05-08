@@ -17,6 +17,8 @@ package de.gerdiproject.harvest.state.impl;
 
 import java.util.function.Consumer;
 
+import javax.ws.rs.core.Response;
+
 import de.gerdiproject.harvest.MainContext;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.state.AbstractProgressingState;
@@ -24,6 +26,7 @@ import de.gerdiproject.harvest.state.constants.StateConstants;
 import de.gerdiproject.harvest.state.constants.StateEventHandlerConstants;
 import de.gerdiproject.harvest.submission.events.DocumentsSubmittedEvent;
 import de.gerdiproject.harvest.submission.events.SubmissionFinishedEvent;
+import de.gerdiproject.harvest.utils.ServerResponseFactory;
 import de.gerdiproject.harvest.utils.time.HarvestTimeKeeper;
 
 /**
@@ -84,41 +87,38 @@ public class SubmittingState extends AbstractProgressingState
 
 
     @Override
-    public String startHarvest()
+    public Response startHarvest()
     {
-        return StateConstants.CANNOT_START_PREFIX + StateConstants.SUBMIT_IN_PROGRESS;
+        return ServerResponseFactory.createBusyResponse(
+                   StateConstants.CANNOT_START_PREFIX + StateConstants.SUBMIT_IN_PROGRESS,
+                   estimateRemainingSeconds());
     }
 
 
     @Override
-    public String pause()
+    public Response submit()
     {
-        // TODO implement pause
-        return null;
+        return ServerResponseFactory.createBusyResponse(
+                   StateConstants.CANNOT_SUBMIT_PREFIX + StateConstants.SUBMIT_IN_PROGRESS,
+                   estimateRemainingSeconds());
     }
 
 
     @Override
-    public String resume()
+    public Response save()
     {
-        // TODO implement pause
-        return String.format(
-                   StateConstants.CANNOT_RESUME_PREFIX + StateConstants.SUBMIT_IN_PROGRESS,
-                   StateConstants.INIT_PROCESS);
+        return ServerResponseFactory.createBusyResponse(
+                   StateConstants.CANNOT_SAVE_PREFIX + StateConstants.SUBMIT_IN_PROGRESS,
+                   estimateRemainingSeconds());
     }
 
 
     @Override
-    public String submit()
+    public Response isOutdated()
     {
-        return StateConstants.CANNOT_SUBMIT_PREFIX + StateConstants.SUBMIT_IN_PROGRESS;
-    }
-
-
-    @Override
-    public String save()
-    {
-        return StateConstants.CANNOT_SAVE_PREFIX + StateConstants.SUBMIT_IN_PROGRESS;
+        return ServerResponseFactory.createBusyResponse(
+                   StateConstants.CANNOT_PROCESS_PREFIX + StateConstants.SUBMIT_IN_PROGRESS,
+                   estimateRemainingSeconds());
     }
 
 
@@ -126,12 +126,5 @@ public class SubmittingState extends AbstractProgressingState
     public String getName()
     {
         return StateConstants.SUBMIT_PROCESS;
-    }
-
-
-    @Override
-    public boolean isOutdated()
-    {
-        return MainContext.getTimeKeeper().isHarvestIncomplete();
     }
 }

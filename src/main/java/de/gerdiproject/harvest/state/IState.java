@@ -15,6 +15,7 @@
  */
 package de.gerdiproject.harvest.state;
 
+import javax.ws.rs.core.Response;
 
 /**
  * An interface for states of the {@linkplain StateMachine}.
@@ -46,7 +47,7 @@ public interface IState
      *
      * @return a minimalistic representation the state's progress
      */
-    String getProgress();
+    Response getProgress();
 
 
     /**
@@ -68,7 +69,7 @@ public interface IState
      *
      * @return a status message about the success or failure of the operation
      */
-    String startHarvest();
+    Response startHarvest();
 
 
     /**
@@ -76,23 +77,7 @@ public interface IState
      *
      * @return a status message about the success or failure of the operation
      */
-    String abort();
-
-
-    /**
-     * Attempts to pause a running process.
-     *
-     * @return a status message about the success or failure of the operation
-     */
-    String pause();
-
-
-    /**
-     * Attempts to resume a paused process.
-     *
-     * @return a status message about the success or failure of the operation
-     */
-    String resume();
+    Response abort();
 
 
     /**
@@ -100,7 +85,7 @@ public interface IState
      *
      * @return a status message about the success or failure of the operation
      */
-    String submit();
+    Response submit();
 
 
     /**
@@ -108,7 +93,7 @@ public interface IState
      *
      * @return a status message about the success or failure of the operation
      */
-    String save();
+    Response save();
 
 
     /**
@@ -116,5 +101,5 @@ public interface IState
      *
      * @return true if there is new metadata to harvest
      */
-    boolean isOutdated();
+    Response isOutdated();
 }

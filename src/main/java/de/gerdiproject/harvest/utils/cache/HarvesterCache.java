@@ -26,7 +26,6 @@ import de.gerdiproject.harvest.save.HarvestSaver;
 import de.gerdiproject.harvest.submission.AbstractSubmitter;
 import de.gerdiproject.harvest.utils.HashGenerator;
 import de.gerdiproject.harvest.utils.cache.constants.CacheConstants;
-import de.gerdiproject.harvest.utils.cache.events.RegisterCacheEvent;
 import de.gerdiproject.json.datacite.DataCiteJson;
 
 /**
@@ -69,7 +68,8 @@ public class HarvesterCache
         this.changesCache = new DocumentChangesCache(harvesterName);
 
         EventSystem.addListener(ContextDestroyedEvent.class, this::onContextDestroyed);
-        EventSystem.sendEvent(new RegisterCacheEvent(this));
+
+        HarvesterCacheManager.instance().registerCache(this);
     }
 
 
