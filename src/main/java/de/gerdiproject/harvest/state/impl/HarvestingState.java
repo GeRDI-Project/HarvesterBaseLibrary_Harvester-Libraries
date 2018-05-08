@@ -28,6 +28,7 @@ import de.gerdiproject.harvest.state.AbstractProgressingState;
 import de.gerdiproject.harvest.state.constants.StateConstants;
 import de.gerdiproject.harvest.state.constants.StateEventHandlerConstants;
 import de.gerdiproject.harvest.submission.events.SubmissionStartedEvent;
+import de.gerdiproject.harvest.utils.ServerResponseFactory;
 import de.gerdiproject.harvest.utils.time.HarvestTimeKeeper;
 
 /**
@@ -80,13 +81,6 @@ public class HarvestingState extends AbstractProgressingState
 
 
     @Override
-    public String getName()
-    {
-        return StateConstants.HARVESTING_PROCESS;
-    }
-
-
-    @Override
     public String getStatusString()
     {
         HarvestTimeKeeper timeKeeper = MainContext.getTimeKeeper();
@@ -101,27 +95,42 @@ public class HarvestingState extends AbstractProgressingState
     @Override
     public Response startHarvest()
     {
-        return createBusyResponse(StateConstants.CANNOT_START_PREFIX, StateConstants.HARVEST_IN_PROGRESS);
+        return ServerResponseFactory.createBusyResponse(
+                   StateConstants.CANNOT_START_PREFIX + StateConstants.HARVEST_IN_PROGRESS,
+                   estimateRemainingSeconds());
     }
 
 
     @Override
     public Response submit()
     {
-        return createBusyResponse(StateConstants.CANNOT_SUBMIT_PREFIX, StateConstants.HARVEST_IN_PROGRESS);
+        return ServerResponseFactory.createBusyResponse(
+                   StateConstants.CANNOT_SUBMIT_PREFIX + StateConstants.HARVEST_IN_PROGRESS,
+                   estimateRemainingSeconds());
     }
 
 
     @Override
     public Response save()
     {
-        return createBusyResponse(StateConstants.CANNOT_SAVE_PREFIX, StateConstants.HARVEST_IN_PROGRESS);
+        return ServerResponseFactory.createBusyResponse(
+                   StateConstants.CANNOT_SAVE_PREFIX + StateConstants.HARVEST_IN_PROGRESS,
+                   estimateRemainingSeconds());
     }
 
 
     @Override
     public Response isOutdated()
     {
-        return createBusyResponse(StateConstants.CANNOT_GET_VALUE_PREFIX, StateConstants.HARVEST_IN_PROGRESS);
+        return ServerResponseFactory.createBusyResponse(
+                   StateConstants.CANNOT_PROCESS_PREFIX + StateConstants.HARVEST_IN_PROGRESS,
+                   estimateRemainingSeconds());
+    }
+
+
+    @Override
+    public String getName()
+    {
+        return StateConstants.HARVESTING_PROCESS;
     }
 }

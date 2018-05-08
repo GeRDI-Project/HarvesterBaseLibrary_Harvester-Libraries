@@ -15,20 +15,18 @@
  */
 package de.gerdiproject.harvest.state.impl;
 
-import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import de.gerdiproject.harvest.application.constants.StatusConstants;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.state.IState;
 import de.gerdiproject.harvest.state.StateMachine;
 import de.gerdiproject.harvest.state.constants.StateConstants;
 import de.gerdiproject.harvest.state.constants.StateEventHandlerConstants;
 import de.gerdiproject.harvest.state.events.AbortingFinishedEvent;
+import de.gerdiproject.harvest.utils.ServerResponseFactory;
 
 /**
  * This state indicates some process is aborting.
@@ -109,11 +107,7 @@ public class AbortingState implements IState
     @Override
     public Response getProgress()
     {
-        return Response
-               .status(Status.BAD_REQUEST)
-               .entity(StatusConstants.NOT_AVAILABLE)
-               .type(MediaType.TEXT_PLAIN)
-               .build();
+        return ServerResponseFactory.createBadRequestResponse();
     }
 
 
@@ -137,10 +131,6 @@ public class AbortingState implements IState
      */
     private Response createServiceUnavailableResponse()
     {
-        return Response
-               .status(Status.SERVICE_UNAVAILABLE)
-               .entity(String.format(StateConstants.ABORT_DETAILED, processName))
-               .type(MediaType.TEXT_PLAIN)
-               .build();
+        return ServerResponseFactory.createBusyResponse(String.format(StateConstants.ABORT_DETAILED, processName), -1);
     }
 }

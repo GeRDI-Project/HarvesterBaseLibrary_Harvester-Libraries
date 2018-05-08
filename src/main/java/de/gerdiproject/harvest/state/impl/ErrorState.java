@@ -15,16 +15,14 @@
  */
 package de.gerdiproject.harvest.state.impl;
 
-import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
 
-import de.gerdiproject.harvest.application.constants.StatusConstants;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.harvester.events.HarvesterInitializedEvent;
 import de.gerdiproject.harvest.state.IState;
 import de.gerdiproject.harvest.state.constants.StateConstants;
 import de.gerdiproject.harvest.state.constants.StateEventHandlerConstants;
+import de.gerdiproject.harvest.utils.ServerResponseFactory;
 
 /**
  * This state is a dead-end that occurs when the harvester cannot be
@@ -60,39 +58,35 @@ public class ErrorState implements IState
     @Override
     public Response startHarvest()
     {
-        return createServerErrorResponse();
+        return ServerResponseFactory.createFubarResponse();
     }
 
 
     @Override
     public Response abort()
     {
-        return createServerErrorResponse();
+        return ServerResponseFactory.createFubarResponse();
     }
 
 
     @Override
     public Response submit()
     {
-        return createServerErrorResponse();
+        return ServerResponseFactory.createFubarResponse();
     }
 
 
     @Override
     public Response save()
     {
-        return createServerErrorResponse();
+        return ServerResponseFactory.createFubarResponse();
     }
 
 
     @Override
     public Response getProgress()
     {
-        return Response
-               .status(Status.BAD_REQUEST)
-               .entity(StatusConstants.NOT_AVAILABLE)
-               .type(MediaType.TEXT_PLAIN)
-               .build();
+        return ServerResponseFactory.createFubarResponse();
     }
 
 
@@ -106,21 +100,6 @@ public class ErrorState implements IState
     @Override
     public Response isOutdated()
     {
-        return createServerErrorResponse();
-    }
-
-
-    /**
-     * Creates a response, notifying the requester about the server error.
-     *
-     * @return a response, notifying the requester about the server error.
-     */
-    private Response createServerErrorResponse()
-    {
-        return Response
-               .status(Status.INTERNAL_SERVER_ERROR)
-               .entity(StateConstants.ERROR_DETAILED)
-               .type(MediaType.TEXT_PLAIN)
-               .build();
+        return ServerResponseFactory.createFubarResponse();
     }
 }

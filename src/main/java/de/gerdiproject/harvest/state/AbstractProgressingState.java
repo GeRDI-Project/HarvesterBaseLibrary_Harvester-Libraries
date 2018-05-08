@@ -17,10 +17,7 @@ package de.gerdiproject.harvest.state;
 
 import java.util.function.Consumer;
 
-import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.ResponseBuilder;
-import javax.ws.rs.core.Response.Status;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,6 +27,7 @@ import de.gerdiproject.harvest.state.constants.StateConstants;
 import de.gerdiproject.harvest.state.events.AbortingStartedEvent;
 import de.gerdiproject.harvest.state.events.StartAbortingEvent;
 import de.gerdiproject.harvest.state.impl.AbortingState;
+import de.gerdiproject.harvest.utils.ServerResponseFactory;
 
 /**
  * This abstract class is a state representing a process that has a clearly
@@ -128,11 +126,7 @@ public abstract class AbstractProgressingState implements IState
         else
             entity = String.valueOf(currentProgress);
 
-        return Response
-               .status(Status.OK)
-               .entity(entity)
-               .type(MediaType.TEXT_PLAIN)
-               .build();
+        return ServerResponseFactory.createOkResponse(entity);
     }
 
 
@@ -141,11 +135,8 @@ public abstract class AbstractProgressingState implements IState
     {
         EventSystem.sendEvent(new StartAbortingEvent());
 
-        return Response
-               .status(Status.OK)
-               .entity(String.format(StateConstants.ABORT_STATUS, getName()))
-               .type(MediaType.TEXT_PLAIN)
-               .build();
+        return ServerResponseFactory.createOkResponse(
+                   String.format(StateConstants.ABORT_STATUS, getName()));
     }
 
 
@@ -155,7 +146,7 @@ public abstract class AbstractProgressingState implements IState
      *
      * @return the remaining seconds or -1, if the time cannot be estimated
      */
-    private long estimateRemainingSeconds()
+    protected long estimateRemainingSeconds()
     {
         // only estimate if some progress was made
         if (currentProgress > 0) {
@@ -242,29 +233,5 @@ public abstract class AbstractProgressingState implements IState
                     currentProgress,
                     maxProgress));
         }
-    }
-
-    /**
-     * Creates a response, replying that the service is not available at the moment.
-     * If available, a Retry-Again header is set with the remaining seconds of the process.
-     *
-     * @param prefix a prefix for the error response, explaining what has failed
-     * @param suffix a suffix for the error response, explaining why it has failed
-     *
-     * @return a response, replying that the service is not available at the moment
-     */
-    protected Response createBusyResponse(final String prefix, final String suffix)
-    {
-        final ResponseBuilder rb = Response
-                                   .status(Status.SERVICE_UNAVAILABLE)
-                                   .entity(prefix + suffix)
-                                   .type(MediaType.TEXT_PLAIN);
-
-        long remainingSeconds = estimateRemainingSeconds();
-
-        if (remainingSeconds != -1)
-            rb.header(StateConstants.RETRY_AFTER_HEADER, remainingSeconds);
-
-        return rb.build();
     }
 }

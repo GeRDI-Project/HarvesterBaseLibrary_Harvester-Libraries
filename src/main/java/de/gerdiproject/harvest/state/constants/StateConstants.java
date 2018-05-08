@@ -42,7 +42,7 @@ public class StateConstants
     public static final String CANNOT_RESUME_PREFIX = "Cannot resume %s: ";
     public static final String CANNOT_SUBMIT_PREFIX = "Cannot submit documents: ";
     public static final String CANNOT_SAVE_PREFIX = "Cannot save documents: ";
-    public static final String CANNOT_GET_VALUE_PREFIX = "Cannot retrieve value: ";
+    public static final String CANNOT_PROCESS_PREFIX = "Cannot process request: ";
 
     public static final String INIT_IN_PROGRESS = "Please wait for the harvester to be initialized!";
     public static final String SUBMIT_IN_PROGRESS = "Please wait for all documents to be submitted!";
@@ -50,8 +50,9 @@ public class StateConstants
     public static final String SAVE_IN_PROGRESS = "Please wait for the search index to be saved to disk!";
     public static final String NO_HARVEST_IN_PROGRESS = "No harvest is running!";
     public static final String NO_DOCUMENTS = "No documents to send! Did you start a harvest?";
-    public static final String ERROR_DETAILED = "Cannot execute command, because the Harvester could not be initialized! Look at the logs for details.";
-    public static final String ABORT_DETAILED = "Cannot execute command, because the %s-process is being aborted! Try again in a short moment.";
+    public static final String ERROR_DETAILED = "Cannot process request, because the Harvester could not be initialized! Look at the logs for details.";
+    public static final String ABORT_DETAILED = "Cannot process request, because the %s-process is being aborted! Try again in a short moment.";
+    public static final String UNKNOWN_ERROR = "Cannot process request due to an unknown error!";
 
     public static final String RESUME_IN_PROGRESS = "The %s-process is already running!";
     public static final String PAUSE_IN_PROGRESS = "The %s-process is already paused!";

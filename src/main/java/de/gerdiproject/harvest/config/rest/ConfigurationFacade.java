@@ -29,11 +29,11 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
 
 import de.gerdiproject.harvest.MainContext;
 import de.gerdiproject.harvest.config.Configuration;
 import de.gerdiproject.harvest.config.constants.ConfigurationConstants;
+import de.gerdiproject.harvest.utils.ServerResponseFactory;
 
 
 /**
@@ -60,21 +60,20 @@ public final class ConfigurationFacade
     })
     public Response getValue(@QueryParam("key") String key)
     {
-        if (MainContext.getConfiguration() == null)
-            return createServerErrorResponse();
+        final Configuration config = MainContext.getConfiguration();
 
-        final String entity;
+        if (config == null)
+            return ServerResponseFactory.createServerErrorResponse();
 
         // if there is no key, return an info string
-        if (key == null)
-            entity = MainContext.getConfiguration().getInfoString();
-        else
-            entity = MainContext.getConfiguration().getParameterStringValue(key);
+        final String entity;
 
-        return Response.status(Status.OK)
-               .entity(entity == null ? "" : entity)
-               .type(MediaType.TEXT_PLAIN)
-               .build();
+        if (key == null)
+            entity = config.getInfoString();
+        else
+            entity = config.getParameterStringValue(key);
+
+        return ServerResponseFactory.createOkResponse(entity);
     }
 
 
@@ -89,13 +88,13 @@ public final class ConfigurationFacade
     })
     public Response saveToDisk()
     {
-        if (MainContext.getConfiguration() == null)
-            return createServerErrorResponse();
+        final Configuration config = MainContext.getConfiguration();
+
+        if (config == null)
+            return ServerResponseFactory.createServerErrorResponse();
         else
-            return Response.status(Status.OK)
-                   .entity(MainContext.getConfiguration().saveToDisk())
-                   .type(MediaType.TEXT_PLAIN)
-                   .build();
+            return ServerResponseFactory.createOkResponse(
+                       config.saveToDisk());
     }
 
 
@@ -118,7 +117,7 @@ public final class ConfigurationFacade
         final Configuration config = MainContext.getConfiguration();
 
         if (config == null)
-            return createServerErrorResponse();
+            return ServerResponseFactory.createServerErrorResponse();
 
         // assemble response string
         final StringBuilder sb = new StringBuilder();
@@ -134,29 +133,9 @@ public final class ConfigurationFacade
 
         // if nothing was attempted to be changed, inform the user
         if (sb.length() == 0)
-            return Response.status(Status.BAD_REQUEST)
-                   .entity(ConfigurationConstants.NO_CHANGES)
-                   .type(MediaType.TEXT_PLAIN)
-                   .build();
+            return ServerResponseFactory.createBadRequestResponse(
+                       ConfigurationConstants.NO_CHANGES);
         else
-            return Response.status(Status.OK)
-                   .entity(sb.toString())
-                   .type(MediaType.TEXT_PLAIN)
-                   .build();
-    }
-
-
-    /**
-     * Creates a server error response if the configuration is unavailable.
-     *
-     * @return a server error response if the configuration is unavailable
-     */
-    private Response createServerErrorResponse()
-    {
-        return Response
-               .status(Status.INTERNAL_SERVER_ERROR)
-               .entity(ConfigurationConstants.REST_INFO_FAILED)
-               .type(MediaType.TEXT_PLAIN)
-               .build();
+            return ServerResponseFactory.createOkResponse(sb.toString());
     }
 }

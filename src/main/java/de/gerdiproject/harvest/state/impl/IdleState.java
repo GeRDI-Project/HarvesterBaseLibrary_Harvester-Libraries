@@ -33,7 +33,6 @@
  */
 package de.gerdiproject.harvest.state.impl;
 
-import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
@@ -41,7 +40,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import de.gerdiproject.harvest.MainContext;
-import de.gerdiproject.harvest.application.constants.StatusConstants;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.harvester.events.GetHarvesterOutdatedEvent;
 import de.gerdiproject.harvest.harvester.events.HarvestStartedEvent;
@@ -54,6 +52,7 @@ import de.gerdiproject.harvest.state.constants.StateConstants;
 import de.gerdiproject.harvest.state.constants.StateEventHandlerConstants;
 import de.gerdiproject.harvest.submission.events.StartSubmissionEvent;
 import de.gerdiproject.harvest.submission.events.SubmissionStartedEvent;
+import de.gerdiproject.harvest.utils.ServerResponseFactory;
 import de.gerdiproject.harvest.utils.time.HarvestTimeKeeper;
 
 /**
@@ -102,27 +101,20 @@ public class IdleState implements IState
     public Response startHarvest()
     {
         EventSystem.sendEvent(new StartHarvestEvent());
-        return Response
-               .status(Status.ACCEPTED)
-               .entity(StateConstants.HARVEST_STARTED)
-               .type(MediaType.TEXT_PLAIN)
-               .build();
+        return ServerResponseFactory.createResponse(
+                   Status.ACCEPTED,
+                   StateConstants.HARVEST_STARTED);
     }
 
 
     @Override
     public Response abort()
     {
-        final String entity = String.format(
-                                  StateConstants.CANNOT_ABORT_PREFIX
-                                  + StateConstants.NO_HARVEST_IN_PROGRESS,
-                                  StateConstants.HARVESTING_PROCESS);
-
-        return Response
-               .status(Status.BAD_REQUEST)
-               .entity(entity)
-               .type(MediaType.TEXT_PLAIN)
-               .build();
+        final String message = String.format(
+                                   StateConstants.CANNOT_ABORT_PREFIX
+                                   + StateConstants.NO_HARVEST_IN_PROGRESS,
+                                   StateConstants.HARVESTING_PROCESS);
+        return ServerResponseFactory.createBadRequestResponse(message);
     }
 
 
@@ -130,11 +122,9 @@ public class IdleState implements IState
     public Response submit()
     {
         EventSystem.sendEvent(new StartSubmissionEvent());
-        return Response
-               .status(Status.ACCEPTED)
-               .entity(StateConstants.SUBMITTING_STATUS)
-               .type(MediaType.TEXT_PLAIN)
-               .build();
+        return ServerResponseFactory.createResponse(
+                   Status.ACCEPTED,
+                   StateConstants.SUBMITTING_STATUS);
     }
 
 
@@ -142,23 +132,16 @@ public class IdleState implements IState
     public Response save()
     {
         EventSystem.sendEvent(new StartSaveEvent(false));
-
-        return Response
-               .status(Status.ACCEPTED)
-               .entity(StateConstants.SAVING_STATUS)
-               .type(MediaType.TEXT_PLAIN)
-               .build();
+        return ServerResponseFactory.createResponse(
+                   Status.ACCEPTED,
+                   StateConstants.SAVING_STATUS);
     }
 
 
     @Override
     public Response getProgress()
     {
-        return Response
-               .status(Status.BAD_REQUEST)
-               .entity(StatusConstants.NOT_AVAILABLE)
-               .type(MediaType.TEXT_PLAIN)
-               .build();
+        return ServerResponseFactory.createBadRequestResponse();
     }
 
 
@@ -172,28 +155,6 @@ public class IdleState implements IState
     @Override
     public Response isOutdated()
     {
-        final Boolean isOutdated;
-
-        if (MainContext.getTimeKeeper().isHarvestIncomplete())
-            isOutdated = true;
-        else
-            isOutdated = EventSystem.sendSynchronousEvent(new GetHarvesterOutdatedEvent());
-
-        final String entity;
-        final Status status;
-
-        if (isOutdated == null) {
-            entity = StateConstants.INIT_IN_PROGRESS;
-            status = Status.SERVICE_UNAVAILABLE;
-        } else {
-            entity = isOutdated.toString();
-            status = Status.OK;
-        }
-
-        return Response
-               .status(status)
-               .entity(entity)
-               .type(MediaType.TEXT_PLAIN)
-               .build();
+        return ServerResponseFactory.createSynchronousEventResponse(new GetHarvesterOutdatedEvent());
     }
 }

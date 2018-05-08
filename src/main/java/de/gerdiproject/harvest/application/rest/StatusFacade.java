@@ -28,13 +28,12 @@ import javax.ws.rs.core.Response.Status;
 import de.gerdiproject.harvest.MainContext;
 import de.gerdiproject.harvest.application.constants.StatusConstants;
 import de.gerdiproject.harvest.application.enums.HealthStatus;
-import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.harvester.events.GetMaxDocumentCountEvent;
 import de.gerdiproject.harvest.harvester.events.GetProviderNameEvent;
 import de.gerdiproject.harvest.state.IState;
 import de.gerdiproject.harvest.state.StateMachine;
-import de.gerdiproject.harvest.state.constants.StateConstants;
 import de.gerdiproject.harvest.state.impl.ErrorState;
+import de.gerdiproject.harvest.utils.ServerResponseFactory;
 import de.gerdiproject.harvest.utils.cache.events.GetCacheCountEvent;
 
 
@@ -88,24 +87,7 @@ public final class StatusFacade
     })
     public Response getDataProvider()
     {
-        String providerName = EventSystem.sendSynchronousEvent(new GetProviderNameEvent());
-
-        final String entity;
-        final Status status;
-
-        if (providerName == null) {
-            entity = StateConstants.INIT_IN_PROGRESS;
-            status = Status.SERVICE_UNAVAILABLE;
-        } else {
-            entity = providerName;
-            status = Status.OK;
-        }
-
-        return Response
-               .status(status)
-               .entity(entity)
-               .type(MediaType.TEXT_PLAIN)
-               .build();
+        return ServerResponseFactory.createSynchronousEventResponse(new GetProviderNameEvent());
     }
 
 
@@ -122,27 +104,14 @@ public final class StatusFacade
     })
     public Response getMaxDocumentCount()
     {
-        Integer maxDocs = EventSystem.sendSynchronousEvent(new GetMaxDocumentCountEvent());
+        Response resp =
+            ServerResponseFactory.createSynchronousEventResponse(
+                new GetMaxDocumentCountEvent());
 
-        final String entity;
-        final Status status;
-
-        if (maxDocs == null) {
-            entity = StateConstants.INIT_IN_PROGRESS;
-            status = Status.SERVICE_UNAVAILABLE;
-        } else if (maxDocs < 0) {
-            entity = StatusConstants.NOT_AVAILABLE;
-            status = Status.BAD_REQUEST;
-        } else {
-            entity = maxDocs.toString();
-            status = Status.OK;
-        }
-
-        return Response
-               .status(status)
-               .entity(entity)
-               .type(MediaType.TEXT_PLAIN)
-               .build();
+        if (resp.getEntity().equals("-1"))
+            return ServerResponseFactory.createBadRequestResponse();
+        else
+            return resp;
     }
 
     /**
@@ -158,24 +127,7 @@ public final class StatusFacade
     })
     public Response getHarvestedDocumentCount()
     {
-        Integer cachedDocs = EventSystem.sendSynchronousEvent(new GetCacheCountEvent());
-
-        final String entity;
-        final Status status;
-
-        if (cachedDocs == null) {
-            entity = StateConstants.INIT_IN_PROGRESS;
-            status = Status.SERVICE_UNAVAILABLE;
-        } else {
-            entity = cachedDocs.toString();
-            status = Status.OK;
-        }
-
-        return Response
-               .status(status)
-               .entity(entity)
-               .type(MediaType.TEXT_PLAIN)
-               .build();
+        return ServerResponseFactory.createSynchronousEventResponse(new GetCacheCountEvent());
     }
 
     /**
@@ -210,22 +162,11 @@ public final class StatusFacade
     {
         long timestamp = MainContext.getTimeKeeper().getHarvestMeasure().getStartTimestamp();
 
-        final String entity;
-        final Status status;
+        if (timestamp == -1L)
+            return ServerResponseFactory.createBadRequestResponse();
 
-        if (timestamp == -1L) {
-            entity = StatusConstants.NOT_AVAILABLE;
-            status = Status.BAD_REQUEST;
-        } else {
-            entity = Instant.ofEpochMilli(timestamp).toString();
-            status = Status.OK;
-        }
-
-        return Response
-               .status(status)
-               .entity(entity)
-               .type(MediaType.TEXT_PLAIN)
-               .build();
+        else
+            return ServerResponseFactory.createOkResponse(Instant.ofEpochMilli(timestamp).toString());
     }
 
 
@@ -270,10 +211,6 @@ public final class StatusFacade
                                ? Status.OK
                                : Status.INTERNAL_SERVER_ERROR;
 
-        return Response
-               .status(status)
-               .entity(health.toString())
-               .type(MediaType.TEXT_PLAIN)
-               .build();
+        return ServerResponseFactory.createResponse(status, health);
     }
 }

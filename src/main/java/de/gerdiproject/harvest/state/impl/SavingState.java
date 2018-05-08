@@ -30,6 +30,7 @@ import de.gerdiproject.harvest.state.constants.StateConstants;
 import de.gerdiproject.harvest.state.constants.StateEventHandlerConstants;
 import de.gerdiproject.harvest.submission.events.StartSubmissionEvent;
 import de.gerdiproject.harvest.submission.events.SubmissionStartedEvent;
+import de.gerdiproject.harvest.utils.ServerResponseFactory;
 import de.gerdiproject.harvest.utils.time.HarvestTimeKeeper;
 
 /**
@@ -111,44 +112,44 @@ public class SavingState extends AbstractProgressingState
 
 
     @Override
-    public String getName()
-    {
-        return StateConstants.SAVE_PROCESS;
-    }
-
-
-    @Override
     public Response startHarvest()
     {
-        return createBusyResponse(
-                   StateConstants.CANNOT_START_PREFIX,
-                   StateConstants.SAVE_IN_PROGRESS);
-    }
-
-
-    @Override
-    public Response save()
-    {
-        return createBusyResponse(
-                   StateConstants.CANNOT_SAVE_PREFIX,
-                   StateConstants.SAVE_IN_PROGRESS);
+        return ServerResponseFactory.createBusyResponse(
+                   StateConstants.CANNOT_START_PREFIX + StateConstants.SAVE_IN_PROGRESS,
+                   estimateRemainingSeconds());
     }
 
 
     @Override
     public Response submit()
     {
-        return createBusyResponse(
-                   StateConstants.CANNOT_SUBMIT_PREFIX,
-                   StateConstants.SAVE_IN_PROGRESS);
+        return ServerResponseFactory.createBusyResponse(
+                   StateConstants.CANNOT_SUBMIT_PREFIX + StateConstants.SAVE_IN_PROGRESS,
+                   estimateRemainingSeconds());
+    }
+
+
+    @Override
+    public Response save()
+    {
+        return ServerResponseFactory.createBusyResponse(
+                   StateConstants.CANNOT_SAVE_PREFIX + StateConstants.SAVE_IN_PROGRESS,
+                   estimateRemainingSeconds());
     }
 
 
     @Override
     public Response isOutdated()
     {
-        return createBusyResponse(
-                   StateConstants.CANNOT_GET_VALUE_PREFIX,
-                   StateConstants.SAVE_IN_PROGRESS);
+        return ServerResponseFactory.createBusyResponse(
+                   StateConstants.CANNOT_PROCESS_PREFIX + StateConstants.SAVE_IN_PROGRESS,
+                   estimateRemainingSeconds());
+    }
+
+
+    @Override
+    public String getName()
+    {
+        return StateConstants.SAVE_PROCESS;
     }
 }

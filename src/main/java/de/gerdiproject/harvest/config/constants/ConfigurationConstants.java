@@ -1,5 +1,5 @@
 /**
- * Copyright © 2017 Robin Weiss (http://www.gerdi-project.de)
+* Copyright © 2017 Robin Weiss (http://www.gerdi-project.de)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -88,9 +88,6 @@ public class ConfigurationConstants
                                            + "POST  Saves the current configuration to disk.%n"
                                            + "PUT   Sets x-www-form-urlencoded parameters for the harvester.%n"
                                            + "      Valid values: %s.%n";
-
-    public static final String REST_INFO_FAILED =
-        "Could not initialize Configuration.\nPlease, look at the server logs for details.";
 
     public static final String PARSE_ERROR = "Could not read configuration parameter value '%s' from key '%s'!";
 

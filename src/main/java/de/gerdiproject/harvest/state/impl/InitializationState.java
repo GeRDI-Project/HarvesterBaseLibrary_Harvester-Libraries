@@ -15,16 +15,14 @@
  */
 package de.gerdiproject.harvest.state.impl;
 
-import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
 
-import de.gerdiproject.harvest.application.constants.StatusConstants;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.harvester.events.HarvesterInitializedEvent;
 import de.gerdiproject.harvest.state.IState;
 import de.gerdiproject.harvest.state.constants.StateConstants;
 import de.gerdiproject.harvest.state.constants.StateEventHandlerConstants;
+import de.gerdiproject.harvest.utils.ServerResponseFactory;
 
 /**
  * This state represents the initialization of harvesters at the beginning of
@@ -60,42 +58,35 @@ public class InitializationState implements IState
     @Override
     public Response startHarvest()
     {
-        return createServiceUnavailableResponse(StateConstants.CANNOT_START_PREFIX);
+        return ServerResponseFactory.createInitResponse();
     }
 
 
     @Override
     public Response abort()
     {
-        return createServiceUnavailableResponse(
-                   String.format(
-                       StateConstants.CANNOT_ABORT_PREFIX,
-                       StateConstants.INIT_PROCESS));
+        return ServerResponseFactory.createInitResponse();
     }
 
 
     @Override
     public Response submit()
     {
-        return createServiceUnavailableResponse(StateConstants.CANNOT_SUBMIT_PREFIX);
+        return ServerResponseFactory.createInitResponse();
     }
 
 
     @Override
     public Response save()
     {
-        return createServiceUnavailableResponse(StateConstants.CANNOT_SAVE_PREFIX);
+        return ServerResponseFactory.createInitResponse();
     }
 
 
     @Override
     public Response getProgress()
     {
-        return Response
-               .status(Status.BAD_REQUEST)
-               .entity(StatusConstants.NOT_AVAILABLE)
-               .type(MediaType.TEXT_PLAIN)
-               .build();
+        return ServerResponseFactory.createBadRequestResponse();
     }
 
 
@@ -109,23 +100,6 @@ public class InitializationState implements IState
     @Override
     public Response isOutdated()
     {
-        return createServiceUnavailableResponse(StateConstants.CANNOT_GET_VALUE_PREFIX);
-    }
-
-
-    /**
-     * Creates a response, replying that the service is not available at the moment.
-     *
-     * @param prefix a prefix for the error response
-     *
-     * @return a response, replying that the service is not available at the moment
-     */
-    private Response createServiceUnavailableResponse(final String prefix)
-    {
-        return Response
-               .status(Status.SERVICE_UNAVAILABLE)
-               .entity(prefix + StateConstants.INIT_IN_PROGRESS)
-               .type(MediaType.TEXT_PLAIN)
-               .build();
+        return ServerResponseFactory.createInitResponse();
     }
 }
