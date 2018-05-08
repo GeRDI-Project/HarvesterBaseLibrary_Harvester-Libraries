@@ -19,8 +19,6 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
-import java.util.Collections;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.function.Consumer;
@@ -44,9 +42,9 @@ import de.gerdiproject.harvest.state.events.AbortingFinishedEvent;
 import de.gerdiproject.harvest.state.events.AbortingStartedEvent;
 import de.gerdiproject.harvest.state.events.StartAbortingEvent;
 import de.gerdiproject.harvest.utils.CancelableFuture;
-import de.gerdiproject.harvest.utils.cache.DocumentChangesCache;
 import de.gerdiproject.harvest.utils.cache.FileUtils;
-import de.gerdiproject.harvest.utils.cache.events.RegisterCacheEvent;
+import de.gerdiproject.harvest.utils.cache.HarvesterCache;
+import de.gerdiproject.harvest.utils.cache.HarvesterCacheManager;
 import de.gerdiproject.json.GsonUtils;
 import de.gerdiproject.json.datacite.DataCiteJson;
 
@@ -59,8 +57,6 @@ import de.gerdiproject.json.datacite.DataCiteJson;
 public class HarvestSaver
 {
     private final static HarvestSaver instance = new HarvestSaver();
-
-    private final List<DocumentChangesCache> cacheList = Collections.synchronizedList(new LinkedList<>());
 
     private CancelableFuture<Boolean> currentSavingProcess;
     private boolean isAborting;
@@ -75,7 +71,6 @@ public class HarvestSaver
      */
     public static void init()
     {
-        EventSystem.addListener(RegisterCacheEvent.class, instance.onRegisterCache);
         EventSystem.addListener(StartSaveEvent.class, instance.onStartSave);
     }
 
@@ -176,7 +171,7 @@ public class HarvestSaver
     private Callable<Boolean> createSaveProcess(long startTimestamp, long finishTimestamp, boolean isAutoTriggered)
     {
         return () -> {
-            int documentCount = getNumberOfChangedDocuments();
+            int documentCount = HarvesterCacheManager.instance().getNumberOfHarvestedDocuments();
             EventSystem.sendEvent(new SaveStartedEvent(isAutoTriggered, documentCount));
 
             if (documentCount == 0)
@@ -288,9 +283,11 @@ public class HarvestSaver
         // iterate through cached array
         final Gson gson = GsonUtils.getGson();
 
-        for (DocumentChangesCache cachedDocuments : cacheList) {
+        final List<HarvesterCache> cacheList = HarvesterCacheManager.instance().getHarvesterCaches();
 
-            cachedDocuments.forEach((String documentId, DataCiteJson document) -> {
+        for (HarvesterCache cache : cacheList) {
+
+            cache.getChangesCache().forEach((String documentId, DataCiteJson document) -> {
                 if (isAborting)
                     return false;
                 else
@@ -316,34 +313,9 @@ public class HarvestSaver
     }
 
 
-    /**
-     * Iterates through all registered caches and calculates the total number of
-     * changed documents.
-     *
-     * @return the total number of submitted changes.
-     */
-    protected int getNumberOfChangedDocuments()
-    {
-        int docCount = 0;
-
-        for (final DocumentChangesCache cache : cacheList)
-            docCount += cache.size();
-
-        return docCount;
-    }
-
-
     //////////////////////////////
     // Event Callback Functions //
     //////////////////////////////
-
-
-    /**
-     * Event listener for registering a new documents cache.
-     */
-    private final Consumer<RegisterCacheEvent> onRegisterCache = (RegisterCacheEvent e) -> {
-        cacheList.add(e.getCache().getChangesCache());
-    };
 
 
     /**

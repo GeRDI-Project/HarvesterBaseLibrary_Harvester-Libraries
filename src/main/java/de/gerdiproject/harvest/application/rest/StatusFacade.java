@@ -34,7 +34,7 @@ import de.gerdiproject.harvest.state.IState;
 import de.gerdiproject.harvest.state.StateMachine;
 import de.gerdiproject.harvest.state.impl.ErrorState;
 import de.gerdiproject.harvest.utils.ServerResponseFactory;
-import de.gerdiproject.harvest.utils.cache.events.GetCacheCountEvent;
+import de.gerdiproject.harvest.utils.cache.HarvesterCacheManager;
 
 
 /**
@@ -127,7 +127,7 @@ public final class StatusFacade
     })
     public Response getHarvestedDocumentCount()
     {
-        return ServerResponseFactory.createSynchronousEventResponse(new GetCacheCountEvent());
+        return ServerResponseFactory.createOkResponse(HarvesterCacheManager.instance().getNumberOfHarvestedDocuments());
     }
 
     /**
