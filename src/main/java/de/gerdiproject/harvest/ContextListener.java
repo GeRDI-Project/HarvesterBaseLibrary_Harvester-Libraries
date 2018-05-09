@@ -31,6 +31,7 @@ import com.google.gson.JsonSerializer;
 import de.gerdiproject.harvest.application.constants.ApplicationConstants;
 import de.gerdiproject.harvest.application.events.ContextDestroyedEvent;
 import de.gerdiproject.harvest.application.events.ContextInitializedEvent;
+import de.gerdiproject.harvest.application.events.ContextResetEvent;
 import de.gerdiproject.harvest.config.parameters.AbstractParameter;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.harvester.AbstractHarvester;
@@ -141,6 +142,8 @@ public class ContextListener<T extends AbstractHarvester> implements ServletCont
     @Override
     public void contextInitialized(ServletContextEvent sce)
     {
+        EventSystem.addListener(ContextResetEvent.class, this::onContextReset);
+
         // init Json utilities
         GsonUtils.init(createGsonBuilder());
 
@@ -168,5 +171,20 @@ public class ContextListener<T extends AbstractHarvester> implements ServletCont
 
         String goodbyeMsg = String.format(ApplicationConstants.CONTEXT_DESTROYED, getServiceName());
         System.out.println(goodbyeMsg); // NOPMD The logger does not work at this point
+    }
+
+
+    /**
+     * This event listener is called when the harvester service is reset.
+     *
+     * @param event the event that triggered the callback
+     */
+    protected void onContextReset(ContextResetEvent event)
+    {
+        String resetMsg = String.format(ApplicationConstants.CONTEXT_RESET, getServiceName());
+        System.out.println(resetMsg); // NOPMD The logger may not work here
+
+        EventSystem.reset();
+        contextInitialized(null);
     }
 }

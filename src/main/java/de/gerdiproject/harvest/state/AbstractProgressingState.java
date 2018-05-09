@@ -135,8 +135,17 @@ public abstract class AbstractProgressingState implements IState
     {
         EventSystem.sendEvent(new StartAbortingEvent());
 
-        return ServerResponseFactory.createOkResponse(
+        return ServerResponseFactory.createAcceptedResponse(
                    String.format(StateConstants.ABORT_STATUS, getName()));
+    }
+
+
+    @Override
+    public Response reset()
+    {
+        return ServerResponseFactory.createBusyResponse(
+                   String.format(StateConstants.CANNOT_RESET, getName()),
+                   estimateRemainingSeconds());
     }
 
 

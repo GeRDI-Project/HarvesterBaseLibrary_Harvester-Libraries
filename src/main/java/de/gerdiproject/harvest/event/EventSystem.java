@@ -15,6 +15,7 @@
  */
 package de.gerdiproject.harvest.event;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -108,7 +109,34 @@ public class EventSystem
     public static <T extends IEvent> void removeAllListeners(Class<T> eventClass)
     {
         synchronized (instance.callbackMap) {
-            instance.callbackMap.remove(eventClass);
+            final List<Consumer<? extends IEvent>> eventList = instance.callbackMap.remove(eventClass);
+
+            // clear old list
+            if (eventList != null) {
+                synchronized (eventList) {
+                    eventList.clear();
+                }
+            }
+        }
+    }
+
+
+    /**
+     * Removes all listeners and clears the queue.
+     */
+    public static void reset()
+    {
+        instance.asyncEventQueue.clear();
+        instance.synchronousCallbackMap.clear();
+
+        // remove all async events
+        synchronized (instance.callbackMap) {
+            Collection<List<Consumer<? extends IEvent>>> listenerLists = instance.callbackMap.values();
+
+            for (List<Consumer<? extends IEvent>> listeners : listenerLists)
+                listeners.clear();
+
+            instance.callbackMap.clear();
         }
     }
 

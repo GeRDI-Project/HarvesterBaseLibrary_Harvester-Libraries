@@ -53,6 +53,7 @@ public class StateConstants
     public static final String ERROR_DETAILED = "Cannot process request, because the Harvester could not be initialized! Look at the logs for details.";
     public static final String ABORT_DETAILED = "Cannot process request, because the %s-process is being aborted! Try again in a short moment.";
     public static final String UNKNOWN_ERROR = "Cannot process request due to an unknown error!";
+    public static final String CANNOT_RESET = "Cannot reset the service! Please, abort the %s-process first!";
 
     public static final String RESUME_IN_PROGRESS = "The %s-process is already running!";
     public static final String PAUSE_IN_PROGRESS = "The %s-process is already paused!";
@@ -74,6 +75,10 @@ public class StateConstants
     public static final String ABORT_FINISHED = "%s-process aborted!";
 
     public static final String SAVING_DONE = "Saving finished!";
+
+    public static final String RESET_STARTED = "Resetting the Harvester Service!";
+    public static final String RESET_STARTED_PROBLEMATIC = "Resetting the Harvester Service! This may cause stability issues,"
+                                                           + " because the service is neither in the " + IDLE_PROCESS + "- nor the " + ERROR_PROCESS + " state!";
 
     // PROGRESSING STATES
     public static final String TIME_UNKNOWN = "unknown";

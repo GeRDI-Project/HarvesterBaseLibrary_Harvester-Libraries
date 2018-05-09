@@ -65,7 +65,7 @@ public class ServerResponseFactory
      * Creates a response, replying that the service is not available at the moment.
      * If available, a Retry-Again header is set with the remaining seconds of the process.
      *
-     * @param message a the error message, explaining what has failed
+     * @param message an error message, explaining what has failed
      * @param retryInSeconds the number of seconds until the request should be attempted
      *                          again, or -1 if this number is unknown
      *
@@ -82,6 +82,22 @@ public class ServerResponseFactory
             rb.header(StateConstants.RETRY_AFTER_HEADER, retryInSeconds);
 
         return rb.build();
+    }
+
+
+    /**
+     * Creates a HTTP-202 response for signalling that a process was started.
+     * @param message a message, explaining what has started
+     *
+     * @return a HTTP-202 response for signalling that a process was started
+     */
+    public static Response createAcceptedResponse(final String message)
+    {
+        return Response
+               .status(Status.ACCEPTED)
+               .entity(message)
+               .type(MediaType.TEXT_PLAIN)
+               .build();
     }
 
 

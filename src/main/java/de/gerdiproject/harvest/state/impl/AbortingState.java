@@ -20,6 +20,7 @@ import javax.ws.rs.core.Response;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import de.gerdiproject.harvest.application.events.ContextResetEvent;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.state.IState;
 import de.gerdiproject.harvest.state.StateMachine;
@@ -101,6 +102,15 @@ public class AbortingState implements IState
     public Response save()
     {
         return createServiceUnavailableResponse();
+    }
+
+
+    @Override
+    public Response reset()
+    {
+        EventSystem.sendEvent(new ContextResetEvent());
+        return ServerResponseFactory.createAcceptedResponse(
+                   StateConstants.RESET_STARTED_PROBLEMATIC);
     }
 
 
