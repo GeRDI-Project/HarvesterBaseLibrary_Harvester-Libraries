@@ -24,6 +24,9 @@ import java.util.List;
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonDeserializer;
 import com.google.gson.JsonSerializer;
@@ -54,6 +57,8 @@ import de.gerdiproject.json.GsonUtils;
  */
 public class ContextListener<T extends AbstractHarvester> implements ServletContextListener
 {
+    protected static final Logger LOGGER = LoggerFactory.getLogger(ContextListener.class);
+
 
     // this warning is suppressed, because the only generic Superclass MUST be T. The cast will always succeed.
     @SuppressWarnings("unchecked")
@@ -182,7 +187,7 @@ public class ContextListener<T extends AbstractHarvester> implements ServletCont
     protected void onContextReset(ContextResetEvent event)
     {
         String resetMsg = String.format(ApplicationConstants.CONTEXT_RESET, getServiceName());
-        System.out.println(resetMsg); // NOPMD The logger may not work here
+        LOGGER.info(resetMsg);
 
         EventSystem.reset();
         contextInitialized(null);
