@@ -50,7 +50,8 @@ public class StatusConstants
                                            + "                  harvested considering the harvesting range.%n"
                                            + "GET/data-provider Returns the name of the data provider that is harvested.%n"
                                            + "GET/harvested-documents Returns the number of harvested and currently%n"
-                                           + "                        cached documents.";
+                                           + "                        cached documents.%n"
+                                           + "GET/versions Returns Maven version information.";
 
 
     /**

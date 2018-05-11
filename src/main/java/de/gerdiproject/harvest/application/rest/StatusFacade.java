@@ -35,6 +35,7 @@ import de.gerdiproject.harvest.state.StateMachine;
 import de.gerdiproject.harvest.state.impl.ErrorState;
 import de.gerdiproject.harvest.utils.ServerResponseFactory;
 import de.gerdiproject.harvest.utils.cache.HarvesterCacheManager;
+import de.gerdiproject.harvest.utils.maven.MavenUtils;
 
 
 /**
@@ -212,5 +213,28 @@ public final class StatusFacade
                                : Status.INTERNAL_SERVER_ERROR;
 
         return ServerResponseFactory.createResponse(status, health);
+    }
+
+
+    /**
+     * Displays the artifactIds and versions of GeRDI Maven libraries
+     * used in this service.
+     *
+     * @return artifactIds and versions of GeRDI Maven libraries
+     * used in this service.
+     */
+    @GET
+    @Path("versions")
+    @Produces({
+        MediaType.TEXT_PLAIN
+    })
+    public Response getVersions()
+    {
+        final String versions = MavenUtils.getMavenVersionInfo();
+
+        if (versions == null)
+            return ServerResponseFactory.createUnknownErrorResponse();
+        else
+            return ServerResponseFactory.createOkResponse(versions);
     }
 }
