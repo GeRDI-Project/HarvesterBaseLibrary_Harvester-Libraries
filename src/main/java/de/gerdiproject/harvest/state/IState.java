@@ -102,4 +102,12 @@ public interface IState
      * @return true if there is new metadata to harvest
      */
     Response isOutdated();
+
+
+    /**
+     * Attempts to reset the harvester service.
+     *
+     * @return a status message
+     */
+    Response reset();
 }

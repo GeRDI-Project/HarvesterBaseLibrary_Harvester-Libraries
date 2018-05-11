@@ -172,4 +172,20 @@ public class HarvesterFacade
     {
         return StateMachine.getCurrentState().submit();
     }
+
+
+    /**
+     * Attempts to completely reset the harvester service
+     *
+     * @return a status message
+     */
+    @POST
+    @Path("reset")
+    @Produces({
+        MediaType.TEXT_PLAIN
+    })
+    public Response reset()
+    {
+        return StateMachine.getCurrentState().reset();
+    }
 }

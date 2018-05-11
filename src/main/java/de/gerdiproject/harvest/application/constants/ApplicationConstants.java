@@ -28,6 +28,7 @@ public class ApplicationConstants
     public static final String INIT_HARVESTER_SUCCESS = "%s initialized!";
 
     public static final String CONTEXT_DESTROYED = "%s undeployed!";
+    public static final String CONTEXT_RESET = "Resetting %s...";
 
     public static final String HARVESTER_SERVICE_NAME_SUFFIX = "HarvesterService";
     public static final String HARVESTER_NAME_SUB_STRING = "harvester";

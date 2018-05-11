@@ -34,12 +34,12 @@
 package de.gerdiproject.harvest.state.impl;
 
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import de.gerdiproject.harvest.MainContext;
+import de.gerdiproject.harvest.application.events.ContextResetEvent;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.harvester.events.GetHarvesterOutdatedEvent;
 import de.gerdiproject.harvest.harvester.events.HarvestStartedEvent;
@@ -101,8 +101,7 @@ public class IdleState implements IState
     public Response startHarvest()
     {
         EventSystem.sendEvent(new StartHarvestEvent());
-        return ServerResponseFactory.createResponse(
-                   Status.ACCEPTED,
+        return ServerResponseFactory.createAcceptedResponse(
                    StateConstants.HARVEST_STARTED);
     }
 
@@ -122,8 +121,7 @@ public class IdleState implements IState
     public Response submit()
     {
         EventSystem.sendEvent(new StartSubmissionEvent());
-        return ServerResponseFactory.createResponse(
-                   Status.ACCEPTED,
+        return ServerResponseFactory.createAcceptedResponse(
                    StateConstants.SUBMITTING_STATUS);
     }
 
@@ -132,9 +130,17 @@ public class IdleState implements IState
     public Response save()
     {
         EventSystem.sendEvent(new StartSaveEvent(false));
-        return ServerResponseFactory.createResponse(
-                   Status.ACCEPTED,
+        return ServerResponseFactory.createAcceptedResponse(
                    StateConstants.SAVING_STATUS);
+    }
+
+
+    @Override
+    public Response reset()
+    {
+        EventSystem.sendEvent(new ContextResetEvent());
+        return ServerResponseFactory.createAcceptedResponse(
+                   StateConstants.RESET_STARTED);
     }
 
 

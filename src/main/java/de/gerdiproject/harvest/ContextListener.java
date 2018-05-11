@@ -24,6 +24,9 @@ import java.util.List;
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonDeserializer;
 import com.google.gson.JsonSerializer;
@@ -31,6 +34,7 @@ import com.google.gson.JsonSerializer;
 import de.gerdiproject.harvest.application.constants.ApplicationConstants;
 import de.gerdiproject.harvest.application.events.ContextDestroyedEvent;
 import de.gerdiproject.harvest.application.events.ContextInitializedEvent;
+import de.gerdiproject.harvest.application.events.ContextResetEvent;
 import de.gerdiproject.harvest.config.parameters.AbstractParameter;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.harvester.AbstractHarvester;
@@ -53,6 +57,8 @@ import de.gerdiproject.json.GsonUtils;
  */
 public class ContextListener<T extends AbstractHarvester> implements ServletContextListener
 {
+    protected static final Logger LOGGER = LoggerFactory.getLogger(ContextListener.class);
+
 
     // this warning is suppressed, because the only generic Superclass MUST be T. The cast will always succeed.
     @SuppressWarnings("unchecked")
@@ -141,6 +147,8 @@ public class ContextListener<T extends AbstractHarvester> implements ServletCont
     @Override
     public void contextInitialized(ServletContextEvent sce)
     {
+        EventSystem.addListener(ContextResetEvent.class, this::onContextReset);
+
         // init Json utilities
         GsonUtils.init(createGsonBuilder());
 
@@ -168,5 +176,20 @@ public class ContextListener<T extends AbstractHarvester> implements ServletCont
 
         String goodbyeMsg = String.format(ApplicationConstants.CONTEXT_DESTROYED, getServiceName());
         System.out.println(goodbyeMsg); // NOPMD The logger does not work at this point
+    }
+
+
+    /**
+     * This event listener is called when the harvester service is reset.
+     *
+     * @param event the event that triggered the callback
+     */
+    protected void onContextReset(ContextResetEvent event)
+    {
+        String resetMsg = String.format(ApplicationConstants.CONTEXT_RESET, getServiceName());
+        LOGGER.info(resetMsg);
+
+        EventSystem.reset();
+        contextInitialized(null);
     }
 }
