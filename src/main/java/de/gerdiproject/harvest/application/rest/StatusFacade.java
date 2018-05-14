@@ -36,6 +36,7 @@ import de.gerdiproject.harvest.state.impl.ErrorState;
 import de.gerdiproject.harvest.utils.ServerResponseFactory;
 import de.gerdiproject.harvest.utils.cache.HarvesterCacheManager;
 import de.gerdiproject.harvest.utils.maven.MavenUtils;
+import de.gerdiproject.harvest.utils.maven.constants.MavenConstants;
 
 
 /**
@@ -59,6 +60,7 @@ public final class StatusFacade
     {
         return String.format(StatusConstants.REST_INFO, MainContext.getModuleName());
     }
+
 
     /**
      * Displays the name of the current state of the harvester.
@@ -115,6 +117,7 @@ public final class StatusFacade
             return resp;
     }
 
+
     /**
      * Retrieves the amount of documents that were harvested and are currently
      * cached.
@@ -130,6 +133,7 @@ public final class StatusFacade
     {
         return ServerResponseFactory.createOkResponse(HarvesterCacheManager.instance().getNumberOfHarvestedDocuments());
     }
+
 
     /**
      * Returns the progress of the current state.
@@ -217,11 +221,9 @@ public final class StatusFacade
 
 
     /**
-     * Displays the artifactIds and versions of GeRDI Maven libraries
-     * used in this service.
+     * Displays the artifactIds and versions of GeRDI Maven libraries used in this service.
      *
-     * @return artifactIds and versions of GeRDI Maven libraries
-     * used in this service.
+     * @return artifactIds and versions of GeRDI Maven libraries used in this service.
      */
     @GET
     @Path("versions")
@@ -230,7 +232,28 @@ public final class StatusFacade
     })
     public Response getVersions()
     {
-        final String versions = MavenUtils.getMavenVersionInfo();
+        final String versions = MavenUtils.getMavenVersionInfo(MavenConstants.DEFAULT_GERDI_NAMESPACE);
+
+        if (versions == null)
+            return ServerResponseFactory.createUnknownErrorResponse();
+        else
+            return ServerResponseFactory.createOkResponse(versions);
+    }
+
+
+    /**
+     * Displays the artifactIds and versions of all Maven libraries used in this service.
+     *
+     * @return artifactIds and versions of all Maven libraries used in this service.
+     */
+    @GET
+    @Path("versions-all")
+    @Produces({
+        MediaType.TEXT_PLAIN
+    })
+    public Response getAllVersions()
+    {
+        final String versions = MavenUtils.getMavenVersionInfo(null);
 
         if (versions == null)
             return ServerResponseFactory.createUnknownErrorResponse();

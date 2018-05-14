@@ -51,7 +51,8 @@ public class StatusConstants
                                            + "GET/data-provider Returns the name of the data provider that is harvested.%n"
                                            + "GET/harvested-documents Returns the number of harvested and currently%n"
                                            + "                        cached documents.%n"
-                                           + "GET/versions Returns Maven version information.";
+                                           + "GET/versions     Returns a list of GeRDI Maven dependencies.%n"
+                                           + "GET/versions-all Returns a list of all Maven dependencies.";
 
 
     /**

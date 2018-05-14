@@ -23,10 +23,12 @@ package de.gerdiproject.harvest.utils.maven.constants;
  */
 public class MavenConstants
 {
-    public static final String MAVEN_JAR_FILE_PATTERN = "^.+/(.+)-(\\d+\\.\\d+\\.\\d+(?:-SNAPSHOT)?)\\.jar.+$";
-    public static final String MAVEN_JAR_FILE_NAME_REPLACEMENT = "\n$1 $2";
+    public static final String MAVEN_JAR_FILE_PATTERN = "^.+/([^/]*?)\\.jar!.+$";
+    public static final String MAVEN_JAR_FILE_NAME_REPLACEMENT = "$1\n";
 
-    public static final String MAVEN_JAR_META_INF_FOLDER = "META-INF/maven/de.gerdi-project";
+    public static final String MAVEN_JAR_META_INF_FOLDER = "META-INF/maven/%s";
+    public static final String DEFAULT_GERDI_NAMESPACE = "de.gerdi-project";
+    public static final String JAR_PREFIX = "jar:";
 
     /**
      * Private constructor, because this class offers only constants.

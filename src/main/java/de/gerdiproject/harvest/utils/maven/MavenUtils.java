@@ -30,40 +30,49 @@ import de.gerdiproject.harvest.utils.maven.constants.MavenConstants;
 public class MavenUtils
 {
     /**
+     * Private constructor, because this class offers only static functions.
+     */
+    private MavenUtils()
+    {
+    }
+
+
+    /**
      * Returns a well-formatted string that contains artifactIDs and versions of GeRDI
      * Maven libraries used within this service.
      *
+     * @param groupId the maven groupId that is used to filter the maven projects,
+     *         or null if not filter is to be applied
+     *
      * @return a well-formatted Maven versions string, or null if no versions could be retrieved
      */
-    public static String getMavenVersionInfo()
+    public static String getMavenVersionInfo(String groupId)
     {
 
         final StringBuilder sb = new StringBuilder();
+        final String projectFilter = String.format(
+                                         MavenConstants.MAVEN_JAR_META_INF_FOLDER,
+                                         groupId == null ? "" : groupId);
 
         try {
             final Enumeration<URL> gerdiMavenLibraries =
                 MavenUtils.class
                 .getClassLoader()
-                .getResources(MavenConstants.MAVEN_JAR_META_INF_FOLDER);
+                .getResources(projectFilter);
 
             while (gerdiMavenLibraries.hasMoreElements()) {
                 final String jarName = gerdiMavenLibraries.nextElement().toString();
-                sb.append(jarName.replaceAll(
-                              MavenConstants.MAVEN_JAR_FILE_PATTERN,
-                              MavenConstants.MAVEN_JAR_FILE_NAME_REPLACEMENT));
+
+                if (jarName.startsWith(MavenConstants.JAR_PREFIX)) {
+                    sb.append(jarName.replaceAll(
+                                  MavenConstants.MAVEN_JAR_FILE_PATTERN,
+                                  MavenConstants.MAVEN_JAR_FILE_NAME_REPLACEMENT));
+                }
             }
         } catch (IOException e) {
             return null;
         }
 
         return sb.toString();
-    }
-
-
-    /**
-     * Private constructor, because this class offers only static functions.
-     */
-    private MavenUtils()
-    {
     }
 }
