@@ -17,6 +17,7 @@ package de.gerdiproject.harvest.application.rest;
 
 
 import java.time.Instant;
+import java.util.List;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -232,12 +233,13 @@ public final class StatusFacade
     })
     public Response getVersions()
     {
-        final String versions = MavenUtils.getMavenVersionInfo(MavenConstants.DEFAULT_GERDI_NAMESPACE);
+        final List<String> dependencyList =
+            MavenUtils.getMavenVersionInfo(MavenConstants.DEFAULT_GERDI_NAMESPACE);
 
-        if (versions == null)
+        if (dependencyList == null)
             return ServerResponseFactory.createUnknownErrorResponse();
         else
-            return ServerResponseFactory.createOkResponse(versions);
+            return ServerResponseFactory.createOkResponse(String.join("\n", dependencyList));
     }
 
 
@@ -253,11 +255,11 @@ public final class StatusFacade
     })
     public Response getAllVersions()
     {
-        final String versions = MavenUtils.getMavenVersionInfo(null);
+        final List<String> dependencyList = MavenUtils.getMavenVersionInfo(null);
 
-        if (versions == null)
+        if (dependencyList == null)
             return ServerResponseFactory.createUnknownErrorResponse();
         else
-            return ServerResponseFactory.createOkResponse(versions);
+            return ServerResponseFactory.createOkResponse(String.join("\n", dependencyList));
     }
 }
