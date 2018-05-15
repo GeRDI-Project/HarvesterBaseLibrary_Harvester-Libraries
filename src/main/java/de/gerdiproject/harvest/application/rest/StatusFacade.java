@@ -233,13 +233,12 @@ public final class StatusFacade
     })
     public Response getVersions()
     {
-        final List<String> dependencyList =
-            MavenUtils.getMavenVersionInfo(MavenConstants.DEFAULT_GERDI_NAMESPACE);
+        final String versions = getSpecifiedVersions(MavenConstants.DEFAULT_GERDI_NAMESPACE);
 
-        if (dependencyList == null)
+        if (versions == null)
             return ServerResponseFactory.createUnknownErrorResponse();
         else
-            return ServerResponseFactory.createOkResponse(String.join("\n", dependencyList));
+            return ServerResponseFactory.createOkResponse(versions);
     }
 
 
@@ -255,11 +254,41 @@ public final class StatusFacade
     })
     public Response getAllVersions()
     {
-        final List<String> dependencyList = MavenUtils.getMavenVersionInfo(null);
+        final String versions = getSpecifiedVersions(null);
 
-        if (dependencyList == null)
+        if (versions == null)
             return ServerResponseFactory.createUnknownErrorResponse();
         else
-            return ServerResponseFactory.createOkResponse(String.join("\n", dependencyList));
+            return ServerResponseFactory.createOkResponse(versions);
+    }
+
+
+    /**
+     * Retrieves filtered dependencies and the main jar as a linebreak separated list.
+     * The first entry is always the main jar and is separated by a double linebreak.
+     *
+     * @param filter a groupId that can be used to filter maven dependencies
+     *
+     * @return dependencies and the main jar as a linebreak separated list
+     */
+    private String getSpecifiedVersions(String filter)
+    {
+        final String mainJar = MavenUtils.instance().getHarvesterJarName();
+
+        if (mainJar == null)
+            return null;
+
+        final List<String> dependencyList = MavenUtils.instance().getMavenVersionInfo(filter);
+
+        if (dependencyList == null)
+            return null;
+
+        // remove jar from dependencies. it's dealt with in a special manner
+        dependencyList.remove(mainJar);
+
+        return String.format(
+                   MavenConstants.DEPENDENCY_LIST_FORMAT,
+                   mainJar,
+                   String.join("\n", dependencyList));
     }
 }

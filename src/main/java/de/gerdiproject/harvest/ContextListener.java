@@ -40,6 +40,7 @@ import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.harvester.AbstractHarvester;
 import de.gerdiproject.harvest.submission.AbstractSubmitter;
 import de.gerdiproject.harvest.submission.elasticsearch.ElasticSearchSubmitter;
+import de.gerdiproject.harvest.utils.maven.MavenUtils;
 import de.gerdiproject.json.GsonUtils;
 
 
@@ -151,6 +152,9 @@ public class ContextListener<T extends AbstractHarvester> implements ServletCont
 
         // init Json utilities
         GsonUtils.init(createGsonBuilder());
+
+        // init MavenUtils
+        MavenUtils.instance().init(this);
 
         // init main context
         MainContext.init(

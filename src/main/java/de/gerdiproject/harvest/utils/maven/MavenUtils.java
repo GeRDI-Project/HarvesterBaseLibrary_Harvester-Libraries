@@ -23,6 +23,7 @@ import java.util.Enumeration;
 import java.util.LinkedList;
 import java.util.List;
 
+import de.gerdiproject.harvest.ContextListener;
 import de.gerdiproject.harvest.utils.maven.constants.MavenConstants;
 
 /**
@@ -32,11 +33,44 @@ import de.gerdiproject.harvest.utils.maven.constants.MavenConstants;
  */
 public class MavenUtils
 {
+    private static final MavenUtils instance = new MavenUtils();
+
+    private String harvesterJarName;
+
+
     /**
      * Private constructor, because this class offers only static functions.
      */
     private MavenUtils()
     {
+    }
+
+
+    /**
+     * Initializes class by retrieving the jar name of the jar that contains the ContextListener
+     * implementation, namely the harvester jar.
+     */
+    public void init(ContextListener<?> context)
+    {
+        final Class<?> contextListenerClass = context.getClass();
+        final String resourcePath = contextListenerClass.getResource(
+                                        contextListenerClass.getSimpleName() + ".class")
+                                    .toString();
+
+        harvesterJarName = resourcePath.replaceAll(
+                               MavenConstants.MAVEN_JAR_FILE_PATTERN,
+                               MavenConstants.MAVEN_JAR_FILE_NAME_REPLACEMENT);
+    }
+
+
+    /**
+     * Returns the Singleton instance of this class.
+     *
+     * @return the Singleton instance of this class
+     */
+    public static MavenUtils instance()
+    {
+        return instance;
     }
 
 
@@ -48,7 +82,7 @@ public class MavenUtils
      *
      * @return a list of maven dependencies, or null if no versions could be retrieved
      */
-    public static List<String> getMavenVersionInfo(String groupId)
+    public List<String> getMavenVersionInfo(String groupId)
     {
         final List<String> dependencyList = new LinkedList<>();
         final String projectFilter = String.format(
@@ -64,10 +98,10 @@ public class MavenUtils
 
             // retrieve only the jar names from the resources
             while (gerdiMavenLibraries.hasMoreElements()) {
-                final String jarName = gerdiMavenLibraries.nextElement().toString();
+                final String resourcePath = gerdiMavenLibraries.nextElement().toString();
 
-                if (jarName.startsWith(MavenConstants.JAR_PREFIX)) {
-                    dependencyList.add(jarName.replaceAll(
+                if (resourcePath.startsWith(MavenConstants.JAR_PREFIX)) {
+                    dependencyList.add(resourcePath.replaceAll(
                                            MavenConstants.MAVEN_JAR_FILE_PATTERN,
                                            MavenConstants.MAVEN_JAR_FILE_NAME_REPLACEMENT));
                 }
@@ -77,8 +111,19 @@ public class MavenUtils
         }
 
         // sort dependencies
-        Collections.sort(dependencyList);
+        Collections.sort(dependencyList, String.CASE_INSENSITIVE_ORDER);
 
         return dependencyList;
+    }
+
+
+    /**
+     * Returns the name of the main jar of this service.
+     *
+     * @return the name of the main jar of this service
+     */
+    public String getHarvesterJarName()
+    {
+        return harvesterJarName;
     }
 }
