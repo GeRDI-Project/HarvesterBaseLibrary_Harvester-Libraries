@@ -24,7 +24,9 @@ package de.gerdiproject.harvest.utils.maven.constants;
 public class MavenConstants
 {
     public static final String MAVEN_JAR_FILE_PATTERN = "^.+/([^/]*?)\\.jar!.+$";
-    public static final String MAVEN_JAR_FILE_NAME_REPLACEMENT = "$1\n";
+    public static final String MAVEN_JAR_FILE_NAME_REPLACEMENT = "$1";
+
+    public static final String DEPENDENCY_LIST_FORMAT = "%s%n%n%s";
 
     public static final String MAVEN_JAR_META_INF_FOLDER = "META-INF/maven/%s";
     public static final String DEFAULT_GERDI_NAMESPACE = "de.gerdi-project";

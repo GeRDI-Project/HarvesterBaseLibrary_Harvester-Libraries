@@ -17,6 +17,7 @@ package de.gerdiproject.harvest.application.rest;
 
 
 import java.time.Instant;
+import java.util.List;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -232,7 +233,7 @@ public final class StatusFacade
     })
     public Response getVersions()
     {
-        final String versions = MavenUtils.getMavenVersionInfo(MavenConstants.DEFAULT_GERDI_NAMESPACE);
+        final String versions = getSpecifiedVersions(MavenConstants.DEFAULT_GERDI_NAMESPACE);
 
         if (versions == null)
             return ServerResponseFactory.createUnknownErrorResponse();
@@ -253,11 +254,41 @@ public final class StatusFacade
     })
     public Response getAllVersions()
     {
-        final String versions = MavenUtils.getMavenVersionInfo(null);
+        final String versions = getSpecifiedVersions(null);
 
         if (versions == null)
             return ServerResponseFactory.createUnknownErrorResponse();
         else
             return ServerResponseFactory.createOkResponse(versions);
+    }
+
+
+    /**
+     * Retrieves filtered dependencies and the main jar as a linebreak separated list.
+     * The first entry is always the main jar and is separated by a double linebreak.
+     *
+     * @param filter a groupId that can be used to filter maven dependencies
+     *
+     * @return dependencies and the main jar as a linebreak separated list
+     */
+    private String getSpecifiedVersions(String filter)
+    {
+        final String mainJar = MavenUtils.instance().getHarvesterJarName();
+
+        if (mainJar == null)
+            return null;
+
+        final List<String> dependencyList = MavenUtils.instance().getMavenVersionInfo(filter);
+
+        if (dependencyList == null)
+            return null;
+
+        // remove jar from dependencies. it's dealt with in a special manner
+        dependencyList.remove(mainJar);
+
+        return String.format(
+                   MavenConstants.DEPENDENCY_LIST_FORMAT,
+                   mainJar,
+                   String.join("\n", dependencyList));
     }
 }
