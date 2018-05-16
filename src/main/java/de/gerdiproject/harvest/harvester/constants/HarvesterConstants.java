@@ -60,7 +60,11 @@ public class HarvesterConstants
                                            + "GET/status    Additional GET requests for retrieving concrete%n"
                                            + "              harvester status values%n"
                                            + "GET/schedule  Displays a configurable set of cron jobs that%n"
-                                           + "              can trigger harvests automatically";
+                                           + "              can trigger harvests automatically%n"
+                                           + "GET/log       Displays the server log. The query parameters%n"
+                                           + "              'date', 'class', and 'level' can be used to%n"
+                                           + "              filter the log with comma-separated values of%n"
+                                           + "              dates, logger classes, and log levels.";
     public static final String UNKNOWN_NUMBER = "???";
     public static final String MAX_RANGE_NUMBER = "%d (" + ConfigurationConstants.INTEGER_VALUE_MAX + ")";
 

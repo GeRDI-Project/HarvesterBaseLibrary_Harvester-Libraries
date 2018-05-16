@@ -40,6 +40,7 @@ import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.harvester.AbstractHarvester;
 import de.gerdiproject.harvest.submission.AbstractSubmitter;
 import de.gerdiproject.harvest.submission.elasticsearch.ElasticSearchSubmitter;
+import de.gerdiproject.harvest.utils.logger.LoggerUtils;
 import de.gerdiproject.harvest.utils.maven.MavenUtils;
 import de.gerdiproject.json.GsonUtils;
 
@@ -137,7 +138,6 @@ public class ContextListener<T extends AbstractHarvester> implements ServletCont
         return new ElasticSearchSubmitter();
     }
 
-
     /**
      * This method is called when the server is set up. Creates a logger and
      * harvester and sets them in the MainContext.
@@ -148,6 +148,8 @@ public class ContextListener<T extends AbstractHarvester> implements ServletCont
     @Override
     public void contextInitialized(ServletContextEvent sce)
     {
+        LoggerUtils.init(getServiceName());
+
         EventSystem.addListener(ContextResetEvent.class, this::onContextReset);
 
         // init Json utilities
