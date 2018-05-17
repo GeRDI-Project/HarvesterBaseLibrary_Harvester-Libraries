@@ -57,18 +57,31 @@ public class CacheConstants
     public static final String DOCUMENT_HASH_FILE_PATH = "%s/%s/%s.json";
     public static final String SOURCE_HASH_FILE_PATH = "%s/sourceHash.json";
 
+    public static final String CACHE_INIT_FAILED = "Could not initialize %s!";
+
     public static final String DELETE_FILE_SUCCESS = "Deleted file '%s'.";
     public static final String DELETE_FILE_FAILED = "Could not delete file '%s'!";
 
-    public static final String CACHE_CREATE_FAILED = "Could not create file '%s'!";
-    public static final String CACHE_INIT_FAILED = "Could not initialize %s!";
+    public static final String REPLACE_FILE_SUCCESS = "Replaced file '%s' with '%s'.";
+    public static final String REPLACE_FILE_FAILED = "Could not replace file '%s' with '%s'!";
+
+    public static final String CREATE_FILE_SUCCESS = "Created file '%s'.";
+    public static final String CREATE_FILE_FAILED = "Could not create file '%s'!";
+
+    public static final String COPY_FILE_SUCCESS = "Copied file '%s' to '%s'.";
     public static final String COPY_FILE_FAILED = "Could not copy file '%s' to '%s'!";
+
+    public static final String CREATE_DIR_SUCCESS = "Created directory '%s'.";
+    public static final String CREATE_DIR_FAILED = "Could not create directory '%s'!";
+
+    public static final String DIR_MERGE_SUCCESS = "Merged folder '%s' into '%s'.";
+    public static final String DIR_MERGE_FAILED_NOT_DIRS = "Could not merge '%s' into '%s': Both paths must denote directories!";
+    public static final String DIR_MERGE_FAILED_NO_TARGET_DIR = "Could not merge '%s' into '%s': The target directory does not exist and could not be created!";
+    public static final String DIR_MERGE_FAILED = "Could not merge '%s' into '%s'!";
 
     // AbstractStreamHarvester
     public static final String CACHE_ENTRY_STREAM_PATH = CACHE_FOLDER_PATH + "StreamHarvester/%s" + JSON_FILE_EXTENSION;
     public static final String ENTRY_STREAM_WRITE_ERROR = "Could not write entries to file at path '%s'!";
-    public static final String DIR_MERGE_FAILED_NOT_DIRS = "Could not merge %s into %s: Both paths must denote directories!";
-    public static final String DIR_MERGE_FAILED = "Could not merge %s into %s!";
 
 
     /**

@@ -80,7 +80,9 @@ public class FileUtils
                     LOGGER.error(String.format(CacheConstants.DELETE_FILE_FAILED, deletedFile.getAbsolutePath()), ioException);
                 else
                     LOGGER.error(String.format(CacheConstants.DELETE_FILE_FAILED, deletedFile.getAbsolutePath()));
-            }
+            } else
+                LOGGER.trace(String.format(CacheConstants.DELETE_FILE_SUCCESS, deletedFile.getAbsolutePath()));
+
         }
     }
 
@@ -96,7 +98,9 @@ public class FileUtils
         deleteFile(oldFile);
 
         if (!createDirectories(newFile) || !newFile.renameTo(oldFile))
-            LOGGER.error(String.format(CacheConstants.CACHE_CREATE_FAILED, oldFile.getAbsolutePath()));
+            LOGGER.error(String.format(CacheConstants.REPLACE_FILE_FAILED, oldFile.getAbsolutePath(), newFile.getAbsolutePath()));
+        else
+            LOGGER.trace(String.format(CacheConstants.REPLACE_FILE_SUCCESS, oldFile.getAbsolutePath(), newFile.getAbsolutePath()));
     }
 
 
@@ -108,16 +112,20 @@ public class FileUtils
      */
     public static void copyFile(File sourceFile, File targetFile)
     {
-        createDirectories(targetFile);
+        if (createDirectories(targetFile)) {
 
-        try {
-            Files.copy(sourceFile.toPath(), targetFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
-        } catch (IOException e) {
-            LOGGER.error(
-                String.format(
-                    CacheConstants.COPY_FILE_FAILED,
-                    sourceFile.getAbsolutePath(),
-                    targetFile.getAbsolutePath()));
+            try {
+                Files.copy(sourceFile.toPath(), targetFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+            } catch (IOException e) {
+                LOGGER.error(
+                    String.format(
+                        CacheConstants.COPY_FILE_FAILED,
+                        sourceFile.getAbsolutePath(),
+                        targetFile.getAbsolutePath()));
+                return;
+            }
+
+            LOGGER.trace(String.format(CacheConstants.COPY_FILE_SUCCESS, sourceFile.getAbsolutePath(), targetFile.getAbsolutePath()));
         }
     }
 
@@ -135,7 +143,17 @@ public class FileUtils
     {
         final File directory = file.isDirectory() ? file : file.getParentFile();
 
-        return directory == null || directory.exists() || directory.mkdirs();
+        if (directory == null || directory.exists())
+            return true;
+
+        final boolean creationSuccessful = directory.mkdirs();
+
+        if (creationSuccessful)
+            LOGGER.trace(String.format(CacheConstants.CREATE_DIR_SUCCESS, directory.getAbsolutePath()));
+        else
+            LOGGER.error(String.format(CacheConstants.CREATE_DIR_FAILED, directory.getAbsolutePath()));
+
+        return creationSuccessful;
     }
 
 
@@ -161,10 +179,11 @@ public class FileUtils
 
         if (!creationSuccessful) {
             if (ioException != null)
-                LOGGER.error(String.format(CacheConstants.CACHE_CREATE_FAILED, file.getAbsolutePath()), ioException);
+                LOGGER.error(String.format(CacheConstants.CREATE_FILE_FAILED, file.getAbsolutePath()), ioException);
             else
-                LOGGER.error(String.format(CacheConstants.CACHE_CREATE_FAILED, file.getAbsolutePath()));
-        }
+                LOGGER.error(String.format(CacheConstants.CREATE_FILE_FAILED, file.getAbsolutePath()));
+        } else
+            LOGGER.trace(String.format(CacheConstants.CREATE_FILE_SUCCESS, file.getAbsolutePath()));
     }
 
 
@@ -179,7 +198,13 @@ public class FileUtils
     public static void integrateDirectory(File sourceDirectory, File targetDirectory, boolean replaceFiles)
     {
         // make sure the target directory exists
-        createDirectories(targetDirectory);
+        if (!createDirectories(targetDirectory)) {
+            LOGGER.error(String.format(
+                             CacheConstants.DIR_MERGE_FAILED_NO_TARGET_DIR,
+                             targetDirectory.getAbsolutePath()));
+            return;
+        }
+
 
         // make sure both files are directories
         if (!sourceDirectory.isDirectory() || !targetDirectory.isDirectory()) {
@@ -218,6 +243,11 @@ public class FileUtils
                          e);
             return;
         }
+
+        LOGGER.trace(String.format(
+                         CacheConstants.DIR_MERGE_SUCCESS,
+                         sourceDirectory.getAbsolutePath(),
+                         targetDirectory.getAbsolutePath()));
 
         // delete source folder
         deleteFile(sourceDirectory);
