@@ -40,6 +40,7 @@ public class HarvesterCache
 {
     private final DocumentVersionsCache versionsCache;
     private final DocumentChangesCache changesCache;
+    private final HashGenerator hashGenerator;
     private final String harvesterId;
     private final File harvesterCacheFolder;
 
@@ -51,6 +52,8 @@ public class HarvesterCache
      */
     public HarvesterCache(final String harvesterName)
     {
+        this.hashGenerator = new HashGenerator(MainContext.getCharset());
+
         // set harvesterID
         final String providerName = EventSystem.sendSynchronousEvent(new GetProviderNameEvent());
         this.harvesterId = providerName + harvesterName;
@@ -137,7 +140,7 @@ public class HarvesterCache
         if (doc instanceof DataCiteJson)
             changesCache.putFile(documentId, (DataCiteJson) doc);
 
-        versionsCache.putFile(documentId, HashGenerator.instance().getShaHash(doc));
+        versionsCache.putFile(documentId, hashGenerator.getShaHash(doc));
     }
 
 
@@ -175,7 +178,7 @@ public class HarvesterCache
     {
         final String harvesterHash = hash == null
                                      ? null
-                                     : HashGenerator.instance().getShaHash(hash + harvestStartIndex + harvestEndIndex);
+                                     : hashGenerator.getShaHash(hash + harvestStartIndex + harvestEndIndex);
         versionsCache.init(harvesterHash);
         changesCache.init(versionsCache);
     }
@@ -203,7 +206,7 @@ public class HarvesterCache
      */
     private String getDocumentId(IDocument doc)
     {
-        return HashGenerator.instance().getShaHash(harvesterId + doc.getSourceId());
+        return hashGenerator.getShaHash(harvesterId + doc.getSourceId());
     }
 
 
@@ -223,7 +226,7 @@ public class HarvesterCache
         if (oldHash == null)
             return true;
 
-        final String currentHash = HashGenerator.instance().getShaHash(doc);
+        final String currentHash = hashGenerator.getShaHash(doc);
         return !oldHash.equals(currentHash);
     }
 

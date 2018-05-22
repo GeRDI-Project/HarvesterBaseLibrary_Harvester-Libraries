@@ -36,7 +36,6 @@ import de.gerdiproject.harvest.state.StateMachine;
 import de.gerdiproject.harvest.state.impl.InitializationState;
 import de.gerdiproject.harvest.submission.AbstractSubmitter;
 import de.gerdiproject.harvest.utils.CancelableFuture;
-import de.gerdiproject.harvest.utils.HashGenerator;
 import de.gerdiproject.harvest.utils.time.HarvestTimeKeeper;
 
 
@@ -140,9 +139,6 @@ public class MainContext
         // init harvester
         CancelableFuture<Boolean> initProcess = new CancelableFuture<>(() -> {
             LOGGER.info(ApplicationConstants.INIT_HARVESTER_START);
-
-            // init HashGenerator
-            HashGenerator.init(charset);
 
             // initialize saver and submitter
             HarvestSaver.init();

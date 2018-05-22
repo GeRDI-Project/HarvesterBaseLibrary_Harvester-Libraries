@@ -21,6 +21,7 @@ import java.util.Collection;
 import java.util.List;
 
 import de.gerdiproject.harvest.IDocument;
+import de.gerdiproject.harvest.MainContext;
 import de.gerdiproject.harvest.harvester.constants.HarvesterConstants;
 import de.gerdiproject.harvest.utils.HashGenerator;
 
@@ -166,6 +167,7 @@ public abstract class AbstractListHarvester<T> extends AbstractHarvester
     @Override
     protected String initHash() throws NoSuchAlgorithmException, NullPointerException
     {
-        return HashGenerator.instance().getShaHash(entries.toString());
+        final HashGenerator generator = new HashGenerator(MainContext.getCharset());
+        return generator.getShaHash(entries.toString());
     }
 }

@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiConsumer;
 
+import de.gerdiproject.harvest.MainContext;
 import de.gerdiproject.harvest.utils.HashGenerator;
 import de.gerdiproject.harvest.utils.cache.HarvesterCache;
 
@@ -194,7 +195,9 @@ public abstract class AbstractCompositeHarvester extends AbstractHarvester
         final StringBuffer hashBuilder = new StringBuffer();
 
         subHarvesters.forEach((AbstractHarvester subHarvester) -> hashBuilder.append(subHarvester.getHash(false)));
-        return HashGenerator.instance().getShaHash(hashBuilder.toString());
+
+        final HashGenerator generator = new HashGenerator(MainContext.getCharset());
+        return generator.getShaHash(hashBuilder.toString());
     }
 
 

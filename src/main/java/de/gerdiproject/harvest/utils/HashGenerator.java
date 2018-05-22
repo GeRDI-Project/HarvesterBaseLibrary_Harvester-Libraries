@@ -24,9 +24,9 @@ import de.gerdiproject.harvest.IDocument;
 import de.gerdiproject.json.GsonUtils;
 
 /**
- * This singleton class generates hash values of strings and objects.
+ * This class generates hash values of strings and objects.<br><br>
  *
- * https://stackoverflow.com/questions/9655181/how{@literal -}to{@literal -}convert{@literal -}a{@literal -}byte{@literal -}array{@literal -}to{@literal -}a{@literal -}hex{@literal -}string{@literal -}in{@literal -}java
+ * https://stackoverflow.com/questions/9655181/how-to-convert-a-byte-array-to-a-hex-string-in-java
  *
  * @author Robin Weiss
  */
@@ -37,18 +37,14 @@ public class HashGenerator
     private MessageDigest messageDigest;
     private Charset charset;
 
-    private final static HashGenerator instance = new HashGenerator();
-
 
     /**
-     * Initializes the singleton instance, generating the message digest and
-     * setting the charset.
+     * Constructs a hash generator using a specified charset.
      *
      * @param charset the charset used to decode input strings
      */
-    public static void init(Charset charset)
+    public HashGenerator(Charset charset)
     {
-        instance.charset = charset;
         MessageDigest temp;
 
         try {
@@ -57,18 +53,18 @@ public class HashGenerator
             temp = null;
         }
 
-        instance.messageDigest = temp;
+        this.charset = charset;
+        this.messageDigest = temp;
     }
 
 
     /**
-     * Returns the singleton instance.
-     *
-     * @return the singleton instance
+     * Resets the fields of the singleton instance to default values.
      */
-    public static HashGenerator instance()
+    public void reset()
     {
-        return instance;
+        charset = null;
+        messageDigest = null;
     }
 
 
