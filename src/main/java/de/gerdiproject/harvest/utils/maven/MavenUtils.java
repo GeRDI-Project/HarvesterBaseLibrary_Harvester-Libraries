@@ -55,13 +55,13 @@ public class MavenUtils
     public void init(ContextListener<?> context)
     {
         final Class<?> contextListenerClass = context.getClass();
-        final String resourcePath = contextListenerClass.getResource(
-                                        contextListenerClass.getSimpleName() + ".class")
-                                    .toString();
+        final URL contextListenerResource =
+            contextListenerClass.getResource(contextListenerClass.getSimpleName() + ".class");
 
-        harvesterJarName = resourcePath.replaceAll(
-                               MavenConstants.MAVEN_JAR_FILE_PATTERN,
-                               MavenConstants.MAVEN_JAR_FILE_NAME_REPLACEMENT);
+        if (contextListenerResource != null)
+            harvesterJarName = contextListenerResource.toString().replaceAll(
+                                   MavenConstants.MAVEN_JAR_FILE_PATTERN,
+                                   MavenConstants.MAVEN_JAR_FILE_NAME_REPLACEMENT);
     }
 
 
