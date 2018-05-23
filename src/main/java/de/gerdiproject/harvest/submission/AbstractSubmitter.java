@@ -63,6 +63,7 @@ public abstract class AbstractSubmitter
 
     protected final Logger logger; // NOPMD - we want to retrieve the type of the inheriting class
 
+
     /**
      * A mapping between document IDs and documents that are to be submitted as
      * a batch.

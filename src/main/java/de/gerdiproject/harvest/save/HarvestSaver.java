@@ -26,7 +26,6 @@ import java.util.function.Consumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.gson.Gson;
 import com.google.gson.stream.JsonWriter;
 
 import de.gerdiproject.harvest.MainContext;
@@ -45,7 +44,6 @@ import de.gerdiproject.harvest.utils.CancelableFuture;
 import de.gerdiproject.harvest.utils.cache.FileUtils;
 import de.gerdiproject.harvest.utils.cache.HarvesterCache;
 import de.gerdiproject.harvest.utils.cache.HarvesterCacheManager;
-import de.gerdiproject.json.GsonUtils;
 import de.gerdiproject.json.datacite.DataCiteJson;
 
 /**
@@ -281,25 +279,32 @@ public class HarvestSaver
         writer.beginArray();
 
         // iterate through cached array
-        final Gson gson = GsonUtils.getGson();
-
         final List<HarvesterCache> cacheList = HarvesterCacheManager.instance().getHarvesterCaches();
+        boolean isSuccessful = false;
 
         for (HarvesterCache cache : cacheList) {
-
+            isSuccessful =
             cache.getChangesCache().forEach((String documentId, DataCiteJson document) -> {
                 if (isAborting)
                     return false;
                 else
                 {
                     // write a document to the array
-                    if (document != null)
-                        gson.toJson(document, DataCiteJson.class, writer);
+                    if (document != null) {
+                        try {
+                            writer.jsonValue(document.toJson());
+                        } catch (IOException e) {
+                            return false;
+                        }
+                    }
 
                     EventSystem.sendEvent(savedEvent);
                     return true;
                 }
             });
+
+            if (!isSuccessful)
+                break;
         }
 
         // close writer
@@ -308,7 +313,7 @@ public class HarvestSaver
         writer.close();
 
         // cancel the asynchronous process
-        if (isAborting)
+        if (!isSuccessful)
             currentSavingProcess.cancel(false);
     }
 

@@ -27,10 +27,6 @@ import javax.servlet.ServletContextListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonDeserializer;
-import com.google.gson.JsonSerializer;
-
 import de.gerdiproject.harvest.application.constants.ApplicationConstants;
 import de.gerdiproject.harvest.application.events.ContextDestroyedEvent;
 import de.gerdiproject.harvest.application.events.ContextInitializedEvent;
@@ -42,7 +38,6 @@ import de.gerdiproject.harvest.submission.AbstractSubmitter;
 import de.gerdiproject.harvest.submission.elasticsearch.ElasticSearchSubmitter;
 import de.gerdiproject.harvest.utils.logger.LoggerUtils;
 import de.gerdiproject.harvest.utils.maven.MavenUtils;
-import de.gerdiproject.json.GsonUtils;
 
 
 /**
@@ -100,22 +95,6 @@ public class ContextListener<T extends AbstractHarvester> implements ServletCont
 
 
     /**
-     * Creates a GsonBuilder that is to be shared across the service. If you
-     * have custom JSON (de-)serialization adapters, you can register them to
-     * the GsonBuilder when overriding this method.
-     *
-     * @see JsonDeserializer
-     * @see JsonSerializer
-     *
-     * @return a GsonBuilder that will be used to initialize {@link GsonUtils}
-     */
-    protected GsonBuilder createGsonBuilder()
-    {
-        return new GsonBuilder();
-    }
-
-
-    /**
      * Returns additional parameters that are specific to the harvester
      * implementation.
      *
@@ -151,9 +130,6 @@ public class ContextListener<T extends AbstractHarvester> implements ServletCont
         LoggerUtils.init(getServiceName());
 
         EventSystem.addListener(ContextResetEvent.class, this::onContextReset);
-
-        // init Json utilities
-        GsonUtils.init(createGsonBuilder());
 
         // init MavenUtils
         MavenUtils.instance().init(this);

@@ -22,20 +22,20 @@ import java.io.InputStreamReader;
 import java.lang.reflect.Type;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.charset.Charset;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonIOException;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
 
-import de.gerdiproject.harvest.MainContext;
 import de.gerdiproject.harvest.utils.data.constants.DataOperationConstants;
-import de.gerdiproject.json.GsonUtils;
 
 /**
  * This class provides methods for reading files from the web.
@@ -45,6 +45,22 @@ import de.gerdiproject.json.GsonUtils;
 public class WebDataRetriever implements IDataRetriever
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(WebDataRetriever.class);
+    private final Gson gson;
+    private final Charset charset;
+
+
+    /**
+     * Constructor that sets the GSON (de-)serializer for reading and
+     * writing JSON objects.
+     *
+     * @param gson the GSON (de-)serializer for reading and writing JSON objects
+     * @param charset the charset of the files to be read and written
+     */
+    public WebDataRetriever(Gson gson, Charset charset)
+    {
+        this.gson = gson;
+        this.charset = charset;
+    }
 
 
     @Override
@@ -108,7 +124,7 @@ public class WebDataRetriever implements IDataRetriever
 
         try
             (InputStreamReader reader = createWebReader(url)) {
-            object = GsonUtils.getGson().fromJson(reader, targetClass);
+            object = gson.fromJson(reader, targetClass);
 
         } catch (IOException | IllegalStateException | JsonIOException | JsonSyntaxException e) {
             LOGGER.warn(String.format(DataOperationConstants.WEB_ERROR_JSON, url), e);
@@ -125,7 +141,7 @@ public class WebDataRetriever implements IDataRetriever
 
         try
             (InputStreamReader reader = createWebReader(url)) {
-            object = GsonUtils.getGson().fromJson(reader, targetType);
+            object = gson.fromJson(reader, targetType);
 
         } catch (IOException | IllegalStateException | JsonIOException | JsonSyntaxException e) {
             LOGGER.warn(String.format(DataOperationConstants.WEB_ERROR_JSON, url), e);
@@ -143,7 +159,7 @@ public class WebDataRetriever implements IDataRetriever
         try
             (InputStream response = new URL(url).openStream()) {
             // parse the html object
-            htmlResponse = Jsoup.parse(response, MainContext.getCharset().displayName(), url);
+            htmlResponse = Jsoup.parse(response, charset.displayName(), url);
 
         } catch (Exception e) {
             LOGGER.warn(String.format(DataOperationConstants.WEB_ERROR_JSON, url), e);
@@ -164,6 +180,6 @@ public class WebDataRetriever implements IDataRetriever
      */
     private InputStreamReader createWebReader(String url) throws MalformedURLException, IOException
     {
-        return new InputStreamReader(new URL(url).openStream(), MainContext.getCharset());
+        return new InputStreamReader(new URL(url).openStream(), charset);
     }
 }

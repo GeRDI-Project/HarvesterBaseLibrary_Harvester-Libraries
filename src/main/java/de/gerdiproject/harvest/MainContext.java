@@ -127,7 +127,8 @@ public class MainContext
      *
      * @see de.gerdiproject.harvest.harvester.AbstractHarvester
      */
-    public static <T extends AbstractHarvester> void init(String moduleName, Class<T> harvesterClass, Charset charset, List<AbstractParameter<?>> harvesterParams, AbstractSubmitter submitter)
+    public static <T extends AbstractHarvester> void init(String moduleName, Class<T> harvesterClass,
+                                                          Charset charset, List<AbstractParameter<?>> harvesterParams, AbstractSubmitter submitter)
     {
         instance.moduleName = moduleName;
         instance.charset = charset;

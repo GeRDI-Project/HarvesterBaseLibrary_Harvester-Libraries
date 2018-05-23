@@ -17,18 +17,11 @@
 package de.gerdiproject.harvest.utils.cache;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import com.google.gson.Gson;
-import com.google.gson.stream.JsonReader;
-import com.google.gson.stream.JsonToken;
-
 import de.gerdiproject.harvest.MainContext;
+import de.gerdiproject.harvest.harvester.AbstractHarvester;
 import de.gerdiproject.harvest.utils.cache.constants.CacheConstants;
-import de.gerdiproject.json.GsonUtils;
 import de.gerdiproject.json.datacite.DataCiteJson;
 
 /**
@@ -47,19 +40,20 @@ public class DocumentChangesCache extends AbstractCache<DataCiteJson>
      * Constructor that requires the harvester name for the creation of a dedicated
      * folder.
      *
-     * @param harvesterName the name of the harvester for which the cache is created
+     * @param harvester the harvester for which the cache is created
      */
-    public DocumentChangesCache(final String harvesterName)
+    public DocumentChangesCache(final AbstractHarvester harvester)
     {
         super(String.format(
                   CacheConstants.STABLE_CHANGES_FOLDER_PATH,
                   MainContext.getModuleName(),
-                  harvesterName),
+                  harvester.getName()),
               String.format(
                   CacheConstants.TEMP_CHANGES_FOLDER_PATH,
                   MainContext.getModuleName(),
-                  harvesterName),
-              DataCiteJson.class);
+                  harvester.getName()),
+              DataCiteJson.class,
+              harvester.getCharset());
     }
 
 
@@ -119,47 +113,5 @@ public class DocumentChangesCache extends AbstractCache<DataCiteJson>
 
         super.putFile(documentId, document);
 
-    }
-
-
-    @Override
-    @Deprecated
-    protected void migrateToNewSystem()
-    {
-        final String harvesterName = new File(stableFolderPath).getParentFile().getName();
-        final File stableFile = new File(
-            String.format(
-                CacheConstants.UPDATE_CACHE_FILE_PATH,
-                MainContext.getModuleName(),
-                harvesterName));
-
-        // skip if there is no old cache file
-        if (stableFile.exists()) {
-            final Gson gson = GsonUtils.getGson();
-
-            try
-                (JsonReader reader = new JsonReader(
-                    new InputStreamReader(new FileInputStream(stableFile), MainContext.getCharset()))) {
-
-                // iterate through cached documents
-                reader.beginObject();
-
-                while (reader.hasNext()) {
-                    final String documentId = reader.nextName();
-                    final File file = getFile(documentId, true);
-
-                    if (reader.peek() == JsonToken.NULL) {
-                        FileUtils.createEmptyFile(file);
-                        reader.skipValue();
-                    } else
-                        diskIo.writeObjectToFile(file, gson.fromJson(reader, DataCiteJson.class));
-                }
-
-            } catch (IOException e) {
-                return;
-            }
-
-            FileUtils.deleteFile(stableFile);
-        }
     }
 }

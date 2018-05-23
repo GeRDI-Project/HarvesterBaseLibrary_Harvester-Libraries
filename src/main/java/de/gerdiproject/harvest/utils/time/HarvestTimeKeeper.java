@@ -15,6 +15,10 @@
  */
 package de.gerdiproject.harvest.utils.time;
 
+import java.nio.charset.StandardCharsets;
+
+import com.google.gson.GsonBuilder;
+
 import de.gerdiproject.harvest.MainContext;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.harvester.events.HarvestFinishedEvent;
@@ -39,6 +43,7 @@ public class HarvestTimeKeeper
     private final ProcessTimeMeasure harvestMeasure;
     private final ProcessTimeMeasure submissionMeasure;
     private final ProcessTimeMeasure saveMeasure;
+    private final transient DiskIO diskIo;
 
 
     /**
@@ -47,6 +52,7 @@ public class HarvestTimeKeeper
      */
     public HarvestTimeKeeper()
     {
+        this.diskIo = new DiskIO(new GsonBuilder().create(), StandardCharsets.UTF_8);
         this.harvestMeasure = new ProcessTimeMeasure();
         this.saveMeasure = new ProcessTimeMeasure();
         this.submissionMeasure = new ProcessTimeMeasure();
@@ -81,9 +87,7 @@ public class HarvestTimeKeeper
         final String stableFilePath = String.format(
                                           CacheConstants.HARVEST_TIME_KEEPER_CACHE_FILE_PATH,
                                           MainContext.getModuleName());
-
-        final DiskIO diskReader = new DiskIO();
-        final HarvestTimeKeeper parsedKeeper = diskReader.getObject(stableFilePath, HarvestTimeKeeper.class);
+        final HarvestTimeKeeper parsedKeeper = diskIo.getObject(stableFilePath, HarvestTimeKeeper.class);
 
         if (parsedKeeper != null) {
 
@@ -166,9 +170,7 @@ public class HarvestTimeKeeper
         final String stableFilePath = String.format(
                                           CacheConstants.HARVEST_TIME_KEEPER_CACHE_FILE_PATH,
                                           MainContext.getModuleName());
-
-        final DiskIO diskWriter = new DiskIO();
-        diskWriter.writeObjectToFile(stableFilePath, this);
+        diskIo.writeObjectToFile(stableFilePath, this);
     }
 
 

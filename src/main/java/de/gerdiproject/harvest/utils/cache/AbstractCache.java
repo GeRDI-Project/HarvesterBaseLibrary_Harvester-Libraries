@@ -18,6 +18,7 @@ package de.gerdiproject.harvest.utils.cache;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -25,6 +26,7 @@ import java.util.function.BiFunction;
 
 import de.gerdiproject.harvest.utils.cache.constants.CacheConstants;
 import de.gerdiproject.harvest.utils.data.DiskIO;
+import de.gerdiproject.json.GsonUtils;
 
 
 /**
@@ -53,26 +55,15 @@ public abstract class AbstractCache <T>
      * @param stableFolderPath the path of the stable cache folder
      * @param wipFolderPath the path of the cache folder with pending changes
      * @param fileContentClass the class of the file content
+     * @param charset the charset of the cached files
      */
-    public AbstractCache(final String stableFolderPath, final String wipFolderPath, final Class<T> fileContentClass)
+    public AbstractCache(final String stableFolderPath, final String wipFolderPath, final Class<T> fileContentClass, final Charset charset)
     {
         this.stableFolderPath = stableFolderPath;
         this.wipFolderPath = wipFolderPath;
         this.fileContentClass = fileContentClass;
-        this.diskIo = new DiskIO();
-
-        // if outdated caches exist, migrate them to folder structure
-        migrateToNewSystem();
+        this.diskIo = new DiskIO(GsonUtils.createGerdiDocumentGsonBuilder().create(), charset);
     }
-
-
-    /**
-     * Migrates the changes cache file from RestfulHarvester-Library
-     * version 6.5.0 and below to the new folder structure, introduced in 6.5.1.
-     */
-    @Deprecated
-    protected abstract void migrateToNewSystem();
-
 
     /**
      * Replaces the stable folder with the work-in-progress changes.

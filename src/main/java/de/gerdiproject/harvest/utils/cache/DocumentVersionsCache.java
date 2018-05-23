@@ -17,13 +17,9 @@
 package de.gerdiproject.harvest.utils.cache;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
-
-import com.google.gson.stream.JsonReader;
 
 import de.gerdiproject.harvest.MainContext;
+import de.gerdiproject.harvest.harvester.AbstractHarvester;
 import de.gerdiproject.harvest.utils.cache.constants.CacheConstants;
 
 /**
@@ -42,20 +38,21 @@ public class DocumentVersionsCache extends AbstractCache<String>
     /**
      * Constructor that requires the harvester name for the creation of a folder.
      *
-     * @param harvesterName the name of the harvester for which the cache is created
+     * @param harvester the harvester for which the cache is created
      */
-    public DocumentVersionsCache(final String harvesterName)
+    public DocumentVersionsCache(final AbstractHarvester harvester)
     {
         super(
             String.format(
                 CacheConstants.STABLE_VERSIONS_FOLDER_PATH,
                 MainContext.getModuleName(),
-                harvesterName),
+                harvester.getName()),
             String.format(
                 CacheConstants.TEMP_VERSIONS_FOLDER_PATH,
                 MainContext.getModuleName(),
-                harvesterName),
-            String.class);
+                harvester.getName()),
+            String.class,
+            harvester.getCharset());
     }
 
 
@@ -112,54 +109,5 @@ public class DocumentVersionsCache extends AbstractCache<String>
     public void applyChanges()
     {
         FileUtils.integrateDirectory(new File(wipFolderPath), new File(stableFolderPath), true);
-    }
-
-
-    @Override
-    @Deprecated
-    protected void migrateToNewSystem()
-    {
-        final String harvesterName = new File(stableFolderPath).getParentFile().getName();
-        final File stableFile = new File(
-            String.format(
-                CacheConstants.VERSIONS_CACHE_FILE_PATH,
-                MainContext.getModuleName(),
-                harvesterName));
-
-        if (stableFile.exists()) {
-            try
-                (JsonReader reader = new JsonReader(
-                    new InputStreamReader(
-                        new FileInputStream(stableFile),
-                        MainContext.getCharset()))) {
-
-                // retrieve harvester hash
-                reader.beginObject();
-                reader.nextName();
-                final String sourceHash = reader.nextString();
-
-                final File stableHarvesterHash =
-                    new File(String.format(
-                                 CacheConstants.SOURCE_HASH_FILE_PATH,
-                                 stableFolderPath));
-                diskIo.writeStringToFile(stableHarvesterHash, sourceHash);
-                reader.nextName();
-
-                // iterate through all entries
-                reader.beginObject();
-
-                while (reader.hasNext()) {
-                    final String documentId = reader.nextName();
-                    final String documentHash = reader.nextString();
-                    diskIo.writeObjectToFile(getFile(documentId, true), documentHash);
-                }
-
-            } catch (IOException e) {
-                return;
-            }
-
-            // delete old file
-            FileUtils.deleteFile(stableFile);
-        }
     }
 }

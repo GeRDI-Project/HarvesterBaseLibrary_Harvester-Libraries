@@ -16,6 +16,7 @@
 package de.gerdiproject.harvest.config;
 
 
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -24,6 +25,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.google.gson.JsonParseException;
 
 import de.gerdiproject.harvest.MainContext;
@@ -48,6 +51,7 @@ import de.gerdiproject.harvest.utils.data.DiskIO;
  */
 public class Configuration
 {
+    private static final Gson GSON =  new GsonBuilder().registerTypeAdapter(Configuration.class, new ConfigurationAdapter()).create();
     private static final Logger LOGGER = LoggerFactory.getLogger(Configuration.class);
 
     private Map<String, AbstractParameter<?>> globalParameters;
@@ -55,6 +59,8 @@ public class Configuration
 
     private Map<String, AbstractParameter<?>> harvesterParameters;
     String harvesterParameterFormat;
+
+    private final transient DiskIO diskIo;
 
 
     /**
@@ -71,6 +77,8 @@ public class Configuration
 
         this.globalParameterFormat = getPaddedKeyFormat(globalParameters);
         this.harvesterParameterFormat = getPaddedKeyFormat(harvesterParameters);
+
+        this.diskIo = new DiskIO(GSON, StandardCharsets.UTF_8);
     }
 
 
@@ -81,12 +89,10 @@ public class Configuration
      */
     public Configuration(List<AbstractParameter<?>> harvesterParams)
     {
-        this.globalParameters = ParameterFactory.createDefaultParameters();
-        this.harvesterParameters = ParameterFactory.createHarvesterParameters(harvesterParams);
-
-        this.globalParameterFormat = getPaddedKeyFormat(globalParameters);
-        this.harvesterParameterFormat = getPaddedKeyFormat(harvesterParameters);
-
+        this(
+            ParameterFactory.createDefaultParameters(),
+            ParameterFactory.createHarvesterParameters(harvesterParams)
+        );
         updateAllParameters();
     }
 
@@ -148,23 +154,21 @@ public class Configuration
     {
         // read JSON from disk
         final String path = getConfigFilePath();
-        final String configJson = new DiskIO().getString(path);
+        final Configuration configJson = diskIo.getObject(path, Configuration.class);
 
         if (configJson == null)
             LOGGER.error(String.format(ConfigurationConstants.LOAD_FAILED, path, ConfigurationConstants.NO_EXISTS));
         else {
-            // deserialize JSON string
             try {
-                final Configuration config = ConfigurationAdapter.getGson().fromJson(configJson, Configuration.class);
 
                 // copy harvester parameters
-                config.harvesterParameters.forEach((String key, AbstractParameter<?> param) -> {
+                configJson.harvesterParameters.forEach((String key, AbstractParameter<?> param) -> {
                     if (harvesterParameters.containsKey(key))
                         setParameter(key, param.getStringValue());
                 });
 
                 // copy global parameters
-                config.globalParameters.forEach((String key, AbstractParameter<?> param) -> {
+                configJson.globalParameters.forEach((String key, AbstractParameter<?> param) -> {
                     if (globalParameters.containsKey(key))
                         setParameter(key, param.getStringValue());
                 });
@@ -228,14 +232,7 @@ public class Configuration
      */
     public String saveToDisk()
     {
-        // assemble path
-        String path = getConfigFilePath();
-
-        // serialize config
-        String configJson = ConfigurationAdapter.getGson().toJson(this);
-
-        // write to disk
-        return new DiskIO().writeStringToFile(path, configJson);
+        return diskIo.writeObjectToFile(getConfigFilePath(), this);
     }
 
 

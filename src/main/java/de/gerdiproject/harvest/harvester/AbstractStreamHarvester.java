@@ -38,7 +38,6 @@ import de.gerdiproject.harvest.application.events.ContextDestroyedEvent;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.harvester.constants.HarvesterConstants;
 import de.gerdiproject.harvest.utils.cache.constants.CacheConstants;
-import de.gerdiproject.json.GsonUtils;
 
 
 /**
@@ -58,6 +57,8 @@ public abstract class AbstractStreamHarvester<T> extends AbstractHarvester
 
     private final AtomicInteger entryCount;
     protected final int numberOfDocumentsPerEntry;
+
+    protected final Gson gson;
 
 
     /**
@@ -79,6 +80,7 @@ public abstract class AbstractStreamHarvester<T> extends AbstractHarvester
         super(harvesterName);
         this.numberOfDocumentsPerEntry = numberOfDocumentsPerEntry;
         this.entryCount = new AtomicInteger();
+        this.gson = createGsonBuilder().create();
 
         EventSystem.addListener(ContextDestroyedEvent.class, onContextDestroyed);
     }
@@ -141,8 +143,6 @@ public abstract class AbstractStreamHarvester<T> extends AbstractHarvester
         // the endIndex must be in [1, docsPerEntry]
         if (endIndex == 0)
             endIndex = numberOfDocumentsPerEntry;
-
-        Gson gson = GsonUtils.getGson();
 
         // open reader to entry stream
         JsonReader entryReader = createEntryStreamReader();
@@ -345,7 +345,7 @@ public abstract class AbstractStreamHarvester<T> extends AbstractHarvester
     private Consumer<T> createAddEntryToStreamFunction(JsonWriter entryWriter)
     {
         return (T entry) -> {
-            GsonUtils.getGson().toJson(entry, entry.getClass(), entryWriter);
+            gson.toJson(entry, entry.getClass(), entryWriter);
             entryCount.incrementAndGet();
         };
     }

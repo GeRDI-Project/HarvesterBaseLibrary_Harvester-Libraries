@@ -24,6 +24,8 @@ import java.util.Map;
 
 import javax.ws.rs.core.MediaType;
 
+import com.google.gson.Gson;
+
 import de.gerdiproject.harvest.IDocument;
 import de.gerdiproject.harvest.MainContext;
 import de.gerdiproject.harvest.config.constants.ConfigurationConstants;
@@ -35,7 +37,6 @@ import de.gerdiproject.harvest.submission.elasticsearch.json.ElasticSearchIndexW
 import de.gerdiproject.harvest.submission.elasticsearch.json.ElasticSearchResponse;
 import de.gerdiproject.harvest.utils.data.HttpRequester;
 import de.gerdiproject.harvest.utils.data.HttpRequester.RestRequestType;
-import de.gerdiproject.json.GsonUtils;
 
 
 /**
@@ -47,13 +48,24 @@ import de.gerdiproject.json.GsonUtils;
 public class ElasticSearchSubmitter extends AbstractSubmitter
 {
     private HttpRequester httpRequester;
+    private final Gson gson;
+
+
+    /**
+     * Constructor that initializes a Json parser for server responses.
+     */
+    public ElasticSearchSubmitter()
+    {
+        super();
+        this.gson = new Gson();
+    }
 
 
     @Override
     public void init()
     {
         super.init();
-        httpRequester = new HttpRequester();
+        httpRequester = new HttpRequester(MainContext.getCharset(), gson);
     }
 
 
@@ -78,7 +90,7 @@ public class ElasticSearchSubmitter extends AbstractSubmitter
                               MediaType.APPLICATION_JSON);
 
         // parse JSON response
-        ElasticSearchResponse responseJson = GsonUtils.getGson().fromJson(response, ElasticSearchResponse.class);
+        ElasticSearchResponse responseJson = gson.fromJson(response, ElasticSearchResponse.class);
 
         // throw error if some documents could not be submitted
         if (responseJson.hasErrors())
@@ -152,7 +164,7 @@ public class ElasticSearchSubmitter extends AbstractSubmitter
      */
     private String toElasticSearchJson(final IDocument document)
     {
-        final String jsonString = GsonUtils.getGson().toJson(document, document.getClass());
+        final String jsonString = document.toJson();
 
         return jsonString.replaceAll(
                    ElasticSearchConstants.DATE_RANGE_REGEX,

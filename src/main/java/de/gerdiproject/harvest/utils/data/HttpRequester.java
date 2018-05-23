@@ -37,9 +37,9 @@ import org.jsoup.nodes.Document;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 
-import de.gerdiproject.harvest.ContextListener;
 import de.gerdiproject.harvest.MainContext;
 import de.gerdiproject.harvest.config.Configuration;
 import de.gerdiproject.harvest.config.constants.ConfigurationConstants;
@@ -84,24 +84,12 @@ public class HttpRequester
 
 
     /**
-     * Standard constructor. Sets charset to whatever is defined via the {@linkplain ContextListener} and does not suppress
-     * warnings.
-     */
-    public HttpRequester()
-    {
-        this(MainContext.getCharset(), false);
-    }
-
-
-    /**
      * Constructor that allows to change the charset.
      *
-     * @param httpCharset
-     *            the encoding charset
-     * @param suppressWarnings
-     *            if true, failed http requests will not be logged
+     * @param httpCharset the encoding charset
+     * @param gson the GSON (de-)serializer for reading and writing JSON objects
      */
-    public HttpRequester(Charset httpCharset, boolean suppressWarnings)
+    public HttpRequester(Charset httpCharset, Gson gson)
     {
         Configuration config = MainContext.getConfiguration();
 
@@ -111,9 +99,8 @@ public class HttpRequester
         }
 
         this.httpCharset = httpCharset;
-        this.suppressWarnings = suppressWarnings;
-        diskIO = new DiskIO();
-        webDataRetriever = new WebDataRetriever();
+        diskIO = new DiskIO(gson, httpCharset);
+        webDataRetriever = new WebDataRetriever(gson, httpCharset);
 
         EventSystem.addListener(GlobalParameterChangedEvent.class, onGlobalParameterChanged);
     }

@@ -20,11 +20,8 @@ import java.nio.charset.Charset;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
-import de.gerdiproject.harvest.IDocument;
-import de.gerdiproject.json.GsonUtils;
-
 /**
- * This class generates hash values of strings and objects.<br><br>
+ * This class generates hash values of strings.<br><br>
  *
  * https://stackoverflow.com/questions/9655181/how-to-convert-a-byte-array-to-a-hex-string-in-java
  *
@@ -65,19 +62,6 @@ public class HashGenerator
     {
         charset = null;
         messageDigest = null;
-    }
-
-
-    /**
-     * Generates a hash value over the JSON string representation of a document.
-     *
-     * @param doc the document of which the hash is generated
-     *
-     * @return a hexadecimal hash string
-     */
-    public String getShaHash(final IDocument doc)
-    {
-        return getShaHash(GsonUtils.getGson().toJson(doc, doc.getClass()));
     }
 
 

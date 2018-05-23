@@ -16,6 +16,7 @@
  */
 package de.gerdiproject.harvest.scheduler;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.Map;
 import java.util.Timer;
@@ -27,6 +28,8 @@ import javax.ws.rs.core.Response.Status;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.google.gson.Gson;
 
 import de.gerdiproject.harvest.MainContext;
 import de.gerdiproject.harvest.application.events.ContextDestroyedEvent;
@@ -49,7 +52,9 @@ public class Scheduler
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(Scheduler.class);
     private Timer timer;
+
     private final Map<String, TimerTask> registeredTasks;
+    private final transient DiskIO diskIo;
 
 
     /**
@@ -59,6 +64,7 @@ public class Scheduler
     {
         this.timer = new Timer();
         this.registeredTasks = new ConcurrentHashMap<>();
+        this.diskIo = new DiskIO(new Gson(), StandardCharsets.UTF_8);
     }
 
 
@@ -82,8 +88,7 @@ public class Scheduler
      */
     private void loadFromDisk()
     {
-        final DiskIO diskReader = new DiskIO();
-        String[] cachedCronTabs = diskReader.getObject(
+        String[] cachedCronTabs = diskIo.getObject(
                                       String.format(SchedulerConstants.CACHE_PATH, MainContext.getModuleName()),
                                       String[].class);
 
@@ -106,8 +111,7 @@ public class Scheduler
      */
     private void saveToDisk()
     {
-        final DiskIO diskWriter = new DiskIO();
-        diskWriter.writeObjectToFile(
+        diskIo.writeObjectToFile(
             String.format(SchedulerConstants.CACHE_PATH, MainContext.getModuleName()),
             registeredTasks.keySet());
     }

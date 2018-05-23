@@ -16,6 +16,8 @@
 package de.gerdiproject.harvest.harvester;
 
 
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
@@ -26,6 +28,10 @@ import java.util.function.Consumer;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonDeserializer;
+import com.google.gson.JsonSerializer;
 
 import de.gerdiproject.harvest.ICleanable;
 import de.gerdiproject.harvest.IDocument;
@@ -50,6 +56,7 @@ import de.gerdiproject.harvest.submission.elasticsearch.ElasticSearchSubmitter;
 import de.gerdiproject.harvest.utils.CancelableFuture;
 import de.gerdiproject.harvest.utils.cache.HarvesterCache;
 import de.gerdiproject.harvest.utils.data.HttpRequester;
+import de.gerdiproject.json.GsonUtils;
 
 
 /**
@@ -66,12 +73,13 @@ import de.gerdiproject.harvest.utils.data.HttpRequester;
 public abstract class AbstractHarvester
 {
     private final Map<String, String> properties;
-
     private final AtomicInteger maxDocumentCount;
     private final AtomicInteger startIndex;
     private final AtomicInteger endIndex;
     private HarvesterCache documentsCache;
 
+    protected final Logger logger; // NOPMD - we want to retrieve the type of the inheriting class
+    protected final HttpRequester httpRequester;
     protected CancelableFuture<Boolean> currentHarvestingProcess;
     protected boolean isMainHarvester;
     protected boolean isAborting;
@@ -79,9 +87,6 @@ public abstract class AbstractHarvester
     protected AtomicBoolean forceHarvest;
     protected String name;
     protected String hash;
-    protected final HttpRequester httpRequester;
-
-    protected final Logger logger; // NOPMD - we want to retrieve the type of the inheriting class
 
 
     /**
@@ -102,9 +107,9 @@ public abstract class AbstractHarvester
     {
         name = (harvesterName != null) ? harvesterName : getClass().getSimpleName();
         logger = LoggerFactory.getLogger(name);
+        httpRequester = new HttpRequester(MainContext.getCharset(), createGsonBuilder().create());
 
         properties = new HashMap<>();
-        httpRequester = new HttpRequester();
 
         currentHarvestingProcess = null;
         maxDocumentCount = new AtomicInteger();
@@ -157,7 +162,7 @@ public abstract class AbstractHarvester
      */
     protected HarvesterCache initCache()
     {
-        final HarvesterCache cache = documentsCache != null ? documentsCache : new HarvesterCache(name);
+        final HarvesterCache cache = documentsCache != null ? documentsCache : new HarvesterCache(this);
 
         // update the harvester hash in the cache file
         final int from = startIndex.get() == Integer.MAX_VALUE ? maxDocumentCount.get() : startIndex.get();
@@ -531,6 +536,42 @@ public abstract class AbstractHarvester
         EventSystem.sendEvent(new DocumentsHarvestedEvent(getMaxNumberOfDocuments()));
     }
 
+
+    /**
+     * Creates a GsonBuilder for parsing harvested source data. If you
+     * have custom JSON (de-)serialization adapters, you can register them to
+     * the GsonBuilder when overriding this method.
+     *
+     * @see JsonDeserializer
+     * @see JsonSerializer
+     *
+     * @return a GsonBuilder that will be used to parse source data
+     */
+    protected GsonBuilder createGsonBuilder()
+    {
+        return GsonUtils.createGerdiDocumentGsonBuilder();
+    }
+
+
+    /**
+     * Returns the name of the harvester.
+     *
+     * @return the name of the harvester
+     */
+    public String getName()
+    {
+        return name;
+    }
+
+    /**
+     * Returns the charset of the harvested data.
+     *
+     * @return the charset of the harvested data
+     */
+    public Charset getCharset()
+    {
+        return StandardCharsets.UTF_8;
+    }
 
     //////////////////////////////
     // Event Callback Functions //

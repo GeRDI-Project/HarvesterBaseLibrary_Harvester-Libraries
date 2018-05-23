@@ -20,8 +20,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import com.google.gson.JsonDeserializationContext;
 import com.google.gson.JsonDeserializer;
 import com.google.gson.JsonElement;
@@ -39,7 +37,6 @@ import de.gerdiproject.harvest.config.parameters.IntegerParameter;
 import de.gerdiproject.harvest.config.parameters.ParameterFactory;
 import de.gerdiproject.harvest.config.parameters.StringParameter;
 import de.gerdiproject.harvest.config.parameters.UrlParameter;
-import de.gerdiproject.json.GsonUtils;
 
 /**
  * This adapter defines the (de-)serialization behavior of
@@ -49,19 +46,6 @@ import de.gerdiproject.json.GsonUtils;
  */
 public class ConfigurationAdapter implements JsonDeserializer<Configuration>, JsonSerializer<Configuration>
 {
-    /**
-     * Returns a {@linkplain Gson} with an integrated
-     * {@linkplain ConfigurationAdapter}.
-     *
-     * @return a {@linkplain Gson} with an integrated
-     *         {@linkplain ConfigurationAdapter}
-     */
-    public static Gson getGson()
-    {
-        return new GsonBuilder().registerTypeAdapter(Configuration.class, new ConfigurationAdapter()).create();
-    }
-
-
     @Override
     public Configuration deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context) throws JsonParseException
     {
@@ -121,7 +105,7 @@ public class ConfigurationAdapter implements JsonDeserializer<Configuration>, Js
                 throw new JsonParseException(
                     String.format(
                         ConfigurationConstants.PARSE_ERROR,
-                        GsonUtils.getPrettyGson().toJson(paramJson.getValue()),
+                        paramJson.getValue().toString(),
                         key));
         }
 

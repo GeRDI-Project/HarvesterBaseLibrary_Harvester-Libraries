@@ -26,7 +26,7 @@ import de.gerdiproject.harvest.utils.HashGenerator;
 
 /**
  * This class provides test cases for the {@linkplain HashGenerator}.
- * 
+ *
  * @author Robin Weiss
  *
  */

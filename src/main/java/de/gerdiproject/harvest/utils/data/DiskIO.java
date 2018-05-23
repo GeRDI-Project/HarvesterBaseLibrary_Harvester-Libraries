@@ -26,6 +26,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.Reader;
 import java.lang.reflect.Type;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.stream.Collectors;
 
@@ -34,13 +35,12 @@ import org.jsoup.nodes.Document;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonIOException;
 import com.google.gson.JsonSyntaxException;
 
-import de.gerdiproject.harvest.MainContext;
 import de.gerdiproject.harvest.utils.data.constants.DataOperationConstants;
-import de.gerdiproject.json.GsonUtils;
 
 /**
  * This class provides methods for reading files from disk.
@@ -50,6 +50,22 @@ import de.gerdiproject.json.GsonUtils;
 public class DiskIO implements IDataRetriever
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(DiskIO.class);
+    private final Gson gson;
+    private final Charset charset;
+
+
+    /**
+     * Constructor that sets the GSON (de-)serializer for reading and
+     * writing JSON objects.
+     *
+     * @param gson the GSON (de-)serializer for reading and writing JSON objects
+     * @param charset the charset of the files to be read and written
+     */
+    public DiskIO(Gson gson, Charset charset)
+    {
+        this.gson = gson;
+        this.charset = charset;
+    }
 
 
     /**
@@ -127,7 +143,7 @@ public class DiskIO implements IDataRetriever
      */
     public String writeObjectToFile(String filePath, Object obj)
     {
-        String jsonString = (obj == null) ? "{}" : GsonUtils.getGson().toJson(obj);
+        String jsonString = (obj == null) ? "{}" : gson.toJson(obj);
         return writeStringToFile(filePath, jsonString);
     }
 
@@ -143,7 +159,7 @@ public class DiskIO implements IDataRetriever
      */
     public String writeObjectToFile(File file, Object obj)
     {
-        String jsonString = (obj == null) ? "{}" : GsonUtils.getGson().toJson(obj);
+        String jsonString = (obj == null) ? "{}" : gson.toJson(obj);
         return writeStringToFile(file, jsonString);
     }
 
@@ -187,7 +203,7 @@ public class DiskIO implements IDataRetriever
 
         try
             (Reader reader = createDiskReader(file)) {
-            object = GsonUtils.getGson().fromJson(reader, targetClass);
+            object = gson.fromJson(reader, targetClass);
 
         } catch (FileNotFoundException e) { // NOPMD if the file is not found, do not log anything
 
@@ -214,7 +230,7 @@ public class DiskIO implements IDataRetriever
 
         try
             (Reader reader = createDiskReader(file)) {
-            object = GsonUtils.getGson().fromJson(reader, targetType);
+            object = gson.fromJson(reader, targetType);
 
         } catch (FileNotFoundException e) { // NOPMD if the file is not found, do not log anything
 
@@ -280,6 +296,6 @@ public class DiskIO implements IDataRetriever
     private Reader createDiskReader(File file) throws FileNotFoundException
     {
         // try to read from disk
-        return new InputStreamReader(new FileInputStream(file), MainContext.getCharset());
+        return new InputStreamReader(new FileInputStream(file), charset);
     }
 }

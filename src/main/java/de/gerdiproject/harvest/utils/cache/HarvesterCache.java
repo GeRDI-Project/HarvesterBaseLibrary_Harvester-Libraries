@@ -21,6 +21,7 @@ import de.gerdiproject.harvest.IDocument;
 import de.gerdiproject.harvest.MainContext;
 import de.gerdiproject.harvest.application.events.ContextDestroyedEvent;
 import de.gerdiproject.harvest.event.EventSystem;
+import de.gerdiproject.harvest.harvester.AbstractHarvester;
 import de.gerdiproject.harvest.harvester.events.GetProviderNameEvent;
 import de.gerdiproject.harvest.save.HarvestSaver;
 import de.gerdiproject.harvest.submission.AbstractSubmitter;
@@ -48,27 +49,27 @@ public class HarvesterCache
     /**
      * Constructs a cache for a harvester.
      *
-     * @param harvesterName the unique name of the harvester
+     * @param harvester the harvester of which the documents are to be cached
      */
-    public HarvesterCache(final String harvesterName)
+    public HarvesterCache(final AbstractHarvester harvester)
     {
         this.hashGenerator = new HashGenerator(MainContext.getCharset());
 
         // set harvesterID
         final String providerName = EventSystem.sendSynchronousEvent(new GetProviderNameEvent());
-        this.harvesterId = providerName + harvesterName;
+        this.harvesterId = providerName + harvester.getName();
 
         // set cache folder
         this.harvesterCacheFolder = new File(
             String.format(
                 CacheConstants.TEMP_CHANGES_FOLDER_PATH,
                 MainContext.getModuleName(),
-                harvesterName
+                harvester
             )).getParentFile();
 
         // set versions and changes caches
-        this.versionsCache = new DocumentVersionsCache(harvesterName);
-        this.changesCache = new DocumentChangesCache(harvesterName);
+        this.versionsCache = new DocumentVersionsCache(harvester);
+        this.changesCache = new DocumentChangesCache(harvester);
 
         EventSystem.addListener(ContextDestroyedEvent.class, this::onContextDestroyed);
 
@@ -140,7 +141,7 @@ public class HarvesterCache
         if (doc instanceof DataCiteJson)
             changesCache.putFile(documentId, (DataCiteJson) doc);
 
-        versionsCache.putFile(documentId, hashGenerator.getShaHash(doc));
+        versionsCache.putFile(documentId, hashGenerator.getShaHash(doc.toJson()));
     }
 
 
@@ -226,7 +227,7 @@ public class HarvesterCache
         if (oldHash == null)
             return true;
 
-        final String currentHash = hashGenerator.getShaHash(doc);
+        final String currentHash = hashGenerator.getShaHash(doc.toJson());
         return !oldHash.equals(currentHash);
     }
 
