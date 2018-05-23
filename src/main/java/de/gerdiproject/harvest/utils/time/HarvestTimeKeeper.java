@@ -19,7 +19,6 @@ import java.nio.charset.StandardCharsets;
 
 import com.google.gson.GsonBuilder;
 
-import de.gerdiproject.harvest.MainContext;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.harvester.events.HarvestFinishedEvent;
 import de.gerdiproject.harvest.harvester.events.HarvestStartedEvent;
@@ -43,19 +42,25 @@ public class HarvestTimeKeeper
     private final ProcessTimeMeasure harvestMeasure;
     private final ProcessTimeMeasure submissionMeasure;
     private final ProcessTimeMeasure saveMeasure;
+
     private final transient DiskIO diskIo;
+    private final transient String cacheFilePath;
 
 
     /**
      * Constructor that creates time measures for harvesting, submitting, and
      * saving.
      */
-    public HarvestTimeKeeper()
+    public HarvestTimeKeeper(String cacheFolderName)
     {
         this.diskIo = new DiskIO(new GsonBuilder().create(), StandardCharsets.UTF_8);
         this.harvestMeasure = new ProcessTimeMeasure();
         this.saveMeasure = new ProcessTimeMeasure();
         this.submissionMeasure = new ProcessTimeMeasure();
+
+        this.cacheFilePath = String.format(
+                                 CacheConstants.HARVEST_TIME_KEEPER_CACHE_FILE_PATH,
+                                 cacheFolderName);
     }
 
 
@@ -84,10 +89,7 @@ public class HarvestTimeKeeper
      */
     private void loadFromDisk()
     {
-        final String stableFilePath = String.format(
-                                          CacheConstants.HARVEST_TIME_KEEPER_CACHE_FILE_PATH,
-                                          MainContext.getModuleName());
-        final HarvestTimeKeeper parsedKeeper = diskIo.getObject(stableFilePath, HarvestTimeKeeper.class);
+        final HarvestTimeKeeper parsedKeeper = diskIo.getObject(cacheFilePath, HarvestTimeKeeper.class);
 
         if (parsedKeeper != null) {
 
@@ -167,10 +169,7 @@ public class HarvestTimeKeeper
      */
     private void saveToDisk()
     {
-        final String stableFilePath = String.format(
-                                          CacheConstants.HARVEST_TIME_KEEPER_CACHE_FILE_PATH,
-                                          MainContext.getModuleName());
-        diskIo.writeObjectToFile(stableFilePath, this);
+        diskIo.writeObjectToFile(cacheFilePath, this);
     }
 
 

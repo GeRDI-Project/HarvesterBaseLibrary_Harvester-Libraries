@@ -132,7 +132,7 @@ public class MainContext
     {
         instance.moduleName = moduleName;
         instance.charset = charset;
-        instance.timeKeeper = new HarvestTimeKeeper();
+        instance.timeKeeper = new HarvestTimeKeeper(moduleName);
         instance.timeKeeper.init();
 
         StateMachine.setState(new InitializationState());
