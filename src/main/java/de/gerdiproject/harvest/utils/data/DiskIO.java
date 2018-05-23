@@ -124,7 +124,7 @@ public class DiskIO implements IDataRetriever
 
         // log the status
         if (isSuccessful)
-            LOGGER.debug(statusMessage);
+            LOGGER.trace(statusMessage);
         else
             LOGGER.warn(statusMessage);
 
