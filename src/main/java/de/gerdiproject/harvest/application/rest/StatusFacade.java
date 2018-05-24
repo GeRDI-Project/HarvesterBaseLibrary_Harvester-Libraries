@@ -273,12 +273,17 @@ public final class StatusFacade
      */
     private String getSpecifiedVersions(String filter)
     {
-        final String mainJar = MavenUtils.instance().getHarvesterJarName();
+        final MavenUtils utils = MainContext.getMavenUtils();
+
+        if (utils == null)
+            return null;
+
+        final String mainJar = utils.getHarvesterJarName();
 
         if (mainJar == null)
             return null;
 
-        final List<String> dependencyList = MavenUtils.instance().getMavenVersionInfo(filter);
+        final List<String> dependencyList = utils.getMavenVersionInfo(filter);
 
         if (dependencyList == null)
             return null;

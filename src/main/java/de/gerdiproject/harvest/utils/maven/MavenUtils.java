@@ -23,7 +23,6 @@ import java.util.Enumeration;
 import java.util.LinkedList;
 import java.util.List;
 
-import de.gerdiproject.harvest.ContextListener;
 import de.gerdiproject.harvest.utils.maven.constants.MavenConstants;
 
 /**
@@ -33,46 +32,30 @@ import de.gerdiproject.harvest.utils.maven.constants.MavenConstants;
  */
 public class MavenUtils
 {
-    private static final MavenUtils instance = new MavenUtils();
-
-    private String harvesterJarName;
+    private final String harvesterJarName;
 
 
     /**
-     * Private constructor, because this class offers only static functions.
-     */
-    private MavenUtils()
-    {
-    }
-
-
-    /**
-     * Initializes class by retrieving the jar name of the jar that contains the ContextListener
-     * implementation, namely the harvester jar.
+     * Initializes the class by retrieving the jar name of the jar that contains a specified
+     * class.
      *
-     * @param context the context listener that called this method
+     * @param mainJarClass a class of the harvester jar
      */
-    public void init(ContextListener<?> context)
+    public MavenUtils(Class<?> mainJarClass)
     {
-        final Class<?> contextListenerClass = context.getClass();
-        final URL contextListenerResource =
-            contextListenerClass.getResource(contextListenerClass.getSimpleName() + ".class");
+        URL contextListenerResource =
+            mainJarClass.getResource(mainJarClass.getSimpleName() + ".class");
+
+        // fallback, use HarvesterLibrary as main jar
+        if (contextListenerResource == null)
+            contextListenerResource = getClass().getResource(mainJarClass.getSimpleName() + ".class");
 
         if (contextListenerResource != null)
-            harvesterJarName = contextListenerResource.toString().replaceAll(
-                                   MavenConstants.MAVEN_JAR_FILE_PATTERN,
-                                   MavenConstants.MAVEN_JAR_FILE_NAME_REPLACEMENT);
-    }
-
-
-    /**
-     * Returns the Singleton instance of this class.
-     *
-     * @return the Singleton instance of this class
-     */
-    public static MavenUtils instance()
-    {
-        return instance;
+            this.harvesterJarName = contextListenerResource.toString().replaceAll(
+                                        MavenConstants.MAVEN_JAR_FILE_PATTERN,
+                                        MavenConstants.MAVEN_JAR_FILE_NAME_REPLACEMENT);
+        else
+            this.harvesterJarName = null;
     }
 
 

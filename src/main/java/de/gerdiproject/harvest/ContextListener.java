@@ -37,7 +37,6 @@ import de.gerdiproject.harvest.harvester.AbstractHarvester;
 import de.gerdiproject.harvest.submission.AbstractSubmitter;
 import de.gerdiproject.harvest.submission.elasticsearch.ElasticSearchSubmitter;
 import de.gerdiproject.harvest.utils.logger.LoggerUtils;
-import de.gerdiproject.harvest.utils.maven.MavenUtils;
 
 
 /**
@@ -130,9 +129,6 @@ public class ContextListener<T extends AbstractHarvester> implements ServletCont
         LoggerUtils.init(getServiceName());
 
         EventSystem.addListener(ContextResetEvent.class, this::onContextReset);
-
-        // init MavenUtils
-        MavenUtils.instance().init(this);
 
         // init main context
         MainContext.init(

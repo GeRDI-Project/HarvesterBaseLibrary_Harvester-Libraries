@@ -36,6 +36,7 @@ import de.gerdiproject.harvest.state.StateMachine;
 import de.gerdiproject.harvest.state.impl.InitializationState;
 import de.gerdiproject.harvest.submission.AbstractSubmitter;
 import de.gerdiproject.harvest.utils.CancelableFuture;
+import de.gerdiproject.harvest.utils.maven.MavenUtils;
 import de.gerdiproject.harvest.utils.time.HarvestTimeKeeper;
 
 
@@ -57,6 +58,7 @@ public class MainContext
     private Configuration configuration;
     private AbstractSubmitter submitter;
     private Scheduler scheduler;
+    private MavenUtils mavenUtils;
 
     private static MainContext instance = new MainContext();
 
@@ -106,12 +108,25 @@ public class MainContext
      * Retrieves a timekeeper that measures certain processes.
      *
      * @return a timekeeper that measures certain processes
+     * or null, if the main context was not initialized
      */
     public static HarvestTimeKeeper getTimeKeeper()
     {
         return instance.timeKeeper;
     }
+    
 
+    /**
+     * Retrieves Maven utilities.
+     *
+     * @return a Maven utility class
+     * or null, if the main context was not initialized
+     */
+    public static MavenUtils getMavenUtils()
+    {
+        return instance.mavenUtils;
+    }
+    
 
     /**
      * Sets up global parameters and the harvester.
@@ -130,13 +145,16 @@ public class MainContext
     public static <T extends AbstractHarvester> void init(String moduleName, Class<T> harvesterClass,
                                                           Charset charset, List<AbstractParameter<?>> harvesterParams, AbstractSubmitter submitter)
     {
+        StateMachine.setState(new InitializationState());
+
         instance.moduleName = moduleName;
         instance.charset = charset;
+
         instance.timeKeeper = new HarvestTimeKeeper(moduleName);
         instance.timeKeeper.loadFromDisk();
         instance.timeKeeper.addEventListeners();
 
-        StateMachine.setState(new InitializationState());
+        instance.mavenUtils = new MavenUtils(harvesterClass);
 
         // init harvester
         CancelableFuture<Boolean> initProcess = new CancelableFuture<>(() -> {
