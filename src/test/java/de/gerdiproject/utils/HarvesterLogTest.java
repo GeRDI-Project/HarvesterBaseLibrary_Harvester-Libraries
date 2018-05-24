@@ -32,7 +32,7 @@ import de.gerdiproject.harvest.utils.logger.HarvesterLog;
 
 
 /**
- * This class provides test cases for the {@linkplain HarvesterLogTest}.
+ * This class provides test cases for {@linkplain HarvesterLog}s.
  *
  * @author Robin Weiss
  */
