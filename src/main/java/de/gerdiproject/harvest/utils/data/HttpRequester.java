@@ -123,12 +123,12 @@ public class HttpRequester
         // read json file from disk, if the option is enabled
         if (readFromDisk) {
             String filePath = urlToFilePath(url, DataOperationConstants.FILE_ENDING_JSON);
-            jsonObj = (JsonObject) diskIO.getJson(filePath);
+            jsonObj = diskIO.getObject(filePath, JsonObject.class);
         }
 
         // request json from web, if it has not been read from disk already
         if (jsonObj == null) {
-            jsonObj = (JsonObject) webDataRetriever.getJson(url);
+            jsonObj = webDataRetriever.getObject(url, JsonObject.class);
             isResponseReadFromWeb = true;
         }
 

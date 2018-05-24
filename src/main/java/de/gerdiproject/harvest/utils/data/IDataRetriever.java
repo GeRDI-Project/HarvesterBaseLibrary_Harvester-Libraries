@@ -19,8 +19,6 @@ import java.lang.reflect.Type;
 
 import org.jsoup.nodes.Document;
 
-import com.google.gson.JsonElement;
-
 /**
  * This interface describes a means for retrieving data from an arbitrary source.
  *
@@ -36,16 +34,6 @@ public interface IDataRetriever
      * @return a text, or null if the file could not be parsed
      */
     String getString(String path);
-
-
-    /**
-     * Tries to parse the content from a specified path as a
-     * JSON object or array.
-     *
-     * @param path the path to a JSON file
-     * @return a JSON object or array, or null if the file could not be parsed
-     */
-    JsonElement getJson(String path);
 
 
     /**

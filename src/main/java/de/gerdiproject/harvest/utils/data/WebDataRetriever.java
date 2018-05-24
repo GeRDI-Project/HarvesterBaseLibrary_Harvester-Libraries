@@ -30,9 +30,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.gson.Gson;
-import com.google.gson.JsonElement;
 import com.google.gson.JsonIOException;
-import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
 
 import de.gerdiproject.harvest.utils.data.constants.DataOperationConstants;
@@ -94,26 +92,6 @@ public class WebDataRetriever implements IDataRetriever
         }
 
         return responseText;
-    }
-
-
-    @Override
-    public JsonElement getJson(String url)
-    {
-        JsonElement jsonResponse = null;
-
-        try
-            (InputStreamReader reader = createWebReader(url)) {
-            JsonParser parser = new JsonParser();
-
-            // parse the json object
-            jsonResponse = parser.parse(reader);
-
-        } catch (Exception e) {
-            LOGGER.warn(String.format(DataOperationConstants.WEB_ERROR_JSON, url), e);
-        }
-
-        return jsonResponse;
     }
 
 

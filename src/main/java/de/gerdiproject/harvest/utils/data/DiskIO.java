@@ -36,7 +36,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.gson.Gson;
-import com.google.gson.JsonElement;
 import com.google.gson.JsonIOException;
 import com.google.gson.JsonSyntaxException;
 
@@ -246,13 +245,6 @@ public class DiskIO implements IDataRetriever
     public String getString(String filePath)
     {
         return getString(new File(filePath));
-    }
-
-
-    @Override
-    public JsonElement getJson(String filePath)
-    {
-        return getObject(new File(filePath), JsonElement.class);
     }
 
 
