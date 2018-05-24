@@ -15,9 +15,8 @@
  *  under the License.
  */
 /**
- * This package contains constants related to {@linkplain de.gerdiproject.harvest.utils.logger.HarvesterLog}
- * and logging in general.
+ * This package contains events that concern logging.
  *
  * @author Robin Weiss
  */
-package de.gerdiproject.harvest.utils.logger;
+package de.gerdiproject.harvest.utils.logger.events;

@@ -29,6 +29,7 @@ import javax.ws.rs.core.Response.Status;
 import de.gerdiproject.harvest.MainContext;
 import de.gerdiproject.harvest.application.constants.StatusConstants;
 import de.gerdiproject.harvest.application.enums.HealthStatus;
+import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.harvester.events.GetMaxDocumentCountEvent;
 import de.gerdiproject.harvest.harvester.events.GetProviderNameEvent;
 import de.gerdiproject.harvest.state.IState;
@@ -38,6 +39,7 @@ import de.gerdiproject.harvest.utils.ServerResponseFactory;
 import de.gerdiproject.harvest.utils.cache.HarvesterCacheManager;
 import de.gerdiproject.harvest.utils.maven.MavenUtils;
 import de.gerdiproject.harvest.utils.maven.constants.MavenConstants;
+import de.gerdiproject.harvest.utils.maven.events.GetMavenUtilsEvent;
 
 
 /**
@@ -273,7 +275,7 @@ public final class StatusFacade
      */
     private String getSpecifiedVersions(String filter)
     {
-        final MavenUtils utils = MainContext.getMavenUtils();
+        final MavenUtils utils = EventSystem.sendSynchronousEvent(new GetMavenUtilsEvent());
 
         if (utils == null)
             return null;

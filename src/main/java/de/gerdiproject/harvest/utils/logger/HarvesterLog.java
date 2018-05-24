@@ -17,6 +17,7 @@
 package de.gerdiproject.harvest.utils.logger;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -31,23 +32,68 @@ import ch.qos.logback.classic.encoder.PatternLayoutEncoder;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.FileAppender;
 import de.gerdiproject.harvest.MainContext;
+import de.gerdiproject.harvest.utils.cache.FileUtils;
 import de.gerdiproject.harvest.utils.logger.constants.LoggerConstants;
 
 /**
- * This class provides static methods for configuring the logger.
+ * This class creates a log file to which logs are being appended.
+ * The log can be read and deleted.
  *
  * @author Robin Weiss
  */
-public class LoggerUtils
+public class HarvesterLog
 {
-    private static org.slf4j.Logger LOGGER = LoggerFactory.getLogger(LoggerUtils.class);
+    private static org.slf4j.Logger LOGGER = LoggerFactory.getLogger(HarvesterLog.class);
+
+    private final String logFilePath;
+
 
     /**
-     * Private constructor, because this class only provides static methods.
+     * Adds a logger that logs to a specified file and assigns
+     * a standard logging pattern to it.
+     *
+     * @param logFilePath the path to the log file
      */
-    private LoggerUtils()
+    public HarvesterLog(final String logFilePath)
     {
+        this.logFilePath = logFilePath;
 
+        final LoggerContext loggerContext = (LoggerContext) LoggerFactory.getILoggerFactory();
+
+        // set a logging pattern
+        final PatternLayoutEncoder encoder = new PatternLayoutEncoder();
+        encoder.setContext(loggerContext);
+        encoder.setPattern(LoggerConstants.LOG_PATTERN);
+        encoder.start();
+
+        // set the log file
+        FileAppender<ILoggingEvent> fileAppender = new FileAppender<>();
+        fileAppender.setName(logFilePath);
+        fileAppender.setContext(loggerContext);
+        fileAppender.setFile(logFilePath);
+        fileAppender.setEncoder(encoder);
+        fileAppender.start();
+
+        // add the logger to the list of loggers
+        LoggerConstants.ROOT_LOGGER.addAppender(fileAppender);
+    }
+
+
+    /**
+     * Deletes the log file.
+     */
+    public void clearLog()
+    {
+        FileUtils.deleteFile(new File(logFilePath));
+    }
+
+
+    /**
+     * Unregisters the logger from the list of loggers.
+     */
+    public void unregisterLogger()
+    {
+        LoggerConstants.ROOT_LOGGER.detachAppender(logFilePath);
     }
 
 
@@ -63,10 +109,9 @@ public class LoggerUtils
      *
      * @return all log messages that fit the filter criteria
      */
-    public static String getLog(List<String> dateFilters, List<String> levelFilters, List<String> classFilters)
+    public String getLog(List<String> dateFilters, List<String> levelFilters, List<String> classFilters)
     {
         final StringBuilder logBuilder = new StringBuilder();
-        final String logFilePath = String.format(LoggerConstants.LOG_FILE_PATH, MainContext.getModuleName());
 
         try
             (BufferedReader reader = new BufferedReader(
@@ -99,31 +144,5 @@ public class LoggerUtils
         }
 
         return logBuilder.toString();
-    }
-
-
-    /**
-     * Initializes the root logger by assigning a file to it and setting
-     * a standard logging pattern.
-     *
-     * @param logFileName the name of the log file
-     */
-    public static void init(final String logFileName)
-    {
-        final LoggerContext loggerContext = (LoggerContext) LoggerFactory.getILoggerFactory();
-
-        final FileAppender<ILoggingEvent> fileAppender = new FileAppender<>();
-        fileAppender.setContext(loggerContext);
-        fileAppender.setFile(String.format(LoggerConstants.LOG_FILE_PATH, logFileName));
-
-        final PatternLayoutEncoder encoder = new PatternLayoutEncoder();
-        encoder.setContext(loggerContext);
-        encoder.setPattern(LoggerConstants.LOG_PATTERN);
-        encoder.start();
-
-        fileAppender.setEncoder(encoder);
-        fileAppender.start();
-
-        LoggerConstants.ROOT_LOGGER.addAppender(fileAppender);
     }
 }

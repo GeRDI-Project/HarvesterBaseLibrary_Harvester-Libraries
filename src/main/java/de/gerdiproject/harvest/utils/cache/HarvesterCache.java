@@ -232,6 +232,10 @@ public class HarvesterCache
     }
 
 
+    //////////////////////////////
+    // Event Callback Functions //
+    //////////////////////////////
+
     /**
      * This callback function is called when the web service is terminated. It
      * cleans up temporary files.

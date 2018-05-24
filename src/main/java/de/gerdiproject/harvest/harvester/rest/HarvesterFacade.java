@@ -36,7 +36,8 @@ import de.gerdiproject.harvest.harvester.constants.HarvesterConstants;
 import de.gerdiproject.harvest.harvester.events.GetMaxDocumentCountEvent;
 import de.gerdiproject.harvest.state.StateMachine;
 import de.gerdiproject.harvest.utils.ServerResponseFactory;
-import de.gerdiproject.harvest.utils.logger.LoggerUtils;
+import de.gerdiproject.harvest.utils.logger.HarvesterLog;
+import de.gerdiproject.harvest.utils.logger.events.GetMainLogEvent;
 
 
 /**
@@ -195,6 +196,7 @@ public class HarvesterFacade
         return StateMachine.getCurrentState().reset();
     }
 
+
     /**
      * Attempts to retrieve the log of the harvester service.
      *
@@ -218,7 +220,12 @@ public class HarvesterFacade
         final List<String> levelFilters = levelString == null ? null : Arrays.asList(levelString.split(","));
         final List<String> classFilters = classString == null ? null : Arrays.asList(classString.split(","));
 
-        final String log = LoggerUtils.getLog(dateFilters, levelFilters, classFilters);
+        final HarvesterLog mainLog = EventSystem.sendSynchronousEvent(new GetMainLogEvent());
+
+        if (mainLog == null)
+            return ServerResponseFactory.createServerErrorResponse();
+
+        final String log = mainLog.getLog(dateFilters, levelFilters, classFilters);
 
         if (log == null)
             return ServerResponseFactory.createServerErrorResponse();

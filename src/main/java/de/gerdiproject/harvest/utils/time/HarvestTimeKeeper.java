@@ -52,6 +52,9 @@ public class HarvestTimeKeeper implements IEventListener
     /**
      * Constructor that creates time measures for harvesting, submitting, and
      * saving.
+     *
+     * @param cacheFolderName the name of the cache folder
+     * where the JSON representation of this class is cached
      */
     public HarvestTimeKeeper(String cacheFolderName)
     {

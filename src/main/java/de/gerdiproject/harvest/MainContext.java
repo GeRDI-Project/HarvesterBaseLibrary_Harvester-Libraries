@@ -28,6 +28,7 @@ import de.gerdiproject.harvest.config.Configuration;
 import de.gerdiproject.harvest.config.constants.ConfigurationConstants;
 import de.gerdiproject.harvest.config.parameters.AbstractParameter;
 import de.gerdiproject.harvest.event.EventSystem;
+import de.gerdiproject.harvest.event.IEventListener;
 import de.gerdiproject.harvest.harvester.AbstractHarvester;
 import de.gerdiproject.harvest.harvester.events.HarvesterInitializedEvent;
 import de.gerdiproject.harvest.save.HarvestSaver;
@@ -36,7 +37,11 @@ import de.gerdiproject.harvest.state.StateMachine;
 import de.gerdiproject.harvest.state.impl.InitializationState;
 import de.gerdiproject.harvest.submission.AbstractSubmitter;
 import de.gerdiproject.harvest.utils.CancelableFuture;
+import de.gerdiproject.harvest.utils.logger.HarvesterLog;
+import de.gerdiproject.harvest.utils.logger.constants.LoggerConstants;
+import de.gerdiproject.harvest.utils.logger.events.GetMainLogEvent;
 import de.gerdiproject.harvest.utils.maven.MavenUtils;
+import de.gerdiproject.harvest.utils.maven.events.GetMavenUtilsEvent;
 import de.gerdiproject.harvest.utils.time.HarvestTimeKeeper;
 
 
@@ -46,7 +51,7 @@ import de.gerdiproject.harvest.utils.time.HarvestTimeKeeper;
  *
  * @author Robin Weiss
  */
-public class MainContext
+public class MainContext implements IEventListener
 {
     private String moduleName;
 
@@ -59,6 +64,7 @@ public class MainContext
     private AbstractSubmitter submitter;
     private Scheduler scheduler;
     private MavenUtils mavenUtils;
+    private HarvesterLog log;
 
     private static MainContext instance = new MainContext();
 
@@ -68,6 +74,23 @@ public class MainContext
      */
     private MainContext()
     {
+    }
+
+
+    @Override
+    public void addEventListeners()
+    {
+        EventSystem.addSynchronousListener(GetMainLogEvent.class, onGetMainLog);
+        EventSystem.addSynchronousListener(GetMavenUtilsEvent.class, onGetMavenUtils);
+
+    }
+
+
+    @Override
+    public void removeEventListeners()
+    {
+        EventSystem.removeSynchronousListener(GetMainLogEvent.class);
+        EventSystem.removeSynchronousListener(GetMavenUtilsEvent.class);
     }
 
 
@@ -114,19 +137,7 @@ public class MainContext
     {
         return instance.timeKeeper;
     }
-    
 
-    /**
-     * Retrieves Maven utilities.
-     *
-     * @return a Maven utility class
-     * or null, if the main context was not initialized
-     */
-    public static MavenUtils getMavenUtils()
-    {
-        return instance.mavenUtils;
-    }
-    
 
     /**
      * Sets up global parameters and the harvester.
@@ -145,6 +156,8 @@ public class MainContext
     public static <T extends AbstractHarvester> void init(String moduleName, Class<T> harvesterClass,
                                                           Charset charset, List<AbstractParameter<?>> harvesterParams, AbstractSubmitter submitter)
     {
+        instance.log = new HarvesterLog(String.format(LoggerConstants.LOG_FILE_PATH, moduleName));
+
         StateMachine.setState(new InitializationState());
 
         instance.moduleName = moduleName;
@@ -190,7 +203,9 @@ public class MainContext
             return true;
         });
 
-        initProcess.thenApply(onHarvesterInitializedSuccess).exceptionally(onHarvesterInitializedFailed);
+        initProcess
+        .thenApply(instance::onHarvesterInitializedSuccess)
+        .exceptionally(instance::onHarvesterInitializedFailed);
     }
 
 
@@ -198,8 +213,13 @@ public class MainContext
      * This function is called when the asynchronous harvester initialization
      * completes successfully. It logs the success and changes the state
      * machine's current state.
+     *
+     * @param state if true, the harvester was initialized successfully
+     *
+     * @return true, if the harvester was initialized successfully
      */
-    private static Function<Boolean, Boolean> onHarvesterInitializedSuccess = (Boolean state) -> {
+    private Boolean onHarvesterInitializedSuccess(Boolean state)
+    {
 
         // log sucess
         LOGGER.info(String.format(ApplicationConstants.INIT_HARVESTER_SUCCESS, getModuleName()));
@@ -207,6 +227,7 @@ public class MainContext
         // change state
         EventSystem.sendEvent(new HarvesterInitializedEvent(state));
 
+        addEventListeners();
         return state;
     };
 
@@ -215,15 +236,41 @@ public class MainContext
      * This function is called when the asynchronous harvester fails to be
      * initialized. It logs the exception that caused the failure and changes
      * the state machine's current state.
+     *
+     * @param reason the cause of the initialization failure
+     *
+     * @return false
      */
-    private static Function<Throwable, Boolean> onHarvesterInitializedFailed = (Throwable reason) -> {
-
+    private Boolean onHarvesterInitializedFailed(Throwable reason)
+    {
         // log exception that caused the failure
         LOGGER.error(ApplicationConstants.INIT_HARVESTER_FAILED, reason.getCause());
 
         // change stage
         EventSystem.sendEvent(new HarvesterInitializedEvent(false));
 
+        addEventListeners();
         return false;
+    };
+
+
+
+    //////////////////////////////
+    // Event Callback Functions //
+    //////////////////////////////
+
+    /**
+     * This function is a synchronous callback for retrieving the main log.
+     */
+    private Function<GetMainLogEvent, HarvesterLog> onGetMainLog = (GetMainLogEvent event) -> {
+        return log;
+    };
+
+
+    /**
+     * This function is a synchronous callback for retrieving the main log.
+     */
+    private Function<GetMavenUtilsEvent, MavenUtils> onGetMavenUtils = (GetMavenUtilsEvent event) -> {
+        return mavenUtils;
     };
 }

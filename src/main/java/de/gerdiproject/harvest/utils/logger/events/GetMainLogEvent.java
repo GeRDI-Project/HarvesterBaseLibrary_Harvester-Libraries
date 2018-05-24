@@ -14,10 +14,19 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
+package de.gerdiproject.harvest.utils.logger.events;
+
+import de.gerdiproject.harvest.MainContext;
+import de.gerdiproject.harvest.event.ISynchronousEvent;
+import de.gerdiproject.harvest.utils.logger.HarvesterLog;
+
 /**
- * This package contains constants related to {@linkplain de.gerdiproject.harvest.utils.logger.HarvesterLog}
- * and logging in general.
+ * This synchronous event returns the {@linkplain HarvesterLog} that is attached
+ * to the {@linkplain MainContext}.
  *
  * @author Robin Weiss
  */
-package de.gerdiproject.harvest.utils.logger;
+public class GetMainLogEvent implements ISynchronousEvent<HarvesterLog>
+{
+
+}
