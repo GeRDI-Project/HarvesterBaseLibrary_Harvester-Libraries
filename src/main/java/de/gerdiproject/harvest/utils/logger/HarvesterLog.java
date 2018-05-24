@@ -45,19 +45,16 @@ public class HarvesterLog
 {
     private static org.slf4j.Logger LOGGER = LoggerFactory.getLogger(HarvesterLog.class);
 
-    private final String logFilePath;
-
+    private final FileAppender<ILoggingEvent> fileAppender;
 
     /**
-     * Adds a logger that logs to a specified file and assigns
+     * Creates a logger that logs to a specified file and assigns
      * a standard logging pattern to it.
      *
      * @param logFilePath the path to the log file
      */
     public HarvesterLog(final String logFilePath)
     {
-        this.logFilePath = logFilePath;
-
         final LoggerContext loggerContext = (LoggerContext) LoggerFactory.getILoggerFactory();
 
         // set a logging pattern
@@ -67,15 +64,10 @@ public class HarvesterLog
         encoder.start();
 
         // set the log file
-        FileAppender<ILoggingEvent> fileAppender = new FileAppender<>();
-        fileAppender.setName(logFilePath);
+        this.fileAppender = new FileAppender<>();
         fileAppender.setContext(loggerContext);
         fileAppender.setFile(logFilePath);
         fileAppender.setEncoder(encoder);
-        fileAppender.start();
-
-        // add the logger to the list of loggers
-        LoggerConstants.ROOT_LOGGER.addAppender(fileAppender);
     }
 
 
@@ -84,7 +76,27 @@ public class HarvesterLog
      */
     public void clearLog()
     {
-        FileUtils.deleteFile(new File(logFilePath));
+        boolean wasStarted = fileAppender.isStarted();
+
+        // stop logging and delete the log file
+        fileAppender.stop();
+        FileUtils.deleteFile(new File(fileAppender.getFile()));
+
+        // restore logging if it was running
+        if (wasStarted)
+            fileAppender.start();
+    }
+
+
+    /**
+     * Registers the logger at the list of loggers.
+     */
+    public void registerLogger()
+    {
+        if (!fileAppender.isStarted()) {
+            fileAppender.start();
+            LoggerConstants.ROOT_LOGGER.addAppender(fileAppender);
+        }
     }
 
 
@@ -93,7 +105,10 @@ public class HarvesterLog
      */
     public void unregisterLogger()
     {
-        LoggerConstants.ROOT_LOGGER.detachAppender(logFilePath);
+        if (fileAppender.isStarted()) {
+            fileAppender.stop();
+            LoggerConstants.ROOT_LOGGER.detachAppender(fileAppender);
+        }
     }
 
 
@@ -116,7 +131,7 @@ public class HarvesterLog
         try
             (BufferedReader reader = new BufferedReader(
                 new InputStreamReader(
-                    new FileInputStream(logFilePath), MainContext.getCharset()))) {
+                    new FileInputStream(fileAppender.getFile()), MainContext.getCharset()))) {
 
             if (dateFilters == null && levelFilters == null && classFilters == null)
                 logBuilder.append(reader.lines().collect(Collectors.joining("\n")));
@@ -139,7 +154,7 @@ public class HarvesterLog
                 }
             }
         } catch (IOException e) {
-            LOGGER.error(String.format(LoggerConstants.ERROR_READING_LOG, logFilePath), e);
+            LOGGER.error(String.format(LoggerConstants.ERROR_READING_LOG, fileAppender.getFile()), e);
             return null;
         }
 

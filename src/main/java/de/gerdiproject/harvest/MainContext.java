@@ -157,6 +157,7 @@ public class MainContext implements IEventListener
                                                           Charset charset, List<AbstractParameter<?>> harvesterParams, AbstractSubmitter submitter)
     {
         instance.log = new HarvesterLog(String.format(LoggerConstants.LOG_FILE_PATH, moduleName));
+        instance.log.registerLogger();
 
         StateMachine.setState(new InitializationState());
 
