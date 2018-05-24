@@ -94,8 +94,12 @@ public class EventSystem
             List<Consumer<? extends IEvent>> eventList = instance.callbackMap.get(eventClass);
 
             // remove event from list, if the list exists
-            if (eventList != null)
+            if (eventList != null) {
                 eventList.remove(callback);
+
+                if (eventList.isEmpty())
+                    instance.callbackMap.remove(eventClass);
+            }
         }
     }
 
