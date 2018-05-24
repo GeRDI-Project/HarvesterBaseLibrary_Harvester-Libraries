@@ -69,23 +69,29 @@ public class HarvestTimeKeeperTest
     public void testCaching()
     {
         HarvestTimeKeeper keeper = new HarvestTimeKeeper(MOCKED_FOLDER_NAME);
-        keeper.init();
+        keeper.addEventListeners();
 
+        // send events to change statuses
         EventSystem.sendEvent(new HarvestStartedEvent(0, 1));
         EventSystem.sendEvent(new HarvestFinishedEvent(true, null));
         EventSystem.sendEvent(new SaveStartedEvent(false, 1));
         EventSystem.sendEvent(new SaveFinishedEvent(false));
         EventSystem.sendEvent(new SubmissionStartedEvent(1));
 
+        // clean up old time keeper
+        keeper.removeEventListeners();
         keeper = null;
 
         HarvestTimeKeeper loadedKeeper = new HarvestTimeKeeper(MOCKED_FOLDER_NAME);
-        loadedKeeper.init();
+        loadedKeeper.loadFromDisk();
 
+        // assert that the loaded statuses are the saved ones
         assertEquals(ProcessStatus.Finished, loadedKeeper.getHarvestMeasure().getStatus());
         assertEquals(ProcessStatus.Failed, loadedKeeper.getSaveMeasure().getStatus());
         assertEquals(ProcessStatus.NotStarted, loadedKeeper.getSubmissionMeasure().getStatus());
 
+        // clean up loaded time keeper
+        loadedKeeper.removeEventListeners();
         reset();
     }
 
@@ -97,7 +103,7 @@ public class HarvestTimeKeeperTest
     public void testHarvestMeasure()
     {
         final HarvestTimeKeeper keeper = new HarvestTimeKeeper(MOCKED_FOLDER_NAME);
-        keeper.init();
+        keeper.addEventListeners();
 
         testMeasure(
             keeper.getHarvestMeasure(),
@@ -106,6 +112,7 @@ public class HarvestTimeKeeperTest
             new HarvestFinishedEvent(false, null)
         );
 
+        keeper.removeEventListeners();
         reset();
     }
 
@@ -117,7 +124,7 @@ public class HarvestTimeKeeperTest
     public void testSaveMeasure()
     {
         final HarvestTimeKeeper keeper = new HarvestTimeKeeper(MOCKED_FOLDER_NAME);
-        keeper.init();
+        keeper.addEventListeners();
 
         testMeasure(
             keeper.getSaveMeasure(),
@@ -126,6 +133,7 @@ public class HarvestTimeKeeperTest
             new SaveFinishedEvent(false)
         );
 
+        keeper.removeEventListeners();
         reset();
     }
 
@@ -137,7 +145,7 @@ public class HarvestTimeKeeperTest
     public void testSubmissionMeasure()
     {
         final HarvestTimeKeeper keeper = new HarvestTimeKeeper(MOCKED_FOLDER_NAME);
-        keeper.init();
+        keeper.addEventListeners();
 
         testMeasure(
             keeper.getSubmissionMeasure(),
@@ -146,6 +154,7 @@ public class HarvestTimeKeeperTest
             new SubmissionFinishedEvent(false)
         );
 
+        keeper.removeEventListeners();
         reset();
     }
 
@@ -189,7 +198,5 @@ public class HarvestTimeKeeperTest
     {
         final File cacheFile = new File(String.format(CacheConstants.HARVEST_TIME_KEEPER_CACHE_FILE_PATH, MOCKED_FOLDER_NAME));
         cacheFile.delete();
-
-        EventSystem.reset();
     }
 }

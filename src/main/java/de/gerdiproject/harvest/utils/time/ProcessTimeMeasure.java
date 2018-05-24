@@ -21,7 +21,9 @@ import java.util.function.Consumer;
 import de.gerdiproject.harvest.event.AbstractSucceededOrFailedEvent;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.event.IEvent;
+import de.gerdiproject.harvest.event.IEventListener;
 import de.gerdiproject.harvest.state.events.AbortingStartedEvent;
+import de.gerdiproject.harvest.submission.Procedure;
 import de.gerdiproject.harvest.utils.time.constants.HarvestTimeKeeperConstants;
 import de.gerdiproject.harvest.utils.time.events.ProcessTimeMeasureFinishedEvent;
 
@@ -31,12 +33,15 @@ import de.gerdiproject.harvest.utils.time.events.ProcessTimeMeasureFinishedEvent
  *
  * @author Robin Weiss
  */
-public class ProcessTimeMeasure
+public class ProcessTimeMeasure implements IEventListener
 {
+    private final transient ProcessTimeMeasureFinishedEvent finishedEvent;
+    private final transient Procedure eventListenerAdder;
+    private final transient Procedure eventListenerRemover;
+
     private long startTimestamp;
     private long endTimestamp;
     private ProcessStatus status;
-    private transient ProcessTimeMeasureFinishedEvent finishedEvent;
 
 
     /**
@@ -44,14 +49,18 @@ public class ProcessTimeMeasure
      */
     public ProcessTimeMeasure()
     {
+        this.finishedEvent = new ProcessTimeMeasureFinishedEvent(this);
         this.status = ProcessStatus.NotStarted;
         this.startTimestamp = -1;
         this.endTimestamp = -1;
+        eventListenerAdder = null;
+        eventListenerRemover = null;
     }
 
 
     /**
-     * Initializes the time measuring event listeners.
+     * Constructor that sets up the events for measuring the process time,
+     * but does not automatically add event listeners.
      *
      * @param startEvent the class of an Event that marks the beginning of the
      *            time measurement
@@ -60,28 +69,56 @@ public class ProcessTimeMeasure
      * @param <R> the type of the start event
      * @param <T> the type of the end event
      */
-    public <R extends IEvent, T extends AbstractSucceededOrFailedEvent> void init(Class<R> startEvent, Class<T> endEvent)
+    public <R extends IEvent, T extends AbstractSucceededOrFailedEvent> ProcessTimeMeasure(Class<R> startEvent, Class<T> endEvent)
     {
-        // create process started event callback
-        Consumer<R> onProcessStarted = (R event) -> start();
+        this.finishedEvent = new ProcessTimeMeasureFinishedEvent(this);
+        this.status = ProcessStatus.NotStarted;
+        this.startTimestamp = -1;
+        this.endTimestamp = -1;
 
-        // create process finished event callback
-        Consumer<T> onProcessFinished = (T event) -> {
+        // define function for starting process measurement
+        final Consumer<R> onProcessStarted = (R event) -> start();
+
+        // define function for finishing process measurement
+        final Consumer<T> onProcessFinished =
+        (T event) -> {
             if (event.isSuccessful())
                 end(ProcessStatus.Finished);
             else
                 end(ProcessStatus.Failed);
         };
 
-        // create process aborted event callback
-        Consumer<AbortingStartedEvent> onProcessAborted =
-            (AbortingStartedEvent event) -> end(ProcessStatus.Aborted);
+        // define function for adding event listeners
+        this.eventListenerAdder = () -> {
+            EventSystem.addListener(startEvent, onProcessStarted);
+            EventSystem.addListener(endEvent, onProcessFinished);
+            EventSystem.addListener(AbortingStartedEvent.class, onProcessAborted);
+        };
 
-        finishedEvent = new ProcessTimeMeasureFinishedEvent(this);
+        // define function for removing event listeners
+        this.eventListenerRemover = () -> {
+            EventSystem.removeListener(startEvent, onProcessStarted);
+            EventSystem.removeListener(endEvent, onProcessFinished);
+            EventSystem.removeListener(AbortingStartedEvent.class, onProcessAborted);
+        };
+    }
 
-        EventSystem.addListener(startEvent, onProcessStarted);
-        EventSystem.addListener(endEvent, onProcessFinished);
-        EventSystem.addListener(AbortingStartedEvent.class, onProcessAborted);
+
+    @Override
+    public void addEventListeners()
+    {
+        if (eventListenerAdder != null)
+            eventListenerAdder.run();
+
+    }
+
+
+    @Override
+    public void removeEventListeners()
+    {
+        if (eventListenerRemover != null)
+            eventListenerRemover.run();
+
     }
 
 
@@ -206,4 +243,16 @@ public class ProcessTimeMeasure
     public enum ProcessStatus {
         NotStarted, Started, Finished, Aborted, Failed
     }
+
+
+    //////////////////////////////
+    // Event Callback Functions //
+    //////////////////////////////
+
+    /**
+     * Event callback for aborting the process
+     */
+    private final transient Consumer<AbortingStartedEvent> onProcessAborted = (AbortingStartedEvent event) -> {
+        end(ProcessStatus.Aborted);
+    };
 }

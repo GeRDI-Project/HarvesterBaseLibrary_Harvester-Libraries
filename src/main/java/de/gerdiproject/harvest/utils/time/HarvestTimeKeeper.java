@@ -16,10 +16,12 @@
 package de.gerdiproject.harvest.utils.time;
 
 import java.nio.charset.StandardCharsets;
+import java.util.function.Consumer;
 
 import com.google.gson.GsonBuilder;
 
 import de.gerdiproject.harvest.event.EventSystem;
+import de.gerdiproject.harvest.event.IEventListener;
 import de.gerdiproject.harvest.harvester.events.HarvestFinishedEvent;
 import de.gerdiproject.harvest.harvester.events.HarvestStartedEvent;
 import de.gerdiproject.harvest.save.events.SaveFinishedEvent;
@@ -37,7 +39,7 @@ import de.gerdiproject.harvest.utils.time.events.ProcessTimeMeasureFinishedEvent
  *
  * @author Robin Weiss
  */
-public class HarvestTimeKeeper
+public class HarvestTimeKeeper implements IEventListener
 {
     private final ProcessTimeMeasure harvestMeasure;
     private final ProcessTimeMeasure submissionMeasure;
@@ -54,9 +56,9 @@ public class HarvestTimeKeeper
     public HarvestTimeKeeper(String cacheFolderName)
     {
         this.diskIo = new DiskIO(new GsonBuilder().create(), StandardCharsets.UTF_8);
-        this.harvestMeasure = new ProcessTimeMeasure();
-        this.saveMeasure = new ProcessTimeMeasure();
-        this.submissionMeasure = new ProcessTimeMeasure();
+        this.harvestMeasure = new ProcessTimeMeasure(HarvestStartedEvent.class, HarvestFinishedEvent.class);
+        this.saveMeasure = new ProcessTimeMeasure(SaveStartedEvent.class, SaveFinishedEvent.class);
+        this.submissionMeasure = new ProcessTimeMeasure(SubmissionStartedEvent.class, SubmissionFinishedEvent.class);
 
         this.cacheFilePath = String.format(
                                  CacheConstants.HARVEST_TIME_KEEPER_CACHE_FILE_PATH,
@@ -64,30 +66,34 @@ public class HarvestTimeKeeper
     }
 
 
-    /**
-     * Attempts to load old timestamps from a cache file from disk and
-     * initializes event listeners of the time measures and the time keeper
-     * itself. This separation from the constructor is required in order to not
-     * create Zombie-listeners when parsing the {@linkplain HarvestTimeKeeper}
-     * from disk.
-     */
-    public void init()
+    @Override
+    public void addEventListeners()
     {
-        loadFromDisk();
+        harvestMeasure.addEventListeners();
+        saveMeasure.addEventListeners();
+        submissionMeasure.addEventListeners();
 
-        harvestMeasure.init(HarvestStartedEvent.class, HarvestFinishedEvent.class);
-        saveMeasure.init(SaveStartedEvent.class, SaveFinishedEvent.class);
-        submissionMeasure.init(SubmissionStartedEvent.class, SubmissionFinishedEvent.class);
+        EventSystem.addListener(HarvestStartedEvent.class, onHarvestStarted);
+        EventSystem.addListener(ProcessTimeMeasureFinishedEvent.class, onProcessTimeMeasureFinished);
+    }
 
-        EventSystem.addListener(HarvestStartedEvent.class, this::onHarvestStarted);
-        EventSystem.addListener(ProcessTimeMeasureFinishedEvent.class, this::onProcessTimeMeasureFinished);
+
+    @Override
+    public void removeEventListeners()
+    {
+        harvestMeasure.removeEventListeners();
+        saveMeasure.removeEventListeners();
+        submissionMeasure.removeEventListeners();
+
+        EventSystem.removeListener(HarvestStartedEvent.class, onHarvestStarted);
+        EventSystem.removeListener(ProcessTimeMeasureFinishedEvent.class, onProcessTimeMeasureFinished);
     }
 
 
     /**
      * Attempts to load values from a cached file.
      */
-    private void loadFromDisk()
+    public void loadFromDisk()
     {
         final HarvestTimeKeeper parsedKeeper = diskIo.getObject(cacheFilePath, HarvestTimeKeeper.class);
 
@@ -172,6 +178,12 @@ public class HarvestTimeKeeper
         diskIo.writeObjectToFile(cacheFilePath, this);
     }
 
+    private void resetSaveAndSubmissionMeasures()
+    {
+        saveMeasure.set(-1, -1, ProcessStatus.NotStarted);
+        submissionMeasure.set(-1, -1, ProcessStatus.NotStarted);
+    }
+
 
     //////////////////////////////
     // Event Callback Functions //
@@ -183,11 +195,9 @@ public class HarvestTimeKeeper
      *
      * @param event the event that triggered the callback
      */
-    private void onHarvestStarted(HarvestStartedEvent event) // NOPMD - Event callbacks always require the event
-    {
-        saveMeasure.set(-1, -1, ProcessStatus.NotStarted);
-        submissionMeasure.set(-1, -1, ProcessStatus.NotStarted);
-    }
+    private final transient Consumer<HarvestStartedEvent> onHarvestStarted = (HarvestStartedEvent event)  -> {
+        resetSaveAndSubmissionMeasures();
+    };
 
 
     /**
@@ -196,8 +206,7 @@ public class HarvestTimeKeeper
      *
      * @param event the event that triggered the listener
      */
-    private void onProcessTimeMeasureFinished(ProcessTimeMeasureFinishedEvent event) // NOPMD - Event callbacks always require the event
-    {
+    private final transient Consumer<ProcessTimeMeasureFinishedEvent>  onProcessTimeMeasureFinished = (ProcessTimeMeasureFinishedEvent event) -> {
         saveToDisk();
-    }
+    };
 }
