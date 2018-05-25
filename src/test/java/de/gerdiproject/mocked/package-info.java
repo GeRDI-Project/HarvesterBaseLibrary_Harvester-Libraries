@@ -16,7 +16,7 @@
  */
 /**
  * This package contains classes that are used for mocking data for unit tests.
- * 
+ *
  * @author Robin Weiss
  */
 package de.gerdiproject.mocked;

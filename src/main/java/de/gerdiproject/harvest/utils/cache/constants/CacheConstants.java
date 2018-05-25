@@ -64,6 +64,7 @@ public class CacheConstants
 
     public static final String REPLACE_FILE_SUCCESS = "Replaced file '%s' with '%s'.";
     public static final String REPLACE_FILE_FAILED = "Could not replace file '%s' with '%s'!";
+    public static final String REPLACE_FILE_FAILED_NO_FILE = "Could not replace file '%s' with '%s', because it does not exist!";
     public static final String REPLACE_FILE_FAILED_NO_TARGET_DIR = "Could not replace file '%s' with '%s': "
                                                                    + "The target directory does not exist and could not be created!";
 
@@ -72,6 +73,7 @@ public class CacheConstants
 
     public static final String COPY_FILE_SUCCESS = "Copied file '%s' to '%s'.";
     public static final String COPY_FILE_FAILED = "Could not copy file '%s' to '%s'!";
+    public static final String COPY_FILE_FAILED_NO_FILE = "Could not copy file '%s' to '%s', because it does not exist!";
 
     public static final String CREATE_DIR_SUCCESS = "Created directory '%s'.";
     public static final String CREATE_DIR_FAILED = "Could not create directory '%s'!";

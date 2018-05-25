@@ -32,7 +32,7 @@ import ch.qos.logback.classic.encoder.PatternLayoutEncoder;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.FileAppender;
 import de.gerdiproject.harvest.MainContext;
-import de.gerdiproject.harvest.utils.cache.FileUtils;
+import de.gerdiproject.harvest.utils.FileUtils;
 import de.gerdiproject.harvest.utils.logger.constants.LoggerConstants;
 
 /**

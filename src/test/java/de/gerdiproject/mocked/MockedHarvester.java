@@ -28,7 +28,7 @@ import de.gerdiproject.json.datacite.Title;
 /**
  * This class serves as a mocked Harvester that can harvest a specified
  * list of strings.
- * 
+ *
  * @author Robin Weiss
  */
 public class MockedHarvester extends AbstractListHarvester<String>
@@ -38,7 +38,7 @@ public class MockedHarvester extends AbstractListHarvester<String>
 
     /**
      * This constructor accepts a list of harvestable strings.
-     * 
+     *
      * @param mockedEntries a list of strings to be harvested
      */
     public MockedHarvester(final List<String> mockedEntries)

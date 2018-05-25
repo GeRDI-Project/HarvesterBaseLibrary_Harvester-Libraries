@@ -20,7 +20,7 @@ import de.gerdiproject.harvest.ContextListener;
 
 /**
  * This class is a mocked ContextListener, duh!
- * 
+ *
  * @author Robin Weiss
  */
 public class MockedContextListener extends ContextListener<MockedHarvester>

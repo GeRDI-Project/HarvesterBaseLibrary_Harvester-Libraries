@@ -29,7 +29,6 @@ import de.gerdiproject.json.datacite.DataCiteJson;
  * This class provides test cases for {@linkplain MavenUtils}.
  *
  * @author Robin Weiss
- *
  */
 public class MavenUtilsTest
 {

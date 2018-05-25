@@ -14,7 +14,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package de.gerdiproject.harvest.utils.cache;
+package de.gerdiproject.harvest.utils;
 
 import java.io.File;
 import java.io.IOException;
@@ -91,24 +91,49 @@ public class FileUtils
      * Replaces one cache file with another and logs any errors.
      *
      * @param targetFile the file that is to be replaced
-     * @param newFile the new file
+     * @param newFile the new file that replaces the target file
      */
     public static void replaceFile(File targetFile, File newFile)
     {
-        deleteFile(targetFile);
+        if (!newFile.exists()) {
+            LOGGER.error(String.format(
+                             CacheConstants.REPLACE_FILE_FAILED_NO_FILE,
+                             targetFile.getAbsolutePath(),
+                             newFile.getAbsolutePath()));
+            return;
+        }
+
+        File backup = null;
+
+        // back up target file, in case something goes wrong
+        if (targetFile.exists()) {
+            backup = new File(targetFile.getPath() + CacheConstants.TEMP_FILE_EXTENSION);
+            targetFile.renameTo(backup);
+        }
 
         if (!createDirectories(targetFile.getParentFile())) {
             LOGGER.error(String.format(
                              CacheConstants.REPLACE_FILE_FAILED_NO_TARGET_DIR,
                              targetFile.getAbsolutePath(),
                              newFile.getAbsolutePath()));
+
+            if (backup != null)
+                backup.renameTo(targetFile);
+
             return;
         }
 
-        if (!newFile.renameTo(targetFile))
+        if (!newFile.renameTo(targetFile)) {
             LOGGER.error(String.format(CacheConstants.REPLACE_FILE_FAILED, targetFile.getPath(), newFile.getPath()));
-        else
+
+            if (backup != null)
+                backup.renameTo(targetFile);
+        } else {
             LOGGER.trace(String.format(CacheConstants.REPLACE_FILE_SUCCESS, targetFile.getPath(), newFile.getPath()));
+
+            if (backup != null)
+                deleteFile(backup);
+        }
     }
 
 
@@ -120,7 +145,13 @@ public class FileUtils
      */
     public static void copyFile(File sourceFile, File targetFile)
     {
-        if (createDirectories(sourceFile.isDirectory() ? targetFile : targetFile.getParentFile())) {
+        if (!sourceFile.exists())
+            LOGGER.error(String.format(
+                             CacheConstants.COPY_FILE_FAILED_NO_FILE,
+                             sourceFile.getAbsolutePath(),
+                             targetFile.getAbsolutePath()));
+
+        else if (createDirectories(sourceFile.isDirectory() ? targetFile : targetFile.getParentFile())) {
 
             try {
                 Files.copy(sourceFile.toPath(), targetFile.toPath(), StandardCopyOption.REPLACE_EXISTING);

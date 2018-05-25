@@ -20,6 +20,7 @@ import java.io.File;
 
 import de.gerdiproject.harvest.MainContext;
 import de.gerdiproject.harvest.harvester.AbstractHarvester;
+import de.gerdiproject.harvest.utils.FileUtils;
 import de.gerdiproject.harvest.utils.cache.constants.CacheConstants;
 
 /**
