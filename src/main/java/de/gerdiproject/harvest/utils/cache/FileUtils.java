@@ -77,10 +77,12 @@ public class FileUtils
 
             if (!wasDeleted) {
                 if (ioException != null)
-                    LOGGER.error(String.format(CacheConstants.DELETE_FILE_FAILED, deletedFile.getAbsolutePath()), ioException);
+                    LOGGER.error(String.format(CacheConstants.DELETE_FILE_FAILED, deletedFile.getPath()), ioException);
                 else
-                    LOGGER.error(String.format(CacheConstants.DELETE_FILE_FAILED, deletedFile.getAbsolutePath()));
-            }
+                    LOGGER.error(String.format(CacheConstants.DELETE_FILE_FAILED, deletedFile.getPath()));
+            } else
+                LOGGER.trace(String.format(CacheConstants.DELETE_FILE_SUCCESS, deletedFile.getPath()));
+
         }
     }
 
@@ -88,15 +90,25 @@ public class FileUtils
     /**
      * Replaces one cache file with another and logs any errors.
      *
-     * @param oldFile the file that is to be replaced
+     * @param targetFile the file that is to be replaced
      * @param newFile the new file
      */
-    public static void replaceFile(File oldFile, File newFile)
+    public static void replaceFile(File targetFile, File newFile)
     {
-        deleteFile(oldFile);
+        deleteFile(targetFile);
 
-        if (!createDirectories(newFile) || !newFile.renameTo(oldFile))
-            LOGGER.error(String.format(CacheConstants.CACHE_CREATE_FAILED, oldFile.getAbsolutePath()));
+        if (!createDirectories(targetFile.getParentFile())) {
+            LOGGER.error(String.format(
+                             CacheConstants.REPLACE_FILE_FAILED_NO_TARGET_DIR,
+                             targetFile.getAbsolutePath(),
+                             newFile.getAbsolutePath()));
+            return;
+        }
+
+        if (!newFile.renameTo(targetFile))
+            LOGGER.error(String.format(CacheConstants.REPLACE_FILE_FAILED, targetFile.getPath(), newFile.getPath()));
+        else
+            LOGGER.trace(String.format(CacheConstants.REPLACE_FILE_SUCCESS, targetFile.getPath(), newFile.getPath()));
     }
 
 
@@ -108,34 +120,44 @@ public class FileUtils
      */
     public static void copyFile(File sourceFile, File targetFile)
     {
-        createDirectories(targetFile);
+        if (createDirectories(sourceFile.isDirectory() ? targetFile : targetFile.getParentFile())) {
 
-        try {
-            Files.copy(sourceFile.toPath(), targetFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
-        } catch (IOException e) {
-            LOGGER.error(
-                String.format(
-                    CacheConstants.COPY_FILE_FAILED,
-                    sourceFile.getAbsolutePath(),
-                    targetFile.getAbsolutePath()));
+            try {
+                Files.copy(sourceFile.toPath(), targetFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+            } catch (IOException e) {
+                LOGGER.error(
+                    String.format(
+                        CacheConstants.COPY_FILE_FAILED,
+                        sourceFile.getAbsolutePath(),
+                        targetFile.getAbsolutePath()));
+                return;
+            }
+
+            LOGGER.trace(String.format(CacheConstants.COPY_FILE_SUCCESS, sourceFile.getPath(), targetFile.getPath()));
         }
     }
 
 
     /**
-     * Attempts to create all directories of a specified file.
+     * Attempts to create all directories of a given directory path.
      *
-     * @param file the file or directory for which all directories are supposed
-     *            to be created
+     * @param directory the directory path to be created
      *
-     * @return true if the directories exist or were created or the file does
-     *         not have directories
+     * @return true if the directories already exist or were created
      */
-    public static boolean createDirectories(File file)
+    public static boolean createDirectories(File directory)
     {
-        final File directory = file.isDirectory() ? file : file.getParentFile();
+        if (directory == null || directory.exists())
+            return true;
 
-        return directory == null || directory.exists() || directory.mkdirs();
+        final boolean creationSuccessful = directory.mkdirs();
+
+        if (creationSuccessful)
+            LOGGER.trace(String.format(CacheConstants.CREATE_DIR_SUCCESS, directory.getPath()));
+        else
+            LOGGER.error(String.format(CacheConstants.CREATE_DIR_FAILED, directory.getPath()));
+
+        return creationSuccessful;
     }
 
 
@@ -149,7 +171,7 @@ public class FileUtils
         deleteFile(file);
 
         // attempt to create parent folder
-        boolean creationSuccessful = createDirectories(file);
+        boolean creationSuccessful = createDirectories(file.getParentFile());
         Exception ioException = null;
 
         try {
@@ -161,10 +183,11 @@ public class FileUtils
 
         if (!creationSuccessful) {
             if (ioException != null)
-                LOGGER.error(String.format(CacheConstants.CACHE_CREATE_FAILED, file.getAbsolutePath()), ioException);
+                LOGGER.error(String.format(CacheConstants.CREATE_FILE_FAILED, file.getPath()), ioException);
             else
-                LOGGER.error(String.format(CacheConstants.CACHE_CREATE_FAILED, file.getAbsolutePath()));
-        }
+                LOGGER.error(String.format(CacheConstants.CREATE_FILE_FAILED, file.getPath()));
+        } else
+            LOGGER.trace(String.format(CacheConstants.CREATE_FILE_SUCCESS, file.getPath()));
     }
 
 
@@ -179,14 +202,21 @@ public class FileUtils
     public static void integrateDirectory(File sourceDirectory, File targetDirectory, boolean replaceFiles)
     {
         // make sure the target directory exists
-        createDirectories(targetDirectory);
+        if (!createDirectories(targetDirectory)) {
+            LOGGER.error(String.format(
+                             CacheConstants.DIR_MERGE_FAILED_NO_TARGET_DIR,
+                             sourceDirectory.getPath(),
+                             targetDirectory.getPath()));
+            return;
+        }
+
 
         // make sure both files are directories
         if (!sourceDirectory.isDirectory() || !targetDirectory.isDirectory()) {
             LOGGER.error(String.format(
                              CacheConstants.DIR_MERGE_FAILED_NOT_DIRS,
-                             sourceDirectory.getAbsolutePath(),
-                             targetDirectory.getAbsolutePath()));
+                             sourceDirectory.getPath(),
+                             targetDirectory.getPath()));
             return;
         }
 
@@ -213,11 +243,16 @@ public class FileUtils
         } catch (IOException e) {
             LOGGER.error(String.format(
                              CacheConstants.DIR_MERGE_FAILED,
-                             sourceDirectory.getAbsolutePath(),
-                             targetDirectory.getAbsolutePath()),
+                             sourceDirectory.getPath(),
+                             targetDirectory.getPath()),
                          e);
             return;
         }
+
+        LOGGER.trace(String.format(
+                         CacheConstants.DIR_MERGE_SUCCESS,
+                         sourceDirectory.getPath(),
+                         targetDirectory.getPath()));
 
         // delete source folder
         deleteFile(sourceDirectory);

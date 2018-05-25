@@ -50,7 +50,7 @@ public class MavenUtils
      * Initializes class by retrieving the jar name of the jar that contains the ContextListener
      * implementation, namely the harvester jar.
      *
-     * @param context the context listener that called this method
+     * @param context the context listener of the service
      */
     public void init(ContextListener<?> context)
     {

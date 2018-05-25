@@ -169,11 +169,12 @@ public class ElasticSearchSubmitter extends AbstractSubmitter
 
         // if the url was changed, convert it to a bulk submission url
         if (event.getParameter().getKey().equals(ConfigurationConstants.SUBMISSION_URL) && url != null) {
-            String[] path = url.getPath().substring(1).split("/");
+            String rawPath = url.getPath() + '/';
+            String[] path = rawPath.substring(1).split("/");
             String bulkSubmitUrl = url.toString();
 
             // check if the URL already is a bulk submission URL
-            if (!path[path.length - 1].equals(ElasticSearchConstants.BULK_SUBMISSION_URL_SUFFIX)) {
+            if (path.length == 0 || !path[path.length - 1].equals(ElasticSearchConstants.BULK_SUBMISSION_URL_SUFFIX)) {
                 // extract URL without Query, add a slash if necessary
                 int queryIndex = bulkSubmitUrl.indexOf('?');
 
