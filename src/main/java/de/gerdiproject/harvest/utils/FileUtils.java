@@ -88,7 +88,7 @@ public class FileUtils
 
 
     /**
-     * Replaces one cache file with another and logs any errors.
+     * Replaces one file with another and logs any errors.
      *
      * @param targetFile the file that is to be replaced
      * @param newFile the new file that replaces the target file
@@ -138,7 +138,7 @@ public class FileUtils
 
 
     /**
-     * Copies one cache file to another and logs any errors.
+     * Copies a single file to a target destination and logs any errors.
      *
      * @param sourceFile the file that is to be copied
      * @param targetFile the destination file
@@ -152,6 +152,28 @@ public class FileUtils
                              targetFile.getAbsolutePath()));
 
         else if (createDirectories(sourceFile.isDirectory() ? targetFile : targetFile.getParentFile())) {
+            if (sourceFile.isDirectory()) {
+                try
+                    (DirectoryStream<Path> sourceStream = Files.newDirectoryStream(sourceFile.toPath())) {
+                    for (Path sourceFilePath : sourceStream) {
+                        final File sourceDirContent = sourceFilePath.toFile();
+                        final File targetDirContent = new File(targetFile, sourceDirContent.getName());
+
+                        if (sourceDirContent.isDirectory())
+                            copyFile(sourceDirContent, targetDirContent);
+                        else
+                            Files.copy(sourceDirContent.toPath(), targetDirContent.toPath(), StandardCopyOption.REPLACE_EXISTING);
+                    }
+                } catch (IOException e) {
+                    LOGGER.error(String.format(
+                                     CacheConstants.COPY_FILE_FAILED,
+                                     sourceFile.getPath(),
+                                     targetFile.getPath()),
+                                 e);
+                    return;
+                }
+
+            }
 
             try {
                 Files.copy(sourceFile.toPath(), targetFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
@@ -267,8 +289,8 @@ public class FileUtils
                         deleteFile(targetFile);
 
                     // copy single file
-                    if (!targetFile.exists())
-                        copyFile(sourceFile, targetFile);
+                    if (replaceFiles || !targetFile.exists())
+                        replaceFile(targetFile, sourceFile);
                 }
             }
         } catch (IOException e) {
