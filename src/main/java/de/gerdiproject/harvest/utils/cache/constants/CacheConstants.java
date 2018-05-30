@@ -80,7 +80,7 @@ public class CacheConstants
 
     public static final String DIR_MERGE_SUCCESS = "Merged folder '%s' into '%s'.";
     public static final String DIR_MERGE_FAILED_NOT_DIRS = "Could not merge '%s' into '%s': Both paths must denote directories!";
-    public static final String DIR_MERGE_FAILED_NO_TARGET_DIR = "Could not merge '%s' into '%s': The target directory does not exist and could not be created!";
+    public static final String DIR_MERGE_FAILED_NO_SOURCE_DIR = "Could not merge '%s' into '%s': The source directory does not exist!";
     public static final String DIR_MERGE_FAILED = "Could not merge '%s' into '%s'!";
 
     // AbstractStreamHarvester

@@ -172,18 +172,18 @@ public class FileUtils
                                  e);
                     return;
                 }
-
-            }
-
-            try {
-                Files.copy(sourceFile.toPath(), targetFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
-            } catch (IOException e) {
-                LOGGER.error(
-                    String.format(
-                        CacheConstants.COPY_FILE_FAILED,
-                        sourceFile.getAbsolutePath(),
-                        targetFile.getAbsolutePath()));
-                return;
+            } else {
+                try {
+                    Files.copy(sourceFile.toPath(), targetFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+                } catch (IOException e) {
+                    LOGGER.error(
+                        String.format(
+                            CacheConstants.COPY_FILE_FAILED,
+                            sourceFile.getAbsolutePath(),
+                            targetFile.getAbsolutePath()),
+                        e);
+                    return;
+                }
             }
 
             LOGGER.trace(String.format(CacheConstants.COPY_FILE_SUCCESS, sourceFile.getPath(), targetFile.getPath()));
@@ -254,22 +254,27 @@ public class FileUtils
      */
     public static void integrateDirectory(File sourceDirectory, File targetDirectory, boolean replaceFiles)
     {
-        // make sure the target directory exists
-        if (!createDirectories(targetDirectory)) {
+        // make sure the source directory exists
+        if (!sourceDirectory.exists()) {
             LOGGER.error(String.format(
-                             CacheConstants.DIR_MERGE_FAILED_NO_TARGET_DIR,
+                             CacheConstants.DIR_MERGE_FAILED_NO_SOURCE_DIR,
                              sourceDirectory.getPath(),
                              targetDirectory.getPath()));
             return;
         }
 
-
         // make sure both files are directories
-        if (!sourceDirectory.isDirectory() || !targetDirectory.isDirectory()) {
+        if (!sourceDirectory.isDirectory() || (targetDirectory.exists() && !targetDirectory.isDirectory())) {
             LOGGER.error(String.format(
                              CacheConstants.DIR_MERGE_FAILED_NOT_DIRS,
                              sourceDirectory.getPath(),
                              targetDirectory.getPath()));
+            return;
+        }
+
+        // if the target directory does not exist, simply rename the source directory
+        if (!targetDirectory.exists()) {
+            sourceDirectory.renameTo(targetDirectory);
             return;
         }
 
@@ -284,10 +289,6 @@ public class FileUtils
                     integrateDirectory(sourceFile, targetFile, replaceFiles);
 
                 else {
-                    // delete existing file, if in replace-mode
-                    if (replaceFiles)
-                        deleteFile(targetFile);
-
                     // copy single file
                     if (replaceFiles || !targetFile.exists())
                         replaceFile(targetFile, sourceFile);
