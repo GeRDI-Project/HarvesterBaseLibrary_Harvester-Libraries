@@ -23,7 +23,7 @@ import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.event.IEvent;
 import de.gerdiproject.harvest.event.IEventListener;
 import de.gerdiproject.harvest.state.events.AbortingStartedEvent;
-import de.gerdiproject.harvest.submission.Procedure;
+import de.gerdiproject.harvest.utils.Procedure;
 import de.gerdiproject.harvest.utils.time.constants.HarvestTimeKeeperConstants;
 import de.gerdiproject.harvest.utils.time.events.ProcessTimeMeasureFinishedEvent;
 

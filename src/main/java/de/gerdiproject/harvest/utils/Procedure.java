@@ -14,7 +14,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package de.gerdiproject.harvest.submission;
+package de.gerdiproject.harvest.utils;
 
 /**
  * This interface represents a lmbda expression that accepts no arguments and returns
