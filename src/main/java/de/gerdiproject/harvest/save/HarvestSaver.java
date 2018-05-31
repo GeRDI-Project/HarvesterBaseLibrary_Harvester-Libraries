@@ -32,6 +32,7 @@ import de.gerdiproject.harvest.MainContext;
 import de.gerdiproject.harvest.config.Configuration;
 import de.gerdiproject.harvest.config.constants.ConfigurationConstants;
 import de.gerdiproject.harvest.event.EventSystem;
+import de.gerdiproject.harvest.event.IEventListener;
 import de.gerdiproject.harvest.save.constants.SaveConstants;
 import de.gerdiproject.harvest.save.events.DocumentSavedEvent;
 import de.gerdiproject.harvest.save.events.SaveFinishedEvent;
@@ -47,29 +48,33 @@ import de.gerdiproject.harvest.utils.cache.HarvesterCacheManager;
 import de.gerdiproject.json.datacite.DataCiteJson;
 
 /**
- * This static class offers some helper functions for saving a harvest result to
- * disk.
+ * This class offers functions for saving a harvest result to disk.
  *
  * @author Robin Weiss
  */
-public class HarvestSaver
+public class HarvestSaver implements IEventListener
 {
-    private final static HarvestSaver instance = new HarvestSaver();
+    private final static Logger LOGGER = LoggerFactory.getLogger(HarvestSaver.class);
 
     private CancelableFuture<Boolean> currentSavingProcess;
     private boolean isAborting;
     private File saveFile;
 
-    private final static Logger LOGGER = LoggerFactory.getLogger(HarvestSaver.class);
 
-
-    /**
-     * Adds event listeners, and sets the harvest saver timestamp if something
-     * was saved in a previous session.
-     */
-    public static void init()
+    @Override
+    public void addEventListeners()
     {
-        EventSystem.addListener(StartSaveEvent.class, instance.onStartSave);
+        EventSystem.addListener(StartSaveEvent.class, onStartSave);
+
+    }
+
+
+    @Override
+    public void removeEventListeners()
+    {
+        EventSystem.removeListener(StartSaveEvent.class, onStartSave);
+        EventSystem.removeListener(StartAbortingEvent.class, onStartAborting);
+
     }
 
 
@@ -340,5 +345,4 @@ public class HarvestSaver
         EventSystem.removeListener(StartAbortingEvent.class, this.onStartAborting);
         EventSystem.sendEvent(new AbortingStartedEvent());
     };
-
 }

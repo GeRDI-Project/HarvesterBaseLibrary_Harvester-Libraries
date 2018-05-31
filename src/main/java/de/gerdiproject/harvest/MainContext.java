@@ -53,10 +53,13 @@ import de.gerdiproject.harvest.utils.time.HarvestTimeKeeper;
  */
 public class MainContext implements IEventListener
 {
-    private String moduleName;
-
     private static final Logger LOGGER = LoggerFactory.getLogger(MainContext.class);
+    private static final MainContext instance = new MainContext();
 
+    private final HarvestSaver saver;
+
+    private HarvesterLog log;
+    private String moduleName;
     private HarvestTimeKeeper timeKeeper;
     private AbstractHarvester harvester;
     private Charset charset;
@@ -64,9 +67,7 @@ public class MainContext implements IEventListener
     private AbstractSubmitter submitter;
     private Scheduler scheduler;
     private MavenUtils mavenUtils;
-    private HarvesterLog log;
 
-    private static MainContext instance = new MainContext();
 
 
     /**
@@ -74,6 +75,7 @@ public class MainContext implements IEventListener
      */
     private MainContext()
     {
+        saver = new HarvestSaver();
     }
 
 
@@ -156,6 +158,9 @@ public class MainContext implements IEventListener
     public static <T extends AbstractHarvester> void init(String moduleName, Class<T> harvesterClass,
                                                           Charset charset, List<AbstractParameter<?>> harvesterParams, AbstractSubmitter submitter)
     {
+        if (instance.log != null)
+            instance.log.unregisterLogger();
+
         instance.log = new HarvesterLog(String.format(LoggerConstants.LOG_FILE_PATH, moduleName));
         instance.log.registerLogger();
 
@@ -175,7 +180,7 @@ public class MainContext implements IEventListener
             LOGGER.info(ApplicationConstants.INIT_HARVESTER_START);
 
             // initialize saver and submitter
-            HarvestSaver.init();
+            instance.saver.addEventListeners();
             instance.submitter = submitter;
             instance.submitter.init();
 
@@ -263,7 +268,7 @@ public class MainContext implements IEventListener
     /**
      * This function is a synchronous callback for retrieving the main log.
      */
-    private Function<GetMainLogEvent, HarvesterLog> onGetMainLog = (GetMainLogEvent event) -> {
+    private final Function<GetMainLogEvent, HarvesterLog> onGetMainLog = (GetMainLogEvent event) -> {
         return log;
     };
 
@@ -271,7 +276,7 @@ public class MainContext implements IEventListener
     /**
      * This function is a synchronous callback for retrieving the main log.
      */
-    private Function<GetMavenUtilsEvent, MavenUtils> onGetMavenUtils = (GetMavenUtilsEvent event) -> {
+    private final Function<GetMavenUtilsEvent, MavenUtils> onGetMavenUtils = (GetMavenUtilsEvent event) -> {
         return mavenUtils;
     };
 }
