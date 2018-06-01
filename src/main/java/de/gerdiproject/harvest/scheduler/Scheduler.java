@@ -22,25 +22,22 @@ import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
-
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
+import java.util.function.Consumer;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.gson.Gson;
 
-import de.gerdiproject.harvest.MainContext;
 import de.gerdiproject.harvest.application.events.ContextDestroyedEvent;
 import de.gerdiproject.harvest.event.EventSystem;
+import de.gerdiproject.harvest.event.IEventListener;
 import de.gerdiproject.harvest.scheduler.constants.SchedulerConstants;
 import de.gerdiproject.harvest.scheduler.events.AddSchedulerTaskEvent;
 import de.gerdiproject.harvest.scheduler.events.DeleteSchedulerTaskEvent;
 import de.gerdiproject.harvest.scheduler.events.GetScheduleEvent;
 import de.gerdiproject.harvest.scheduler.events.ScheduledTaskExecutedEvent;
 import de.gerdiproject.harvest.scheduler.utils.CronUtils;
-import de.gerdiproject.harvest.utils.ServerResponseFactory;
 import de.gerdiproject.harvest.utils.data.DiskIO;
 
 /**
@@ -48,51 +45,75 @@ import de.gerdiproject.harvest.utils.data.DiskIO;
  *
  * @author Robin Weiss
  */
-public class Scheduler
+public class Scheduler implements IEventListener
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(Scheduler.class);
     private Timer timer;
 
     private final Map<String, TimerTask> registeredTasks;
-    private final transient DiskIO diskIo;
+    private final DiskIO diskIo;
+    private final String cacheFilePath;
 
 
     /**
      * Constructor that initializes the timer and task registry.
+     *
+     * @param cacheFilePath the path to the cache file in which
+     *         the JSON representation of this class is cached
      */
-    public Scheduler()
+    public Scheduler(String cacheFilePath)
     {
         this.timer = new Timer();
         this.registeredTasks = new ConcurrentHashMap<>();
         this.diskIo = new DiskIO(new Gson(), StandardCharsets.UTF_8);
+        this.cacheFilePath = cacheFilePath;
+    }
+
+
+    @Override
+    public void addEventListeners()
+    {
+        EventSystem.addSynchronousListener(AddSchedulerTaskEvent.class, this::onAddTask);
+        EventSystem.addSynchronousListener(DeleteSchedulerTaskEvent.class, this::onDeleteTask);
+        EventSystem.addSynchronousListener(GetScheduleEvent.class, this::onGetSchedule);
+        EventSystem.addListener(ScheduledTaskExecutedEvent.class, onTaskExecuted);
+        EventSystem.addListener(ContextDestroyedEvent.class, onContextDestroyed);
+    }
+
+
+    @Override
+    public void removeEventListeners()
+    {
+        EventSystem.removeSynchronousListener(AddSchedulerTaskEvent.class);
+        EventSystem.removeSynchronousListener(DeleteSchedulerTaskEvent.class);
+        EventSystem.removeSynchronousListener(GetScheduleEvent.class);
+        EventSystem.removeListener(ScheduledTaskExecutedEvent.class, onTaskExecuted);
+        EventSystem.removeListener(ContextDestroyedEvent.class, onContextDestroyed);
     }
 
 
     /**
-     * Initializes the scheduler by adding event listeners and loading cached schedules from disk.
+     * Returns the number of registered cron tabs.
+     *
+     * @return the number of registered cron tabs
      */
-    public void init()
+    public int size()
     {
-        EventSystem.addSynchronousListener(AddSchedulerTaskEvent.class, this::onAddTask);
-        EventSystem.addSynchronousListener(DeleteSchedulerTaskEvent.class, this::onDeleteSchedule);
-        EventSystem.addSynchronousListener(GetScheduleEvent.class, this::onGetSchedule);
-        EventSystem.addListener(ScheduledTaskExecutedEvent.class, this::onTaskExecuted);
-        EventSystem.addListener(ContextDestroyedEvent.class, this::onContextDestroyed);
-
-        loadFromDisk();
+        return registeredTasks.size();
     }
 
 
     /**
      * Attempts to load a schedule from disk.
      */
-    private void loadFromDisk()
+    public void loadFromDisk()
     {
-        String[] cachedCronTabs = diskIo.getObject(
-                                      String.format(SchedulerConstants.CACHE_PATH, MainContext.getModuleName()),
-                                      String[].class);
+        String[] cachedCronTabs = diskIo.getObject(cacheFilePath, String[].class);
 
         if (cachedCronTabs != null) {
+
+            registeredTasks.clear();
+
             for (String cronTab : cachedCronTabs) {
                 try {
                     scheduleTask(cronTab);
@@ -111,9 +132,7 @@ public class Scheduler
      */
     private void saveToDisk()
     {
-        diskIo.writeObjectToFile(
-            String.format(SchedulerConstants.CACHE_PATH, MainContext.getModuleName()),
-            registeredTasks.keySet());
+        diskIo.writeObjectToFile(cacheFilePath, registeredTasks.keySet());
     }
 
 
@@ -145,6 +164,43 @@ public class Scheduler
     }
 
 
+    /**
+     * Reschedules a task, calculating a next fitting date.
+     *
+     * @param rescheduledTask the task that is to be rescheduled
+     */
+    private void rescheduleTask(TimerTask rescheduledTask)
+    {
+        registeredTasks.forEach((String cronTab, TimerTask task) -> {
+            if (task == rescheduledTask)
+            {
+                try {
+                    scheduleTask(cronTab);
+                } catch (IllegalArgumentException e) {
+                    LOGGER.error(
+                        String.format(SchedulerConstants.ERROR_RESCHEDULE, cronTab),
+                        e);
+                }
+            }
+        });
+    }
+
+
+    /**
+     * Removes event listeners, cancels the timer and removes
+     * all registered tasks.
+     */
+    private void destroy()
+    {
+        removeEventListeners();
+
+        // stop all running task threads
+        timer.cancel();
+        timer.purge();
+        registeredTasks.clear();
+    }
+
+
     //////////////////////////////
     // Event Callback Functions //
     //////////////////////////////
@@ -155,32 +211,26 @@ public class Scheduler
      *
      * @param event the event that triggered the callback
      *
-     * @return an HTTP response
+     * @throws IllegalArgumentException thrown if the cron tab is invalid or already exists
+     * @return a feedback message
      */
-    private Response onAddTask(AddSchedulerTaskEvent event)
+    private String onAddTask(AddSchedulerTaskEvent event) throws IllegalArgumentException
     {
-        try {
-            final String cronTab = event.getCronTab();
+        final String cronTab = event.getCronTab();
 
-            if (cronTab == null)
-                throw new IllegalArgumentException(SchedulerConstants.ERROR_ADD_NULL);
+        if (cronTab == null)
+            throw new IllegalArgumentException(SchedulerConstants.ERROR_ADD_NULL);
 
-            // check for duplicate cron tabs
-            if (registeredTasks.containsKey(cronTab))
-                throw new IllegalArgumentException(String.format(SchedulerConstants.ERROR_ADD_ALREADY_EXISTS, cronTab));
+        // check for duplicate cron tabs
+        if (registeredTasks.containsKey(cronTab))
+            throw new IllegalArgumentException(String.format(SchedulerConstants.ERROR_ADD_ALREADY_EXISTS, cronTab));
 
-            scheduleTask(cronTab);
-
-        } catch (IllegalArgumentException e) {
-            return ServerResponseFactory.createBadRequestResponse(e.getMessage());
-        }
+        scheduleTask(cronTab);
 
         // save the updated schedule
         saveToDisk();
 
-        return ServerResponseFactory.createResponse(
-                   Status.CREATED,
-                   String.format(SchedulerConstants.ADD_OK, event.getCronTab()));
+        return String.format(SchedulerConstants.ADD_OK, event.getCronTab());
     }
 
 
@@ -189,28 +239,29 @@ public class Scheduler
      *
      * @param event the event that triggered the callback
      *
-     * @return an HTTP response to the request
+     * @throws IllegalArgumentException thrown if the cron tab is not registered
+     *
+     * @return a feedback message
      */
-    private Response onDeleteSchedule(DeleteSchedulerTaskEvent event)
+    private String onDeleteTask(DeleteSchedulerTaskEvent event) throws IllegalArgumentException
     {
         final String cronTab = event.getCronTab();
 
         // delete all tasks?
         if (cronTab == null) {
+            final int oldNumberOfTasks = registeredTasks.size();
             timer.cancel();
             timer.purge();
             registeredTasks.clear();
             saveToDisk();
             timer = new Timer();
 
-            return ServerResponseFactory.createOkResponse(SchedulerConstants.DELETE_ALL);
+            return String.format(SchedulerConstants.DELETE_ALL, oldNumberOfTasks);
         }
 
         // check if id is within bounds
         if (!registeredTasks.containsKey(cronTab))
-            return ServerResponseFactory.createBadRequestResponse(
-                       String.format(SchedulerConstants.DELETE_FAILED, cronTab)
-                   );
+            throw new IllegalArgumentException(String.format(SchedulerConstants.DELETE_FAILED, cronTab));
 
         // remove and cancel task
         final TimerTask removedTask = registeredTasks.remove(cronTab);
@@ -219,9 +270,7 @@ public class Scheduler
         // save the updated schedule
         saveToDisk();
 
-        return ServerResponseFactory.createOkResponse(
-                   String.format(SchedulerConstants.DELETE_OK, cronTab)
-               );
+        return String.format(SchedulerConstants.DELETE_OK, cronTab);
     }
 
 
@@ -249,21 +298,9 @@ public class Scheduler
      *
      * @param event the event that triggered the callback
      */
-    private void onTaskExecuted(ScheduledTaskExecutedEvent event)
-    {
-        registeredTasks.forEach((String cronTab, TimerTask task) -> {
-            if (task == event.getExecutedTask())
-            {
-                try {
-                    scheduleTask(cronTab);
-                } catch (IllegalArgumentException e) {
-                    LOGGER.error(
-                        String.format(SchedulerConstants.ERROR_RESCHEDULE, cronTab),
-                        e);
-                }
-            }
-        });
-    }
+    private final Consumer<ScheduledTaskExecutedEvent> onTaskExecuted = (ScheduledTaskExecutedEvent event) -> {
+        rescheduleTask(event.getExecutedTask());
+    };
 
 
     /**
@@ -272,11 +309,7 @@ public class Scheduler
      *
      * @param event the event that triggered the callback
      */
-    private void onContextDestroyed(ContextDestroyedEvent event)  // NOPMD event payloads must always exist
-    {
-        // stop all running task threads
-        timer.cancel();
-        timer.purge();
-        registeredTasks.clear();
-    }
+    private final Consumer<ContextDestroyedEvent> onContextDestroyed = (ContextDestroyedEvent event) -> {
+        destroy();
+    };
 }

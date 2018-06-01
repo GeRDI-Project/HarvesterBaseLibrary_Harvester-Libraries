@@ -28,7 +28,6 @@ import de.gerdiproject.harvest.save.events.SaveFinishedEvent;
 import de.gerdiproject.harvest.save.events.SaveStartedEvent;
 import de.gerdiproject.harvest.submission.events.SubmissionFinishedEvent;
 import de.gerdiproject.harvest.submission.events.SubmissionStartedEvent;
-import de.gerdiproject.harvest.utils.cache.constants.CacheConstants;
 import de.gerdiproject.harvest.utils.data.DiskIO;
 import de.gerdiproject.harvest.utils.time.ProcessTimeMeasure.ProcessStatus;
 import de.gerdiproject.harvest.utils.time.events.ProcessTimeMeasureFinishedEvent;
@@ -53,19 +52,17 @@ public class HarvestTimeKeeper implements IEventListener
      * Constructor that creates time measures for harvesting, submitting, and
      * saving.
      *
-     * @param cacheFolderName the name of the cache folder
-     * where the JSON representation of this class is cached
+     * @param cacheFilePath the path to the cache file in which
+     *         the JSON representation of this class is cached
      */
-    public HarvestTimeKeeper(String cacheFolderName)
+    public HarvestTimeKeeper(String cacheFilePath)
     {
         this.diskIo = new DiskIO(new GsonBuilder().create(), StandardCharsets.UTF_8);
         this.harvestMeasure = new ProcessTimeMeasure(HarvestStartedEvent.class, HarvestFinishedEvent.class);
         this.saveMeasure = new ProcessTimeMeasure(SaveStartedEvent.class, SaveFinishedEvent.class);
         this.submissionMeasure = new ProcessTimeMeasure(SubmissionStartedEvent.class, SubmissionFinishedEvent.class);
 
-        this.cacheFilePath = String.format(
-                                 CacheConstants.HARVEST_TIME_KEEPER_CACHE_FILE_PATH,
-                                 cacheFolderName);
+        this.cacheFilePath = cacheFilePath;
     }
 
 

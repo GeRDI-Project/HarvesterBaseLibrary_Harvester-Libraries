@@ -46,7 +46,10 @@ import de.gerdiproject.harvest.utils.time.ProcessTimeMeasure.ProcessStatus;
  */
 public class HarvestTimeKeeperTest
 {
-    private static final String MOCKED_FOLDER_NAME = "mocked";
+    private static final String CACHE_PATH =
+        "test/" + String.format(
+            CacheConstants.HARVEST_TIME_KEEPER_CACHE_FILE_PATH,
+            "timeKeeperTest");
 
     private HarvestTimeKeeper keeper;
 
@@ -54,7 +57,7 @@ public class HarvestTimeKeeperTest
     @Before
     public void before()
     {
-        keeper = new HarvestTimeKeeper(MOCKED_FOLDER_NAME);
+        keeper = new HarvestTimeKeeper(CACHE_PATH);
         keeper.addEventListeners();
     }
 
@@ -69,7 +72,7 @@ public class HarvestTimeKeeperTest
 
         keeper = null;
 
-        final File cacheFile = new File(String.format(CacheConstants.HARVEST_TIME_KEEPER_CACHE_FILE_PATH, MOCKED_FOLDER_NAME));
+        final File cacheFile = new File(CACHE_PATH);
         cacheFile.delete();
     }
 
@@ -104,7 +107,7 @@ public class HarvestTimeKeeperTest
         // clean up old time keeper
         keeper.removeEventListeners();
 
-        keeper = new HarvestTimeKeeper(MOCKED_FOLDER_NAME);
+        keeper = new HarvestTimeKeeper(CACHE_PATH);
         keeper.loadFromDisk();
         keeper.addEventListeners();
 

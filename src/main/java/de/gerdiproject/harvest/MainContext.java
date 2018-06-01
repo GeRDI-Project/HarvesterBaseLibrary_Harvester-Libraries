@@ -33,10 +33,12 @@ import de.gerdiproject.harvest.harvester.AbstractHarvester;
 import de.gerdiproject.harvest.harvester.events.HarvesterInitializedEvent;
 import de.gerdiproject.harvest.save.HarvestSaver;
 import de.gerdiproject.harvest.scheduler.Scheduler;
+import de.gerdiproject.harvest.scheduler.constants.SchedulerConstants;
 import de.gerdiproject.harvest.state.StateMachine;
 import de.gerdiproject.harvest.state.impl.InitializationState;
 import de.gerdiproject.harvest.submission.AbstractSubmitter;
 import de.gerdiproject.harvest.utils.CancelableFuture;
+import de.gerdiproject.harvest.utils.cache.constants.CacheConstants;
 import de.gerdiproject.harvest.utils.logger.HarvesterLog;
 import de.gerdiproject.harvest.utils.logger.constants.LoggerConstants;
 import de.gerdiproject.harvest.utils.logger.events.GetMainLogEvent;
@@ -98,7 +100,12 @@ public class MainContext implements IEventListener
         log.registerLogger();
         this.onGetMainLog = (GetMainLogEvent event) -> {return log;};
 
-        this.timeKeeper = new HarvestTimeKeeper(moduleName);
+        final String timeKeeperCachePath =
+            String.format(
+                CacheConstants.HARVEST_TIME_KEEPER_CACHE_FILE_PATH,
+                moduleName);
+
+        this.timeKeeper = new HarvestTimeKeeper(timeKeeperCachePath);
         timeKeeper.loadFromDisk();
 
         this.mavenUtils = new MavenUtils(harvesterClass);
@@ -128,8 +135,9 @@ public class MainContext implements IEventListener
         configuration.updateParameter(ConfigurationConstants.HARVEST_END_INDEX);
 
         // init scheduler
-        this.scheduler = new Scheduler();
-        scheduler.init();
+        final String schedulerCachePath = String.format(SchedulerConstants.CACHE_PATH, moduleName);
+        this.scheduler = new Scheduler(schedulerCachePath);
+        scheduler.loadFromDisk();
     }
 
 
@@ -185,6 +193,7 @@ public class MainContext implements IEventListener
         EventSystem.addSynchronousListener(GetMavenUtilsEvent.class, onGetMavenUtils);
         saver.addEventListeners();
         timeKeeper.addEventListeners();
+        scheduler.addEventListeners();
     }
 
 
@@ -195,6 +204,7 @@ public class MainContext implements IEventListener
         EventSystem.removeSynchronousListener(GetMavenUtilsEvent.class);
         saver.removeEventListeners();
         timeKeeper.removeEventListeners();
+        scheduler.removeEventListeners();
     }
 
 

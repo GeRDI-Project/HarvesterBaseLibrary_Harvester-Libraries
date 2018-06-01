@@ -79,8 +79,12 @@ public class SchedulerFacade
     })
     public Response addTask(@QueryParam("cron") String cronTab)
     {
-        return ServerResponseFactory.createSynchronousEventResponse(
-                   new AddSchedulerTaskEvent(cronTab));
+        try {
+            return ServerResponseFactory.createSynchronousEventResponse(
+                       new AddSchedulerTaskEvent(cronTab));
+        } catch (IllegalArgumentException ex) {
+            return ServerResponseFactory.createBadRequestResponse(ex.getMessage());
+        }
     }
 
 
@@ -97,7 +101,11 @@ public class SchedulerFacade
     })
     public Response deleteTask(@QueryParam("cron") String cronTab)
     {
-        return ServerResponseFactory.createSynchronousEventResponse(
-                   new DeleteSchedulerTaskEvent(cronTab));
+        try {
+            return ServerResponseFactory.createSynchronousEventResponse(
+                       new DeleteSchedulerTaskEvent(cronTab));
+        } catch (IllegalArgumentException ex) {
+            return ServerResponseFactory.createBadRequestResponse(ex.getMessage());
+        }
     }
 }
