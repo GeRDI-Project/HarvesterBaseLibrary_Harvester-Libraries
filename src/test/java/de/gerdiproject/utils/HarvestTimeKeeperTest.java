@@ -95,7 +95,7 @@ public class HarvestTimeKeeperTest
     public void testCaching()
     {
         // send events to change statuses
-        EventSystem.sendEvent(new HarvestStartedEvent(0, 1));
+        EventSystem.sendEvent(new HarvestStartedEvent(0, 1, null));
         EventSystem.sendEvent(new HarvestFinishedEvent(true, null));
         EventSystem.sendEvent(new SaveStartedEvent(false, 1));
         EventSystem.sendEvent(new SaveFinishedEvent(false));
@@ -123,7 +123,7 @@ public class HarvestTimeKeeperTest
     {
         testMeasure(
             keeper.getHarvestMeasure(),
-            new HarvestStartedEvent(0, 1),
+            new HarvestStartedEvent(0, 1, null),
             new HarvestFinishedEvent(true, null),
             new HarvestFinishedEvent(false, null)
         );

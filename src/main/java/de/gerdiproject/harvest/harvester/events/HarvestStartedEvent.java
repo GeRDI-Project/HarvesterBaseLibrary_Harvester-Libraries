@@ -29,19 +29,20 @@ public class HarvestStartedEvent implements IEvent
     private final long startTimestamp;
     private final int startIndex;
     private final int endIndex;
+    private final String harvesterHash;
 
 
     /**
      * Simple constructor that requires the harvesting range.
      *
      * @param startIndex the index of the first document to be harvested
-     * @param endIndex the index of the last document that is to be harvested +
-     *            1
+     * @param endIndex the index of the last document that is to be harvested + 1
      */
-    public HarvestStartedEvent(int startIndex, int endIndex)
+    public HarvestStartedEvent(int startIndex, int endIndex, String harvesterHash)
     {
         this.startIndex = startIndex;
         this.endIndex = endIndex;
+        this.harvesterHash = harvesterHash;
         this.startTimestamp = Instant.now().toEpochMilli();
     }
 
@@ -79,4 +80,13 @@ public class HarvestStartedEvent implements IEvent
     }
 
 
+    /**
+     * Returns the version hash of the harvested documents.
+     *
+     * @return the version hash of the harvested documents
+     */
+    public String getHarvesterHash()
+    {
+        return harvesterHash;
+    }
 }

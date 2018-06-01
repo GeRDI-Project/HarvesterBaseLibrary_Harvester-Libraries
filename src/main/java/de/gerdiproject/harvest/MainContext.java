@@ -54,95 +54,87 @@ import de.gerdiproject.harvest.utils.time.HarvestTimeKeeper;
 public class MainContext implements IEventListener
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(MainContext.class);
-    private static final MainContext instance = new MainContext();
+    private static MainContext instance = null;
 
     private final HarvestSaver saver;
+    private final HarvesterLog log;
+    private final String moduleName;
+    private final HarvestTimeKeeper timeKeeper;
+    private final AbstractHarvester harvester;
+    private final Charset charset;
+    private final Configuration configuration;
 
-    private HarvesterLog log;
-    private String moduleName;
-    private HarvestTimeKeeper timeKeeper;
-    private AbstractHarvester harvester;
-    private Charset charset;
-    private Configuration configuration;
-    private AbstractSubmitter submitter;
-    private Scheduler scheduler;
-    private MavenUtils mavenUtils;
-
-
-
-    /**
-     * Singleton constructor.
-     */
-    private MainContext()
-    {
-        saver = new HarvestSaver();
-    }
-
-
-    @Override
-    public void addEventListeners()
-    {
-        EventSystem.addSynchronousListener(GetMainLogEvent.class, onGetMainLog);
-        EventSystem.addSynchronousListener(GetMavenUtilsEvent.class, onGetMavenUtils);
-
-    }
-
-
-    @Override
-    public void removeEventListeners()
-    {
-        EventSystem.removeSynchronousListener(GetMainLogEvent.class);
-        EventSystem.removeSynchronousListener(GetMavenUtilsEvent.class);
-    }
+    @SuppressWarnings("unused") // the submitter is connected via the event system
+    private final AbstractSubmitter submitter;
+    private final Scheduler scheduler;
+    private final MavenUtils mavenUtils;
+    private final Function<GetMainLogEvent, HarvesterLog> onGetMainLog;
+    private final Function<GetMavenUtilsEvent, MavenUtils> onGetMavenUtils;
 
 
     /**
-     * Returns the name of the application.
+     * Constructs an instance with all necessary helpers and utility objects.
      *
-     * @return the module name
-     */
-    public static String getModuleName()
-    {
-        return instance.moduleName;
-    }
-
-
-    /**
-     * Retrieves the charset used for processing strings.
+     * @param <T> an AbstractHarvester subclass
+     * @param moduleName name of this application
+     * @param harvesterClass an AbstractHarvester subclass
+     * @param charset the default charset for processing strings
+     * @param harvesterParams additional parameters, specific to the harvester,
+     *            or null
+     * @param submitter the class responsible for submitting documents to a
+     *            search index
+     * @throws IllegalAccessException can be thrown when the harvester class cannot be instantiated
+     * @throws InstantiationException can be thrown when the harvester class cannot be instantiated
      *
-     * @return the charset that is used for processing strings
+     * @see de.gerdiproject.harvest.harvester.AbstractHarvester
      */
-    public static Charset getCharset()
+    private <T extends AbstractHarvester> MainContext(String moduleName, Class<T> harvesterClass,
+                                                      Charset charset, List<AbstractParameter<?>> harvesterParams, AbstractSubmitter submitter) throws InstantiationException, IllegalAccessException
     {
-        return instance.charset;
+        this.moduleName = moduleName;
+        this.charset = charset;
+
+        this.log = new HarvesterLog(String.format(LoggerConstants.LOG_FILE_PATH, moduleName), charset);
+        log.registerLogger();
+        this.onGetMainLog = (GetMainLogEvent event) -> {return log;};
+
+        this.timeKeeper = new HarvestTimeKeeper(moduleName);
+        timeKeeper.loadFromDisk();
+
+        this.mavenUtils = new MavenUtils(harvesterClass);
+        this.onGetMavenUtils = (GetMavenUtilsEvent event) -> { return mavenUtils;};
+
+        // initialize saver
+        this.saver = new HarvestSaver(moduleName, charset, timeKeeper.getHarvestMeasure());
+
+        // initialize submitter
+        this.submitter = submitter;
+        submitter.init();
+
+        // initialize harvester
+        this.harvester = harvesterClass.newInstance();
+        harvester.setAsMainHarvester();
+
+        // initialize the configuration
+        this.configuration = new Configuration(harvesterParams);
+        configuration.loadFromEnvironmentVariables();
+        configuration.loadFromCache();
+
+        // initialize the harvester properly (relies on the configuration)
+        harvester.init();
+
+        // update the harvesting range
+        configuration.updateParameter(ConfigurationConstants.HARVEST_START_INDEX);
+        configuration.updateParameter(ConfigurationConstants.HARVEST_END_INDEX);
+
+        // init scheduler
+        this.scheduler = new Scheduler();
+        scheduler.init();
     }
 
 
     /**
-     * Retrieves the global configuration.
-     *
-     * @return the harvester configuration
-     */
-    public static Configuration getConfiguration()
-    {
-        return instance.configuration;
-    }
-
-
-    /**
-     * Retrieves a timekeeper that measures certain processes.
-     *
-     * @return a timekeeper that measures certain processes
-     * or null, if the main context was not initialized
-     */
-    public static HarvestTimeKeeper getTimeKeeper()
-    {
-        return instance.timeKeeper;
-    }
-
-
-    /**
-     * Sets up global parameters and the harvester.
+     * Constructs an instance of the MainContext in a dedicated thread.
      *
      * @param <T> an AbstractHarvester subclass
      * @param moduleName name of this application
@@ -158,60 +150,96 @@ public class MainContext implements IEventListener
     public static <T extends AbstractHarvester> void init(String moduleName, Class<T> harvesterClass,
                                                           Charset charset, List<AbstractParameter<?>> harvesterParams, AbstractSubmitter submitter)
     {
-        if (instance.log != null)
-            instance.log.unregisterLogger();
-
-        instance.log = new HarvesterLog(String.format(LoggerConstants.LOG_FILE_PATH, moduleName));
-        instance.log.registerLogger();
-
+        LOGGER.info(ApplicationConstants.INIT_HARVESTER_START);
         StateMachine.setState(new InitializationState());
 
-        instance.moduleName = moduleName;
-        instance.charset = charset;
-
-        instance.timeKeeper = new HarvestTimeKeeper(moduleName);
-        instance.timeKeeper.loadFromDisk();
-        instance.timeKeeper.addEventListeners();
-
-        instance.mavenUtils = new MavenUtils(harvesterClass);
-
-        // init harvester
         CancelableFuture<Boolean> initProcess = new CancelableFuture<>(() -> {
-            LOGGER.info(ApplicationConstants.INIT_HARVESTER_START);
+            // clear old instance if necessary
+            if (instance != null)
+                instance.clear();
 
-            // initialize saver and submitter
-            instance.saver.addEventListeners();
-            instance.submitter = submitter;
-            instance.submitter.init();
-
-            // initialize harvester
-            instance.harvester = harvesterClass.newInstance();
-            instance.harvester.setAsMainHarvester();
-
-            // initialize the configuration
-            final Configuration config = new Configuration(harvesterParams);
-            config.loadFromEnvironmentVariables();
-            config.loadFromCache();
-
-            instance.configuration = config;
-
-            // initialize the harvester properly (relies on the configuration)
-            instance.harvester.init();
-
-            // update the harvesting range
-            config.updateParameter(ConfigurationConstants.HARVEST_START_INDEX);
-            config.updateParameter(ConfigurationConstants.HARVEST_END_INDEX);
-
-            // init scheduler
-            instance.scheduler = new Scheduler();
-            instance.scheduler.init();
-
+            instance = new MainContext(moduleName, harvesterClass, charset, harvesterParams, submitter);
             return true;
         });
 
         initProcess
-        .thenApply(instance::onHarvesterInitializedSuccess)
-        .exceptionally(instance::onHarvesterInitializedFailed);
+        .thenApply(MainContext::onHarvesterInitializedSuccess)
+        .exceptionally(MainContext::onHarvesterInitializedFailed);
+    }
+
+
+    /**
+     * Removes event listeners and clears all connections to the context.
+     */
+    private void clear()
+    {
+        removeEventListeners();
+        log.unregisterLogger();
+    }
+
+
+    @Override
+    public void addEventListeners()
+    {
+        EventSystem.addSynchronousListener(GetMainLogEvent.class, onGetMainLog);
+        EventSystem.addSynchronousListener(GetMavenUtilsEvent.class, onGetMavenUtils);
+        saver.addEventListeners();
+        timeKeeper.addEventListeners();
+    }
+
+
+    @Override
+    public void removeEventListeners()
+    {
+        EventSystem.removeSynchronousListener(GetMainLogEvent.class);
+        EventSystem.removeSynchronousListener(GetMavenUtilsEvent.class);
+        saver.removeEventListeners();
+        timeKeeper.removeEventListeners();
+    }
+
+
+    /**
+     * Returns the name of the application.
+     *
+     * @return the module name
+     */
+    public static String getModuleName()
+    {
+        return instance != null ? instance.moduleName : null;
+    }
+
+
+    /**
+     * Retrieves the charset used for processing strings.
+     *
+     * @return the charset that is used for processing strings
+     */
+    public static Charset getCharset()
+    {
+        return instance != null ? instance.charset : null;
+    }
+
+
+    /**
+     * Retrieves the global configuration.
+     *
+     * @return the harvester configuration
+     */
+    public static Configuration getConfiguration()
+    {
+        return instance != null ? instance.configuration : null;
+    }
+
+
+    /**
+     * Retrieves a timekeeper that measures certain processes.
+     *
+     * @return a timekeeper that measures certain processes
+     * or null, if the main context was not initialized
+     */
+    public static HarvestTimeKeeper getTimeKeeper()
+    {
+        return instance != null ? instance.timeKeeper : null;
     }
 
 
@@ -224,16 +252,15 @@ public class MainContext implements IEventListener
      *
      * @return true, if the harvester was initialized successfully
      */
-    private Boolean onHarvesterInitializedSuccess(Boolean state)
+    private static Boolean onHarvesterInitializedSuccess(Boolean state)
     {
-
         // log sucess
         LOGGER.info(String.format(ApplicationConstants.INIT_HARVESTER_SUCCESS, getModuleName()));
 
         // change state
         EventSystem.sendEvent(new HarvesterInitializedEvent(state));
 
-        addEventListeners();
+        instance.addEventListeners();
         return state;
     };
 
@@ -247,7 +274,7 @@ public class MainContext implements IEventListener
      *
      * @return false
      */
-    private Boolean onHarvesterInitializedFailed(Throwable reason)
+    private static Boolean onHarvesterInitializedFailed(Throwable reason)
     {
         // log exception that caused the failure
         LOGGER.error(ApplicationConstants.INIT_HARVESTER_FAILED, reason.getCause());
@@ -255,28 +282,7 @@ public class MainContext implements IEventListener
         // change stage
         EventSystem.sendEvent(new HarvesterInitializedEvent(false));
 
-        addEventListeners();
+        instance.addEventListeners();
         return false;
-    };
-
-
-
-    //////////////////////////////
-    // Event Callback Functions //
-    //////////////////////////////
-
-    /**
-     * This function is a synchronous callback for retrieving the main log.
-     */
-    private final Function<GetMainLogEvent, HarvesterLog> onGetMainLog = (GetMainLogEvent event) -> {
-        return log;
-    };
-
-
-    /**
-     * This function is a synchronous callback for retrieving the main log.
-     */
-    private final Function<GetMavenUtilsEvent, MavenUtils> onGetMavenUtils = (GetMavenUtilsEvent event) -> {
-        return mavenUtils;
     };
 }

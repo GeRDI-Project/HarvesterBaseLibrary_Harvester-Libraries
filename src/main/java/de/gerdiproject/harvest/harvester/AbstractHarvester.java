@@ -372,7 +372,7 @@ public abstract class AbstractHarvester
         // only send events from the main harvester
         if (isMainHarvester) {
             EventSystem.addListener(StartAbortingEvent.class, onStartAborting);
-            EventSystem.sendEvent(new HarvestStartedEvent(from, to));
+            EventSystem.sendEvent(new HarvestStartedEvent(from, to, getHash(false)));
         }
 
         // start asynchronous harvest

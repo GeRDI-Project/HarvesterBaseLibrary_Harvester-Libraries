@@ -19,6 +19,8 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
+import java.nio.charset.Charset;
+import java.time.Instant;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.function.Consumer;
@@ -28,11 +30,10 @@ import org.slf4j.LoggerFactory;
 
 import com.google.gson.stream.JsonWriter;
 
-import de.gerdiproject.harvest.MainContext;
-import de.gerdiproject.harvest.config.Configuration;
-import de.gerdiproject.harvest.config.constants.ConfigurationConstants;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.event.IEventListener;
+import de.gerdiproject.harvest.harvester.events.HarvestFinishedEvent;
+import de.gerdiproject.harvest.harvester.events.HarvestStartedEvent;
 import de.gerdiproject.harvest.save.constants.SaveConstants;
 import de.gerdiproject.harvest.save.events.DocumentSavedEvent;
 import de.gerdiproject.harvest.save.events.SaveFinishedEvent;
@@ -45,6 +46,7 @@ import de.gerdiproject.harvest.utils.CancelableFuture;
 import de.gerdiproject.harvest.utils.FileUtils;
 import de.gerdiproject.harvest.utils.cache.HarvesterCache;
 import de.gerdiproject.harvest.utils.cache.HarvesterCacheManager;
+import de.gerdiproject.harvest.utils.time.ProcessTimeMeasure;
 import de.gerdiproject.json.datacite.DataCiteJson;
 
 /**
@@ -60,12 +62,41 @@ public class HarvestSaver implements IEventListener
     private boolean isAborting;
     private File saveFile;
 
+    private int harvestFrom;
+    private int harvestTo;
+    private long harvestStartTime;
+    private long harvestEndTime;
+    private String sourceHash;
+    private final String fileName;
+    private final Charset charset;
+
+
+    /**
+     * Constructor that sets final fields and retrieves timestamps from a specified {@linkplain ProcessTimeMeasure}.
+     * @param fileName the name of the saved file which serves as a prefix to which
+     * a timestamp will be appended
+     * @param charset the charset of the file writer
+     * @param harvestMeasure the harvest time measure of which timestamps will be retrieved
+     */
+    public HarvestSaver(String fileName, Charset charset, ProcessTimeMeasure harvestMeasure)
+    {
+        this.fileName = fileName;
+        this.charset = charset;
+        this.harvestStartTime = harvestMeasure.getStartTimestamp();
+        this.harvestEndTime = harvestMeasure.getEndTimestamp();
+
+        this.sourceHash = null;
+        this.harvestFrom = -1;
+        this.harvestTo = -1;
+    }
+
 
     @Override
     public void addEventListeners()
     {
         EventSystem.addListener(StartSaveEvent.class, onStartSave);
-
+        EventSystem.addListener(HarvestStartedEvent.class, onHarvestStarted);
+        EventSystem.addListener(HarvestFinishedEvent.class, onHarvestFinished);
     }
 
 
@@ -73,8 +104,9 @@ public class HarvestSaver implements IEventListener
     public void removeEventListeners()
     {
         EventSystem.removeListener(StartSaveEvent.class, onStartSave);
+        EventSystem.removeListener(HarvestStartedEvent.class, onHarvestStarted);
+        EventSystem.removeListener(HarvestFinishedEvent.class, onHarvestFinished);
         EventSystem.removeListener(StartAbortingEvent.class, onStartAborting);
-
     }
 
 
@@ -90,13 +122,9 @@ public class HarvestSaver implements IEventListener
         isAborting = false;
         EventSystem.addListener(StartAbortingEvent.class, onStartAborting);
 
-        // get timestamps
-        long startTimestamp = MainContext.getTimeKeeper().getHarvestMeasure().getStartTimestamp();
-        long finishTimestamp = MainContext.getTimeKeeper().getHarvestMeasure().getEndTimestamp();
-
         // start asynchronous save
         currentSavingProcess =
-            new CancelableFuture<>(createSaveProcess(startTimestamp, finishTimestamp, isAutoTriggered));
+            new CancelableFuture<>(createSaveProcess(isAutoTriggered));
 
         // exception handler
         currentSavingProcess.thenApply((isSuccessful) -> {
@@ -163,15 +191,12 @@ public class HarvestSaver implements IEventListener
     /**
      * Creates a saving-process that can be called asynchronously.
      *
-     * @param cachedDocuments the cache of changed documents
-     * @param startTimestamp the UNIX Timestamp of the beginning of the harvest
-     * @param finishTimestamp the UNIX Timestamp of the end of the harvest
      * @param isAutoTriggered true if the save was not explicitly triggered via
      *            a REST call
      *
      * @return true, if the file was saved successfully
      */
-    private Callable<Boolean> createSaveProcess(long startTimestamp, long finishTimestamp, boolean isAutoTriggered)
+    private Callable<Boolean> createSaveProcess(boolean isAutoTriggered)
     {
         return () -> {
             int documentCount = HarvesterCacheManager.instance().getNumberOfHarvestedDocuments();
@@ -183,12 +208,8 @@ public class HarvestSaver implements IEventListener
                 return false;
             }
 
-            // create file
-            final Configuration config = MainContext.getConfiguration();
-            saveFile = createTargetFile(config, startTimestamp);
-
-            // check if file was created
-            boolean isSuccessful = saveFile != null;
+            saveFile = createTargetFile();
+            boolean isSuccessful = saveFile.exists();
 
             if (isSuccessful)
             {
@@ -197,14 +218,11 @@ public class HarvestSaver implements IEventListener
                 try {
                     // prepare json writer for the save file
                     JsonWriter writer = new JsonWriter(
-                        new OutputStreamWriter(new FileOutputStream(saveFile), MainContext.getCharset()));
+                        new OutputStreamWriter(new FileOutputStream(saveFile), charset));
 
                     // transfer data to target file
-                    writeDocuments(
-                        writer,
-                        startTimestamp,
-                        finishTimestamp,
-                        config.getParameterValue(ConfigurationConstants.READ_HTTP_FROM_DISK, Boolean.class));
+                    writeDocuments(writer);
+
                 } catch (IOException e) {
                     LOGGER.error(SaveConstants.SAVE_INTERRUPTED, e);
                     isSuccessful = false;
@@ -217,38 +235,20 @@ public class HarvestSaver implements IEventListener
 
 
     /**
-     * Creates a target file for the harvest that is to be saved.
+     * Creates a target file for the harvested documents that are to be saved.
      *
-     * @param config the global harvester configuration
-     * @param startTimestamp the UNIX Timestamp of the beginning of the harvest
-     *
-     * @return a file, if the path could be resolved or created, or null if not
+     * @return a target save file
      */
-    private File createTargetFile(Configuration config, long startTimestamp)
+    private File createTargetFile()
     {
-        // get harvesting range
-        int from = config.getParameterValue(ConfigurationConstants.HARVEST_START_INDEX, Integer.class);
-        int to = config.getParameterValue(ConfigurationConstants.HARVEST_END_INDEX, Integer.class);
+        final File saveFile = new File(SaveConstants.SAVE_FOLDER, String.format(
+                                           SaveConstants.SAVE_FILE_NAME,
+                                           fileName,
+                                           harvestStartTime));
 
-        // assemble file name
-        String fileName;
-
-        if (from > 0 || to != Integer.MAX_VALUE) {
-
-            fileName = String.format(
-                           SaveConstants.SAVE_FILE_NAME_PARTIAL,
-                           MainContext.getModuleName(),
-                           from,
-                           to,
-                           startTimestamp);
-        } else
-            fileName = String.format(SaveConstants.SAVE_FILE_NAME, MainContext.getModuleName(), startTimestamp);
-
-        // create file and directories
-        File saveFile = new File(fileName);
         FileUtils.createEmptyFile(saveFile);
 
-        return saveFile.exists() ? saveFile : null;
+        return saveFile;
     }
 
 
@@ -257,14 +257,10 @@ public class HarvestSaver implements IEventListener
      * additional harvesting related data
      *
      * @param writer a JSON writer to a file
-     * @param startTimestamp the UNIX Timestamp of the beginning of the harvest
-     * @param finishTimestamp the UNIX Timestamp of the end of the harvest
-     * @param readFromDisk if true, the harvest was not retrieved from the web,
-     *            but instead, from locally cached HTTP responses
      *
      * @throws IOException thrown by either the cacheReader or the writer
      */
-    private void writeDocuments(JsonWriter writer, long startTimestamp, long finishTimestamp, boolean readFromDisk) throws IOException
+    private void writeDocuments(JsonWriter writer) throws IOException
     {
         // this event holds no unique data, we can resubmit it as often as we
         // want
@@ -272,13 +268,25 @@ public class HarvestSaver implements IEventListener
 
         writer.beginObject();
         writer.name(SaveConstants.HARVEST_DATE_JSON);
-        writer.value(startTimestamp);
+        writer.value(harvestStartTime);
 
         writer.name(SaveConstants.DURATION_JSON);
-        writer.value((finishTimestamp - startTimestamp) / 1000l);
+        writer.value((harvestEndTime - harvestStartTime) / 1000l);
 
-        writer.name(SaveConstants.IS_FROM_DISK_JSON);
-        writer.value(readFromDisk);
+        if (harvestFrom != -1) {
+            writer.name(SaveConstants.HARVEST_FROM_JSON);
+            writer.value(harvestFrom);
+        }
+
+        if (harvestTo != -1) {
+            writer.name(SaveConstants.HARVEST_TO_JSON);
+            writer.value(harvestTo);
+        }
+
+        if (sourceHash != null) {
+            writer.name(SaveConstants.SOURCE_HASH_JSON);
+            writer.value(sourceHash);
+        }
 
         writer.name(SaveConstants.DOCUMENTS_JSON);
         writer.beginArray();
@@ -334,6 +342,26 @@ public class HarvestSaver implements IEventListener
      */
     private final Consumer<StartSaveEvent> onStartSave = (StartSaveEvent e) -> {
         save(e.isAutoTriggered());
+    };
+
+
+    /**
+     * Event callback that saves the parameters that were set at the beginning of a harvest.
+     */
+    private final Consumer<HarvestStartedEvent> onHarvestStarted = (HarvestStartedEvent event) -> {
+        this.sourceHash = event.getHarvesterHash();
+        this.harvestFrom = event.getStartIndex();
+        this.harvestTo = event.getEndIndex();
+        this.harvestStartTime = event.getStartTimestamp();
+        this.harvestEndTime = -1;
+    };
+
+
+    /**
+     * Event callback that saves a timestamp when the harvest finishes.
+     */
+    private final Consumer<HarvestFinishedEvent> onHarvestFinished = (HarvestFinishedEvent event) -> {
+        this.harvestEndTime = Instant.now().toEpochMilli();
     };
 
 

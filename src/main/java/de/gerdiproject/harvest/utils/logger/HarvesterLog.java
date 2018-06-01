@@ -21,6 +21,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.charset.Charset;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.stream.Collectors;
@@ -31,7 +32,6 @@ import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.classic.encoder.PatternLayoutEncoder;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.FileAppender;
-import de.gerdiproject.harvest.MainContext;
 import de.gerdiproject.harvest.utils.FileUtils;
 import de.gerdiproject.harvest.utils.logger.constants.LoggerConstants;
 
@@ -46,14 +46,16 @@ public class HarvesterLog
     private static org.slf4j.Logger LOGGER = LoggerFactory.getLogger(HarvesterLog.class);
 
     private final FileAppender<ILoggingEvent> fileAppender;
+    private final Charset charset;
 
     /**
      * Creates a logger that logs to a specified file and assigns
      * a standard logging pattern to it.
      *
      * @param logFilePath the path to the log file
+     * @param charset the charset of the log file
      */
-    public HarvesterLog(final String logFilePath)
+    public HarvesterLog(final String logFilePath, final Charset charset)
     {
         final LoggerContext loggerContext = (LoggerContext) LoggerFactory.getILoggerFactory();
 
@@ -68,6 +70,8 @@ public class HarvesterLog
         fileAppender.setContext(loggerContext);
         fileAppender.setFile(logFilePath);
         fileAppender.setEncoder(encoder);
+
+        this.charset = charset;
     }
 
 
@@ -131,7 +135,7 @@ public class HarvesterLog
         try
             (BufferedReader reader = new BufferedReader(
                 new InputStreamReader(
-                    new FileInputStream(fileAppender.getFile()), MainContext.getCharset()))) {
+                    new FileInputStream(fileAppender.getFile()), charset))) {
 
             if (dateFilters == null && levelFilters == null && classFilters == null)
                 logBuilder.append(reader.lines().collect(Collectors.joining("\n")));

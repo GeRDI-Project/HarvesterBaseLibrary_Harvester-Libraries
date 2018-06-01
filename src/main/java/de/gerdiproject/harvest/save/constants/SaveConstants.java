@@ -15,6 +15,8 @@
  */
 package de.gerdiproject.harvest.save.constants;
 
+import java.io.File;
+
 import de.gerdiproject.harvest.save.HarvestSaver;
 
 /**
@@ -27,12 +29,12 @@ public class SaveConstants
 {
     public static final String HARVEST_DATE_JSON = "harvestDate";
     public static final String DURATION_JSON = "durationInSeconds";
-    public static final String IS_FROM_DISK_JSON = "wasHarvestedFromDisk";
+    public static final String SOURCE_HASH_JSON = "sourceHash";
+    public static final String HARVEST_FROM_JSON = "sourceRangeFrom";
+    public static final String HARVEST_TO_JSON = "sourceRangeTo";
 
-    public static final String SAVE_FOLDER_NAME = "harvestedIndices/";
-    public static final String SAVE_FILE_NAME = SAVE_FOLDER_NAME + "%s_result_%d.json";
-    public static final String SAVE_FILE_NAME_PARTIAL =
-        SAVE_FOLDER_NAME + "%s_partialResult_%d-%d_%d.json";
+    public static final File SAVE_FOLDER = new File("savedDocuments");
+    public static final String SAVE_FILE_NAME =  "%s_%d.json";
     public static final String SAVE_FAILED_EMPTY = "Could not save documents: There are no changes to save!";
 
 
