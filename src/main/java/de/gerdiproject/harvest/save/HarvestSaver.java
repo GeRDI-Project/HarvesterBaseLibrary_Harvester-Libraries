@@ -208,7 +208,8 @@ public class HarvestSaver implements IEventListener
                 return false;
             }
 
-            saveFile = createTargetFile();
+            saveFile = getTargetFile();
+            FileUtils.createEmptyFile(saveFile);
             boolean isSuccessful = saveFile.exists();
 
             if (isSuccessful)
@@ -235,20 +236,16 @@ public class HarvestSaver implements IEventListener
 
 
     /**
-     * Creates a target file for the harvested documents that are to be saved.
+     * Returns the target file for the documents that are to be saved.
      *
      * @return a target save file
      */
-    private File createTargetFile()
+    public File getTargetFile()
     {
-        final File saveFile = new File(SaveConstants.SAVE_FOLDER, String.format(
-                                           SaveConstants.SAVE_FILE_NAME,
-                                           fileName,
-                                           harvestStartTime));
-
-        FileUtils.createEmptyFile(saveFile);
-
-        return saveFile;
+        return new File(SaveConstants.SAVE_FOLDER, String.format(
+                            SaveConstants.SAVE_FILE_NAME,
+                            fileName,
+                            harvestStartTime));
     }
 
 
