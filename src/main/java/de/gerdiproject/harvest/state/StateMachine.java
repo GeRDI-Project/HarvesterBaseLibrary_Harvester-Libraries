@@ -51,7 +51,9 @@ public class StateMachine
             instance.currentState.onStateLeave();
 
         instance.currentState = newState;
-        instance.currentState.onStateEnter();
+
+        if (newState != null)
+            newState.onStateEnter();
     }
 
 
