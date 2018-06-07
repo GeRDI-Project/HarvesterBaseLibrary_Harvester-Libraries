@@ -38,6 +38,7 @@ import de.gerdiproject.harvest.scheduler.events.DeleteSchedulerTaskEvent;
 import de.gerdiproject.harvest.scheduler.events.GetScheduleEvent;
 import de.gerdiproject.harvest.scheduler.events.ScheduledTaskExecutedEvent;
 import de.gerdiproject.harvest.scheduler.utils.CronUtils;
+import de.gerdiproject.harvest.utils.cache.ICachedObject;
 import de.gerdiproject.harvest.utils.data.DiskIO;
 
 /**
@@ -45,7 +46,7 @@ import de.gerdiproject.harvest.utils.data.DiskIO;
  *
  * @author Robin Weiss
  */
-public class Scheduler implements IEventListener
+public class Scheduler implements IEventListener, ICachedObject
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(Scheduler.class);
     private Timer timer;
@@ -90,22 +91,22 @@ public class Scheduler implements IEventListener
         EventSystem.removeListener(ScheduledTaskExecutedEvent.class, onTaskExecuted);
         EventSystem.removeListener(ContextDestroyedEvent.class, onContextDestroyed);
     }
-
-
+    
+    
     /**
-     * Returns the number of registered cron tabs.
-     *
-     * @return the number of registered cron tabs
+     * Saves all cron tabs to disk as a JSON array.
      */
-    public int size()
+    @Override
+    public void saveToDisk()
     {
-        return registeredTasks.size();
+        diskIo.writeObjectToFile(cacheFilePath, registeredTasks.keySet());
     }
-
+    
 
     /**
      * Attempts to load a schedule from disk.
      */
+    @Override
     public void loadFromDisk()
     {
         String[] cachedCronTabs = diskIo.getObject(cacheFilePath, String[].class);
@@ -128,11 +129,13 @@ public class Scheduler implements IEventListener
 
 
     /**
-     * Saves all cron tabs to disk as a JSON array.
+     * Returns the number of registered cron tabs.
+     *
+     * @return the number of registered cron tabs
      */
-    private void saveToDisk()
+    public int size()
     {
-        diskIo.writeObjectToFile(cacheFilePath, registeredTasks.keySet());
+        return registeredTasks.size();
     }
 
 

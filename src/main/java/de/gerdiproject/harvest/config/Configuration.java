@@ -39,6 +39,7 @@ import de.gerdiproject.harvest.config.parameters.AbstractParameter;
 import de.gerdiproject.harvest.config.parameters.ParameterFactory;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.state.StateMachine;
+import de.gerdiproject.harvest.utils.cache.ICachedObject;
 import de.gerdiproject.harvest.utils.data.DiskIO;
 
 
@@ -49,7 +50,7 @@ import de.gerdiproject.harvest.utils.data.DiskIO;
  *
  * @author Robin Weiss
  */
-public class Configuration
+public class Configuration implements ICachedObject
 {
     private static final Gson GSON =  new GsonBuilder().registerTypeAdapter(Configuration.class, new ConfigurationAdapter()).create();
     private static final Logger LOGGER = LoggerFactory.getLogger(Configuration.class);
@@ -148,9 +149,22 @@ public class Configuration
 
 
     /**
+     * Saves the configuration as a Json file.
+     *
+     * @return a string describing the status of the operation
+     */
+    @Override
+    public String saveToDisk()
+    {
+        return diskIo.writeObjectToFile(getConfigFilePath(), this);
+    }
+    
+
+    /**
      * Attempts to load a configuration file from disk.
      */
-    public void loadFromCache()
+    @Override
+    public void loadFromDisk()
     {
         // read JSON from disk
         final String path = getConfigFilePath();
@@ -222,17 +236,6 @@ public class Configuration
         });
 
         LOGGER.info(String.format(ConfigurationConstants.ENVIRONMENT_VARIABLE_SET_END, changeCount.get()));
-    }
-
-
-    /**
-     * Saves the configuration as a Json file.
-     *
-     * @return a string describing the status of the operation
-     */
-    public String saveToDisk()
-    {
-        return diskIo.writeObjectToFile(getConfigFilePath(), this);
     }
 
 

@@ -28,6 +28,7 @@ import de.gerdiproject.harvest.save.events.SaveFinishedEvent;
 import de.gerdiproject.harvest.save.events.SaveStartedEvent;
 import de.gerdiproject.harvest.submission.events.SubmissionFinishedEvent;
 import de.gerdiproject.harvest.submission.events.SubmissionStartedEvent;
+import de.gerdiproject.harvest.utils.cache.ICachedObject;
 import de.gerdiproject.harvest.utils.data.DiskIO;
 import de.gerdiproject.harvest.utils.time.ProcessTimeMeasure.ProcessStatus;
 import de.gerdiproject.harvest.utils.time.events.ProcessTimeMeasureFinishedEvent;
@@ -38,7 +39,7 @@ import de.gerdiproject.harvest.utils.time.events.ProcessTimeMeasureFinishedEvent
  *
  * @author Robin Weiss
  */
-public class HarvestTimeKeeper implements IEventListener
+public class HarvestTimeKeeper implements IEventListener, ICachedObject
 {
     private final ProcessTimeMeasure harvestMeasure;
     private final ProcessTimeMeasure submissionMeasure;
@@ -90,9 +91,14 @@ public class HarvestTimeKeeper implements IEventListener
     }
 
 
-    /**
-     * Attempts to load values from a cached file.
-     */
+    @Override
+    public void saveToDisk()
+    {
+        diskIo.writeObjectToFile(cacheFilePath, this);
+    }
+    
+
+    @Override
     public void loadFromDisk()
     {
         final HarvestTimeKeeper parsedKeeper = diskIo.getObject(cacheFilePath, HarvestTimeKeeper.class);
@@ -169,14 +175,6 @@ public class HarvestTimeKeeper implements IEventListener
                && submissionMeasure.getStatus() != ProcessStatus.Finished;
     }
 
-
-    /**
-     * (Over{@literal-})writes the time keeper cache file.
-     */
-    private void saveToDisk()
-    {
-        diskIo.writeObjectToFile(cacheFilePath, this);
-    }
 
     private void resetSaveAndSubmissionMeasures()
     {
