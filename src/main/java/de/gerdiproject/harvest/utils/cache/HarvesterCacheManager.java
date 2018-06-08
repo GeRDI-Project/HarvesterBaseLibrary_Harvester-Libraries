@@ -75,6 +75,15 @@ public class HarvesterCacheManager
 
 
     /**
+     * Removes all registered caches.
+     */
+    public void reset()
+    {
+        cacheList.clear();
+    }
+
+
+    /**
      * Returns the number of cached changes.
      *
      * @return the number of cached changes
