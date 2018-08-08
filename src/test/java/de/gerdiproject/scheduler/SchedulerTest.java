@@ -53,6 +53,7 @@ public class SchedulerTest
             "schedulerTest"));
 
     private Scheduler scheduler;
+    private final Random random = new Random();
 
 
     /**
@@ -104,7 +105,7 @@ public class SchedulerTest
     public void testLoadingFromDisk()
     {
         // add some tasks
-        addTasks(new Random().nextInt() % 10);
+        addTasks(random.nextInt(10));
         int numberOfSavedTasks = scheduler.size();
 
         scheduler = new Scheduler(CACHE_FILE.getAbsolutePath());
@@ -125,7 +126,7 @@ public class SchedulerTest
     public void testLoadingFromDiskNoExists()
     {
         // add some tasks
-        addTasks(Math.abs(new Random().nextInt()) % 10);
+        addTasks(random.nextInt(10));
         int oldSize = scheduler.size();
 
         // delete cache to guarantee it no longer exists
@@ -149,7 +150,7 @@ public class SchedulerTest
     @Test
     public void testAddingTask()
     {
-        int numberOfTasks = Math.abs(new Random().nextInt()) % 10;
+        int numberOfTasks = random.nextInt(10);
         addTasks(numberOfTasks);
         assertEquals(numberOfTasks, scheduler.size());
     }
@@ -194,7 +195,7 @@ public class SchedulerTest
     public void testDeletingTask()
     {
         addTasks(10);
-        int numberOfDeletions = 1 + Math.abs(new Random().nextInt()) % 10;
+        int numberOfDeletions = 1 + random.nextInt(10);
 
         for (int i = 0; i < numberOfDeletions; i++) {
             final String randomCron = String.format(RANDOM_CRON_TAB, i);
@@ -259,7 +260,7 @@ public class SchedulerTest
     @Test
     public void testScheduleGetter()
     {
-        final int addedEvents = 1 + Math.abs(new Random().nextInt()) % 10;
+        final int addedEvents = 1 + random.nextInt(10);
         addTasks(addedEvents);
 
         final String scheduleText = EventSystem.sendSynchronousEvent(new GetScheduleEvent());

@@ -67,6 +67,8 @@ public class CacheConstants
     public static final String REPLACE_FILE_FAILED_NO_FILE = "Could not replace file '%s' with '%s', because it does not exist!";
     public static final String REPLACE_FILE_FAILED_NO_TARGET_DIR = "Could not replace file '%s' with '%s': "
                                                                    + "The target directory does not exist and could not be created!";
+    public static final String REPLACE_FILE_FAILED_CANNOT_BACKUP = "Could not replace file '%s' with '%s', because a backup file could not be created!";
+    public static final String REPLACE_FILE_FAILED_CANNOT_RESTORE = "Could not restore backup file '%s'!";
 
     public static final String CREATE_FILE_SUCCESS = "Created file '%s'.";
     public static final String CREATE_FILE_FAILED = "Could not create file '%s'!";

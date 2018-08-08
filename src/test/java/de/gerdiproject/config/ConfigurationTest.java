@@ -21,6 +21,7 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
@@ -101,13 +102,16 @@ public class ConfigurationTest
     /**
      * After each test:<br>
      * Removes event listeners for parameter change events and deletes created files.
+     * @throws IOException thrown when the temporary cache file could not be deleted
      */
     @After
-    public void after()
+    public void after() throws IOException
     {
         EventSystem.removeAllListeners(GlobalParameterChangedEvent.class);
         EventSystem.removeAllListeners(HarvesterParameterChangedEvent.class);
-        CACHE_FILE.delete();
+
+        if (CACHE_FILE.exists() && !CACHE_FILE.delete())
+            throw new IOException();
     }
 
 

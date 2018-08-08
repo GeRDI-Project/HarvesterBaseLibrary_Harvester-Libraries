@@ -263,7 +263,7 @@ public class FileUtilsTest
         assert COPY_TEST_TARGET_FILE.exists();
 
         try
-            (InputStreamReader reader = new InputStreamReader(new FileInputStream(COPY_TEST_TARGET_FILE))) {
+            (InputStreamReader reader = new InputStreamReader(new FileInputStream(COPY_TEST_TARGET_FILE), StandardCharsets.UTF_8)) {
             disableLogging();
             FileUtils.copyFile(COPY_TEST_SOURCE_FILE, COPY_TEST_TARGET_FILE);
 
@@ -360,7 +360,7 @@ public class FileUtilsTest
         assert COPY_TEST_TARGET_FILE.exists();
 
         try
-            (InputStreamReader reader = new InputStreamReader(new FileInputStream(COPY_TEST_TARGET_FILE))) {
+            (InputStreamReader reader = new InputStreamReader(new FileInputStream(COPY_TEST_TARGET_FILE), StandardCharsets.UTF_8)) {
             disableLogging();
             FileUtils.replaceFile(COPY_TEST_TARGET_FILE, COPY_TEST_SOURCE_FILE);
 

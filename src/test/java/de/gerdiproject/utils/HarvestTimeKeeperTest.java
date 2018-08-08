@@ -19,6 +19,7 @@ package de.gerdiproject.utils;
 import static org.junit.Assert.assertEquals;
 
 import java.io.File;
+import java.io.IOException;
 
 import org.junit.After;
 import org.junit.Before;
@@ -63,9 +64,10 @@ public class HarvestTimeKeeperTest
 
     /**
      * Removes event listeners and deletes the cache file.
+     * @throws IOException thrown when the temporary cache file could not be deleted
      */
     @After
-    public void after()
+    public void after() throws IOException
     {
         if (keeper != null)
             keeper.removeEventListeners();
@@ -73,7 +75,9 @@ public class HarvestTimeKeeperTest
         keeper = null;
 
         final File cacheFile = new File(CACHE_PATH);
-        cacheFile.delete();
+
+        if (cacheFile.exists() && !cacheFile.delete())
+            throw new IOException();
     }
 
     /**

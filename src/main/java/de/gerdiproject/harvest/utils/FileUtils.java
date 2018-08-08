@@ -98,8 +98,8 @@ public class FileUtils
         if (!newFile.exists()) {
             LOGGER.error(String.format(
                              CacheConstants.REPLACE_FILE_FAILED_NO_FILE,
-                             targetFile.getAbsolutePath(),
-                             newFile.getAbsolutePath()));
+                             targetFile.getPath(),
+                             newFile.getPath()));
             return;
         }
 
@@ -108,17 +108,24 @@ public class FileUtils
         // back up target file, in case something goes wrong
         if (targetFile.exists()) {
             backup = new File(targetFile.getPath() + CacheConstants.TEMP_FILE_EXTENSION);
-            targetFile.renameTo(backup);
+
+            if (!targetFile.renameTo(backup)) {
+                LOGGER.error(String.format(
+                                 CacheConstants.REPLACE_FILE_FAILED_CANNOT_BACKUP,
+                                 targetFile.getPath(),
+                                 newFile.getPath()));
+                return;
+            }
         }
 
         if (!createDirectories(targetFile.getParentFile())) {
             LOGGER.error(String.format(
                              CacheConstants.REPLACE_FILE_FAILED_NO_TARGET_DIR,
-                             targetFile.getAbsolutePath(),
-                             newFile.getAbsolutePath()));
+                             targetFile.getPath(),
+                             newFile.getPath()));
 
-            if (backup != null)
-                backup.renameTo(targetFile);
+            if (backup != null && !backup.renameTo(targetFile))
+                LOGGER.error(String.format(CacheConstants.REPLACE_FILE_FAILED_CANNOT_RESTORE, targetFile.getPath()));
 
             return;
         }
@@ -126,8 +133,9 @@ public class FileUtils
         if (!newFile.renameTo(targetFile)) {
             LOGGER.error(String.format(CacheConstants.REPLACE_FILE_FAILED, targetFile.getPath(), newFile.getPath()));
 
-            if (backup != null)
-                backup.renameTo(targetFile);
+            if (backup != null && !backup.renameTo(targetFile))
+                LOGGER.error(String.format(CacheConstants.REPLACE_FILE_FAILED_CANNOT_RESTORE, targetFile.getPath()));
+
         } else {
             LOGGER.trace(String.format(CacheConstants.REPLACE_FILE_SUCCESS, targetFile.getPath(), newFile.getPath()));
 
@@ -274,7 +282,11 @@ public class FileUtils
 
         // if the target directory does not exist, simply rename the source directory
         if (!targetDirectory.exists()) {
-            sourceDirectory.renameTo(targetDirectory);
+            if (!sourceDirectory.renameTo(targetDirectory))
+                LOGGER.error(String.format(CacheConstants.DIR_MERGE_FAILED,
+                                           sourceDirectory.getPath(),
+                                           targetDirectory.getPath()));
+
             return;
         }
 

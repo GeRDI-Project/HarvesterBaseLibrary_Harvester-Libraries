@@ -22,6 +22,7 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 
 import java.io.File;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 
 import org.junit.After;
@@ -52,12 +53,18 @@ public class DiskIOTest
 
     /**
      * Removes test files.
+     * @throws IOException thrown when the temporary files could not be deleted
      */
     @After
-    public void after()
+    public void after() throws IOException
     {
-        STRING_TEST_FILE.delete();
-        OBJECT_TEST_FILE.delete();
+        boolean allDeleted = true;
+
+        allDeleted &= !STRING_TEST_FILE.exists() || STRING_TEST_FILE.delete();
+        allDeleted &= !OBJECT_TEST_FILE.exists() || OBJECT_TEST_FILE.delete();
+
+        if (!allDeleted)
+            throw new IOException();
     }
 
 
