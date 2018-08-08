@@ -41,13 +41,25 @@ public class PasswordParameter extends StringParameter
     }
 
 
+    /**
+     * Constructor for harvester parameters, that only forbid changes during harvesting.
+     *
+     * @param key the unique key of the parameter, which is used to change it via REST
+     * @param defaultValue the default value of the parameter
+     */
+    public PasswordParameter(String key, String defaultValue)
+    {
+        super(key, ConfigurationConstants.HARVESTER_PARAM_ALLOWED_STATES, ConfigurationConstants.STRING_VALID_VALUES_TEXT);
+        value = defaultValue;
+    }
+
+
     @Override
     public String getStringValue()
     {
         // always return ***** as a string value
         return ConfigurationConstants.PASSWORD_STRING_TEXT;
     }
-
 
 
 }

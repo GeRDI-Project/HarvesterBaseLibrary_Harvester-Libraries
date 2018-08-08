@@ -16,9 +16,9 @@
 package de.gerdiproject.harvest.config.adapter;
 
 import java.lang.reflect.Type;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Set;
 
 import com.google.gson.JsonDeserializationContext;
 import com.google.gson.JsonDeserializer;
@@ -34,7 +34,7 @@ import de.gerdiproject.harvest.config.constants.ConfigurationConstants;
 import de.gerdiproject.harvest.config.parameters.AbstractParameter;
 import de.gerdiproject.harvest.config.parameters.BooleanParameter;
 import de.gerdiproject.harvest.config.parameters.IntegerParameter;
-import de.gerdiproject.harvest.config.parameters.ParameterFactory;
+import de.gerdiproject.harvest.config.parameters.PasswordParameter;
 import de.gerdiproject.harvest.config.parameters.StringParameter;
 import de.gerdiproject.harvest.config.parameters.UrlParameter;
 
@@ -49,36 +49,33 @@ public class ConfigurationAdapter implements JsonDeserializer<Configuration>, Js
     @Override
     public Configuration deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context) throws JsonParseException
     {
+        final JsonObject configJson = json.getAsJsonObject();
+
         // initialize global parameters with default values
-        Map<String, AbstractParameter<?>> globalParameters = ParameterFactory.createDefaultParameters();
-        Map<String, AbstractParameter<?>> harvesterParameters = ParameterFactory.createHarvesterParameters(null);
+        Map<String, AbstractParameter<?>> globalParameters =
+            deserializeParameters(configJson.get(ConfigurationConstants.GLOBAL_PARAMETERS_JSON).getAsJsonObject());
 
-        JsonObject configJson = json.getAsJsonObject();
+        Map<String, AbstractParameter<?>> harvesterParameters =
+            deserializeParameters(configJson.get(ConfigurationConstants.HARVESTER_PARAMETERS_JSON).getAsJsonObject());
 
-        // fill global parameters
-        JsonObject globalParamsJson = configJson.get(ConfigurationConstants.GLOBAL_PARAMETERS_JSON).getAsJsonObject();
-        globalParameters.forEach((String key, AbstractParameter<?> value) -> {
-            JsonElement valueJson = globalParamsJson.get(key);
+        return new Configuration(globalParameters, harvesterParameters);
+    }
 
-            if (valueJson != null)
-            {
-                if (valueJson.getAsJsonPrimitive().isString())
-                    globalParameters.get(key).setValue(valueJson.getAsString(), null);
 
-                else
-                    globalParameters.get(key).setValue(valueJson.toString(), null);
-            } else
-                globalParameters.get(key).setValue(null, null);
-        });
+    /**
+     * Converts a JSON object to a parameter {@linkplain HashMap}.
+     *
+     * @param paramsJson the JSON object that is to be read
+     *
+     * @return a {@linkplain HashMap} containing parameters
+     */
+    private Map<String, AbstractParameter<?>> deserializeParameters(JsonObject paramsJson)
+    {
+        Map<String, AbstractParameter<?>> params = new HashMap<>();
 
-        // fill harvester parameters
-        Set<Entry<String, JsonElement>> harvesterParamsJson =
-            configJson.get(ConfigurationConstants.HARVESTER_PARAMETERS_JSON).getAsJsonObject().entrySet();
-
-        for (Entry<String, JsonElement> paramJson : harvesterParamsJson) {
+        for (Entry<String, JsonElement> paramJson : paramsJson.entrySet()) {
             String key = paramJson.getKey();
             JsonPrimitive valueJson = paramJson.getValue().getAsJsonPrimitive();
-
             AbstractParameter<?> param = null;
 
             // boolean parameter
@@ -91,16 +88,22 @@ public class ConfigurationAdapter implements JsonDeserializer<Configuration>, Js
 
             // string parameter
             else if (valueJson.isString()) {
-                if (valueJson.getAsString().startsWith(ConfigurationConstants.URL_PREFIX))
-                    param = new UrlParameter(key, valueJson.getAsString());
+                final String stringVal = valueJson.getAsString();
+
+                if (stringVal.startsWith(ConfigurationConstants.URL_PREFIX))
+                    param = new UrlParameter(key, stringVal.substring(ConfigurationConstants.URL_PREFIX.length()));
+
+                else if (stringVal.startsWith(ConfigurationConstants.PASSWORD_PREFIX))
+                    param = new PasswordParameter(key, stringVal.substring(ConfigurationConstants.PASSWORD_PREFIX.length()));
+
                 else
-                    param = new StringParameter(key, valueJson.getAsString());
+                    param = new StringParameter(key, stringVal);
 
             }
 
             // if parameter cannot be parsed, abort the deserialization!
             if (param != null)
-                harvesterParameters.put(key, param);
+                params.put(key, param);
             else
                 throw new JsonParseException(
                     String.format(
@@ -109,51 +112,15 @@ public class ConfigurationAdapter implements JsonDeserializer<Configuration>, Js
                         key));
         }
 
-        return new Configuration(globalParameters, harvesterParameters);
+        return params;
     }
 
 
     @Override
     public JsonElement serialize(Configuration src, Type typeOfSrc, JsonSerializationContext context)
     {
-        // serialize global parameters
-        Map<String, AbstractParameter<?>> globalParameters = src.getGlobalParameters();
-        JsonObject globalParamsJson = new JsonObject();
-
-        globalParameters.forEach((String key, AbstractParameter<?> param) -> {
-
-            if (param instanceof BooleanParameter)
-                globalParamsJson.addProperty(key, (Boolean) param.getValue());
-
-            else if (param instanceof IntegerParameter)
-                globalParamsJson.addProperty(key, (Integer) param.getValue());
-
-            else if (param instanceof StringParameter)
-                globalParamsJson.addProperty(key, (String) param.getValue());
-
-            else if (param instanceof UrlParameter && param.getValue() != null)
-                globalParamsJson.addProperty(key, ConfigurationConstants.URL_PREFIX + param.getValue().toString());
-
-        });
-
-        // serialize harvester specific parameters
-        Map<String, AbstractParameter<?>> harvesterParameters = src.getHarvesterParameters();
-        JsonObject harvesterParamsJson = new JsonObject();
-
-        harvesterParameters.forEach((String key, AbstractParameter<?> param) -> {
-
-            if (param instanceof BooleanParameter)
-                harvesterParamsJson.addProperty(key, (Boolean) param.getValue());
-
-            else if (param instanceof IntegerParameter)
-                harvesterParamsJson.addProperty(key, (Integer) param.getValue());
-
-            else if (param instanceof StringParameter)
-                harvesterParamsJson.addProperty(key, (String) param.getValue());
-
-            else if (param instanceof UrlParameter && param.getValue() != null)
-                globalParamsJson.addProperty(key, ConfigurationConstants.URL_PREFIX + param.getValue().toString());
-        });
+        JsonObject globalParamsJson = serializeParameters(src.getGlobalParameters());
+        JsonObject harvesterParamsJson = serializeParameters(src.getHarvesterParameters());
 
         // assemble config JSON file
         JsonObject configJson = new JsonObject();
@@ -161,5 +128,37 @@ public class ConfigurationAdapter implements JsonDeserializer<Configuration>, Js
         configJson.add(ConfigurationConstants.HARVESTER_PARAMETERS_JSON, harvesterParamsJson);
 
         return configJson;
+    }
+
+
+    /**
+     * Converts a {@linkplain HashMap} of parameters to a Json object.
+     *
+     * @param paramsJson the JSON object that is to be read
+     *
+     * @return a {@linkplain HashMap} containing parameters
+     */
+    private JsonObject serializeParameters(Map<String, AbstractParameter<?>> params)
+    {
+        JsonObject paramsJson = new JsonObject();
+
+        params.forEach((String key, AbstractParameter<?> param) -> {
+            if (param instanceof BooleanParameter)
+                paramsJson.addProperty(key, (Boolean) param.getValue());
+
+            else if (param instanceof IntegerParameter)
+                paramsJson.addProperty(key, (Integer) param.getValue());
+
+            else if (param instanceof UrlParameter && param.getValue() != null)
+                paramsJson.addProperty(key, ConfigurationConstants.URL_PREFIX + param.getValue().toString());
+
+            else if (param instanceof PasswordParameter && param.getValue() != null)
+                paramsJson.addProperty(key, ConfigurationConstants.PASSWORD_PREFIX + param.getValue().toString());
+
+            else if (param instanceof StringParameter)
+                paramsJson.addProperty(key, (String) param.getValue());
+        });
+
+        return paramsJson;
     }
 }

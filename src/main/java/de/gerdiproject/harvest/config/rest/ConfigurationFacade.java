@@ -21,7 +21,6 @@ import java.util.Map.Entry;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
-import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
@@ -69,32 +68,11 @@ public final class ConfigurationFacade
         final String entity;
 
         if (key == null)
-            entity = config.getInfoString();
+            entity = config.getInfoString(MainContext.getModuleName());
         else
             entity = config.getParameterStringValue(key);
 
         return ServerResponseFactory.createOkResponse(entity);
-    }
-
-
-    /**
-     * Saves the configuration to disk.
-     *
-     * @return an info message that describes the status of the operation
-     */
-    @POST
-    @Produces({
-        MediaType.TEXT_PLAIN
-    })
-    public Response saveToDisk()
-    {
-        final Configuration config = MainContext.getConfiguration();
-
-        if (config == null)
-            return ServerResponseFactory.createServerErrorResponse();
-        else
-            return ServerResponseFactory.createOkResponse(
-                       config.saveToDisk());
     }
 
 
@@ -135,7 +113,10 @@ public final class ConfigurationFacade
         if (sb.length() == 0)
             return ServerResponseFactory.createBadRequestResponse(
                        ConfigurationConstants.NO_CHANGES);
-        else
+        else {
+            config.saveToDisk();
+
             return ServerResponseFactory.createOkResponse(sb.toString());
+        }
     }
 }

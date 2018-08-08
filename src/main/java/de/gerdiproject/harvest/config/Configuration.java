@@ -18,6 +18,7 @@ package de.gerdiproject.harvest.config;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -29,7 +30,6 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonParseException;
 
-import de.gerdiproject.harvest.MainContext;
 import de.gerdiproject.harvest.application.constants.ApplicationConstants;
 import de.gerdiproject.harvest.config.adapter.ConfigurationAdapter;
 import de.gerdiproject.harvest.config.constants.ConfigurationConstants;
@@ -46,22 +46,21 @@ import de.gerdiproject.harvest.utils.data.DiskIO;
 
 /**
  * This class manages all application {@linkplain AbstractParameter}s.
- * It is stored by the {@linkplain MainContext}.
  *
  * @author Robin Weiss
  */
 public class Configuration implements ICachedObject
 {
-    private static final Gson GSON =  new GsonBuilder().registerTypeAdapter(Configuration.class, new ConfigurationAdapter()).create();
+    private static final Gson GSON = new GsonBuilder().registerTypeAdapter(Configuration.class, new ConfigurationAdapter()).create();
     private static final Logger LOGGER = LoggerFactory.getLogger(Configuration.class);
 
-    private Map<String, AbstractParameter<?>> globalParameters;
-    String globalParameterFormat;
-
-    private Map<String, AbstractParameter<?>> harvesterParameters;
-    String harvesterParameterFormat;
-
+    private final transient String globalParameterFormat;
+    private final transient String harvesterParameterFormat;
     private final transient DiskIO diskIo;
+    private transient String cacheFilePath;
+
+    private final Map<String, AbstractParameter<?>> globalParameters;
+    private final Map<String, AbstractParameter<?>> harvesterParameters;
 
 
     /**
@@ -73,13 +72,14 @@ public class Configuration implements ICachedObject
      */
     public Configuration(Map<String, AbstractParameter<?>> globalParameters, Map<String, AbstractParameter<?>> harvesterParameters)
     {
-        this.globalParameters = globalParameters;
-        this.harvesterParameters = harvesterParameters;
+        this.globalParameters = globalParameters != null ? globalParameters : new HashMap<>();
+        this.harvesterParameters = globalParameters != null ? harvesterParameters : new HashMap<>();
 
-        this.globalParameterFormat = getPaddedKeyFormat(globalParameters);
-        this.harvesterParameterFormat = getPaddedKeyFormat(harvesterParameters);
+        this.globalParameterFormat = getPaddedKeyFormat(this.globalParameters);
+        this.harvesterParameterFormat = getPaddedKeyFormat(this.harvesterParameters);
 
         this.diskIo = new DiskIO(GSON, StandardCharsets.UTF_8);
+        this.cacheFilePath = null;
     }
 
 
@@ -125,11 +125,12 @@ public class Configuration implements ICachedObject
     /**
      * Assembles a pretty String that summarizes all options and flags.
      *
+     * @param moduleName the name of the service
+     *
      * @return a pretty String that summarizes all options and flags
      */
-    public String getInfoString()
+    public String getInfoString(String moduleName)
     {
-        String modName = MainContext.getModuleName();
         String parameters = this.toString();
         String globalParamKeys = globalParameters.keySet().toString();
 
@@ -144,69 +145,90 @@ public class Configuration implements ICachedObject
         String validValues = harvesterParamKeys + ", " + globalParamKeys;
 
         // return assembled string
-        return String.format(ConfigurationConstants.REST_INFO, modName, parameters, validValues);
+        return String.format(ConfigurationConstants.REST_INFO, moduleName, parameters, validValues);
+    }
+
+
+    /**
+     * Sets the file path to which the configuration can be saved.
+     *
+     * @param path a path to a file
+     */
+    public void setCacheFilePath(String path)
+    {
+        this.cacheFilePath = path;
     }
 
 
     /**
      * Saves the configuration as a Json file.
      *
-     * @return a string describing the status of the operation
      */
     @Override
-    public String saveToDisk()
+    public void saveToDisk()
     {
-        return diskIo.writeObjectToFile(getConfigFilePath(), this);
+        if (cacheFilePath == null)
+            LOGGER.error(ConfigurationConstants.SAVE_FAILED_NO_PATH);
+        else
+            diskIo.writeObjectToFile(cacheFilePath, this);
     }
-    
+
 
     /**
-     * Attempts to load a configuration file from disk.
+     * Attempts to load a configuration file from disk, overwriting the values
+     * of existing parameters, but not adding them if they did not exist before.
+     * This is done in order to get rid of deprecated parameter keys.
      */
     @Override
     public void loadFromDisk()
     {
+        if (cacheFilePath == null) {
+            LOGGER.error(String.format(ConfigurationConstants.LOAD_FAILED, "", ConfigurationConstants.NO_PATH));
+            return;
+        }
+
         // read JSON from disk
-        final String path = getConfigFilePath();
-        final Configuration configJson = diskIo.getObject(path, Configuration.class);
+        final Configuration configJson = diskIo.getObject(cacheFilePath, Configuration.class);
 
-        if (configJson == null)
-            LOGGER.error(String.format(ConfigurationConstants.LOAD_FAILED, path, ConfigurationConstants.NO_EXISTS));
-        else {
-            try {
+        if (configJson == null) {
+            LOGGER.error(String.format(ConfigurationConstants.LOAD_FAILED, cacheFilePath, ConfigurationConstants.NO_EXISTS));
+            return;
+        }
 
-                // copy harvester parameters
-                configJson.harvesterParameters.forEach((String key, AbstractParameter<?> param) -> {
-                    if (harvesterParameters.containsKey(key))
-                        setParameter(key, param.getStringValue());
-                });
+        try {
+            // copy harvester parameters
+            configJson.harvesterParameters.forEach((String key, AbstractParameter<?> param) -> {
+                if (harvesterParameters.containsKey(key))
+                    setParameter(key, param.getStringValue());
+            });
 
-                // copy global parameters
-                configJson.globalParameters.forEach((String key, AbstractParameter<?> param) -> {
-                    if (globalParameters.containsKey(key))
-                        setParameter(key, param.getStringValue());
-                });
+            // copy global parameters
+            configJson.globalParameters.forEach((String key, AbstractParameter<?> param) -> {
+                if (globalParameters.containsKey(key))
+                    setParameter(key, param.getStringValue());
+            });
 
-                LOGGER.info(String.format(ConfigurationConstants.LOAD_OK, path));
+            LOGGER.info(String.format(ConfigurationConstants.LOAD_OK, cacheFilePath));
 
-            } catch (JsonParseException e) {
-                LOGGER.error(String.format(ConfigurationConstants.LOAD_FAILED, path, e.toString()));
-            }
+        } catch (JsonParseException e) {
+            LOGGER.error(String.format(ConfigurationConstants.LOAD_FAILED, cacheFilePath, e.toString()));
         }
     }
 
 
     /**
      * Attempts to load configuration parameters from environment variables.
+     *
+     * @param moduleName the name of this harvester service
      */
-    public void loadFromEnvironmentVariables()
+    public void loadFromEnvironmentVariables(String moduleName)
     {
         LOGGER.info(ConfigurationConstants.ENVIRONMENT_VARIABLE_SET_START);
 
-        int suffixIndex = MainContext.getModuleName().indexOf(ApplicationConstants.HARVESTER_SERVICE_NAME_SUFFIX);
-        final String moduleName = (suffixIndex != -1)
-                                  ? MainContext.getModuleName().substring(0, suffixIndex)
-                                  : MainContext.getModuleName();
+        int suffixIndex = moduleName.indexOf(ApplicationConstants.HARVESTER_SERVICE_NAME_SUFFIX);
+        final String servicePrefix = (suffixIndex != -1)
+                                     ? moduleName.substring(0, suffixIndex)
+                                     : moduleName;
 
         final AtomicInteger changeCount = new AtomicInteger(0);
         final Map<String, String> environmentVariables = System.getenv();
@@ -214,7 +236,7 @@ public class Configuration implements ICachedObject
         // copy harvester parameters
         harvesterParameters.forEach((String key, AbstractParameter<?> param) -> {
             final String envVal = environmentVariables.get(
-                String.format(ConfigurationConstants.ENVIRONMENT_VARIABLE, moduleName, key));
+                String.format(ConfigurationConstants.ENVIRONMENT_VARIABLE, servicePrefix, key));
 
             if (envVal != null)
             {
@@ -226,7 +248,7 @@ public class Configuration implements ICachedObject
         // copy global parameters
         globalParameters.forEach((String key, AbstractParameter<?> param) -> {
             final String envVal = environmentVariables.get(
-                String.format(ConfigurationConstants.ENVIRONMENT_VARIABLE, moduleName, key));
+                String.format(ConfigurationConstants.ENVIRONMENT_VARIABLE, servicePrefix, key));
 
             if (envVal != null)
             {
@@ -236,17 +258,6 @@ public class Configuration implements ICachedObject
         });
 
         LOGGER.info(String.format(ConfigurationConstants.ENVIRONMENT_VARIABLE_SET_END, changeCount.get()));
-    }
-
-
-    /**
-     * Returns the path to the configurationFile of this service.
-     *
-     * @return the path to the configurationFile of this service
-     */
-    private static String getConfigFilePath()
-    {
-        return String.format(ConfigurationConstants.CONFIG_PATH, MainContext.getModuleName());
     }
 
 
@@ -326,11 +337,15 @@ public class Configuration implements ICachedObject
         else {
             Object oldValue = param.getValue();
             String message = param.setValue(value, StateMachine.getCurrentState());
+            Object newValue = param.getValue();
 
-            if (isHarvesterParam)
-                EventSystem.sendEvent(new HarvesterParameterChangedEvent(param, oldValue));
-            else
-                EventSystem.sendEvent(new GlobalParameterChangedEvent(param, oldValue));
+            // send events only if the value changed
+            if (oldValue == null && newValue != null || oldValue != null && !oldValue.equals(newValue)) {
+                if (isHarvesterParam)
+                    EventSystem.sendEvent(new HarvesterParameterChangedEvent(param, oldValue));
+                else
+                    EventSystem.sendEvent(new GlobalParameterChangedEvent(param, oldValue));
+            }
 
             return message;
         }

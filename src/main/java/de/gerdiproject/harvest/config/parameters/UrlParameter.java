@@ -62,16 +62,11 @@ public class UrlParameter extends AbstractParameter<URL>
     {
         if (value == null)
             return null;
-        else {
-            // remove URL-PREFIX if it exists. This is added to distinguish saved URLs from Strings
-            if (value.startsWith(ConfigurationConstants.URL_PREFIX))
-                value = value.substring(ConfigurationConstants.URL_PREFIX.length());
 
-            try {
-                return new URL(value);
-            } catch (MalformedURLException e) {
-                throw new ParseException(String.format(ConfigurationConstants.CANNOT_CHANGE_PARAM_INVALID_URL, key, value), 0);
-            }
+        try {
+            return new URL(value);
+        } catch (MalformedURLException e) {
+            throw new ParseException(String.format(ConfigurationConstants.CANNOT_CHANGE_PARAM_INVALID_URL, key, value), 0);
         }
     }
 

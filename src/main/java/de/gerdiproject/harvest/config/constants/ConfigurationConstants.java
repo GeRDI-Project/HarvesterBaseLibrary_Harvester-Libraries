@@ -82,13 +82,14 @@ public class ConfigurationConstants
     public static final String LOAD_OK = "Loaded configuration from '%s'.";
     public static final String LOAD_FAILED = "Could not load configuration from '%s': %s";
     public static final String NO_EXISTS = "No configuration exists!";
+    public static final String NO_PATH = "You must set a path first!";
     public static final String REST_INFO = "- %s Configuration -%n%n%s%n"
                                            + "GET   Returns either the entire configuration in pretty text, or%n"
                                            + "      if '?key=xxx' is added, returns the value of parameter 'xxx'.%n"
-                                           + "POST  Saves the current configuration to disk.%n"
                                            + "PUT   Sets x-www-form-urlencoded parameters for the harvester.%n"
                                            + "      Valid values: %s.%n";
 
+    public static final String SAVE_FAILED_NO_PATH = "Could not save configuration: " + NO_PATH;
     public static final String PARSE_ERROR = "Could not read configuration parameter value '%s' from key '%s'!";
 
     public static final List<Class<? extends IState>> HARVESTER_PARAM_ALLOWED_STATES =
@@ -101,6 +102,7 @@ public class ConfigurationConstants
                 SubmittingState.class));
 
     public static final String URL_PREFIX = "%URL_PARAMETER%";
+    public static final String PASSWORD_PREFIX = "%PASSWORD_PARAMETER%";
     public static final String GLOBAL_PARAMETERS_JSON = "globalParameters";
     public static final String HARVESTER_PARAMETERS_JSON = "harvesterParameters";
     public static final String BASIC_PARAMETER_FORMAT = "%%1$-%ds :  %%2$s%%n";
