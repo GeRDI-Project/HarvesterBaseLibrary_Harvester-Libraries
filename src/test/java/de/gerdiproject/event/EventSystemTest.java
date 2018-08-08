@@ -17,10 +17,8 @@
 package de.gerdiproject.event;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
 
 import java.util.Arrays;
 import java.util.LinkedList;
@@ -87,15 +85,15 @@ public class EventSystemTest
         final TestEvent ignoredEvent = TEST_EVENTS.get(0);
         final TestEvent expectedEvent = TEST_EVENTS.get(1);
 
-        assertFalse(receivedEvents.contains(expectedEvent));
+        assert !receivedEvents.contains(expectedEvent);
 
         EventSystem.sendEvent(ignoredEvent);
-        assertFalse(receivedEvents.contains(ignoredEvent));
+        assert !receivedEvents.contains(ignoredEvent);
 
         EventSystem.addListener(TestEvent.class, onTestEvent);
 
         EventSystem.sendEvent(expectedEvent);
-        assertTrue(receivedEvents.contains(expectedEvent));
+        assert receivedEvents.contains(expectedEvent);
     }
 
 
@@ -112,7 +110,7 @@ public class EventSystemTest
 
         EventSystem.sendEvent(SINGLE_TEST_EVENT);
 
-        assertTrue(receivedEvents.contains(SINGLE_TEST_EVENT));
+        assert receivedEvents.contains(SINGLE_TEST_EVENT);
         assertEquals(2, receivedEvents.size());
     }
 
@@ -149,7 +147,7 @@ public class EventSystemTest
         try {
             EventSystem.removeListener(TestEvent.class, onTestEvent);
         } catch (Exception e) {
-            assert(false);
+            assert false;
         }
     }
 
@@ -187,7 +185,7 @@ public class EventSystemTest
         try {
             EventSystem.removeAllListeners(TestEvent.class);
         } catch (Exception e) {
-            assert(false);
+            assert false;
         }
     }
 
@@ -222,7 +220,7 @@ public class EventSystemTest
         try {
             EventSystem.addSynchronousListener(TestSynchronousEvent.class, onTestSyncEvent);
         } catch (Exception e) {
-            assert(false);
+            assert false;
         }
     }
 
@@ -243,7 +241,7 @@ public class EventSystemTest
         try {
             EventSystem.addSynchronousListener(TestSynchronousEvent.class, onTestSyncEvent2);
         } catch (Exception e) {
-            assert(false);
+            assert false;
         }
 
         final Object overriddenResult = EventSystem.sendSynchronousEvent(SINGLE_SYNC_TEST_EVENT);
@@ -283,7 +281,7 @@ public class EventSystemTest
         try {
             EventSystem.removeSynchronousListener(TestSynchronousEvent.class);
         } catch (Exception e) {
-            assert(false);
+            assert false;
         }
     }
 
@@ -324,7 +322,7 @@ public class EventSystemTest
         try {
             EventSystem.reset();
         } catch (Exception e) {
-            assert(false);
+            assert false;
         }
     }
 

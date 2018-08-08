@@ -91,8 +91,8 @@ public class Scheduler implements IEventListener, ICachedObject
         EventSystem.removeListener(ScheduledTaskExecutedEvent.class, onTaskExecuted);
         EventSystem.removeListener(ContextDestroyedEvent.class, onContextDestroyed);
     }
-    
-    
+
+
     /**
      * Saves all cron tabs to disk as a JSON array.
      */
@@ -101,7 +101,7 @@ public class Scheduler implements IEventListener, ICachedObject
     {
         diskIo.writeObjectToFile(cacheFilePath, registeredTasks.keySet());
     }
-    
+
 
     /**
      * Attempts to load a schedule from disk.

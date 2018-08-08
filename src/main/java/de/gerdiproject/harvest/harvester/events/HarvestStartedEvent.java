@@ -37,6 +37,7 @@ public class HarvestStartedEvent implements IEvent
      *
      * @param startIndex the index of the first document to be harvested
      * @param endIndex the index of the last document that is to be harvested + 1
+     * @param harvesterHash a hash value representing the current state of the source data
      */
     public HarvestStartedEvent(int startIndex, int endIndex, String harvesterHash)
     {

@@ -41,7 +41,7 @@ public class DebugUtils
 
     public static String getUnmodifiableLists(DataCiteJson doc)
     {
-        final StringBuilder sb = new StringBuilder();
+        final StringBuilder sb = new StringBuilder(215);
 
         if (isListUnmodifiable(doc.getTitles()))
             sb.append("titles\n");

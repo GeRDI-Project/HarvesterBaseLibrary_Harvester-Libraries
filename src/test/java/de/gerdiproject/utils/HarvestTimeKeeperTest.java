@@ -77,7 +77,7 @@ public class HarvestTimeKeeperTest
     }
 
     /**
-     * Tests the constructor by checking that all measures are not started after construction.
+     * Tests the constructor by checking that no measure is started after construction.
      */
     @Test
     public void testConstructor()
@@ -85,8 +85,8 @@ public class HarvestTimeKeeperTest
         assertEquals(ProcessStatus.NotStarted, keeper.getHarvestMeasure().getStatus());
         assertEquals(ProcessStatus.NotStarted, keeper.getSaveMeasure().getStatus());
         assertEquals(ProcessStatus.NotStarted, keeper.getSubmissionMeasure().getStatus());
-        assert(!keeper.isHarvestIncomplete());
-        assert(!keeper.hasUnsubmittedChanges());
+        assert !keeper.isHarvestIncomplete();
+        assert !keeper.hasUnsubmittedChanges();
     }
 
 

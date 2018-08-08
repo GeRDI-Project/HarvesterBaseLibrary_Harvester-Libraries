@@ -48,4 +48,11 @@ public class MockedObject
         final MockedObject other = (MockedObject) obj;
         return testInt == other.testInt && testStr.equals(other.testStr);
     }
+    
+    
+    @Override
+    public int hashCode()
+    {
+        return testStr.hashCode() + testInt;
+    }
 }

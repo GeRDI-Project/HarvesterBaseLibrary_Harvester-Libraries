@@ -17,10 +17,7 @@
 package de.gerdiproject.state;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
 
 import org.junit.After;
 import org.junit.Test;
@@ -66,7 +63,6 @@ public class StateMachineTest
         final TestState testState = new TestState();
         StateMachine.setState(testState);
 
-        assertNotNull(StateMachine.getCurrentState());
         assertEquals(testState, StateMachine.getCurrentState());
     }
 
@@ -80,12 +76,12 @@ public class StateMachineTest
     {
         final TestState testState = new TestState();
 
-        assertFalse(testState.isActive());
+        assert !testState.isActive();
 
         StateMachine.setState(testState);
-        assertTrue(testState.isActive());
+        assert testState.isActive();
 
         StateMachine.setState(null);
-        assertFalse(testState.isActive());
+        assert !testState.isActive();
     }
 }

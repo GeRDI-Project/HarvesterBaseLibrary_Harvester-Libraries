@@ -264,7 +264,7 @@ public class FileUtils
         }
 
         // make sure both files are directories
-        if (!sourceDirectory.isDirectory() || (targetDirectory.exists() && !targetDirectory.isDirectory())) {
+        if (!sourceDirectory.isDirectory() || targetDirectory.exists() && !targetDirectory.isDirectory()) {
             LOGGER.error(String.format(
                              CacheConstants.DIR_MERGE_FAILED_NOT_DIRS,
                              sourceDirectory.getPath(),

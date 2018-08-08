@@ -17,10 +17,7 @@
 package de.gerdiproject.scheduler;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 import java.util.Random;
@@ -90,11 +87,11 @@ public class SchedulerTest
     @Test
     public void testSavingToDisk()
     {
-        assertFalse(CACHE_FILE.exists());
+        assert !CACHE_FILE.exists();
 
         addTasks(1);
 
-        assertTrue(CACHE_FILE.exists());
+        assert CACHE_FILE.exists();
         assertNotEquals(0, CACHE_FILE.length());
     }
 
@@ -133,12 +130,12 @@ public class SchedulerTest
 
         // delete cache to guarantee it no longer exists
         FileUtils.deleteFile(CACHE_FILE);
-        assertFalse(CACHE_FILE.exists());
+        assert !CACHE_FILE.exists();
 
         try {
             scheduler.loadFromDisk();
         } catch (Exception ex) {
-            assert(false);
+            assert false;
         }
 
         assertEquals(oldSize, scheduler.size());
@@ -167,9 +164,9 @@ public class SchedulerTest
         try {
             EventSystem.sendSynchronousEvent(new AddSchedulerTaskEvent(SOME_CRON_TAB));
             EventSystem.sendSynchronousEvent(new AddSchedulerTaskEvent(SOME_CRON_TAB));
-            assert(false);
+            assert false;
         } catch (Exception ex) {
-            assertTrue(ex instanceof IllegalArgumentException);
+            assert ex instanceof IllegalArgumentException;
         }
     }
 
@@ -182,9 +179,9 @@ public class SchedulerTest
     {
         try {
             EventSystem.sendSynchronousEvent(new AddSchedulerTaskEvent(INVALID_CRON));
-            assert(false);
+            assert false;
         } catch (Exception ex) {
-            assertTrue(ex instanceof IllegalArgumentException);
+            assert ex instanceof IllegalArgumentException;
         }
     }
 
@@ -216,9 +213,9 @@ public class SchedulerTest
     {
         try {
             EventSystem.sendSynchronousEvent(new DeleteSchedulerTaskEvent(SOME_CRON_TAB));
-            assert(false);
+            assert false;
         } catch (Exception ex) {
-            assertTrue(ex instanceof IllegalArgumentException);
+            assert ex instanceof IllegalArgumentException;
         }
     }
 
@@ -250,7 +247,7 @@ public class SchedulerTest
         try {
             EventSystem.sendSynchronousEvent(new DeleteSchedulerTaskEvent(null));
         } catch (Exception ex) {
-            assert(false);
+            assert false;
         }
     }
 
@@ -266,13 +263,12 @@ public class SchedulerTest
         addTasks(addedEvents);
 
         final String scheduleText = EventSystem.sendSynchronousEvent(new GetScheduleEvent());
-        assertNotNull(scheduleText);
 
         int numberOfLines = scheduleText.split("\n").length;
         assertEquals(addedEvents, numberOfLines);
 
         for (int i = 0; i < addedEvents; i++)
-            assertTrue(scheduleText.contains(String.format(RANDOM_CRON_TAB, i)));
+            assert scheduleText.contains(String.format(RANDOM_CRON_TAB, i));
     }
 
 
@@ -283,7 +279,7 @@ public class SchedulerTest
     public void testScheduleGetterEmpty()
     {
         final String scheduleText = EventSystem.sendSynchronousEvent(new GetScheduleEvent());
-        assertTrue(scheduleText.isEmpty());
+        assert scheduleText.isEmpty();
     }
 
 

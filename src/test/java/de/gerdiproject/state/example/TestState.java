@@ -25,7 +25,7 @@ import de.gerdiproject.state.StateMachineTest;
  * This class serves as a test state for {@linkplain StateMachineTest}.
  * It returns null on all calls, but provides a getter function for testing
  * if the onStateEnter() and onStateLeave() functions have been called.
- * 
+ *
  * @author Robin Weiss
  *
  */
@@ -44,8 +44,8 @@ public class TestState implements  IState
     {
         return isActive;
     }
-    
-    
+
+
     @Override
     public String getName()
     {

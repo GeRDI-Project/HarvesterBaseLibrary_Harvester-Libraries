@@ -18,7 +18,7 @@ package de.gerdiproject.harvest.utils.cache;
 
 /**
  * This interface represents objects that can be cached on disk.
- * 
+ *
  * @author Robin Weiss
  */
 public interface ICachedObject
@@ -27,9 +27,9 @@ public interface ICachedObject
      * Attempts to load and set values from a cached file.
      */
     void loadFromDisk();
-    
-    
-    
+
+
+
     /**
      * Saves the object to a cache file on disk, which can be loaded
      * via loadFromDisk().

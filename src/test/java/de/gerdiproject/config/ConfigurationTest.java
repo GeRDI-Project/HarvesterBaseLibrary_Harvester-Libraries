@@ -17,9 +17,7 @@
 package de.gerdiproject.config;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
 import java.io.File;
@@ -122,9 +120,6 @@ public class ConfigurationTest
     {
         final Configuration config = new Configuration(null, null);
 
-        assertNotNull(config.getGlobalParameters());
-        assertNotNull(config.getHarvesterParameters());
-
         assertEquals(0, config.getGlobalParameters().size());
         assertEquals(0, config.getHarvesterParameters().size());
     }
@@ -165,9 +160,6 @@ public class ConfigurationTest
     public void testNullHarvesterConstructor()
     {
         final Configuration config = new Configuration(null);
-
-        assertNotNull(config.getGlobalParameters());
-        assertNotNull(config.getHarvesterParameters());
 
         assertNotEquals(0, config.getGlobalParameters().size());
         assertNotEquals(0, config.getHarvesterParameters().size());
@@ -328,13 +320,11 @@ public class ConfigurationTest
 
         // check GlobalParameterChanged event
         config.setParameter(globalParam.getKey(), newValue);
-        assertNotNull(lastGlobalParamChange);
         assertEquals(globalParam, lastGlobalParamChange.getParameter());
         assertEquals(oldGlobalValue, lastGlobalParamChange.getOldValue());
 
         // check HarvesterParameterChanged event
         config.setParameter(harvesterParam.getKey(), newValue);
-        assertNotNull(lastHarvesterParamChange);
         assertEquals(harvesterParam, lastHarvesterParamChange.getParameter());
         assertEquals(oldHarvesterValue, lastHarvesterParamChange.getOldValue());
     }
@@ -346,7 +336,7 @@ public class ConfigurationTest
     @Test
     public void testSaveWithPath()
     {
-        assertFalse(CACHE_FILE.exists());
+        assert !CACHE_FILE.exists();
 
         final Configuration config = new Configuration(null);
         config.setCacheFilePath(CACHE_FILE.getAbsolutePath());
@@ -365,7 +355,7 @@ public class ConfigurationTest
     @Test
     public void testSaveWithoutPath()
     {
-        assertFalse(CACHE_FILE.exists());
+        assert !CACHE_FILE.exists();
 
         final Configuration config = new Configuration(null);
 
@@ -373,7 +363,7 @@ public class ConfigurationTest
         config.saveToDisk();
         LoggerConstants.ROOT_LOGGER.setLevel(Level.DEBUG);
 
-        assertFalse(CACHE_FILE.exists());
+        assert !CACHE_FILE.exists();
     }
 
 
@@ -427,7 +417,7 @@ public class ConfigurationTest
         loadedConfig.setCacheFilePath(CACHE_FILE.getAbsolutePath());
 
         // make sure the cache file really does not exist
-        assertFalse(CACHE_FILE.exists());
+        assert !CACHE_FILE.exists();
 
         // attempt to load a non-existing path
         LoggerConstants.ROOT_LOGGER.setLevel(Level.OFF);
@@ -435,7 +425,6 @@ public class ConfigurationTest
         LoggerConstants.ROOT_LOGGER.setLevel(Level.DEBUG);
 
         // make sure the old custom parameter still exists
-        assertNotNull(loadedConfig.getParameterValue(customParam.getKey(), customParam.getValue().getClass()));
         assertEquals(customParam.getStringValue(), loadedConfig.getParameterStringValue(customParam.getKey()));
     }
 
@@ -480,7 +469,7 @@ public class ConfigurationTest
     @Test
     public void testJsonSerialization()
     {
-        assertFalse(CACHE_FILE.exists());
+        assert !CACHE_FILE.exists();
 
         final Configuration savedConfig = createConfigWithAllParameterTypes();
         savedConfig.setCacheFilePath(CACHE_FILE.getAbsolutePath());
@@ -500,7 +489,6 @@ public class ConfigurationTest
         // check if deserialized global parameters are correct
         final Map<String, AbstractParameter<?>> loadedGlobalParams = loadedConfig.getGlobalParameters();
         savedConfig.getGlobalParameters().forEach((String key, AbstractParameter<?> param) -> {
-            assertNotNull(loadedGlobalParams.get(key));
             assertEquals(param.getClass(), loadedGlobalParams.get(key).getClass());
             assertEquals(param.getValue(), loadedGlobalParams.get(key).getValue());
         });
@@ -508,7 +496,6 @@ public class ConfigurationTest
         // check if deserialized harvester parameters are correct
         final Map<String, AbstractParameter<?>> loadedHarvesterParams = loadedConfig.getHarvesterParameters();
         savedConfig.getHarvesterParameters().forEach((String key, AbstractParameter<?> param) -> {
-            assertNotNull(loadedHarvesterParams.get(key));
             assertEquals(param.getClass(), loadedHarvesterParams.get(key).getClass());
             assertEquals(param.getValue(), loadedHarvesterParams.get(key).getValue());
         });
@@ -532,13 +519,11 @@ public class ConfigurationTest
 
         // check GlobalParameterChanged event
         config.updateParameter(globalParam.getKey());
-        assertNotNull(lastGlobalParamChange);
         assertNull(lastGlobalParamChange.getOldValue());
         assertEquals(globalParam, lastGlobalParamChange.getParameter());
 
         // check HarvesterParameterChanged event
         config.updateParameter(harvesterParam.getKey());
-        assertNotNull(lastHarvesterParamChange);
         assertNull(lastHarvesterParamChange.getOldValue());
         assertEquals(harvesterParam, lastHarvesterParamChange.getParameter());
     }
@@ -562,12 +547,10 @@ public class ConfigurationTest
         config.updateAllParameters();
 
         // check GlobalParameterChanged event
-        assertNotNull(lastGlobalParamChange);
         assertNull(lastGlobalParamChange.getOldValue());
         assertEquals(globalParam, lastGlobalParamChange.getParameter());
 
         // check HarvesterParameterChanged event
-        assertNotNull(lastHarvesterParamChange);
         assertNull(lastHarvesterParamChange.getOldValue());
         assertEquals(harvesterParam, lastHarvesterParamChange.getParameter());
     }

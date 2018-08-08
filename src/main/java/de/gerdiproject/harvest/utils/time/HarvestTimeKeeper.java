@@ -96,7 +96,7 @@ public class HarvestTimeKeeper implements IEventListener, ICachedObject
     {
         diskIo.writeObjectToFile(cacheFilePath, this);
     }
-    
+
 
     @Override
     public void loadFromDisk()
