@@ -41,6 +41,7 @@ import de.gerdiproject.harvest.config.events.GlobalParameterChangedEvent;
 import de.gerdiproject.harvest.config.parameters.BooleanParameter;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.event.IEvent;
+import de.gerdiproject.harvest.utils.FileUtils;
 import de.gerdiproject.harvest.utils.data.HttpRequester;
 import de.gerdiproject.harvest.utils.data.enums.RestRequestType;
 import de.gerdiproject.harvest.utils.logger.constants.LoggerConstants;
@@ -52,6 +53,7 @@ import de.gerdiproject.harvest.utils.logger.constants.LoggerConstants;
  */
 public class HttpRequesterTest
 {
+    private static final String TEST_RESPONSE_CACHE_FOLDER = "mocked/httpRequesterTestDir/";
     private static final String MOCKED_RESPONSE_CACHE_FOLDER = "src/test/java/de/gerdiproject/utils/examples/httpRequester/";
     private static final String FAOSTAT_JSON_OBJECT_URL = "http://fenixservices.fao.org/faostat/api/v1/en/documents/RFB/";
     private static final String DEFAULT_URL = "http://www.gerdi-project.de/";
@@ -86,6 +88,11 @@ public class HttpRequesterTest
             requester.removeEventListeners();
 
         requester = null;
+
+        final File createdCacheFolder = new File(TEST_RESPONSE_CACHE_FOLDER);
+
+        if (createdCacheFolder.exists())
+            FileUtils.deleteFile(createdCacheFolder);
     }
 
 
@@ -190,7 +197,7 @@ public class HttpRequesterTest
 
 
     /**
-     * Tests if an HTML Java object is returned when a GET-request
+     * Tests if a HTML Java object is returned when a GET-request
      * is sent to a valid URL.
      */
     @Test
@@ -240,15 +247,16 @@ public class HttpRequesterTest
     @Test
     public void testGettingNonExistingHtmlFromDisk()
     {
+        requester = createReadOnlyExampleHttpRequester();
+
         final File cachedResponse =
             new File(
-            MOCKED_RESPONSE_CACHE_FOLDER
+            requester.getCacheFolder()
             + DEFAULT_URL.substring(7)
             + "response.html");
 
         assert !cachedResponse.exists();
 
-        requester = createReadOnlyExampleHttpRequester();
         Document htmlObject = requester.getHtmlFromUrl(DEFAULT_URL);
 
         assertNotNull(htmlObject);
@@ -298,20 +306,65 @@ public class HttpRequesterTest
     @Test
     public void testGettingNonExistingObjectFromDisk()
     {
+        requester = createReadOnlyExampleHttpRequester();
+
         final File cachedResponse =
-            new File(MOCKED_RESPONSE_CACHE_FOLDER
+            new File(requester.getCacheFolder()
                      + FAOSTAT_JSON_OBJECT_URL.substring(7)
                      + "response.html");
 
         assert !cachedResponse.exists();
-
-        requester = createReadOnlyExampleHttpRequester();
 
         JsonObject obj = requester.getObjectFromUrl(
                              FAOSTAT_JSON_OBJECT_URL,
                              JsonObject.class);
 
         assertNotNull(obj);
+    }
+
+
+    /**
+     * Tests if a HTML response is cached on disk if the 'writeToDisk' flag is true.
+     */
+    @Test
+    public void testCachingHtml()
+    {
+        requester = createHttpRequesterWithCaching();
+        final File cacheFile = new File(requester.getCacheFolder() + DEFAULT_URL.substring(7) + "response.html");
+
+        // make sure the repsonse is not already cached
+        assert !cacheFile.exists();
+
+        // make a request, causing the response to be cached
+        requester.getHtmlFromUrl(DEFAULT_URL);
+
+        // verify the cache file was created
+        assert cacheFile.exists();
+    }
+
+
+    /**
+     * Tests if a JSON object response is cached on disk if the 'writeToDisk' flag is true.
+     */
+    @Test
+    public void testCachingObject()
+    {
+        requester = createHttpRequesterWithCaching();
+
+        final File cacheFile = new File(
+            requester.getCacheFolder()
+            + FAOSTAT_JSON_OBJECT_URL.substring(7)
+            + "response.json");
+
+        // make sure the repsonse is not already cached
+        assert !cacheFile.exists();
+
+        requester.getObjectFromUrl(
+            FAOSTAT_JSON_OBJECT_URL,
+            JsonObject.class);
+
+        // verify the cache file was created
+        assert cacheFile.exists();
     }
 
 
@@ -385,7 +438,7 @@ public class HttpRequesterTest
                    new Gson(),
                    true,
                    true,
-                   "mocked/httpRequesterTestDir");
+                   TEST_RESPONSE_CACHE_FOLDER);
     }
 
 

@@ -16,7 +16,7 @@
  */
 /**
  * This package contains mocked objects used by {@linkplain de.gerdiproject.utils.DiskIOTest}.
- * 
+ *
  * @author Robin Weiss
  */
 package de.gerdiproject.utils.examples.diskio;
