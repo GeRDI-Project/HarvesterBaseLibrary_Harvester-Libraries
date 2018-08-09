@@ -36,7 +36,7 @@ import de.gerdiproject.harvest.submission.elasticsearch.json.ElasticSearchIndex;
 import de.gerdiproject.harvest.submission.elasticsearch.json.ElasticSearchIndexWrapper;
 import de.gerdiproject.harvest.submission.elasticsearch.json.ElasticSearchResponse;
 import de.gerdiproject.harvest.utils.data.HttpRequester;
-import de.gerdiproject.harvest.utils.data.HttpRequester.RestRequestType;
+import de.gerdiproject.harvest.utils.data.enums.RestRequestType;
 
 
 /**

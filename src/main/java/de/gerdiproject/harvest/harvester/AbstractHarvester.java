@@ -56,6 +56,7 @@ import de.gerdiproject.harvest.submission.elasticsearch.ElasticSearchSubmitter;
 import de.gerdiproject.harvest.utils.CancelableFuture;
 import de.gerdiproject.harvest.utils.cache.HarvesterCache;
 import de.gerdiproject.harvest.utils.data.HttpRequester;
+import de.gerdiproject.harvest.utils.data.constants.DataOperationConstants;
 import de.gerdiproject.json.GsonUtils;
 
 
@@ -107,7 +108,14 @@ public abstract class AbstractHarvester
     {
         name = (harvesterName != null) ? harvesterName : getClass().getSimpleName();
         logger = LoggerFactory.getLogger(name);
-        httpRequester = new HttpRequester(MainContext.getCharset(), createGsonBuilder().create());
+
+        httpRequester = new HttpRequester(
+            MainContext.getCharset(),
+            createGsonBuilder().create(),
+            false,
+            false,
+            String.format(DataOperationConstants.CACHE_FOLDER_PATH, MainContext.getModuleName()));
+        httpRequester.addEventListeners();
 
         properties = new HashMap<>();
 

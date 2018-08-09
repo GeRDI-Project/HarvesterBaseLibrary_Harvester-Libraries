@@ -24,7 +24,7 @@ import org.junit.Test;
 
 import de.gerdiproject.harvest.state.IState;
 import de.gerdiproject.harvest.state.StateMachine;
-import de.gerdiproject.state.example.TestState;
+import de.gerdiproject.state.examples.TestState;
 
 
 /**

@@ -38,15 +38,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.gson.Gson;
-import com.google.gson.JsonObject;
 
-import de.gerdiproject.harvest.MainContext;
-import de.gerdiproject.harvest.config.Configuration;
 import de.gerdiproject.harvest.config.constants.ConfigurationConstants;
 import de.gerdiproject.harvest.config.events.GlobalParameterChangedEvent;
 import de.gerdiproject.harvest.config.parameters.AbstractParameter;
 import de.gerdiproject.harvest.event.EventSystem;
+import de.gerdiproject.harvest.event.IEventListener;
 import de.gerdiproject.harvest.utils.data.constants.DataOperationConstants;
+import de.gerdiproject.harvest.utils.data.enums.RestRequestType;
 
 
 /**
@@ -54,7 +53,7 @@ import de.gerdiproject.harvest.utils.data.constants.DataOperationConstants;
  *
  * @author Robin Weiss
  */
-public class HttpRequester
+public class HttpRequester implements IEventListener
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(HttpRequester.class);
 
@@ -63,6 +62,7 @@ public class HttpRequester
     private final Charset httpCharset;
     private final DiskIO diskIO;
     private final WebDataRetriever webDataRetriever;
+    private String cacheFolder;
     private boolean readFromDisk;
     private boolean writeToDisk;
 
@@ -75,73 +75,66 @@ public class HttpRequester
         AbstractParameter<?> param = event.getParameter();
 
         if (param.getKey().equals(ConfigurationConstants.READ_HTTP_FROM_DISK))
-            readFromDisk = (Boolean) param.getValue();
-
+            readFromDisk = (Boolean) param.getValue() && cacheFolder != null;
 
         if (param.getKey().equals(ConfigurationConstants.WRITE_HTTP_TO_DISK))
-            writeToDisk = (Boolean) param.getValue();
+            writeToDisk = (Boolean) param.getValue() && cacheFolder != null;
     };
 
 
     /**
-     * Constructor that allows to change the charset.
+     * Constructor that allows to customize the behavior.
+     *
+     * @param httpCharset the encoding charset
+     * @param gson the GSON (de-)serializer for reading and writing JSON objects
+     * @param readFromDisk if true, instead of sending HTTP requests,
+     *         cached responses are read from the file system, if they exist
+     * @param writeToDisk if true, all HTTP responses are cached and can henceforth be
+     *         retrieved when readFromDisk is set to true
+     * @param cacheFolder a folder where cached http responses can be cached
+     */
+    public HttpRequester(Charset httpCharset, Gson gson, boolean readFromDisk, boolean writeToDisk, String cacheFolder)
+    {
+        this.cacheFolder = cacheFolder;
+        this.readFromDisk = readFromDisk && cacheFolder != null;
+        this.writeToDisk = writeToDisk && cacheFolder != null;
+        this.httpCharset = httpCharset;
+
+        this.diskIO = new DiskIO(gson, httpCharset);
+        this.webDataRetriever = new WebDataRetriever(gson, httpCharset);
+    }
+
+
+    /**
+     * Constructor that disallows caching http responses on disk
      *
      * @param httpCharset the encoding charset
      * @param gson the GSON (de-)serializer for reading and writing JSON objects
      */
     public HttpRequester(Charset httpCharset, Gson gson)
     {
-        Configuration config = MainContext.getConfiguration();
-
-        if (config != null) {
-            this.readFromDisk = config.getParameterValue(ConfigurationConstants.READ_HTTP_FROM_DISK, Boolean.class);
-            this.writeToDisk = config.getParameterValue(ConfigurationConstants.WRITE_HTTP_TO_DISK, Boolean.class);
-        }
-
+        this.cacheFolder = null;
+        this.readFromDisk = false;
+        this.writeToDisk = false;
         this.httpCharset = httpCharset;
-        diskIO = new DiskIO(gson, httpCharset);
-        webDataRetriever = new WebDataRetriever(gson, httpCharset);
 
-        EventSystem.addListener(GlobalParameterChangedEvent.class, onGlobalParameterChanged);
+        this.diskIO = new DiskIO(gson, httpCharset);
+        this.webDataRetriever = new WebDataRetriever(gson, httpCharset);
     }
 
 
-    /**
-     * Sends a GET request to a specified URL and tries to retrieve the JSON
-     * response. If the development option is enabled, the JSON will be read
-     * from disk instead.
-     *
-     * @param url
-     *            a URL that returns a JSON object
-     * @return a JSON object, or null if the object is empty or could not be read
-     */
-    public JsonObject getJsonFromUrl(String url)
+    @Override
+    public void addEventListeners()
     {
-        JsonObject jsonObj  = null;
-        boolean isResponseReadFromWeb = false;
+        EventSystem.addListener(GlobalParameterChangedEvent.class, onGlobalParameterChanged);
 
-        // read json file from disk, if the option is enabled
-        if (readFromDisk) {
-            String filePath = urlToFilePath(url, DataOperationConstants.FILE_ENDING_JSON);
-            jsonObj = diskIO.getObject(filePath, JsonObject.class);
-        }
-
-        // request json from web, if it has not been read from disk already
-        if (jsonObj == null) {
-            jsonObj = webDataRetriever.getObject(url, JsonObject.class);
-            isResponseReadFromWeb = true;
-        }
-
-        // write whole response to disk, if the option is enabled
-        if (isResponseReadFromWeb && writeToDisk)
-            diskIO.writeObjectToFile(urlToFilePath(url, DataOperationConstants.FILE_ENDING_JSON), jsonObj);
+    }
 
 
-        // only return the object if it is not empty
-        if (jsonObj != null && jsonObj.size() > 0)
-            return jsonObj;
-        else
-            return null;
+    @Override
+    public void removeEventListeners()
+    {
+        EventSystem.removeListener(GlobalParameterChangedEvent.class, onGlobalParameterChanged);
     }
 
 
@@ -286,7 +279,7 @@ public class HttpRequester
             path += '/';
 
         // assemble the complete file name
-        return String.format(DataOperationConstants.FILE_PATH, MainContext.getModuleName(), path, fileEnding);
+        return String.format(DataOperationConstants.FILE_PATH, cacheFolder, path, fileEnding);
     }
 
 
@@ -479,12 +472,34 @@ public class HttpRequester
 
 
     /**
-     * The type of REST requests that can be sent via the {@link HttpRequester}.
+     * Returns the top folder where HTTP responses can be cached.
      *
-     * @author Robin Weiss
-     *
+     * @return the top folder where HTTP responses can be cached
      */
-    public enum RestRequestType {
-        GET, POST, PUT, DELETE, HEAD, OPTIONS
+    public String getCacheFolder()
+    {
+        return cacheFolder;
+    }
+
+
+    /**
+     * Returns true if HTTP responses are read from a cache on disk.
+     *
+     * @return true if HTTP responses are read from a cache on disk
+     */
+    public boolean isReadingFromDisk()
+    {
+        return readFromDisk;
+    }
+
+
+    /**
+     * Returns true if HTTP responses are written to a cache on disk.
+     *
+     * @return true if HTTP responses are written to a cache on disk
+     */
+    public boolean isWritingToDisk()
+    {
+        return writeToDisk;
     }
 }

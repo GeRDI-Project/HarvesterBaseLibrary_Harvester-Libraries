@@ -14,7 +14,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package de.gerdiproject.state.example;
+package de.gerdiproject.state.examples;
 
 import javax.ws.rs.core.Response;
 

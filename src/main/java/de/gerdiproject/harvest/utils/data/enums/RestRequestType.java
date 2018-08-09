@@ -14,9 +14,15 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
+package de.gerdiproject.harvest.utils.data.enums;
+
+import de.gerdiproject.harvest.utils.data.HttpRequester;
+
 /**
- * This package contains classes that help to test the {@linkplain de.gerdiproject.harvest.event.EventSystem}.
+ * The type of REST requests that can be sent via the {@link HttpRequester}.
  *
  * @author Robin Weiss
  */
-package de.gerdiproject.event.example;
+public enum RestRequestType {
+    GET, POST, PUT, DELETE, HEAD, OPTIONS
+}

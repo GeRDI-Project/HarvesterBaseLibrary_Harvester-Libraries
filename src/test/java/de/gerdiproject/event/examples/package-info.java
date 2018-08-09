@@ -15,9 +15,8 @@
  *  under the License.
  */
 /**
- * This package contains classes that help to test the
- * {@linkplain de.gerdiproject.harvest.state.StateMachine}.
+ * This package contains classes that help to test the {@linkplain de.gerdiproject.harvest.event.EventSystem}.
  *
  * @author Robin Weiss
  */
-package de.gerdiproject.state.example;
+package de.gerdiproject.event.examples;

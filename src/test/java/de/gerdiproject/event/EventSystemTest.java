@@ -30,8 +30,8 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import de.gerdiproject.event.example.TestEvent;
-import de.gerdiproject.event.example.TestSynchronousEvent;
+import de.gerdiproject.event.examples.TestEvent;
+import de.gerdiproject.event.examples.TestSynchronousEvent;
 import de.gerdiproject.harvest.event.EventSystem;
 
 
