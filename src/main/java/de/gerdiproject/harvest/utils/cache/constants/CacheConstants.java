@@ -49,10 +49,12 @@ public class CacheConstants
         + "processTimes"
         + JSON_FILE_EXTENSION;
 
-    public static final String STABLE_VERSIONS_FOLDER_PATH = CACHE_FOLDER_PATH + "documents/%s/versions";
-    public static final String STABLE_CHANGES_FOLDER_PATH = CACHE_FOLDER_PATH + "documents/%s/latestChanges";
-    public static final String TEMP_VERSIONS_FOLDER_PATH = CACHE_FOLDER_PATH + "documents_temp/%s/versions";
-    public static final String TEMP_CHANGES_FOLDER_PATH = CACHE_FOLDER_PATH + "documents_temp/%s/latestChanges";
+
+    public static final String TEMP_HARVESTER_CACHE_FOLDER_PATH = CACHE_FOLDER_PATH + "documents_temp/%s/";
+    public static final String STABLE_HARVESTER_CACHE_FOLDER_PATH = CACHE_FOLDER_PATH + "documents/%s/";
+
+    public static final String VERSIONS_FOLDER_NAME = "versions";
+    public static final String CHANGES_FOLDER_NAME = "latestChanges";
 
     public static final String DOCUMENT_HASH_FILE_PATH = "%s/%s/%s.json";
     public static final String SOURCE_HASH_FILE_PATH = "%s/sourceHash.json";

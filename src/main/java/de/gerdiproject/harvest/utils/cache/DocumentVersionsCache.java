@@ -18,7 +18,6 @@ package de.gerdiproject.harvest.utils.cache;
 
 import java.io.File;
 
-import de.gerdiproject.harvest.MainContext;
 import de.gerdiproject.harvest.harvester.AbstractHarvester;
 import de.gerdiproject.harvest.utils.FileUtils;
 import de.gerdiproject.harvest.utils.cache.constants.CacheConstants;
@@ -44,14 +43,8 @@ public class DocumentVersionsCache extends AbstractCache<String>
     public DocumentVersionsCache(final AbstractHarvester harvester)
     {
         super(
-            String.format(
-                CacheConstants.STABLE_VERSIONS_FOLDER_PATH,
-                MainContext.getModuleName(),
-                harvester.getName()),
-            String.format(
-                CacheConstants.TEMP_VERSIONS_FOLDER_PATH,
-                MainContext.getModuleName(),
-                harvester.getName()),
+            harvester.getTemporaryCacheFolder() + CacheConstants.VERSIONS_FOLDER_NAME,
+            harvester.getStableCacheFolder() + CacheConstants.VERSIONS_FOLDER_NAME,
             String.class,
             harvester.getCharset());
     }

@@ -16,6 +16,10 @@
  */
 package de.gerdiproject.utils;
 
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+
 import de.gerdiproject.harvest.utils.cache.HarvesterCache;
 
 /**
@@ -25,5 +29,30 @@ import de.gerdiproject.harvest.utils.cache.HarvesterCache;
  */
 public class HarvesterCacheTest
 {
-    // TODO IMPLEMENT TESTS
+    @Before
+    public void before()
+    {
+
+    }
+
+
+    @After
+    public void after()
+    {
+
+    }
+
+
+    @Test
+    public void test()
+    {
+        HarvesterCache cache = new HarvesterCache();
+        cache.addDocument(doc);
+        cache.applyChanges(isSuccessful, isAborted);
+        cache.cacheDocument(doc);
+        cache.getChangesCache();
+        cache.getVersionsCache();
+        cache.init(hash, harvestStartIndex, harvestEndIndex);
+        cache.skipAllDocuments();
+    }
 }

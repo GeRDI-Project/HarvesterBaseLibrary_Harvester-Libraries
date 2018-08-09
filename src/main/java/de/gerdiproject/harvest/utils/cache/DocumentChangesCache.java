@@ -19,7 +19,6 @@ package de.gerdiproject.harvest.utils.cache;
 import java.io.File;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import de.gerdiproject.harvest.MainContext;
 import de.gerdiproject.harvest.harvester.AbstractHarvester;
 import de.gerdiproject.harvest.utils.FileUtils;
 import de.gerdiproject.harvest.utils.cache.constants.CacheConstants;
@@ -45,16 +44,11 @@ public class DocumentChangesCache extends AbstractCache<DataCiteJson>
      */
     public DocumentChangesCache(final AbstractHarvester harvester)
     {
-        super(String.format(
-                  CacheConstants.STABLE_CHANGES_FOLDER_PATH,
-                  MainContext.getModuleName(),
-                  harvester.getName()),
-              String.format(
-                  CacheConstants.TEMP_CHANGES_FOLDER_PATH,
-                  MainContext.getModuleName(),
-                  harvester.getName()),
-              DataCiteJson.class,
-              harvester.getCharset());
+        super(
+            harvester.getTemporaryCacheFolder() + CacheConstants.CHANGES_FOLDER_NAME,
+            harvester.getStableCacheFolder() + CacheConstants.CHANGES_FOLDER_NAME,
+            DataCiteJson.class,
+            harvester.getCharset());
     }
 
 

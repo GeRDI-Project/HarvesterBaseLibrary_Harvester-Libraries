@@ -18,7 +18,6 @@ package de.gerdiproject.harvest.utils.cache;
 import java.io.File;
 
 import de.gerdiproject.harvest.IDocument;
-import de.gerdiproject.harvest.MainContext;
 import de.gerdiproject.harvest.application.events.ContextDestroyedEvent;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.harvester.AbstractHarvester;
@@ -27,7 +26,6 @@ import de.gerdiproject.harvest.save.HarvestSaver;
 import de.gerdiproject.harvest.submission.AbstractSubmitter;
 import de.gerdiproject.harvest.utils.FileUtils;
 import de.gerdiproject.harvest.utils.HashGenerator;
-import de.gerdiproject.harvest.utils.cache.constants.CacheConstants;
 import de.gerdiproject.json.datacite.DataCiteJson;
 
 /**
@@ -44,7 +42,7 @@ public class HarvesterCache
     private final DocumentChangesCache changesCache;
     private final HashGenerator hashGenerator;
     private final String harvesterId;
-    private final File harvesterCacheFolder;
+    private final File temporaryCacheFolder;
 
 
     /**
@@ -54,19 +52,14 @@ public class HarvesterCache
      */
     public HarvesterCache(final AbstractHarvester harvester)
     {
-        this.hashGenerator = new HashGenerator(MainContext.getCharset());
+        this.hashGenerator = new HashGenerator(harvester.getCharset());
 
         // set harvesterID
         final String providerName = EventSystem.sendSynchronousEvent(new GetProviderNameEvent());
         this.harvesterId = providerName + harvester.getName();
 
         // set cache folder
-        this.harvesterCacheFolder = new File(
-            String.format(
-                CacheConstants.TEMP_CHANGES_FOLDER_PATH,
-                MainContext.getModuleName(),
-                harvester
-            )).getParentFile();
+        this.temporaryCacheFolder = new File(harvester.getTemporaryCacheFolder());
 
         // set versions and changes caches
         this.versionsCache = new DocumentVersionsCache(harvester);
@@ -245,6 +238,6 @@ public class HarvesterCache
      */
     private void onContextDestroyed(ContextDestroyedEvent event) // NOPMD - Event callbacks always require the event
     {
-        FileUtils.deleteFile(harvesterCacheFolder);
+        FileUtils.deleteFile(temporaryCacheFolder);
     }
 }

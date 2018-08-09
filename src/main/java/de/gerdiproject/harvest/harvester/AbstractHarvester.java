@@ -55,6 +55,7 @@ import de.gerdiproject.harvest.state.events.StartAbortingEvent;
 import de.gerdiproject.harvest.submission.elasticsearch.ElasticSearchSubmitter;
 import de.gerdiproject.harvest.utils.CancelableFuture;
 import de.gerdiproject.harvest.utils.cache.HarvesterCache;
+import de.gerdiproject.harvest.utils.cache.constants.CacheConstants;
 import de.gerdiproject.harvest.utils.data.HttpRequester;
 import de.gerdiproject.harvest.utils.data.constants.DataOperationConstants;
 import de.gerdiproject.json.GsonUtils;
@@ -170,7 +171,14 @@ public abstract class AbstractHarvester
      */
     protected HarvesterCache initCache()
     {
-        final HarvesterCache cache = documentsCache != null ? documentsCache : new HarvesterCache(this);
+        final HarvesterCache cache;
+
+        // create a new cache lazily
+        if (documentsCache == null)
+            cache = new HarvesterCache(this);
+        else
+            cache = documentsCache;
+
 
         // update the harvester hash in the cache file
         final int from = startIndex.get() == Integer.MAX_VALUE ? maxDocumentCount.get() : startIndex.get();
@@ -178,6 +186,37 @@ public abstract class AbstractHarvester
         cache.init(hash, from, to);
 
         return cache;
+    }
+
+
+    /**
+     * Returns a path to a directory in which harvested documents of this
+     * harvester are stored temporarily.
+     *
+     * @return a path to a directory in which harvested documents of this
+     * harvester are stored temporarily
+     */
+    public String getTemporaryCacheFolder()
+    {
+        return String.format(
+                   CacheConstants.TEMP_HARVESTER_CACHE_FOLDER_PATH,
+                   MainContext.getModuleName(),
+                   getName());
+    }
+
+    /**
+     * Returns a path to a directory in which harvested documents of this
+     * harvester are stored permanently.
+     *
+     * @return a path to a directory in which harvested documents of this
+     * harvester are stored permanently
+     */
+    public String getStableCacheFolder()
+    {
+        return String.format(
+                   CacheConstants.STABLE_HARVESTER_CACHE_FOLDER_PATH,
+                   MainContext.getModuleName(),
+                   getName());
     }
 
 
