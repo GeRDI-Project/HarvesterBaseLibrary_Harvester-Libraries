@@ -15,8 +15,8 @@
  *  under the License.
  */
 /**
- * This package contains classes that are used for mocking data for unit tests.
+ * This package contains mocked files to help test the {@linkplain de.gerdiproject.harvest.utils.data.HttpRequester}.
  *
  * @author Robin Weiss
  */
-package de.gerdiproject.mocked;
+package de.gerdiproject.utils.examples.httprequester;

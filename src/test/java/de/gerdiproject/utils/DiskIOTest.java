@@ -31,7 +31,7 @@ import org.junit.Test;
 import com.google.gson.Gson;
 
 import de.gerdiproject.harvest.utils.data.DiskIO;
-import de.gerdiproject.mocked.MockedObject;
+import de.gerdiproject.utils.examples.diskio.MockedObject;
 
 
 /**

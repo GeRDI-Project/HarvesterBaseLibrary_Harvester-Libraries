@@ -14,7 +14,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package de.gerdiproject.mocked;
+package de.gerdiproject.utils.examples.diskio;
 
 /**
  * This is some arbitrary object used for testing JSON (de-)serialization.

@@ -15,8 +15,8 @@
  *  under the License.
  */
 /**
- * This package contains mocked files to help test the {@linkplain de.gerdiproject.harvest.utils.data.HttpRequester}.
- *
+ * This package contains mocked objects used by {@linkplain de.gerdiproject.utils.DiskIOTest}.
+ * 
  * @author Robin Weiss
  */
-package de.gerdiproject.utils.examples.httpRequester;
+package de.gerdiproject.utils.examples.diskio;

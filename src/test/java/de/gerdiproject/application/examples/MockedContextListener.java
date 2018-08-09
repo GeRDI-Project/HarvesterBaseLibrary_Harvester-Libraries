@@ -14,9 +14,10 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package de.gerdiproject.mocked;
+package de.gerdiproject.application.examples;
 
 import de.gerdiproject.harvest.ContextListener;
+import de.gerdiproject.utils.examples.harvestercache.MockedHarvester;
 
 /**
  * This class is a mocked ContextListener, duh!
