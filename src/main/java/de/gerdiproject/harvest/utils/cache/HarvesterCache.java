@@ -16,10 +16,12 @@
 package de.gerdiproject.harvest.utils.cache;
 
 import java.io.File;
+import java.util.function.Consumer;
 
 import de.gerdiproject.harvest.IDocument;
 import de.gerdiproject.harvest.application.events.ContextDestroyedEvent;
 import de.gerdiproject.harvest.event.EventSystem;
+import de.gerdiproject.harvest.event.IEventListener;
 import de.gerdiproject.harvest.harvester.AbstractHarvester;
 import de.gerdiproject.harvest.harvester.events.GetProviderNameEvent;
 import de.gerdiproject.harvest.save.HarvestSaver;
@@ -36,13 +38,14 @@ import de.gerdiproject.json.datacite.DataCiteJson;
  *
  * @author Robin Weiss
  */
-public class HarvesterCache
+public class HarvesterCache implements IEventListener
 {
     private final DocumentVersionsCache versionsCache;
     private final DocumentChangesCache changesCache;
     private final HashGenerator hashGenerator;
     private final String harvesterId;
     private final File temporaryCacheFolder;
+    private final Consumer<ContextDestroyedEvent> onContextDestroyed;
 
 
     /**
@@ -65,9 +68,24 @@ public class HarvesterCache
         this.versionsCache = new DocumentVersionsCache(harvester);
         this.changesCache = new DocumentChangesCache(harvester);
 
-        EventSystem.addListener(ContextDestroyedEvent.class, this::onContextDestroyed);
+        // set clean up event listener
+        this.onContextDestroyed = (ContextDestroyedEvent event) -> FileUtils.deleteFile(temporaryCacheFolder);
 
         HarvesterCacheManager.instance().registerCache(this);
+    }
+
+
+    @Override
+    public void addEventListeners()
+    {
+        EventSystem.addListener(ContextDestroyedEvent.class, onContextDestroyed);
+    }
+
+
+    @Override
+    public void removeEventListeners()
+    {
+        EventSystem.removeListener(ContextDestroyedEvent.class, onContextDestroyed);
     }
 
 
@@ -113,10 +131,12 @@ public class HarvesterCache
      * it, or adds it to the changes cache.
      *
      * @param doc the document that is to be processed
+     * @param forced if true, skips the check if the document
+     *         has changed since the last harvest
      */
-    public void cacheDocument(IDocument doc)
+    public void cacheDocument(IDocument doc, boolean forced)
     {
-        if (hasDocumentChanged(doc))
+        if (forced || hasDocumentChanged(doc))
             addDocument(doc);
         else
             skipDocument(doc);
@@ -128,7 +148,7 @@ public class HarvesterCache
      *
      * @param doc the document that is to be written to the cache
      */
-    public void addDocument(IDocument doc)
+    private void addDocument(IDocument doc)
     {
         final String documentId = getDocumentId(doc);
 
@@ -223,21 +243,5 @@ public class HarvesterCache
 
         final String currentHash = hashGenerator.getShaHash(doc.toJson());
         return !oldHash.equals(currentHash);
-    }
-
-
-    //////////////////////////////
-    // Event Callback Functions //
-    //////////////////////////////
-
-    /**
-     * This callback function is called when the web service is terminated. It
-     * cleans up temporary files.
-     *
-     * @param event the event that triggered the callback
-     */
-    private void onContextDestroyed(ContextDestroyedEvent event) // NOPMD - Event callbacks always require the event
-    {
-        FileUtils.deleteFile(temporaryCacheFolder);
     }
 }

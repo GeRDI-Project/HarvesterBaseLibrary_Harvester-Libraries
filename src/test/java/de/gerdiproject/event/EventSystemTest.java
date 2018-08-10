@@ -17,8 +17,9 @@
 package de.gerdiproject.event;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.fail;
 
 import java.util.Arrays;
 import java.util.LinkedList;
@@ -49,6 +50,7 @@ public class EventSystemTest
     private final static TestEvent SINGLE_TEST_EVENT = new TestEvent("single");
     private final static TestSynchronousEvent SINGLE_SYNC_TEST_EVENT = new TestSynchronousEvent("single");
     private final static String STATIC_SYNC_PAYLOAD = "123";
+    private final static String REMOVE_LISTENER_ERROR = "Removing non-existing listeners should not cause exceptions";
 
 
     private List<TestEvent> receivedEvents;
@@ -77,22 +79,28 @@ public class EventSystemTest
 
     /**
      * Tests if events that are sent without registered listeners
-     * are ignored while events are properly received after listeners were added.
+     * are ignored.
      */
     @Test
-    public void testAddingListener()
+    public void testSendingEventsWithoutAddedListener()
     {
         final TestEvent ignoredEvent = TEST_EVENTS.get(0);
-        final TestEvent expectedEvent = TEST_EVENTS.get(1);
-
-        assert !receivedEvents.contains(expectedEvent);
 
         EventSystem.sendEvent(ignoredEvent);
         assert !receivedEvents.contains(ignoredEvent);
+    }
 
+
+    /**
+     * Tests if events are properly received after listeners were added.
+     */
+    @Test
+    public void testSendingEventsWithAddedListener()
+    {
+        final TestEvent expectedEvent = TEST_EVENTS.get(1);
         EventSystem.addListener(TestEvent.class, onTestEvent);
-
         EventSystem.sendEvent(expectedEvent);
+
         assert receivedEvents.contains(expectedEvent);
     }
 
@@ -103,14 +111,11 @@ public class EventSystemTest
     @Test
     public void testAddingListenerTwice()
     {
-        assertEquals(0, receivedEvents.size());
-
         EventSystem.addListener(TestEvent.class, onTestEvent);
         EventSystem.addListener(TestEvent.class, onTestEvent);
 
         EventSystem.sendEvent(SINGLE_TEST_EVENT);
 
-        assert receivedEvents.contains(SINGLE_TEST_EVENT);
         assertEquals(2, receivedEvents.size());
     }
 
@@ -122,32 +127,25 @@ public class EventSystemTest
     @Test
     public void testRemovingListener()
     {
-        assertEquals(0, receivedEvents.size());
-
         EventSystem.addListener(TestEvent.class, onTestEvent);
-        EventSystem.sendEvent(SINGLE_TEST_EVENT);
-        assertEquals(1, receivedEvents.size());
-
         EventSystem.removeListener(TestEvent.class, onTestEvent);
+
         EventSystem.sendEvent(SINGLE_TEST_EVENT);
-        assertEquals(1, receivedEvents.size());
+
+        assertEquals(0, receivedEvents.size());
     }
 
 
     /**
-     * Tests if removing a non-existing event listener throw no exceptions
-     * are ignored.
+     * Tests if removing a non-existing event listener throws no exceptions.
      */
     @Test
-    public void testRemovingListenerNonExisting()
+    public void testRemovingNonExistingListener()
     {
-        EventSystem.sendEvent(SINGLE_TEST_EVENT);
-        assertEquals(0, receivedEvents.size());
-
         try {
             EventSystem.removeListener(TestEvent.class, onTestEvent);
         } catch (Exception e) {
-            assert false;
+            fail(REMOVE_LISTENER_ERROR);
         }
     }
 
@@ -159,15 +157,13 @@ public class EventSystemTest
     @Test
     public void testRemovingAllListeners()
     {
-        assertEquals(0, receivedEvents.size());
-
         EventSystem.addListener(TestEvent.class, onTestEvent);
         EventSystem.addListener(TestEvent.class, onTestEvent);
         EventSystem.addListener(TestEvent.class, onTestEvent);
-
         EventSystem.removeAllListeners(TestEvent.class);
 
         EventSystem.sendEvent(SINGLE_TEST_EVENT);
+
         assertEquals(0, receivedEvents.size());
     }
 
@@ -179,75 +175,51 @@ public class EventSystemTest
     @Test
     public void testRemovingAllListenersNonExisting()
     {
-        EventSystem.sendEvent(SINGLE_TEST_EVENT);
-        assertEquals(0, receivedEvents.size());
-
         try {
             EventSystem.removeAllListeners(TestEvent.class);
         } catch (Exception e) {
-            assert false;
+            fail(REMOVE_LISTENER_ERROR);
         }
     }
 
 
     /**
      * Tests if synchronous events that are sent without registered listeners
-     * return null while results are properly returned after a listener was added.
+     * return null.
      */
     @Test
-    public void testAddingSynchronousEvent()
+    public void testSendingSynchronousEventWithoutAddedListener()
     {
         final Object nullResult = EventSystem.sendSynchronousEvent(SINGLE_SYNC_TEST_EVENT);
         assertNull(nullResult);
+    }
 
+
+    /**
+     * Tests if results are properly returned after a synchronous event listener was added.
+     */
+    @Test
+    public void testSendingSynchronousEventWithAddedListener()
+    {
         EventSystem.addSynchronousListener(TestSynchronousEvent.class, onTestSyncEvent);
-
         final Object result = EventSystem.sendSynchronousEvent(SINGLE_SYNC_TEST_EVENT);
-
-        assertNotNull(result);
         assertEquals(SINGLE_SYNC_TEST_EVENT.getPayload(), result);
     }
 
 
     /**
-     * Tests if a synchronous event listener can be added twice without throwing exceptions.
-     */
-    @Test
-    public void testAddingSynchronousListenerTwice()
-    {
-        EventSystem.addSynchronousListener(TestSynchronousEvent.class, onTestSyncEvent);
-
-        try {
-            EventSystem.addSynchronousListener(TestSynchronousEvent.class, onTestSyncEvent);
-        } catch (Exception e) {
-            assert false;
-        }
-    }
-
-
-    /**
-     * Tests if a synchronous event listeners are replaced without throwing exceptions.
+     * Tests if a synchronous event listeners can be replaced.
      */
     @Test
     public void testAddingSynchronousListenerOverride()
     {
         EventSystem.addSynchronousListener(TestSynchronousEvent.class, onTestSyncEvent);
+        final Object oldResult = EventSystem.sendSynchronousEvent(SINGLE_SYNC_TEST_EVENT);
 
-        final Object result = EventSystem.sendSynchronousEvent(SINGLE_SYNC_TEST_EVENT);
-
-        assertNotNull(result);
-        assertEquals(SINGLE_SYNC_TEST_EVENT.getPayload(), result);
-
-        try {
-            EventSystem.addSynchronousListener(TestSynchronousEvent.class, onTestSyncEvent2);
-        } catch (Exception e) {
-            assert false;
-        }
-
+        EventSystem.addSynchronousListener(TestSynchronousEvent.class, onTestSyncEvent2);
         final Object overriddenResult = EventSystem.sendSynchronousEvent(SINGLE_SYNC_TEST_EVENT);
 
-        assertNotNull(overriddenResult);
-        assertEquals(STATIC_SYNC_PAYLOAD, overriddenResult);
+        assertNotEquals(oldResult, overriddenResult);
     }
 
 
@@ -259,10 +231,8 @@ public class EventSystemTest
     public void testRemovingSynchronousListener()
     {
         EventSystem.addSynchronousListener(TestSynchronousEvent.class, onTestSyncEvent);
-        final Object result = EventSystem.sendSynchronousEvent(SINGLE_SYNC_TEST_EVENT);
-        assertNotNull(result);
-
         EventSystem.removeSynchronousListener(TestSynchronousEvent.class);
+
         final Object nullResult = EventSystem.sendSynchronousEvent(SINGLE_SYNC_TEST_EVENT);
         assertNull(nullResult);
     }
@@ -273,36 +243,40 @@ public class EventSystemTest
      * are ignored.
      */
     @Test
-    public void testRemovingSynchronousListenerNonExisting()
+    public void testRemovingNonExistingSynchronousListener()
     {
-        final Object nullResult = EventSystem.sendSynchronousEvent(SINGLE_SYNC_TEST_EVENT);
-        assertNull(nullResult);
-
         try {
             EventSystem.removeSynchronousListener(TestSynchronousEvent.class);
         } catch (Exception e) {
-            assert false;
+            fail(REMOVE_LISTENER_ERROR);
         }
     }
 
 
     /**
-     * Tests if resetting the EventSystem removes all listeners.
+     * Tests if resetting the EventSystem removes all asynchronous event listeners.
      */
     @Test
-    public void testReset()
+    public void testSendingEventsAfterReset()
     {
-        assertEquals(0, receivedEvents.size());
-
         EventSystem.addListener(TestEvent.class, onTestEvent);
         EventSystem.addListener(TestEvent.class, onTestEvent);
         EventSystem.addListener(TestEvent.class, onTestEvent2);
-        EventSystem.addSynchronousListener(TestSynchronousEvent.class, onTestSyncEvent);
-
         EventSystem.reset();
 
         EventSystem.sendEvent(SINGLE_TEST_EVENT);
         assertEquals(0, receivedEvents.size());
+    }
+
+
+    /**
+     * Tests if resetting the EventSystem removes all synchronous listeners.
+     */
+    @Test
+    public void testSendingSynchronousEventsAfterReset()
+    {
+        EventSystem.addSynchronousListener(TestSynchronousEvent.class, onTestSyncEvent);
+        EventSystem.reset();
 
         final Object nullResult = EventSystem.sendSynchronousEvent(SINGLE_SYNC_TEST_EVENT);
         assertNull(nullResult);
@@ -316,13 +290,10 @@ public class EventSystemTest
     @Test
     public void testResetNonExisting()
     {
-        EventSystem.sendEvent(SINGLE_TEST_EVENT);
-        assertEquals(0, receivedEvents.size());
-
         try {
             EventSystem.reset();
         } catch (Exception e) {
-            assert false;
+            fail(REMOVE_LISTENER_ERROR);
         }
     }
 
@@ -335,13 +306,17 @@ public class EventSystemTest
     {
         EventSystem.addListener(TestEvent.class, onTestEvent);
 
-        for (TestEvent event : TEST_EVENTS)
-            EventSystem.sendEvent(event);
+        for (int i = 0; i < TEST_EVENTS.size(); i++)
+            EventSystem.sendEvent(TEST_EVENTS.get(i));
 
         for (int i = 0; i < TEST_EVENTS.size(); i++)
             assertEquals(TEST_EVENTS.get(i), receivedEvents.get(i));
     }
 
+
+    //////////////////////
+    // Non-test Methods //
+    //////////////////////
 
     /**
      * Exemplary event callback function that adds the received event to a list.

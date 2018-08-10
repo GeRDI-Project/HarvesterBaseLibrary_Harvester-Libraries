@@ -24,6 +24,9 @@ import java.io.IOException;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameters;
 
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.event.IEvent;
@@ -34,6 +37,7 @@ import de.gerdiproject.harvest.save.events.SaveStartedEvent;
 import de.gerdiproject.harvest.state.events.AbortingStartedEvent;
 import de.gerdiproject.harvest.submission.events.SubmissionFinishedEvent;
 import de.gerdiproject.harvest.submission.events.SubmissionStartedEvent;
+import de.gerdiproject.harvest.utils.FileUtils;
 import de.gerdiproject.harvest.utils.cache.constants.CacheConstants;
 import de.gerdiproject.harvest.utils.time.HarvestTimeKeeper;
 import de.gerdiproject.harvest.utils.time.ProcessTimeMeasure;
@@ -45,156 +49,387 @@ import de.gerdiproject.harvest.utils.time.ProcessTimeMeasure.ProcessStatus;
  * @author Robin Weiss
  *
  */
+@RunWith(Parameterized.class)
 public class HarvestTimeKeeperTest
 {
     private static final String CACHE_PATH =
-        "test/" + String.format(
+        "mocked/" + String.format(
             CacheConstants.HARVEST_TIME_KEEPER_CACHE_FILE_PATH,
             "timeKeeperTest");
 
-    private HarvestTimeKeeper keeper;
+    private static final String HARVEST_MEASURE = "harvest";
+    private static final String SUBMISSION_MEASURE = "submission";
+    private static final String SAVE_MEASURE = "save";
+
+    @Parameters(name = "tested measure: {0}")
+    public static Object[] getParameters()
+    {
+        return new Object[] {HARVEST_MEASURE, SUBMISSION_MEASURE, SAVE_MEASURE};
+    }
+
+    private final HarvestTimeKeeper keeper;
+    private final String testedMeasureType;
+    private final ProcessTimeMeasure testedMeasure;
+    private final IEvent startEvent;
+    private final IEvent finishedEvent;
+    private final IEvent failedEvent;
 
 
-    @Before
-    public void before()
+    /**
+     * The constructor defines which of the three {@linkplain ProcessTimeMeasure}s
+     * that are part of the {@linkplain HarvestTimeKeeper} is being tested
+     *
+     * @param measureType a string representing the measure being tested
+     */
+    public HarvestTimeKeeperTest(String measureType)
     {
         keeper = new HarvestTimeKeeper(CACHE_PATH);
         keeper.addEventListeners();
+
+        testedMeasureType = measureType;
+
+        switch (measureType) {
+            case HARVEST_MEASURE:
+                testedMeasure = keeper.getHarvestMeasure();
+                startEvent = new HarvestStartedEvent(0, 1, null);
+                finishedEvent = new HarvestFinishedEvent(true, null);
+                failedEvent = new HarvestFinishedEvent(false, null);
+                break;
+
+            case SUBMISSION_MEASURE:
+                testedMeasure = keeper.getSubmissionMeasure();
+                startEvent = new SubmissionStartedEvent(1);
+                finishedEvent = new SubmissionFinishedEvent(true);
+                failedEvent = new SubmissionFinishedEvent(false);
+                break;
+
+            case SAVE_MEASURE:
+                testedMeasure = keeper.getSaveMeasure();
+                startEvent = new SaveStartedEvent(false, 1);
+                finishedEvent = new SaveFinishedEvent(true);
+                failedEvent = new SaveFinishedEvent(false);
+                break;
+
+            default:
+                throw new IllegalArgumentException();
+        }
     }
+
+
+    /**
+     * Verifies that cache files are deleted and creates a {@linkplain HarvestTimeKeeper}.
+     *
+     * @throws IOException thrown when the temporary cache file could not be deleted
+     */
+    @Before
+    public void before() throws IOException
+    {
+        final File cacheFile = new File(CACHE_PATH);
+        FileUtils.deleteFile(cacheFile);
+
+        if (cacheFile.exists())
+            throw new IOException();
+    }
+
 
     /**
      * Removes event listeners and deletes the cache file.
-     * @throws IOException thrown when the temporary cache file could not be deleted
      */
     @After
-    public void after() throws IOException
+    public void after()
     {
         if (keeper != null)
             keeper.removeEventListeners();
 
-        keeper = null;
-
-        final File cacheFile = new File(CACHE_PATH);
-
-        if (cacheFile.exists() && !cacheFile.delete())
-            throw new IOException();
+        FileUtils.deleteFile(new File(CACHE_PATH));
     }
 
+
     /**
-     * Tests the constructor by checking that no measure is started after construction.
+     * Tests if the harvest is not considered finished and incomplete
+     * while the harvest has not started.
      */
     @Test
-    public void testConstructor()
+    public void testHarvestIncompleteDuringNotStartedProcess()
     {
-        assertEquals(ProcessStatus.NotStarted, keeper.getHarvestMeasure().getStatus());
-        assertEquals(ProcessStatus.NotStarted, keeper.getSaveMeasure().getStatus());
-        assertEquals(ProcessStatus.NotStarted, keeper.getSubmissionMeasure().getStatus());
         assert !keeper.isHarvestIncomplete();
+    }
+
+
+    /**
+     * Tests if the harvest is not considered finished and incomplete
+     * while the harvest is still running.
+     */
+    @Test
+    public void testHarvestIncompleteDuringStartedProcess()
+    {
+        EventSystem.sendEvent(new HarvestStartedEvent(0, 1, null));
+        assert !keeper.isHarvestIncomplete();
+    }
+
+
+    /**
+     * Tests if the harvest is not considered incomplete
+     * after the harvest finished successfully.
+     */
+    @Test
+    public void testHarvestIncompleteDuringFinishedProcess()
+    {
+        EventSystem.sendEvent(new HarvestStartedEvent(0, 1, null));
+        EventSystem.sendEvent(new HarvestFinishedEvent(true, null));
+        assert !keeper.isHarvestIncomplete();
+    }
+
+
+    /**
+     * Tests if the harvest is considered incomplete
+     * after the harvest failed.
+     */
+    @Test
+    public void testHarvestIncompleteDuringFailedProcess()
+    {
+        EventSystem.sendEvent(new HarvestStartedEvent(0, 1, null));
+        EventSystem.sendEvent(new HarvestFinishedEvent(false, null));
+        assert keeper.isHarvestIncomplete();
+    }
+
+
+    /**
+     * Tests if the harvest is not considered incomplete
+     * after the harvest was aborted.
+     */
+    @Test
+    public void testHarvestIncompleteDuringAbortedProcess()
+    {
+        EventSystem.sendEvent(new HarvestStartedEvent(0, 1, null));
+        EventSystem.sendEvent(new AbortingStartedEvent());
+        assert keeper.isHarvestIncomplete();
+    }
+
+
+    /**
+     * Tests the constructor by checking that the there are no unsubmitted
+     * changes.
+     */
+    @Test
+    public void testInitialUnsubmittedChangesGetter()
+    {
         assert !keeper.hasUnsubmittedChanges();
     }
 
 
     /**
-     * Tests the caching functionality by sending events and reloading the {@linkplain HarvestTimeKeeper}.
-     * Processes that are started should not be saved.
+     * Tests if no status is loaded from cache if the measure was not
+     * started.
      */
     @Test
-    public void testCaching()
+    public void testCachingNotStartedProcess()
     {
-        // send events to change statuses
-        EventSystem.sendEvent(new HarvestStartedEvent(0, 1, null));
-        EventSystem.sendEvent(new HarvestFinishedEvent(true, null));
-        EventSystem.sendEvent(new SaveStartedEvent(false, 1));
-        EventSystem.sendEvent(new SaveFinishedEvent(false));
-        EventSystem.sendEvent(new SubmissionStartedEvent(1));
+        final ProcessTimeMeasure loadedMeasure = loadMeasureFromCache();
 
-        // clean up old time keeper
-        keeper.removeEventListeners();
-
-        keeper = new HarvestTimeKeeper(CACHE_PATH);
-        keeper.loadFromDisk();
-        keeper.addEventListeners();
-
-        // assert that the loaded statuses are the saved ones
-        assertEquals(ProcessStatus.Finished, keeper.getHarvestMeasure().getStatus());
-        assertEquals(ProcessStatus.Failed, keeper.getSaveMeasure().getStatus());
-        assertEquals(ProcessStatus.NotStarted, keeper.getSubmissionMeasure().getStatus());
+        // assert that the 'started' status resets to 'not_started'
+        assertEquals(ProcessStatus.NotStarted, loadedMeasure.getStatus());
     }
 
 
     /**
-     * Tests the harvest time measure by dispatching harvesting events and asserting state changes.
+     * Tests if the 'started' status resets to 'notStarted' after it is loaded from cache.
      */
     @Test
-    public void testHarvestMeasure()
+    public void testCachingStartedProcess()
     {
-        testMeasure(
-            keeper.getHarvestMeasure(),
-            new HarvestStartedEvent(0, 1, null),
-            new HarvestFinishedEvent(true, null),
-            new HarvestFinishedEvent(false, null)
-        );
-    }
-
-
-    /**
-     * Tests the save time measure by dispatching saving events and asserting state changes.
-     */
-    @Test
-    public void testSaveMeasure()
-    {
-        testMeasure(
-            keeper.getSaveMeasure(),
-            new SaveStartedEvent(false, 1),
-            new SaveFinishedEvent(true),
-            new SaveFinishedEvent(false)
-        );
-    }
-
-
-    /**
-     * Tests the submission time measure by dispatching submission events and asserting state changes.
-     */
-    @Test
-    public void testSubmissionMeasure()
-    {
-        testMeasure(
-            keeper.getSubmissionMeasure(),
-            new SubmissionStartedEvent(1),
-            new SubmissionFinishedEvent(true),
-            new SubmissionFinishedEvent(false)
-        );
-    }
-
-
-    /**
-     * Tests a single time measure by dispatching events and evaluating state changes.
-     *
-     * @param measure the measure that is tested
-     * @param startEvent an event that triggers the process to start
-     * @param finishedEvent an event that triggers the process to end successfully
-     * @param failedEvent an event that triggers the process to end erroneously
-     */
-    private void testMeasure(ProcessTimeMeasure measure, IEvent startEvent, IEvent finishedEvent, IEvent failedEvent)
-    {
-        assertEquals(ProcessStatus.NotStarted, measure.getStatus());
-
+        // send events to change status
         EventSystem.sendEvent(startEvent);
-        assertEquals(ProcessStatus.Started, measure.getStatus());
 
+        final ProcessTimeMeasure loadedMeasure = loadMeasureFromCache();
+
+        // assert that the 'started' status resets to 'not_started'
+        assertEquals(ProcessStatus.NotStarted, loadedMeasure.getStatus());
+    }
+
+
+    /**
+     * Tests if the 'finished' status can be loaded from cache.
+     */
+    @Test
+    public void testCachingFinishedProcess()
+    {
+        // send events to change status
+        EventSystem.sendEvent(startEvent);
         EventSystem.sendEvent(finishedEvent);
-        assertEquals(ProcessStatus.Finished, measure.getStatus());
 
+        final ProcessTimeMeasure loadedMeasure = loadMeasureFromCache();
+
+        // assert that the loaded status is the one that was saved
+        assertEquals(ProcessStatus.Finished, loadedMeasure.getStatus());
+    }
+
+
+    /**
+     * Tests if the 'failed' status can be loaded from cache.
+     */
+    @Test
+    public void testCachingFailedProcess()
+    {
+        // send events to change status
         EventSystem.sendEvent(startEvent);
-        assertEquals(ProcessStatus.Started, measure.getStatus());
-
         EventSystem.sendEvent(failedEvent);
-        assertEquals(ProcessStatus.Failed, measure.getStatus());
 
+        final ProcessTimeMeasure loadedMeasure = loadMeasureFromCache();
+
+        // assert that the loaded status is the one that was saved
+        assertEquals(ProcessStatus.Failed, loadedMeasure.getStatus());
+    }
+
+
+    /**
+     * Tests if the 'aborted' status can be loaded from cache.
+     */
+    @Test
+    public void testCachingAbortedProcess()
+    {
+        // send events to change status
         EventSystem.sendEvent(startEvent);
-        assertEquals(ProcessStatus.Started, measure.getStatus());
-
         EventSystem.sendEvent(new AbortingStartedEvent());
-        assertEquals(ProcessStatus.Aborted, measure.getStatus());
+
+        final ProcessTimeMeasure loadedMeasure = loadMeasureFromCache();
+
+        // assert that the loaded status is the one that was saved
+        assertEquals(ProcessStatus.Aborted, loadedMeasure.getStatus());
+    }
+
+
+    /**
+     * Tests if the initial status of a measure is 'NotStarted'.
+     */
+    @Test
+    public void testProcessNotStarted()
+    {
+        assertEquals(ProcessStatus.NotStarted, testedMeasure.getStatus());
+    }
+
+
+    /**
+     * Tests if a measure status progresses to 'NotStarted' if the corresponding event is sent.
+     */
+    @Test
+    public void testProcessStart()
+    {
+        EventSystem.sendEvent(startEvent);
+        assertEquals(ProcessStatus.Started, testedMeasure.getStatus());
+    }
+
+
+    /**
+     * Tests if a measure status progresses to 'Finished' if the corresponding event is sent
+     * after the measure was started.
+     */
+    @Test
+    public void testProcessFinished()
+    {
+        EventSystem.sendEvent(startEvent);
+        EventSystem.sendEvent(finishedEvent);
+        assertEquals(ProcessStatus.Finished, testedMeasure.getStatus());
+    }
+
+
+    /**
+     * Tests if a measure status progresses to 'Failed' if the corresponding event is sent
+     * after the measure was started.
+     */
+    @Test
+    public void testProcessFailed()
+    {
+        EventSystem.sendEvent(startEvent);
+        EventSystem.sendEvent(failedEvent);
+        assertEquals(ProcessStatus.Failed, testedMeasure.getStatus());
+    }
+
+
+    /**
+     * Tests if a measure status progresses to 'Aborted' if the corresponding event is sent
+     * after the measure was started.
+     */
+    @Test
+    public void testProcessAborted()
+    {
+        EventSystem.sendEvent(startEvent);
+        EventSystem.sendEvent(new AbortingStartedEvent());
+        assertEquals(ProcessStatus.Aborted, testedMeasure.getStatus());
+    }
+
+
+    /**
+     * Tests if a measure status progresses to 'Started' again if the corresponding event is sent
+     * after the measure was finished.
+     */
+    @Test
+    public void testProcessRestartAfterFinished()
+    {
+        EventSystem.sendEvent(startEvent);
+        EventSystem.sendEvent(finishedEvent);
+        EventSystem.sendEvent(startEvent);
+        assertEquals(ProcessStatus.Started, testedMeasure.getStatus());
+    }
+
+
+    /**
+     * Tests if a measure status progresses to 'Started' again if the corresponding event is sent
+     * after the measure has failed.
+     */
+    @Test
+    public void testProcessRestartAfterFailed()
+    {
+        EventSystem.sendEvent(startEvent);
+        EventSystem.sendEvent(failedEvent);
+        EventSystem.sendEvent(startEvent);
+        assertEquals(ProcessStatus.Started, testedMeasure.getStatus());
+    }
+
+
+    /**
+     * Tests if a measure status progresses to 'Started' again if the corresponding event is sent
+     * after the measure was aborted.
+     */
+    @Test
+    public void testProcessRestartAfterAborted()
+    {
+        EventSystem.sendEvent(startEvent);
+        EventSystem.sendEvent(new AbortingStartedEvent());
+        EventSystem.sendEvent(startEvent);
+        assertEquals(ProcessStatus.Started, testedMeasure.getStatus());
+    }
+
+
+    //////////////////////
+    // Non-test Methods //
+    //////////////////////
+
+    /**
+     * Helper function that creates a new {@linkplain HarvestTimeKeeper}, loads the
+     * cache to which the original {@linkplain HarvestTimeKeeper} has written, and
+     * returns the same type of {@linkplain ProcessTimeMeasure} which is currently
+     * being tested.
+     *
+     * @return a {@linkplain ProcessTimeMeasure} currently being tested, but loaded from cache
+     */
+    private ProcessTimeMeasure loadMeasureFromCache()
+    {
+        final HarvestTimeKeeper loadedKeeper = new HarvestTimeKeeper(CACHE_PATH);
+        loadedKeeper.loadFromDisk();
+
+        switch (testedMeasureType) {
+            case HARVEST_MEASURE:
+                return loadedKeeper.getHarvestMeasure();
+
+            case SUBMISSION_MEASURE:
+                return loadedKeeper.getSubmissionMeasure();
+
+            case SAVE_MEASURE:
+                return loadedKeeper.getSaveMeasure();
+
+            default:
+                throw new IllegalArgumentException();
+        }
     }
 }

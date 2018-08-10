@@ -43,8 +43,8 @@ public class DocumentVersionsCache extends AbstractCache<String>
     public DocumentVersionsCache(final AbstractHarvester harvester)
     {
         super(
-            harvester.getTemporaryCacheFolder() + CacheConstants.VERSIONS_FOLDER_NAME,
             harvester.getStableCacheFolder() + CacheConstants.VERSIONS_FOLDER_NAME,
+            harvester.getTemporaryCacheFolder() + CacheConstants.VERSIONS_FOLDER_NAME,
             String.class,
             harvester.getCharset());
     }

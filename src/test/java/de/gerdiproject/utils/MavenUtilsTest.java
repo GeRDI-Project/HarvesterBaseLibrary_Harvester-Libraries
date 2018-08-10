@@ -52,6 +52,7 @@ public class MavenUtilsTest
     public void testDependencies()
     {
         final MavenUtils utils = new MavenUtils(MainContext.class);
+
         assertFalse(utils.getMavenVersionInfo(null).isEmpty());
     }
 }

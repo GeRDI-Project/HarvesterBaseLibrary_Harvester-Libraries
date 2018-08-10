@@ -34,26 +34,44 @@ import de.gerdiproject.json.datacite.Title;
 public class MockedHarvester extends AbstractListHarvester<String>
 {
     protected final List<String> mockedEntries;
+    private final String cacheFolder;
 
 
     /**
      * This constructor accepts a list of harvestable strings.
      *
      * @param mockedEntries a list of strings to be harvested
+     * @param cacheFolder the folder where documents are cached
      */
-    public MockedHarvester(final List<String> mockedEntries)
+    public MockedHarvester(final List<String> mockedEntries, final String cacheFolder)
     {
         super(1);
         this.mockedEntries = mockedEntries;
+        this.cacheFolder = cacheFolder;
     }
 
 
     /**
      * This constructor generates a short list to be used as entries.
+     * @param cacheFolder the folder where documents are cached
      */
-    public MockedHarvester()
+    public MockedHarvester(final String cacheFolder)
     {
-        this(Arrays.asList("mockedEntry1", "mockedEntry2", "mockedEntry3"));
+        this(Arrays.asList("mockedEntry1", "mockedEntry2", "mockedEntry3"), cacheFolder);
+    }
+
+
+    @Override
+    public String getTemporaryCacheFolder()
+    {
+        return cacheFolder + "documents_temp/";
+    }
+
+
+    @Override
+    public String getStableCacheFolder()
+    {
+        return cacheFolder + "documents/";
     }
 
 

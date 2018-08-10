@@ -45,8 +45,8 @@ public class DocumentChangesCache extends AbstractCache<DataCiteJson>
     public DocumentChangesCache(final AbstractHarvester harvester)
     {
         super(
-            harvester.getTemporaryCacheFolder() + CacheConstants.CHANGES_FOLDER_NAME,
             harvester.getStableCacheFolder() + CacheConstants.CHANGES_FOLDER_NAME,
+            harvester.getTemporaryCacheFolder() + CacheConstants.CHANGES_FOLDER_NAME,
             DataCiteJson.class,
             harvester.getCharset());
     }

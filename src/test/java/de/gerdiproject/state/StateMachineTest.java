@@ -66,21 +66,39 @@ public class StateMachineTest
         assertEquals(testState, StateMachine.getCurrentState());
     }
 
+    /**
+     * Tests if the constructor of a state does not automatically
+     * call the onStateEnter() function.
+     */
+    @Test
+    public void testConstructor()
+    {
+        final TestState testState = new TestState();
+        assert !testState.isActive();
+    }
+
 
     /**
-     * Tests if the onStateEnter() and onStateLeave() functions of {@linkplain IState}
-     * are called when a state is set and un-set.
+     * Tests if the onStateEnter() function of {@linkplain IState}
+     * is called when the state is assigned to the {@linkplain StateMachine}.
+     */
+    @Test
+    public void testStateEnte()
+    {
+        final TestState testState = new TestState();
+        StateMachine.setState(testState);
+        assert testState.isActive();
+    }
+
+    /**
+     * Tests if the onStateLeave() function of {@linkplain IState}
+     * is called when the state is removed from the {@linkplain StateMachine}.
      */
     @Test
     public void testStateEnterAndLeave()
     {
         final TestState testState = new TestState();
-
-        assert !testState.isActive();
-
         StateMachine.setState(testState);
-        assert testState.isActive();
-
         StateMachine.setState(null);
         assert !testState.isActive();
     }

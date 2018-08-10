@@ -18,7 +18,6 @@ package de.gerdiproject.utils;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 import java.nio.charset.StandardCharsets;
@@ -41,17 +40,24 @@ public class HarvesterLogTest
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(HarvesterLogTest.class);
     private static final File LOG_FILE = new File("mocked/test.log");
+    private static final String CLEAN_UP_ERROR = "Log file was not properly cleaned up!";
+    private static final String EXAMPLE_LOG = "This log is created by the HarvesterLog unit tests.";
 
     private HarvesterLog log;
 
     /**
      * Before each test, a logger is created and registered.
+     *
+     * @throws IllegalStateException thrown when the log is not empty after clearing it
      */
     @Before
-    public void before()
+    public void before() throws IllegalStateException
     {
         log = new HarvesterLog(LOG_FILE.getPath(), StandardCharsets.UTF_8);
         log.registerLogger();
+
+        if (LOG_FILE.length() != 0)
+            throw new IllegalStateException(CLEAN_UP_ERROR);
     }
 
 
@@ -73,8 +79,7 @@ public class HarvesterLogTest
     @Test
     public void testLogFileCreation()
     {
-        assertTrue(LOG_FILE.exists());
-        assertTrue(LOG_FILE.isFile());
+        assert LOG_FILE.exists() && LOG_FILE.isFile();
     }
 
 
@@ -85,7 +90,7 @@ public class HarvesterLogTest
     public void testLogging()
     {
         final long logSizeBefore = LOG_FILE.length();
-        LOGGER.info("Logging test");
+        LOGGER.info(EXAMPLE_LOG);
         final long logSizeAfter = LOG_FILE.length();
 
         assertNotEquals(logSizeBefore, logSizeAfter);
@@ -94,24 +99,33 @@ public class HarvesterLogTest
 
     /**
      * Tests if logs are not added to the log file while the logger
-     * is unregistered, and added when it is re-registered.
+     * is unregistered.
      */
     @Test
-    public void testUnRegistering()
+    public void testLoggingWhileUnRegistered()
     {
-        LOGGER.info("Logging before unregistering");
+        LOGGER.info(EXAMPLE_LOG);
         final long logSizeBeforeUnregister = LOG_FILE.length();
 
         log.unregisterLogger();
-        LOGGER.info("Logging after unregistering");
+        LOGGER.info(EXAMPLE_LOG);
         final long logSizeAfterUnregister = LOG_FILE.length();
 
         assertEquals(logSizeBeforeUnregister, logSizeAfterUnregister);
+    }
 
+    /**
+     * Tests if logs are added after unregistering and then registering the
+     * logger again.
+     */
+    @Test
+    public void testLoggingAfterReRegistering()
+    {
+        log.unregisterLogger();
         log.registerLogger();
-        LOGGER.info("Logging after re-registering");
-        final long logSizeAfterReRegister = LOG_FILE.length();
-        assertNotEquals(logSizeAfterUnregister, logSizeAfterReRegister);
+        LOGGER.info(EXAMPLE_LOG);
+
+        assertNotEquals(0, LOG_FILE.length());
     }
 
 
@@ -122,15 +136,11 @@ public class HarvesterLogTest
     @Test
     public void testLogFileClear()
     {
-        log.clearLog();
-        assertEquals(0L, LOG_FILE.length());
-
-        LOGGER.info("Logging after the file was cleared");
-        assertNotEquals(0L, LOG_FILE.length());
+        LOGGER.info(EXAMPLE_LOG);
 
         log.unregisterLogger();
-
         log.clearLog();
+
         assertEquals(0L, LOG_FILE.length());
     }
 }

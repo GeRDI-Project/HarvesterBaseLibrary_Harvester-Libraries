@@ -18,7 +18,6 @@ package de.gerdiproject.save;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertTrue;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Random;
@@ -112,8 +111,6 @@ public class HarvestSaverTest
 
         final String fileNameAfterHarvest = saver.getTargetFile().getName();
 
-        assertTrue(fileNameBeforeHarvest.startsWith(TEST_NAME));
-        assertTrue(fileNameAfterHarvest.startsWith(TEST_NAME));
         assertNotEquals(fileNameBeforeHarvest, fileNameAfterHarvest);
     }
 

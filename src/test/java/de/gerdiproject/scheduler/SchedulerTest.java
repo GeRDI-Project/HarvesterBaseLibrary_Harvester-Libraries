@@ -18,8 +18,10 @@ package de.gerdiproject.scheduler;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.fail;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.Random;
 
 import org.junit.After;
@@ -44,6 +46,7 @@ import de.gerdiproject.harvest.utils.logger.constants.LoggerConstants;
  */
 public class SchedulerTest
 {
+
     private static final String INVALID_CRON = "abc";
     private static final String RANDOM_CRON_TAB = "%d 0 1 1 *";
     private static final String SOME_CRON_TAB = "0 0 1 1 *";
@@ -52,16 +55,25 @@ public class SchedulerTest
             SchedulerConstants.CACHE_PATH,
             "schedulerTest"));
 
+
+    private static final String CANNOT_CLEAN_ERROR =
+        "Could not delete the temporary test folder: "
+        + CACHE_FILE.getAbsolutePath();
+
     private Scheduler scheduler;
     private final Random random = new Random();
 
 
     /**
      * Creates a new scheduler.
+     * @throws IOException thrown when the test files were not properly cleaned up
      */
     @Before
-    public void before()
+    public void before() throws IOException
     {
+        if (CACHE_FILE.exists())
+            throw new IOException(CANNOT_CLEAN_ERROR);
+
         LoggerConstants.ROOT_LOGGER.setLevel(Level.ERROR);
 
         scheduler = new Scheduler(CACHE_FILE.getAbsolutePath());
@@ -83,16 +95,22 @@ public class SchedulerTest
 
 
     /**
+     * Tests if a new scheduler starts with no tasks assigned.
+     */
+    @Test
+    public void testConstructor()
+    {
+        assertEquals(0, scheduler.size());
+    }
+
+
+    /**
      * Tests if a cache file is created when a new task is added.
      */
     @Test
     public void testSavingToDisk()
     {
-        assert !CACHE_FILE.exists();
-
         addTasks(1);
-
-        assert CACHE_FILE.exists();
         assertNotEquals(0, CACHE_FILE.length());
     }
 
@@ -104,17 +122,13 @@ public class SchedulerTest
     @Test
     public void testLoadingFromDisk()
     {
-        // add some tasks
-        addTasks(random.nextInt(10));
-        int numberOfSavedTasks = scheduler.size();
+        addRandomNumberOfTasks();
 
-        scheduler = new Scheduler(CACHE_FILE.getAbsolutePath());
-        scheduler.addEventListeners();
+        Scheduler anotherScheduler = new Scheduler(CACHE_FILE.getAbsolutePath());
+        anotherScheduler.addEventListeners();
+        anotherScheduler.loadFromDisk();
 
-        assertEquals(0, scheduler.size());
-
-        scheduler.loadFromDisk();
-        assertEquals(numberOfSavedTasks, scheduler.size());
+        assertEquals(scheduler.size(), anotherScheduler.size());
     }
 
 
@@ -125,19 +139,10 @@ public class SchedulerTest
     @Test
     public void testLoadingFromDiskNoExists()
     {
-        // add some tasks
-        addTasks(random.nextInt(10));
-        int oldSize = scheduler.size();
+        addRandomNumberOfTasks();
+        final int oldSize = scheduler.size();
 
-        // delete cache to guarantee it no longer exists
-        FileUtils.deleteFile(CACHE_FILE);
-        assert !CACHE_FILE.exists();
-
-        try {
-            scheduler.loadFromDisk();
-        } catch (Exception ex) {
-            assert false;
-        }
+        scheduler.loadFromDisk();
 
         assertEquals(oldSize, scheduler.size());
     }
@@ -150,8 +155,9 @@ public class SchedulerTest
     @Test
     public void testAddingTask()
     {
-        int numberOfTasks = random.nextInt(10);
+        final int numberOfTasks = random.nextInt(10);
         addTasks(numberOfTasks);
+
         assertEquals(numberOfTasks, scheduler.size());
     }
 
@@ -165,9 +171,10 @@ public class SchedulerTest
         try {
             EventSystem.sendSynchronousEvent(new AddSchedulerTaskEvent(SOME_CRON_TAB));
             EventSystem.sendSynchronousEvent(new AddSchedulerTaskEvent(SOME_CRON_TAB));
-            assert false;
+
+            fail("Adding the same cron tab twice should throw an exception!");
         } catch (Exception ex) {
-            assert ex instanceof IllegalArgumentException;
+            assertEquals(IllegalArgumentException.class, ex.getClass());
         }
     }
 
@@ -180,9 +187,10 @@ public class SchedulerTest
     {
         try {
             EventSystem.sendSynchronousEvent(new AddSchedulerTaskEvent(INVALID_CRON));
-            assert false;
+
+            fail("Adding a cron tab with invalid syntax should throw an exception!");
         } catch (Exception ex) {
-            assert ex instanceof IllegalArgumentException;
+            assertEquals(IllegalArgumentException.class, ex.getClass());
         }
     }
 
@@ -195,7 +203,7 @@ public class SchedulerTest
     public void testDeletingTask()
     {
         addTasks(10);
-        int numberOfDeletions = 1 + random.nextInt(10);
+        final int numberOfDeletions = 1 + random.nextInt(10);
 
         for (int i = 0; i < numberOfDeletions; i++) {
             final String randomCron = String.format(RANDOM_CRON_TAB, i);
@@ -214,9 +222,9 @@ public class SchedulerTest
     {
         try {
             EventSystem.sendSynchronousEvent(new DeleteSchedulerTaskEvent(SOME_CRON_TAB));
-            assert false;
+            fail("Deleting a non-existing cron tab should throw an exception!");
         } catch (Exception ex) {
-            assert ex instanceof IllegalArgumentException;
+            assertEquals(IllegalArgumentException.class, ex.getClass());
         }
     }
 
@@ -228,10 +236,7 @@ public class SchedulerTest
     public void testDeletingAllTasks()
     {
         addTasks(10);
-        assertEquals(10, scheduler.size());
-
         EventSystem.sendSynchronousEvent(new DeleteSchedulerTaskEvent(null));
-
         assertEquals(0, scheduler.size());
     }
 
@@ -243,12 +248,10 @@ public class SchedulerTest
     @Test
     public void testDeletingAllTasksNonExisting()
     {
-        assertEquals(0, scheduler.size());
-
         try {
             EventSystem.sendSynchronousEvent(new DeleteSchedulerTaskEvent(null));
         } catch (Exception ex) {
-            assert false;
+            fail("Deleting all cron tabs should not throw an exception!");
         }
     }
 
@@ -260,16 +263,12 @@ public class SchedulerTest
     @Test
     public void testScheduleGetter()
     {
-        final int addedEvents = 1 + random.nextInt(10);
-        addTasks(addedEvents);
+        addRandomNumberOfTasks();
 
         final String scheduleText = EventSystem.sendSynchronousEvent(new GetScheduleEvent());
 
-        int numberOfLines = scheduleText.split("\n").length;
-        assertEquals(addedEvents, numberOfLines);
-
-        for (int i = 0; i < addedEvents; i++)
-            assert scheduleText.contains(String.format(RANDOM_CRON_TAB, i));
+        for (int i = 0; i < scheduler.size(); i++)
+            assert scheduleText.contains(String.format(RANDOM_CRON_TAB, i) + "\n");
     }
 
 
@@ -285,23 +284,35 @@ public class SchedulerTest
 
 
     /**
-     * Tests if the scheduler is cleaned up and no longer receives
-     * event when the application context is destroyed.
+     * Tests if the scheduler tasks are removed when the application context is destroyed.
      */
     @Test
-    public void testContextDestroyed()
+    public void testTaskRemovalOnContextDestruction()
     {
-        addTasks(1);
-        assertEquals(1, scheduler.size());
-
+        addRandomNumberOfTasks();
         EventSystem.sendEvent(new ContextDestroyedEvent());
 
         assertEquals(0, scheduler.size());
+    }
+
+
+    /**
+     * Tests if the scheduler no longer receives
+     * events when the application context is destroyed.
+     */
+    @Test
+    public void testForNoEventsOnContextDestruction()
+    {
+        EventSystem.sendEvent(new ContextDestroyedEvent());
 
         addTasks(1);
         assertEquals(0, scheduler.size());
     }
 
+
+    //////////////////////
+    // Non-test Methods //
+    //////////////////////
 
     /**
      * Schedules a specified number of tasks.
@@ -314,5 +325,14 @@ public class SchedulerTest
             final String randomCron = String.format(RANDOM_CRON_TAB, i);
             EventSystem.sendSynchronousEvent(new AddSchedulerTaskEvent(randomCron));
         }
+    }
+
+
+    /**
+     * Schedules 1-10 tasks.
+     */
+    private void addRandomNumberOfTasks()
+    {
+        addTasks(1 + random.nextInt(10));
     }
 }

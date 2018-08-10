@@ -174,9 +174,10 @@ public abstract class AbstractHarvester
         final HarvesterCache cache;
 
         // create a new cache lazily
-        if (documentsCache == null)
+        if (documentsCache == null) {
             cache = new HarvesterCache(this);
-        else
+            cache.addEventListeners();
+        } else
             cache = documentsCache;
 
 
@@ -312,10 +313,7 @@ public abstract class AbstractHarvester
             if (document instanceof ICleanable)
                 ((ICleanable) document).clean();
 
-            if (forceHarvest.get())
-                documentsCache.addDocument(document);
-            else
-                documentsCache.cacheDocument(document);
+            documentsCache.cacheDocument(document, forceHarvest.get());
         }
 
         EventSystem.sendEvent(DocumentsHarvestedEvent.singleHarvestedDocument());

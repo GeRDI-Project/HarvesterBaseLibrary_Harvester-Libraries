@@ -16,7 +16,7 @@
  */
 /**
  * This package contains mocked classes used by {@linkplain de.gerdiproject.utils.HarvesterCacheTest}.
- * 
+ *
  * @author Robin Weiss
  */
 package de.gerdiproject.utils.examples.harvestercache;

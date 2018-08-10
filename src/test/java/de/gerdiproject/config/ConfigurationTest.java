@@ -53,6 +53,7 @@ import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.state.StateMachine;
 import de.gerdiproject.harvest.state.impl.HarvestingState;
 import de.gerdiproject.harvest.state.impl.InitializationState;
+import de.gerdiproject.harvest.utils.FileUtils;
 import de.gerdiproject.harvest.utils.data.DiskIO;
 import de.gerdiproject.harvest.utils.logger.constants.LoggerConstants;
 
@@ -87,10 +88,18 @@ public class ConfigurationTest
     /**
      * Before each test:<br>
      * Adds event listeners for parameter change events and resets helper variables.
+     *
+     * @throws IOException thrown when the temporary cache file could not be deleted
      */
     @Before
-    public void before()
+    public void before() throws IOException
     {
+        FileUtils.deleteFile(CACHE_FILE);
+
+        if (CACHE_FILE.exists())
+            throw new IOException();
+
+
         lastGlobalParamChange = null;
         lastHarvesterParamChange = null;
 
@@ -102,16 +111,14 @@ public class ConfigurationTest
     /**
      * After each test:<br>
      * Removes event listeners for parameter change events and deletes created files.
-     * @throws IOException thrown when the temporary cache file could not be deleted
      */
     @After
-    public void after() throws IOException
+    public void after()
     {
         EventSystem.removeAllListeners(GlobalParameterChangedEvent.class);
         EventSystem.removeAllListeners(HarvesterParameterChangedEvent.class);
 
-        if (CACHE_FILE.exists() && !CACHE_FILE.delete())
-            throw new IOException();
+        FileUtils.deleteFile(CACHE_FILE);
     }
 
 
