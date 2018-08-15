@@ -52,6 +52,9 @@ import de.gerdiproject.harvest.utils.logger.constants.LoggerConstants;
 
 /**
  * This class provides test cases for the {@linkplain HttpRequester}.
+ * Each test is executed twice. The first execution tests with disabled
+ * HTTP response caching, while the second execution tests enabled caching
+ * from a mocked folder on disk.
  *
  * @author Robin Weiss
  */
@@ -87,17 +90,17 @@ public class HttpRequesterTest
      * whether the HttpRequester readFromDisk and writeToDisk flags are enabled
      * or not.
      *
-     * @param cachingEnabled if true, the readFromDisk and writeToDisk flags are enabled
+     * @param isCachingEnabled if true, the readFromDisk and writeToDisk flags are enabled
      */
-    public HttpRequesterTest(boolean cachingEnabled)
+    public HttpRequesterTest(boolean isCachingEnabled)
     {
-        this.isCachingEnabled = cachingEnabled;
+        this.isCachingEnabled = isCachingEnabled;
         this.changeReadFromDiskEvent = new GlobalParameterChangedEvent(
-            new BooleanParameter(ConfigurationConstants.READ_HTTP_FROM_DISK, !cachingEnabled),
+            new BooleanParameter(ConfigurationConstants.READ_HTTP_FROM_DISK, !isCachingEnabled),
             null);
 
         this.changeWriteToDiskEvent = new GlobalParameterChangedEvent(
-            new BooleanParameter(ConfigurationConstants.WRITE_HTTP_TO_DISK, !cachingEnabled),
+            new BooleanParameter(ConfigurationConstants.WRITE_HTTP_TO_DISK, !isCachingEnabled),
             null);
     }
 

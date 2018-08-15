@@ -17,6 +17,7 @@
 package de.gerdiproject.config;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
 
@@ -33,6 +34,9 @@ import java.util.Map;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameters;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -40,7 +44,6 @@ import com.google.gson.GsonBuilder;
 import ch.qos.logback.classic.Level;
 import de.gerdiproject.harvest.config.Configuration;
 import de.gerdiproject.harvest.config.adapter.ConfigurationAdapter;
-import de.gerdiproject.harvest.config.constants.ConfigurationConstants;
 import de.gerdiproject.harvest.config.events.GlobalParameterChangedEvent;
 import de.gerdiproject.harvest.config.events.HarvesterParameterChangedEvent;
 import de.gerdiproject.harvest.config.parameters.AbstractParameter;
@@ -50,6 +53,7 @@ import de.gerdiproject.harvest.config.parameters.PasswordParameter;
 import de.gerdiproject.harvest.config.parameters.StringParameter;
 import de.gerdiproject.harvest.config.parameters.UrlParameter;
 import de.gerdiproject.harvest.event.EventSystem;
+import de.gerdiproject.harvest.state.IState;
 import de.gerdiproject.harvest.state.StateMachine;
 import de.gerdiproject.harvest.state.impl.HarvestingState;
 import de.gerdiproject.harvest.state.impl.InitializationState;
@@ -59,9 +63,13 @@ import de.gerdiproject.harvest.utils.logger.constants.LoggerConstants;
 
 /**
  * This class contains unit tests for the {@linkplain Configuration}.
+ * Each test is executed twice. The first execution tests harvester specific parameters,
+ * while the second execution tests global parameters which are usually not modified
+ * by harvester implementations.
  *
  * @author Robin Weiss
  */
+@RunWith(Parameterized.class)
 public class ConfigurationTest
 {
     private static final String CUSTOM_PARAM_KEY = "customParam";
@@ -81,8 +89,29 @@ public class ConfigurationTest
 
     private static final File CACHE_FILE = new File("mocked/config.json");
 
+    private static final String ERROR_ARGUMENTS_MUST_DIFFER = "The old and new value of Parameter Change tests must differ!";
+
+
+    @Parameters(name = "{0}")
+    public static Object[] getParameters()
+    {
+        return new Object[] {"harvester parameters", "global parameters"};
+    }
+
     private GlobalParameterChangedEvent lastGlobalParamChange;
     private HarvesterParameterChangedEvent lastHarvesterParamChange;
+
+    private final boolean isTestingHarvesterParameters;
+
+
+
+
+    public ConfigurationTest(String testingType)
+    {
+        this.lastGlobalParamChange = null;
+        this.lastHarvesterParamChange = null;
+        this.isTestingHarvesterParameters = testingType.equals("harvester parameters");
+    }
 
 
     /**
@@ -131,35 +160,7 @@ public class ConfigurationTest
     {
         final Configuration config = new Configuration(null, null);
 
-        assertEquals(0, config.getGlobalParameters().size());
-        assertEquals(0, config.getHarvesterParameters().size());
-    }
-
-
-    /**
-     * Tests the constructor that requires both types of parameters by custom parameter objects.
-     * The test is successful if both parameters can be retrieved from the {@linkplain Configuration}.
-     */
-    @Test
-    public void testCustomParamsConstructor()
-    {
-        final AbstractParameter<?> globalParam = new StringParameter(CUSTOM_PARAM_KEY + 1, CUSTOM_PARAM_VALUE + 1);
-        final Map<String, AbstractParameter<?>> customGlobalParams = new HashMap<>();
-        customGlobalParams.put(globalParam.getKey(), globalParam);
-
-        final AbstractParameter<?> harvesterParam = new StringParameter(CUSTOM_PARAM_KEY + 2, CUSTOM_PARAM_VALUE + 2);
-        final Map<String, AbstractParameter<?>> customHarvesterParams = new HashMap<>();
-        customHarvesterParams.put(harvesterParam.getKey(), harvesterParam);
-
-        final Configuration customConfig = new Configuration(customGlobalParams, customHarvesterParams);
-
-        // verify that only one of each parameters were created
-        assertEquals(1, customConfig.getGlobalParameters().size());
-        assertEquals(1, customConfig.getHarvesterParameters().size());
-
-        // check if all parameters can be retrieved
-        assertEquals(globalParam.getValue(), customConfig.getParameterValue(globalParam.getKey(), globalParam.getValue().getClass()));
-        assertEquals(harvesterParam.getValue(), customConfig.getParameterValue(harvesterParam.getKey(), harvesterParam.getValue().getClass()));
+        assertEquals(0, getTestedParameters(config).size());
     }
 
 
@@ -172,8 +173,21 @@ public class ConfigurationTest
     {
         final Configuration config = new Configuration(null);
 
-        assertNotEquals(0, config.getGlobalParameters().size());
-        assertNotEquals(0, config.getHarvesterParameters().size());
+        assertNotEquals(0, getTestedParameters(config).size());
+    }
+
+
+    /**
+     * Tests the constructor that requires both types of parameters by custom parameter objects.
+     * The test is successful if both parameters can be retrieved from the {@linkplain Configuration}.
+     */
+    @Test
+    public void testCustomParamsConstructor()
+    {
+        final AbstractParameter<?> param = new IntegerParameter(CUSTOM_PARAM_KEY, INT_VALUE_1);
+        final Configuration config = createConfigWithCustomParameters(param);
+
+        assertEquals(param.getValue(), config.getParameterValue(param.getKey(), param.getValue().getClass()));
     }
 
 
@@ -193,10 +207,6 @@ public class ConfigurationTest
             );
 
         final Configuration customConfig = new Configuration(customHarvesterParams);
-        final Configuration defaultConfig = new Configuration(null);
-
-        assertEquals(defaultConfig.getHarvesterParameters().size() + customHarvesterParams.size(),
-                     customConfig.getHarvesterParameters().size());
 
         // check if all parameters can be retrieved
         for (AbstractParameter<?> param : customHarvesterParams)
@@ -243,19 +253,17 @@ public class ConfigurationTest
     /**
      * Tests if the value of an {@linkplain UrlParameter} can be changed via
      * the setter function of the {@linkplain Configuration}.
+     *
+     * @throws MalformedURLException thrown when one of the test URLs is not well-formed
      */
     @Test
-    public void testUrlParameterChange()
+    public void testUrlParameterChange() throws MalformedURLException
     {
-        try {
-            final URL valueBefore = new URL(URL_VALUE_1);
-            final URL valueAfter = new URL(URL_VALUE_2);
+        final URL valueBefore = new URL(URL_VALUE_1);
+        final URL valueAfter = new URL(URL_VALUE_2);
 
-            final UrlParameter param = new UrlParameter(CUSTOM_PARAM_KEY, valueBefore.toString());
-            testParameterChange(param, valueAfter);
-        } catch (MalformedURLException e) {
-            assert false;
-        }
+        final UrlParameter param = new UrlParameter(CUSTOM_PARAM_KEY, valueBefore.toString());
+        testParameterChange(param, valueAfter);
     }
 
 
@@ -268,10 +276,18 @@ public class ConfigurationTest
     public void testPasswordParameterChange()
     {
         final PasswordParameter param = new PasswordParameter(CUSTOM_PARAM_KEY, PASSWORD_VALUE_1);
-
-        assertEquals(ConfigurationConstants.PASSWORD_STRING_TEXT, param.getStringValue());
         testParameterChange(param, PASSWORD_VALUE_2);
-        assertEquals(ConfigurationConstants.PASSWORD_STRING_TEXT, param.getStringValue());
+    }
+
+
+    /**
+     * Tests if the string representation of a {@linkplain PasswordParameter} masks the value.
+     */
+    @Test
+    public void testPasswordParameterMasking()
+    {
+        final PasswordParameter param = new PasswordParameter(CUSTOM_PARAM_KEY, PASSWORD_VALUE_1);
+        assert !param.getStringValue().contains(param.getValue().toString());
     }
 
 
@@ -282,62 +298,88 @@ public class ConfigurationTest
     @Test
     public void testSettingInForbiddenState()
     {
-        final String valueBefore = "before";
-        final String valueAfter = "after";
+        final Class<? extends IState> stateThatAllowsChanges = HarvestingState.class;
+        final IState stateThatForbidsChanges = new InitializationState();
 
-        final StringParameter param = new StringParameter(CUSTOM_PARAM_KEY, Arrays.asList(HarvestingState.class), valueBefore);
-        final String key = param.getKey();
+        assertFalse(canParameterBeSetInState(stateThatForbidsChanges, stateThatAllowsChanges));
+    }
 
-        final Configuration config = new Configuration(Arrays.asList(param));
 
-        assertEquals(valueBefore, config.getParameterValue(key, valueBefore.getClass()));
-        assertNotEquals(valueAfter, config.getParameterValue(key, valueAfter.getClass()));
+    /**
+     * Tests if parameter values change when being set in a state that is allows
+     * parameter changes.
+     */
+    @Test
+    public void testSettingInAllowedState()
+    {
+        final IState stateThatAllowsChanges = new InitializationState();
+        assert canParameterBeSetInState(stateThatAllowsChanges, stateThatAllowsChanges.getClass());
+    }
 
-        // explicitly test a state that is not among the valid states of the parameter
-        StateMachine.setState(new InitializationState());
-        config.setParameter(key, valueAfter);
-        StateMachine.setState(null);
 
-        assertEquals(valueBefore, config.getParameterValue(key, valueBefore.getClass()));
-        assertNotEquals(valueAfter, config.getParameterValue(key, valueAfter.getClass()));
+    /**
+     * Tests if parameter values change when being set in a null-state.
+     */
+    @Test
+    public void testSettingInNullState()
+    {
+        final Class<? extends IState> stateThatAllowsChanges = HarvestingState.class;
+        assert canParameterBeSetInState(null, stateThatAllowsChanges);
+    }
+
+
+    /**
+     * Tests if parameter changes cause no events to be sent when the new parameter value
+     * is the same as the old one.
+     */
+    @Test
+    public void testParameterChangedEventOnSameValue()
+    {
+        final IntegerParameter param = new IntegerParameter(CUSTOM_PARAM_KEY, INT_VALUE_1);
+        final Configuration config = createConfigWithCustomParameters(param);
+
+        // check that no events are fired when the value does not change
+        config.setParameter(param.getKey(), param.getStringValue());
+        assertNull(getTestedEvent());
     }
 
 
     /**
      * Tests if parameter changes cause events to be sent when the value differs after the change,
-     * and no events to be sent when the value remains unchanged.
+     * and that the event payload contains the parameter that was changed.
      */
     @Test
-    public void testParameterChangedEvents()
+    public void testParameterChangedEventPayloadParameter()
     {
-        final Configuration config = createConfigWithTwoCustomParameters();
-        final AbstractParameter<?> globalParam = (AbstractParameter<?>) config.getGlobalParameters().values().toArray()[0];
-        final AbstractParameter<?> harvesterParam = (AbstractParameter<?>) config.getHarvesterParameters().values().toArray()[0];
+        final StringParameter param = new StringParameter(CUSTOM_PARAM_KEY, CUSTOM_PARAM_VALUE + 1);
+        final Configuration config = createConfigWithCustomParameters(param);
 
-        final String oldGlobalValue = globalParam.getStringValue();
-        final String oldHarvesterValue = harvesterParam.getStringValue();
-        final String newValue = "newVal";
-
-        // check if helper variables were reset correctly
-        assertNull(lastGlobalParamChange);
-        assertNull(lastHarvesterParamChange);
-
-        // check that no events are fired when the value does not change
-        config.setParameter(globalParam.getKey(), globalParam.getStringValue());
-        assertNull(lastGlobalParamChange);
-
-        config.setParameter(harvesterParam.getKey(), harvesterParam.getStringValue());
-        assertNull(lastHarvesterParamChange);
+        final String newValue = CUSTOM_PARAM_VALUE + 2;
 
         // check GlobalParameterChanged event
-        config.setParameter(globalParam.getKey(), newValue);
-        assertEquals(globalParam, lastGlobalParamChange.getParameter());
-        assertEquals(oldGlobalValue, lastGlobalParamChange.getOldValue());
+        config.setParameter(param.getKey(), newValue);
 
-        // check HarvesterParameterChanged event
-        config.setParameter(harvesterParam.getKey(), newValue);
-        assertEquals(harvesterParam, lastHarvesterParamChange.getParameter());
-        assertEquals(oldHarvesterValue, lastHarvesterParamChange.getOldValue());
+        assertEquals(param, getTestedEvent().getParameter());
+    }
+
+
+    /**
+     * Tests if parameter changes cause events to be sent when the value differs after the change,
+     * and that the event payload contains the previous value of the parameter.
+     */
+    @Test
+    public void testParameterChangedEventPayloadOldValue()
+    {
+        final StringParameter param = new StringParameter(CUSTOM_PARAM_KEY, CUSTOM_PARAM_VALUE + 1);
+        final Configuration config = createConfigWithCustomParameters(param);
+
+        final String oldValue = param.getStringValue();
+        final String newValue = CUSTOM_PARAM_VALUE + 2;
+
+        // check GlobalParameterChanged event
+        config.setParameter(param.getKey(), newValue);
+
+        assertEquals(oldValue, getTestedEvent().getOldValue());
     }
 
 
@@ -347,15 +389,12 @@ public class ConfigurationTest
     @Test
     public void testSaveWithPath()
     {
-        assert !CACHE_FILE.exists();
+        final Configuration config = createConfigWithCustomParameters(new StringParameter(CUSTOM_PARAM_KEY, CUSTOM_PARAM_VALUE));
 
-        final Configuration config = new Configuration(null);
         config.setCacheFilePath(CACHE_FILE.getAbsolutePath());
-
         config.saveToDisk();
 
-        assert CACHE_FILE.exists();
-        assert CACHE_FILE.isFile();
+        assert CACHE_FILE.exists() && CACHE_FILE.isFile();
     }
 
 
@@ -366,9 +405,7 @@ public class ConfigurationTest
     @Test
     public void testSaveWithoutPath()
     {
-        assert !CACHE_FILE.exists();
-
-        final Configuration config = new Configuration(null);
+        final Configuration config = createConfigWithCustomParameters(new StringParameter(CUSTOM_PARAM_KEY, CUSTOM_PARAM_VALUE));
 
         LoggerConstants.ROOT_LOGGER.setLevel(Level.OFF);
         config.saveToDisk();
@@ -383,35 +420,59 @@ public class ConfigurationTest
      * saved values while disregarding those whose keys are non-existing.
      */
     @Test
-    public void testLoad()
+    public void testLoadingPresentValues()
     {
-        final Configuration savedConfig = createConfigWithTwoCustomParameters();
-        final AbstractParameter<?> harvesterParam = (AbstractParameter<?>) savedConfig.getHarvesterParameters().values().toArray()[0];
-        final AbstractParameter<?> globalParam = (AbstractParameter<?>) savedConfig.getGlobalParameters().values().toArray()[0];
-        final Object restoredValue = harvesterParam.getValue();
+        final StringParameter param = new StringParameter(CUSTOM_PARAM_KEY, CUSTOM_PARAM_VALUE);
+        final Object param1LoadedValue = param.getValue();
 
+        // save a config with two custom parameters
+        final Configuration savedConfig = createConfigWithCustomParameters(param);
         savedConfig.setCacheFilePath(CACHE_FILE.getAbsolutePath());
         savedConfig.saveToDisk();
 
-        // set up the config to be loaded to only use one of the two custom parameters
-        final Configuration loadedConfig = new Configuration(Arrays.asList(harvesterParam));
+        // create a config with only the first custom parameter
+        final Configuration loadedConfig = createConfigWithCustomParameters(param);
+        loadedConfig.setCacheFilePath(CACHE_FILE.getAbsolutePath());
 
         // change the value of the shared custom parameter
         final String valueToBeRestored = "override me";
-        loadedConfig.setParameter(harvesterParam.getKey(), valueToBeRestored);
-        assertEquals(valueToBeRestored, loadedConfig.getParameterStringValue(harvesterParam.getKey()));
+        loadedConfig.setParameter(param.getKey(), valueToBeRestored);
 
         // load previously set up config
         LoggerConstants.ROOT_LOGGER.setLevel(Level.OFF);
+        loadedConfig.loadFromDisk();
+        LoggerConstants.ROOT_LOGGER.setLevel(Level.DEBUG);
+
+        // make sure the value of custom parameter was changed due to the loading
+        assertEquals(param1LoadedValue, loadedConfig.getParameterValue(param.getKey(), param.getValue().getClass()));
+    }
+
+
+    /**
+     * Tests if loading a configuration will not add values that do not already
+     * exist.
+     */
+    @Test
+    public void testLoadingNonPresentValues()
+    {
+        final StringParameter param = new StringParameter(CUSTOM_PARAM_KEY, CUSTOM_PARAM_VALUE);
+
+        // save a config with two custom parameters
+        final Configuration savedConfig = createConfigWithCustomParameters(param);
+        savedConfig.setCacheFilePath(CACHE_FILE.getAbsolutePath());
+        savedConfig.saveToDisk();
+
+        // create a config with only the first custom parameter
+        final Configuration loadedConfig = new Configuration(null);
         loadedConfig.setCacheFilePath(CACHE_FILE.getAbsolutePath());
+
+        // load previously set up config
+        LoggerConstants.ROOT_LOGGER.setLevel(Level.OFF);
         loadedConfig.loadFromDisk();
         LoggerConstants.ROOT_LOGGER.setLevel(Level.DEBUG);
 
         // make sure custom parameter 2 was not created
-        assertNull(loadedConfig.getParameterStringValue(globalParam.getKey()));
-
-        // make sure the value of custom parameter 1 was changed
-        assertEquals(restoredValue, loadedConfig.getParameterValue(harvesterParam.getKey(), harvesterParam.getValue().getClass()));
+        assertNull(loadedConfig.getParameterStringValue(param.getKey()));
     }
 
 
@@ -421,14 +482,11 @@ public class ConfigurationTest
     @Test
     public void testLoadWithNonExistingPath()
     {
-        final AbstractParameter<?> customParam =
-            new StringParameter(CUSTOM_PARAM_KEY, CUSTOM_PARAM_VALUE);
+        final StringParameter param = new StringParameter(CUSTOM_PARAM_KEY, CUSTOM_PARAM_VALUE);
 
-        final Configuration loadedConfig = new Configuration(Arrays.asList(customParam));
+        // save a config with two custom parameters
+        final Configuration loadedConfig = createConfigWithCustomParameters(param);
         loadedConfig.setCacheFilePath(CACHE_FILE.getAbsolutePath());
-
-        // make sure the cache file really does not exist
-        assert !CACHE_FILE.exists();
 
         // attempt to load a non-existing path
         LoggerConstants.ROOT_LOGGER.setLevel(Level.OFF);
@@ -436,7 +494,7 @@ public class ConfigurationTest
         LoggerConstants.ROOT_LOGGER.setLevel(Level.DEBUG);
 
         // make sure the old custom parameter still exists
-        assertEquals(customParam.getStringValue(), loadedConfig.getParameterStringValue(customParam.getKey()));
+        assertEquals(param.getStringValue(), loadedConfig.getParameterStringValue(param.getKey()));
     }
 
 
@@ -447,21 +505,18 @@ public class ConfigurationTest
     @Test
     public void testLoadWithoutSetPath()
     {
-        final AbstractParameter<?> customParam =
+        final AbstractParameter<?> param =
             new StringParameter(CUSTOM_PARAM_KEY, CUSTOM_PARAM_VALUE);
 
         // save a config with a custom parameter
-        final Configuration savedConfig = new Configuration(Arrays.asList(customParam));
+        final Configuration savedConfig = createConfigWithCustomParameters(param);
         savedConfig.setCacheFilePath(CACHE_FILE.getAbsolutePath());
         savedConfig.saveToDisk();
 
-        // make sure the saved file exists
-        assert CACHE_FILE.exists();
-
         // create config with the same custom parameter, but a different value
         final String valueToBeOverridden = "override me";
-        customParam.setValue(valueToBeOverridden, null);
-        final Configuration loadedConfig = new Configuration(Arrays.asList(customParam));
+        param.setValue(valueToBeOverridden, null);
+        final Configuration loadedConfig = createConfigWithCustomParameters(param);
 
         // attempt to load without setting a path
         LoggerConstants.ROOT_LOGGER.setLevel(Level.OFF);
@@ -469,46 +524,43 @@ public class ConfigurationTest
         LoggerConstants.ROOT_LOGGER.setLevel(Level.DEBUG);
 
         // make sure the old custom parameter value was not overridden
-        assertEquals(valueToBeOverridden, loadedConfig.getParameterStringValue(customParam.getKey()));
+        assertEquals(valueToBeOverridden, loadedConfig.getParameterStringValue(param.getKey()));
     }
 
 
     /**
-     * Tests if all the Configuration can be serialized and deserialized without losing data and
-     * while preserving parameter types.
+     * Tests if a Configuration can be serialized and deserialized without losing data.
      */
     @Test
-    public void testJsonSerialization()
+    public void testJsonSerializationParameterTypes()
     {
-        assert !CACHE_FILE.exists();
-
+        // save config with all parameters to disk
         final Configuration savedConfig = createConfigWithAllParameterTypes();
-        savedConfig.setCacheFilePath(CACHE_FILE.getAbsolutePath());
-        savedConfig.saveToDisk();
-
-        assert CACHE_FILE.exists();
-
-        // deserialize cache file
-        Gson gson = new GsonBuilder().registerTypeAdapter(Configuration.class, new ConfigurationAdapter()).create();
-        DiskIO diskIo = new DiskIO(gson, StandardCharsets.UTF_8);
-        final Configuration loadedConfig = diskIo.getObject(CACHE_FILE, Configuration.class);
-
-        // check if the number of parameters is correct
-        assertEquals(savedConfig.getGlobalParameters().size(), loadedConfig.getGlobalParameters().size());
-        assertEquals(savedConfig.getHarvesterParameters().size(), loadedConfig.getHarvesterParameters().size());
+        final Configuration loadedConfig = saveAndLoadConfig(savedConfig);
 
         // check if deserialized global parameters are correct
-        final Map<String, AbstractParameter<?>> loadedGlobalParams = loadedConfig.getGlobalParameters();
-        savedConfig.getGlobalParameters().forEach((String key, AbstractParameter<?> param) -> {
+        final Map<String, AbstractParameter<?>> loadedGlobalParams = getTestedParameters(loadedConfig);
+        getTestedParameters(savedConfig).forEach((String key, AbstractParameter<?> param) -> {
             assertEquals(param.getClass(), loadedGlobalParams.get(key).getClass());
-            assertEquals(param.getValue(), loadedGlobalParams.get(key).getValue());
         });
+    }
 
-        // check if deserialized harvester parameters are correct
-        final Map<String, AbstractParameter<?>> loadedHarvesterParams = loadedConfig.getHarvesterParameters();
-        savedConfig.getHarvesterParameters().forEach((String key, AbstractParameter<?> param) -> {
-            assertEquals(param.getClass(), loadedHarvesterParams.get(key).getClass());
-            assertEquals(param.getValue(), loadedHarvesterParams.get(key).getValue());
+
+    /**
+     * Tests if a Configuration can be serialized and deserialized
+     * while preserving the parameter types.
+     */
+    @Test
+    public void testJsonSerializationParameterValues()
+    {
+        // save config with all parameters to disk
+        final Configuration savedConfig = createConfigWithAllParameterTypes();
+        final Configuration loadedConfig = saveAndLoadConfig(savedConfig);
+
+        // check if deserialized global parameters are correct
+        final Map<String, AbstractParameter<?>> loadedGlobalParams = getTestedParameters(loadedConfig);
+        getTestedParameters(savedConfig).forEach((String key, AbstractParameter<?> param) -> {
+            assertEquals(param.getValue(), loadedGlobalParams.get(key).getValue());
         });
     }
 
@@ -520,23 +572,14 @@ public class ConfigurationTest
     @Test
     public void testParameterUpdate()
     {
-        final Configuration config = createConfigWithTwoCustomParameters();
-        final AbstractParameter<?> globalParam = (AbstractParameter<?>) config.getGlobalParameters().values().toArray()[0];
-        final AbstractParameter<?> harvesterParam = (AbstractParameter<?>) config.getHarvesterParameters().values().toArray()[0];
+        final AbstractParameter<?> param =
+            new StringParameter(CUSTOM_PARAM_KEY, CUSTOM_PARAM_VALUE);
 
-        // check if helper variables were reset correctly
-        assertNull(lastGlobalParamChange);
-        assertNull(lastHarvesterParamChange);
+        final Configuration config = createConfigWithCustomParameters(param);
 
         // check GlobalParameterChanged event
-        config.updateParameter(globalParam.getKey());
-        assertNull(lastGlobalParamChange.getOldValue());
-        assertEquals(globalParam, lastGlobalParamChange.getParameter());
-
-        // check HarvesterParameterChanged event
-        config.updateParameter(harvesterParam.getKey());
-        assertNull(lastHarvesterParamChange.getOldValue());
-        assertEquals(harvesterParam, lastHarvesterParamChange.getParameter());
+        config.updateParameter(param.getKey());
+        assertEquals(param, getTestedEvent().getParameter());
     }
 
 
@@ -547,48 +590,45 @@ public class ConfigurationTest
     @Test
     public void testAllParametersUpdate()
     {
-        final Configuration config = createConfigWithTwoCustomParameters();
-        final AbstractParameter<?> globalParam = (AbstractParameter<?>) config.getGlobalParameters().values().toArray()[0];
-        final AbstractParameter<?> harvesterParam = (AbstractParameter<?>) config.getHarvesterParameters().values().toArray()[0];
+        final AbstractParameter<?> param =
+            new StringParameter(CUSTOM_PARAM_KEY, CUSTOM_PARAM_VALUE);
 
-        // check if helper variables were reset correctly
-        assertNull(lastGlobalParamChange);
-        assertNull(lastHarvesterParamChange);
-
-        config.updateAllParameters();
+        final Configuration config = createConfigWithCustomParameters(param);
 
         // check GlobalParameterChanged event
-        assertNull(lastGlobalParamChange.getOldValue());
-        assertEquals(globalParam, lastGlobalParamChange.getParameter());
-
-        // check HarvesterParameterChanged event
-        assertNull(lastHarvesterParamChange.getOldValue());
-        assertEquals(harvesterParam, lastHarvesterParamChange.getParameter());
+        config.updateAllParameters();
+        assertEquals(param, getTestedEvent().getParameter());
     }
 
 
     /**
-     * Tests if the {@linkplain Configuration}'s toString() function displays all parameter keys
-     * and string values
+     * Tests if the {@linkplain Configuration}'s toString() function displays all parameter keys.
      */
     @Test
-    public void testToString()
+    public void testToStringKeys()
     {
         final Configuration config = createConfigWithAllParameterTypes();
         final String configString = config.toString();
 
-        config.getGlobalParameters().forEach((String key, AbstractParameter<?> param) -> {
+        getTestedParameters(config).forEach((String key, AbstractParameter<?> param) -> {
             assert configString.contains(key);
-            assert configString.contains(param.getStringValue());
         });
-
-        config.getHarvesterParameters().forEach((String key, AbstractParameter<?> param) -> {
-            assert configString.contains(key);
-            assert configString.contains(param.getStringValue());
-        });
-
     }
 
+
+    /**
+     * Tests if the {@linkplain Configuration}'s toString() function displays all parameter values.
+     */
+    @Test
+    public void testToStringValues()
+    {
+        final Configuration config = createConfigWithAllParameterTypes();
+        final String configString = config.toString();
+
+        getTestedParameters(config).forEach((String key, AbstractParameter<?> param) -> {
+            assert configString.contains(param.getStringValue());
+        });
+    }
 
 
     //////////////////////
@@ -621,21 +661,43 @@ public class ConfigurationTest
      *
      * @param param the parameter of which the value will be changed
      * @param newValue the new value of the parameter after the change
+     *
+     * @throws IllegalArgumentException thrown when the new and the old value are the same,
+     *          rendering this test useless
      */
     private <T> void testParameterChange(AbstractParameter<T> param, T newValue)
     {
         final String key = param.getKey();
         final T oldValue = param.getValue();
 
-        final Configuration config = new Configuration(Arrays.asList(param));
+        if (oldValue.equals(newValue))
+            throw new IllegalArgumentException(ERROR_ARGUMENTS_MUST_DIFFER);
 
-        assertEquals(oldValue, config.getParameterValue(key, oldValue.getClass()));
-        assertNotEquals(newValue, config.getParameterValue(key, oldValue.getClass()));
+        final Configuration config = createConfigWithCustomParameters(param);
 
         config.setParameter(key, newValue.toString());
-
-        assertEquals(newValue, config.getParameterValue(key, newValue.getClass()));
         assertNotEquals(oldValue, config.getParameterValue(key, newValue.getClass()));
+    }
+
+
+    /**
+     * Creates a {@linkplain Configuration} that has either global-
+     * or a harvester parameters, depending on which type is being tested.
+     *
+     * @param params the parameters to be added to the config
+     *
+     * @return a {@linkplain Configuration} with the specified {@linkplain AbstractParameter}s
+     */
+    private Configuration createConfigWithCustomParameters(AbstractParameter<?>... params)
+    {
+        final Map<String, AbstractParameter<?>> parameterMap = new HashMap<>();
+
+        for (AbstractParameter<?> p : params)
+            parameterMap.put(p.getKey(), p);
+
+        return isTestingHarvesterParameters
+               ? new Configuration(null, parameterMap)
+               : new Configuration(parameterMap, null);
     }
 
 
@@ -677,22 +739,80 @@ public class ConfigurationTest
         return new Configuration(globalParams, harvesterParams);
     }
 
+    /**
+     * Saves a {@linkplain Configuration} and loads it by parsing the saved
+     * JSON object.
+     *
+     * @param configToSave the configuration that is to be saved
+     * @return the configuration that was parsed from the saved JSON object
+     */
+    private Configuration saveAndLoadConfig(Configuration configToSave)
+    {
+        // save config with all parameters to disk
+        configToSave.setCacheFilePath(CACHE_FILE.getAbsolutePath());
+        configToSave.saveToDisk();
+
+        // deserialize cache file
+        final Gson gson =
+            new GsonBuilder()
+        .registerTypeAdapter(Configuration.class, new ConfigurationAdapter())
+        .create();
+        final DiskIO diskIo = new DiskIO(gson, StandardCharsets.UTF_8);
+        return diskIo.getObject(CACHE_FILE, Configuration.class);
+    }
+
 
     /**
-     * Creates a {@linkplain Configuration} with one custom global- and one custom harvester parameter.
+     * Retrieves either the map of harvester- or global parameters, depending on what is being tested.
+     * @param config the {@linkplain Configuration} from which the parameter map is retrieved
      *
-     * @return a {@linkplain Configuration} with two parameters
+     * @return the map of harvester- or global parameters from the specified config
      */
-    private Configuration createConfigWithTwoCustomParameters()
+    private Map<String, AbstractParameter<?>> getTestedParameters(final Configuration config)
     {
-        final AbstractParameter<?> globalParam = new StringParameter(CUSTOM_PARAM_KEY + 1, CUSTOM_PARAM_VALUE + 1);
-        final Map<String, AbstractParameter<?>> customGlobalParams = new HashMap<>();
-        customGlobalParams.put(globalParam.getKey(), globalParam);
+        return isTestingHarvesterParameters
+               ? config.getHarvesterParameters()
+               : config.getGlobalParameters();
+    }
 
-        final AbstractParameter<?> harvesterParam = new StringParameter(CUSTOM_PARAM_KEY + 2, CUSTOM_PARAM_VALUE + 2);
-        final Map<String, AbstractParameter<?>> customHarvesterParams = new HashMap<>();
-        customHarvesterParams.put(harvesterParam.getKey(), harvesterParam);
 
-        return new Configuration(customGlobalParams, customHarvesterParams);
+    /**
+     * Retrieves the cached parameter change event that corresponds to either harvester- or global parameter changes,
+     * depending on what is being tested.
+     *
+     * @return the map of harvester- or global parameters from the specified config
+     */
+    private GlobalParameterChangedEvent getTestedEvent()
+    {
+        return isTestingHarvesterParameters
+               ? lastHarvesterParamChange
+               : lastGlobalParamChange;
+    }
+
+
+    /**
+     * Tests if parameter values can change when being set in a specified state.
+     *
+     * @param testedState the state in which the parameter change is attempted
+     * @param allowedState a state in which a parameter change is allowed
+     *
+     * @return true if the parameter value can change
+     */
+    private boolean canParameterBeSetInState(IState testedState, Class<? extends IState> allowedState)
+    {
+        final String valueBefore = CUSTOM_PARAM_VALUE + 1;
+        final String valueAfter = CUSTOM_PARAM_VALUE + 2;
+        final String key = CUSTOM_PARAM_KEY;
+
+
+        final StringParameter param = new StringParameter(key, Arrays.asList(allowedState), valueBefore);
+        final Configuration config = createConfigWithCustomParameters(param);
+
+        // explicitly test a state that is not among the valid states of the parameter
+        StateMachine.setState(testedState);
+        config.setParameter(key, valueAfter);
+        StateMachine.setState(null);
+
+        return param.getValue().equals(valueAfter);
     }
 }

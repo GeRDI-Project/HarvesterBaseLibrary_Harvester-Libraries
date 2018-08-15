@@ -73,7 +73,7 @@ public class Configuration implements ICachedObject
     public Configuration(Map<String, AbstractParameter<?>> globalParameters, Map<String, AbstractParameter<?>> harvesterParameters)
     {
         this.globalParameters = globalParameters != null ? globalParameters : new HashMap<>();
-        this.harvesterParameters = globalParameters != null ? harvesterParameters : new HashMap<>();
+        this.harvesterParameters = harvesterParameters != null ? harvesterParameters : new HashMap<>();
 
         this.globalParameterFormat = getPaddedKeyFormat(this.globalParameters);
         this.harvesterParameterFormat = getPaddedKeyFormat(this.harvesterParameters);
@@ -117,7 +117,6 @@ public class Configuration implements ICachedObject
             if (keyLength > maxLength.get())
                 maxLength.set(keyLength);
         });
-
         return String.format(ConfigurationConstants.BASIC_PARAMETER_FORMAT, maxLength.get());
     }
 

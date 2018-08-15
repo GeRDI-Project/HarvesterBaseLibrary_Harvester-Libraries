@@ -74,7 +74,7 @@ public class HarvesterCacheTest
 
         assertNotNull(cache.getVersionsCache());
     }
-    
+
     /**
      * Tests if the constructor initializes a {@linkplain DocumentChangesCache}.
      */
