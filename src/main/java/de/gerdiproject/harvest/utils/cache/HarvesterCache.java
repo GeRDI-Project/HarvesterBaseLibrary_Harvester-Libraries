@@ -65,13 +65,38 @@ public class HarvesterCache implements IEventListener
         this.temporaryCacheFolder = new File(harvester.getTemporaryCacheFolder());
 
         // set versions and changes caches
-        this.versionsCache = new DocumentVersionsCache(harvester);
-        this.changesCache = new DocumentChangesCache(harvester);
+        this.versionsCache = new DocumentVersionsCache(
+            harvester.getTemporaryCacheFolder(),
+            harvester.getStableCacheFolder(),
+            harvester.getCharset());
+
+        this.changesCache = new DocumentChangesCache(
+            harvester.getTemporaryCacheFolder(),
+            harvester.getStableCacheFolder(),
+            harvester.getCharset());
 
         // set clean up event listener
         this.onContextDestroyed = (ContextDestroyedEvent event) -> FileUtils.deleteFile(temporaryCacheFolder);
 
         HarvesterCacheManager.instance().registerCache(this);
+    }
+
+
+    /**
+     * Initializes all caches.
+     *
+     * @param hash the hash value that represents the entire source data of the
+     *            harvester
+     * @param harvestStartIndex the start index of the harvesting range
+     * @param harvestEndIndex the exclusive end index of the harvesting range
+     */
+    public void init(String hash, int harvestStartIndex, int harvestEndIndex)
+    {
+        final String harvesterHash = hash == null
+                                     ? null
+                                     : hashGenerator.getShaHash(hash + harvestStartIndex + harvestEndIndex);
+        versionsCache.init(harvesterHash);
+        changesCache.init(versionsCache);
     }
 
 
@@ -144,6 +169,23 @@ public class HarvesterCache implements IEventListener
 
 
     /**
+     * Applies all cache changes that were caused by the latest harvest.
+     *
+     * @param isAborted if true, the harvest was aborted
+     * @param isSuccessful if true, the harvest was completed
+     */
+    public void applyChanges(boolean isSuccessful, boolean isAborted)
+    {
+        changesCache.applyChanges();
+
+        if (isSuccessful && !isAborted)
+            versionsCache.deleteEmptyFiles();
+
+        versionsCache.applyChanges();
+    }
+
+
+    /**
      * Writes a document to the cache file.
      *
      * @param doc the document that is to be written to the cache
@@ -160,46 +202,6 @@ public class HarvesterCache implements IEventListener
 
 
     /**
-     * Applies all cache changes that were caused by the latest harvest.
-     *
-     * @param isAborted if true, the harvest was aborted
-     * @param isSuccessful if true, the harvest was completed
-     */
-    public void applyChanges(boolean isSuccessful, boolean isAborted)
-    {
-        changesCache.applyChanges();
-
-        if (isSuccessful && !isAborted) {
-            changesCache.forEach((String documentId, DataCiteJson document) -> {
-                if (document == null)
-                    versionsCache.removeFile(documentId);
-                return true;
-            });
-        }
-
-        versionsCache.applyChanges();
-    }
-
-
-    /**
-     * Initializes all caches.
-     *
-     * @param hash the hash value that represents the entire source data of the
-     *            harvester
-     * @param harvestStartIndex the start index of the harvesting range
-     * @param harvestEndIndex the exclusive end index of the harvesting range
-     */
-    public void init(String hash, int harvestStartIndex, int harvestEndIndex)
-    {
-        final String harvesterHash = hash == null
-                                     ? null
-                                     : hashGenerator.getShaHash(hash + harvestStartIndex + harvestEndIndex);
-        versionsCache.init(harvesterHash);
-        changesCache.init(versionsCache);
-    }
-
-
-    /**
      * Removes a document from the deletion cache, but does not add it to the
      * changes cache.
      *
@@ -209,6 +211,7 @@ public class HarvesterCache implements IEventListener
     {
         final String documentId = getDocumentId(doc);
         changesCache.removeFile(documentId);
+        versionsCache.removeFile(documentId);
     }
 
 

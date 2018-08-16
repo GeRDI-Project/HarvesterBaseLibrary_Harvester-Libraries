@@ -17,8 +17,8 @@
 package de.gerdiproject.harvest.utils.cache;
 
 import java.io.File;
+import java.nio.charset.Charset;
 
-import de.gerdiproject.harvest.harvester.AbstractHarvester;
 import de.gerdiproject.harvest.utils.FileUtils;
 import de.gerdiproject.harvest.utils.cache.constants.CacheConstants;
 
@@ -36,17 +36,18 @@ import de.gerdiproject.harvest.utils.cache.constants.CacheConstants;
 public class DocumentVersionsCache extends AbstractCache<String>
 {
     /**
-     * Constructor that requires the harvester name for the creation of a folder.
+     * Constructor that sets up folders for the cache.
      *
-     * @param harvester the harvester for which the cache is created
+     * @param wipFolderPath the path of the cache folder with pending changes
+     * @param stableFolderPath the path of the stable cache folder
+     * @param charset the charset of the cached files
      */
-    public DocumentVersionsCache(final AbstractHarvester harvester)
+    public DocumentVersionsCache(final String wipFolderPath, final String stableFolderPath, final Charset charset)
     {
-        super(
-            harvester.getStableCacheFolder() + CacheConstants.VERSIONS_FOLDER_NAME,
-            harvester.getTemporaryCacheFolder() + CacheConstants.VERSIONS_FOLDER_NAME,
-            String.class,
-            harvester.getCharset());
+        super(stableFolderPath + CacheConstants.VERSIONS_FOLDER_NAME,
+              wipFolderPath + CacheConstants.VERSIONS_FOLDER_NAME,
+              String.class,
+              charset);
     }
 
 
@@ -69,6 +70,7 @@ public class DocumentVersionsCache extends AbstractCache<String>
         if (hash != null)
             diskIo.writeStringToFile(wipSourceHash, hash);
     }
+
 
 
     /**
@@ -96,6 +98,27 @@ public class DocumentVersionsCache extends AbstractCache<String>
                     wipFolderPath));
 
         return !stableHarvesterHash.equals(wipHarvesterHash);
+    }
+
+
+    /**
+     * Removes deleted version files by checking empty temporary files.
+     * Every empty file is removed from the temporary and the stable
+     * folder.
+     */
+    public void deleteEmptyFiles()
+    {
+        forEach((String documentId, String documentHash) -> {
+            final File wipFile = getFile(documentId, false);
+            final File stableFile = getFile(documentId, true);
+
+            if (wipFile.length() == 0)
+            {
+                FileUtils.deleteFile(wipFile);
+                FileUtils.deleteFile(stableFile);
+            }
+            return true;
+        });
     }
 
 

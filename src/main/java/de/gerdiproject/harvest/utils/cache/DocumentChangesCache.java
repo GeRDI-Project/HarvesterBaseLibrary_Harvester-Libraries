@@ -17,9 +17,9 @@
 package de.gerdiproject.harvest.utils.cache;
 
 import java.io.File;
+import java.nio.charset.Charset;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import de.gerdiproject.harvest.harvester.AbstractHarvester;
 import de.gerdiproject.harvest.utils.FileUtils;
 import de.gerdiproject.harvest.utils.cache.constants.CacheConstants;
 import de.gerdiproject.json.datacite.DataCiteJson;
@@ -37,18 +37,18 @@ public class DocumentChangesCache extends AbstractCache<DataCiteJson>
 
 
     /**
-     * Constructor that requires the harvester name for the creation of a dedicated
-     * folder.
+     * Constructor that sets up folders for the cache.
      *
-     * @param harvester the harvester for which the cache is created
+     * @param wipFolderPath the path of the cache folder with pending changes
+     * @param stableFolderPath the path of the stable cache folder
+     * @param charset the charset of the cached files
      */
-    public DocumentChangesCache(final AbstractHarvester harvester)
+    public DocumentChangesCache(final String wipFolderPath, final String stableFolderPath, final Charset charset)
     {
-        super(
-            harvester.getStableCacheFolder() + CacheConstants.CHANGES_FOLDER_NAME,
-            harvester.getTemporaryCacheFolder() + CacheConstants.CHANGES_FOLDER_NAME,
-            DataCiteJson.class,
-            harvester.getCharset());
+        super(stableFolderPath + CacheConstants.CHANGES_FOLDER_NAME,
+              wipFolderPath + CacheConstants.CHANGES_FOLDER_NAME,
+              DataCiteJson.class,
+              charset);
     }
 
 

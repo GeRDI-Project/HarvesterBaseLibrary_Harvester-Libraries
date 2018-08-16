@@ -282,11 +282,7 @@ public class FileUtils
 
         // if the target directory does not exist, simply rename the source directory
         if (!targetDirectory.exists()) {
-            if (!sourceDirectory.renameTo(targetDirectory))
-                LOGGER.error(String.format(CacheConstants.DIR_MERGE_FAILED,
-                                           sourceDirectory.getPath(),
-                                           targetDirectory.getPath()));
-
+            replaceFile(targetDirectory, sourceDirectory);
             return;
         }
 

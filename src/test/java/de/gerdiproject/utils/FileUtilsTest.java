@@ -616,6 +616,25 @@ public class FileUtilsTest
 
 
     /**
+     * Tests directory integration when there is no target directory and checks
+     * if all source files are properly removed.
+     */
+    @Test
+    public void testDirectoryMergeWithoutTargetRemovingOldDirectory()
+    {
+        final DiskIO diskIo = new DiskIO(new Gson(), StandardCharsets.UTF_8);
+
+        for (File sourceFile : MERGE_TEST_SOURCE_FILES)
+            diskIo.writeStringToFile(sourceFile, COPY_TEST_TEXT);
+
+        FileUtils.integrateDirectory(MERGE_TEST_SOURCE_DIR, MERGE_TEST_TARGET_DIR, false);
+
+        for (File sourceFile : MERGE_TEST_SOURCE_FILES)
+            assert !sourceFile.exists();
+    }
+
+
+    /**
      * Tests if there are no changes in the filesystem if a non-existing
      * directory is attempted to be integrated into another one.
      */

@@ -164,8 +164,15 @@ public abstract class AbstractCache <T>
         final File documentFile = getFile(documentId, false);
 
         // delete old file
-        if (documentFile.exists())
+        if (documentFile.exists()) {
             FileUtils.deleteFile(documentFile);
+
+            // remove folder of document file if it is empty now
+            final File folder = documentFile.getParentFile();
+
+            if (folder != null && folder.listFiles().length == 0)
+                FileUtils.deleteFile(folder);
+        }
 
         // write new file
         if (document != null)

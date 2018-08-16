@@ -105,7 +105,12 @@ public class ConfigurationTest
 
 
 
-
+    /**
+     * Creates a configuration test, focussing on either testing harvester parameters
+     * or global parameters.
+     *
+     * @param testingType a string defining which set of parameters is to be tested
+     */
     public ConfigurationTest(String testingType)
     {
         this.lastGlobalParamChange = null;

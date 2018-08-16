@@ -51,7 +51,7 @@ public class SchedulerTest
     private static final String RANDOM_CRON_TAB = "%d 0 1 1 *";
     private static final String SOME_CRON_TAB = "0 0 1 1 *";
     private static final File CACHE_FILE = new File(
-        "test/" + String.format(
+        "mocked/" + String.format(
             SchedulerConstants.CACHE_PATH,
             "schedulerTest"));
 
