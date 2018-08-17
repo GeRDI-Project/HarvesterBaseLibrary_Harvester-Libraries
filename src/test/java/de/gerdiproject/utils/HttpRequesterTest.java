@@ -77,7 +77,6 @@ public class HttpRequesterTest extends AbstractFileSystemUnitTest<HttpRequester>
     private final IEvent changeWriteToDiskEvent;
 
 
-
     /**
      * This constructor is called via the Parameters. It determines
      * whether the HttpRequester readFromDisk and writeToDisk flags are enabled

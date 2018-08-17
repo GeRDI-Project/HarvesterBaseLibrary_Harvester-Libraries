@@ -21,10 +21,7 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.fail;
 
 import java.io.File;
-import java.io.IOException;
 
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 
 import de.gerdiproject.AbstractFileSystemUnitTest;
@@ -58,13 +55,8 @@ public class SchedulerTest extends AbstractFileSystemUnitTest<Scheduler>
     }
 
 
-    /**
-     * Creates a new scheduler.
-     * @throws IOException thrown when the test files were not properly cleaned up
-     */
     @Override
-    @Before
-    public void before() throws IOException
+    public void before() throws InstantiationException
     {
         super.before();
         setLoggerEnabled(false);
@@ -75,7 +67,6 @@ public class SchedulerTest extends AbstractFileSystemUnitTest<Scheduler>
      * Deletes the cache directory of test files and clears the scheduler.
      */
     @Override
-    @After
     public void after()
     {
         super.after();

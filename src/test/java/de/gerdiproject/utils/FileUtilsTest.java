@@ -34,17 +34,18 @@ import org.junit.Test;
 
 import com.google.gson.Gson;
 
-import de.gerdiproject.AbstractUnitTest;
+import ch.qos.logback.classic.Level;
 import de.gerdiproject.harvest.utils.FileUtils;
 import de.gerdiproject.harvest.utils.cache.constants.CacheConstants;
 import de.gerdiproject.harvest.utils.data.DiskIO;
+import de.gerdiproject.harvest.utils.logger.constants.LoggerConstants;
 
 /**
  * This class provides test cases for the {@linkplain FileUtils}.
  *
  * @author Robin Weiss
  */
-public class FileUtilsTest extends AbstractUnitTest
+public class FileUtilsTest
 {
     private static final File TEST_FOLDER = new File("mocked");
     private static final File FILE_TEST_FOLDER = new File("mocked/fileUtilsTestDir");
@@ -101,6 +102,7 @@ public class FileUtilsTest extends AbstractUnitTest
     private static final String DELETE_DIR_ERROR = "Deleting non-existing directories, should not cause exceptions";
     private static final String DELETE_FILE_ERROR = "Deleting non-existing files, should not cause exceptions";
 
+    private final Level initialLogLevel = LoggerConstants.ROOT_LOGGER.getLevel();
 
 
     /**
@@ -707,5 +709,17 @@ public class FileUtilsTest extends AbstractUnitTest
         final File possiblyReplacedFile = MERGE_TEST_TARGET_FILES.get(0);
         final String expectedFileContent = replaceFiles ? COPY_TEST_TEXT : COPY_TEST_OVERWRITE_TEXT;
         assertEquals(expectedFileContent, diskIo.getString(possiblyReplacedFile));
+    }
+
+
+    /**
+     * Enables or disables the logger.
+     *
+     * @param state if true, the logger is enabled
+     */
+    protected void setLoggerEnabled(boolean state)
+    {
+        final Level newLevel = state ? initialLogLevel : Level.OFF;
+        LoggerConstants.ROOT_LOGGER.setLevel(newLevel);
     }
 }

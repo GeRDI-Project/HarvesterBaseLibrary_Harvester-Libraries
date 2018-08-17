@@ -61,17 +61,6 @@ public class HarvesterCacheManager implements IEventListener
 
 
     /**
-     * Registers a cache, adding it to the internal list of caches.
-     *
-     * @param cache the cache to be registered
-     */
-    public void registerCache(final HarvesterCache cache)
-    {
-        cacheList.add(cache);
-    }
-
-
-    /**
      * Returns an unmodifiable list of registered caches.
      *
      * @return an unmodifiable list of registered caches
@@ -95,6 +84,17 @@ public class HarvesterCacheManager implements IEventListener
             harvestedCount += cache.getChangesCache().size();
 
         return harvestedCount;
+    }
+
+
+    /**
+     * Registers a cache, adding it to the internal list of caches.
+     *
+     * @param cache the cache to be registered
+     */
+    private void registerCache(final HarvesterCache cache)
+    {
+        cacheList.add(cache);
     }
 
 

@@ -264,4 +264,26 @@ public class EventSystem
                 return null;
         }
     }
+
+
+    /**
+     * Checks if there are registered event listeners.
+     *
+     * @return true if there is at least one registered {@linkplain IEvent}
+     */
+    public static boolean hasAsynchronousEventListeners()
+    {
+        return !instance.callbackMap.isEmpty();
+    }
+
+
+    /**
+     * Checks if there are registered synchronous event listeners.
+     *
+     * @return true if there is at least one registered {@linkplain ISynchronousEvent}
+     */
+    public static boolean hasSynchronousEventListeners()
+    {
+        return !instance.synchronousCallbackMap.isEmpty();
+    }
 }

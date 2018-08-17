@@ -22,7 +22,6 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
 
 import java.io.File;
-import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
@@ -104,8 +103,6 @@ public class ConfigurationTest extends AbstractFileSystemUnitTest<Configuration>
      */
     public ConfigurationTest(String testingType)
     {
-        this.lastGlobalParamChange = null;
-        this.lastHarvesterParamChange = null;
         this.isTestingHarvesterParameters = testingType.equals(TEST_PARAM_HARVESTER);
     }
 
@@ -122,10 +119,9 @@ public class ConfigurationTest extends AbstractFileSystemUnitTest<Configuration>
 
 
     @Override
-    public void before() throws IOException
+    public void before() throws InstantiationException
     {
         super.before();
-
         EventSystem.addListener(GlobalParameterChangedEvent.class, this::onGlobalParameterChanged);
         EventSystem.addListener(HarvesterParameterChangedEvent.class, this::onHarvesterParameterChanged);
     }
@@ -135,9 +131,6 @@ public class ConfigurationTest extends AbstractFileSystemUnitTest<Configuration>
     public void after()
     {
         super.after();
-
-        EventSystem.removeAllListeners(GlobalParameterChangedEvent.class);
-        EventSystem.removeAllListeners(HarvesterParameterChangedEvent.class);
     }
 
 
@@ -149,7 +142,6 @@ public class ConfigurationTest extends AbstractFileSystemUnitTest<Configuration>
     public void testNullConstructor()
     {
         testedObject = new Configuration(null, null);
-
         assertEquals(0, getTestedParameters(testedObject).size());
     }
 

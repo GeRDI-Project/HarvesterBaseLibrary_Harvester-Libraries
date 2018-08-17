@@ -1,0 +1,129 @@
+/*
+ *  Copyright © 2018 Robin Weiss (http://www.gerdi-project.de/)
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
+ */
+package de.gerdiproject.utils;
+
+import static org.junit.Assert.assertEquals;
+
+import java.io.File;
+
+import org.junit.Test;
+
+import de.gerdiproject.AbstractUnitTest;
+import de.gerdiproject.harvest.event.EventSystem;
+import de.gerdiproject.harvest.save.HarvestSaver;
+import de.gerdiproject.harvest.utils.cache.HarvesterCache;
+import de.gerdiproject.harvest.utils.cache.HarvesterCacheManager;
+import de.gerdiproject.harvest.utils.cache.events.RegisterHarvesterCacheEvent;
+import de.gerdiproject.utils.examples.harvestercache.MockedHarvester;
+
+/**
+ * This class contains unit tests for the {@linkplain HarvestSaver}.
+ *
+ * @author Robin Weiss
+ */
+public class HarvesterCacheManagerTest extends AbstractUnitTest<HarvesterCacheManager>
+{
+    @Override
+    protected HarvesterCacheManager setUpTestObjects()
+    {
+        return new HarvesterCacheManager();
+    }
+
+
+    /**
+     * Tests if getHarvesterCaches() returns an empty list after construction.
+     */
+    @Test
+    public void testGetHarvesterCachesEmpty()
+    {
+        assert testedObject.getHarvesterCaches().isEmpty();
+    }
+
+
+    /**
+     * Tests if getHarvesterCaches() returns the same number of caches that
+     * were registered via registerCache().
+     */
+    @Test
+    public void testGetHarvesterCaches()
+    {
+        int numberOfRegisteredCaches = registerRandomNumberOfCaches();
+
+        assertEquals(numberOfRegisteredCaches, testedObject.getHarvesterCaches().size());
+    }
+
+
+    /**
+     * Tests if a cache that is registered via a {@linkplain RegisterHarvesterCacheEvent}
+     * can be retrieved via getHarvesterCaches().
+     */
+    @Test
+    public void testRegisteringCache()
+    {
+        testedObject.addEventListeners();
+        final HarvesterCache registeredCache = registerCache();
+
+        assertEquals(registeredCache, testedObject.getHarvesterCaches().get(0));
+    }
+
+
+    /**
+     * Tests if
+     */
+    @Test
+    public void test()
+    {
+    }
+
+
+    //////////////////////
+    // Non-test Methods //
+    //////////////////////
+
+    /**
+     * Registers 1 to 10 {@linkplain HarvesterCache} in the tested {@linkplain HarvesterCacheManager}.
+     *
+     * @return the number of registered caches
+     */
+    private int registerRandomNumberOfCaches()
+    {
+        testedObject.addEventListeners();
+
+        final int numberOfAddedCaches = 1 + random.nextInt(10);
+
+        for (int i = 0; i < numberOfAddedCaches; i++)
+            registerCache();
+
+        return numberOfAddedCaches;
+    }
+
+    /**
+     * Attempts to register a single {@linkplain HarvesterCache}.
+     *
+     * @return the registered {@linkplain HarvesterCache}
+     */
+    private HarvesterCache registerCache()
+    {
+        final MockedHarvester mockedHarvester = new MockedHarvester(new File(""));
+        final HarvesterCache registeredCache = new HarvesterCache(mockedHarvester);
+        final RegisterHarvesterCacheEvent registerEvent = new RegisterHarvesterCacheEvent(registeredCache);
+
+        EventSystem.sendEvent(registerEvent);
+
+        return registeredCache;
+    }
+}

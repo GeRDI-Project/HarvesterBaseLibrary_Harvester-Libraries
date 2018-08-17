@@ -314,6 +314,79 @@ public class EventSystemTest
     }
 
 
+    /**
+     * Tests if the {@linkplain EventSystem} has no initial asynchronous
+     * event listeners.
+     */
+    @Test
+    public void testEmptyEventListeners()
+    {
+        assert !EventSystem.hasAsynchronousEventListeners();
+    }
+
+
+    /**
+     * Tests if the {@linkplain EventSystem} has no initial synchronous
+     * event listeners.
+     */
+    @Test
+    public void testEmptySynchronousEventListeners()
+    {
+        assert !EventSystem.hasSynchronousEventListeners();
+    }
+
+
+    /**
+     * Tests if the hasAsynchronousEventListeners() function
+     * returns true if there are registered event listeners.
+     */
+    @Test
+    public void testNonEmptyEventListeners()
+    {
+        EventSystem.addListener(TestEvent.class, onTestEvent);
+        assert EventSystem.hasAsynchronousEventListeners();
+    }
+
+
+    /**
+     * Tests if the hasSynchronousEventListeners() function
+     * returns true if there are registered synchronous event listeners.
+     */
+    @Test
+    public void testNonEmptySynchronousEventListeners()
+    {
+        EventSystem.addSynchronousListener(TestSynchronousEvent.class, onTestSyncEvent);
+        assert EventSystem.hasSynchronousEventListeners();
+    }
+
+    /**
+     * Tests if the {@linkplain EventSystem} has no initial asynchronous
+     * event listeners.
+     */
+    @Test
+    public void testEmptyEventListenersAfterRemoval()
+    {
+        EventSystem.addListener(TestEvent.class, onTestEvent);
+        EventSystem.removeListener(TestEvent.class, onTestEvent);
+
+        assert !EventSystem.hasAsynchronousEventListeners();
+    }
+
+
+    /**
+     * Tests if the {@linkplain EventSystem} has no initial synchronous
+     * event listeners.
+     */
+    @Test
+    public void testEmptySynchronousEventListenersAfterRemoval()
+    {
+        EventSystem.addSynchronousListener(TestSynchronousEvent.class, onTestSyncEvent);
+        EventSystem.removeSynchronousListener(TestSynchronousEvent.class);
+
+        assert !EventSystem.hasSynchronousEventListeners();
+    }
+
+
     //////////////////////
     // Non-test Methods //
     //////////////////////

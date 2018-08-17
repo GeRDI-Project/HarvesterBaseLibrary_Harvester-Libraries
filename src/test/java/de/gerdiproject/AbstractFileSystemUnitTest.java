@@ -18,12 +18,7 @@ package de.gerdiproject;
 
 import java.io.File;
 import java.io.IOException;
-import java.lang.reflect.ParameterizedType;
 
-import org.junit.After;
-import org.junit.Before;
-
-import de.gerdiproject.harvest.event.IEventListener;
 import de.gerdiproject.harvest.utils.FileUtils;
 
 /**
@@ -33,13 +28,12 @@ import de.gerdiproject.harvest.utils.FileUtils;
  *
  * @author Robin Weiss
  */
-public abstract class AbstractFileSystemUnitTest<T> extends AbstractUnitTest
+public abstract class AbstractFileSystemUnitTest<T> extends AbstractUnitTest<T>
 {
     private static final File TEST_FOLDER = new File("mocked");
     private static final String CLEANUP_ERROR = "Could not delete temporary test diectory: " + TEST_FOLDER;
 
-    protected final File testFolder = getTestSubFolder();
-    protected T testedObject;
+    protected final File testFolder = new File(TEST_FOLDER, getTestedClass().getSimpleName());
 
 
     /**
@@ -49,15 +43,15 @@ public abstract class AbstractFileSystemUnitTest<T> extends AbstractUnitTest
      *
      * @throws IOException thrown when the test folder could not be deleted
      */
-    @Before
-    public void before() throws IOException
+    @Override
+    public void before() throws InstantiationException
     {
         FileUtils.deleteFile(TEST_FOLDER);
 
         if (TEST_FOLDER.exists())
-            throw new IOException(CLEANUP_ERROR);
+            throw new InstantiationException(CLEANUP_ERROR);
 
-        testedObject = setUpTestObjects();
+        super.before();
     }
 
 
@@ -65,36 +59,11 @@ public abstract class AbstractFileSystemUnitTest<T> extends AbstractUnitTest
      * Removes event listeners of the tested object if applicable.
      * Deletes the test folder to free up some space.
      */
-    @After
+    @Override
     public void after()
     {
-        if (testedObject instanceof IEventListener)
-            ((IEventListener) testedObject).removeEventListeners();
+        super.after();
 
-        testedObject = null;
         FileUtils.deleteFile(TEST_FOLDER);
-    }
-
-
-    /**
-     * Sets up all objects that are required for the following test
-     * and returns the main tested object.
-     *
-     * @return the main tested object
-     */
-    protected abstract T setUpTestObjects();
-
-    /**
-     * Sets up a folder as a child of the global test folder.
-     * The sub-folder is named after the tested class.
-     *
-     * @return a dedicated folder for the tested object
-     */
-    private File getTestSubFolder()
-    {
-        @SuppressWarnings("unchecked")
-        Class<T> testedObjectClass = (Class<T>)((ParameterizedType) getClass().getGenericSuperclass()).getActualTypeArguments()[0];
-
-        return new File(TEST_FOLDER, testedObjectClass.getSimpleName());
     }
 }
