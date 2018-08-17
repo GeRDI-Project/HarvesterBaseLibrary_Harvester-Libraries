@@ -67,21 +67,30 @@ public class HarvestSaver implements IEventListener
     private long harvestStartTime;
     private long harvestEndTime;
     private String sourceHash;
+
+    private final File saveFolder;
     private final String fileName;
     private final Charset charset;
+    private final HarvesterCacheManager cacheManager;
 
 
     /**
      * Constructor that sets final fields and retrieves timestamps from a specified {@linkplain ProcessTimeMeasure}.
+     *
+     * @param saveFolder the folder in which the files are saved
      * @param fileName the name of the saved file which serves as a prefix to which
      * a timestamp will be appended
      * @param charset the charset of the file writer
      * @param harvestMeasure the harvest time measure of which timestamps will be retrieved
+     * @param cacheManager the manager of harvester caches
      */
-    public HarvestSaver(String fileName, Charset charset, ProcessTimeMeasure harvestMeasure)
+    public HarvestSaver(File saveFolder, String fileName, Charset charset, ProcessTimeMeasure harvestMeasure, HarvesterCacheManager cacheManager)
     {
+        this.saveFolder = saveFolder;
         this.fileName = fileName;
         this.charset = charset;
+        this.cacheManager = cacheManager;
+
         this.harvestStartTime = harvestMeasure.getStartTimestamp();
         this.harvestEndTime = harvestMeasure.getEndTimestamp();
 
@@ -199,7 +208,7 @@ public class HarvestSaver implements IEventListener
     private Callable<Boolean> createSaveProcess(boolean isAutoTriggered)
     {
         return () -> {
-            int documentCount = HarvesterCacheManager.instance().getNumberOfHarvestedDocuments();
+            int documentCount = cacheManager.getNumberOfHarvestedDocuments();
             EventSystem.sendEvent(new SaveStartedEvent(isAutoTriggered, documentCount));
 
             if (documentCount == 0)
@@ -242,7 +251,7 @@ public class HarvestSaver implements IEventListener
      */
     public File getTargetFile()
     {
-        return new File(SaveConstants.SAVE_FOLDER, String.format(
+        return new File(saveFolder, String.format(
                             SaveConstants.SAVE_FILE_NAME,
                             fileName,
                             harvestStartTime));
@@ -289,7 +298,7 @@ public class HarvestSaver implements IEventListener
         writer.beginArray();
 
         // iterate through cached array
-        final List<HarvesterCache> cacheList = HarvesterCacheManager.instance().getHarvesterCaches();
+        final List<HarvesterCache> cacheList = cacheManager.getHarvesterCaches();
         boolean isSuccessful = false;
 
         for (HarvesterCache cache : cacheList) {

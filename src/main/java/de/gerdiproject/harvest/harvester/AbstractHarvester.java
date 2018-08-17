@@ -56,6 +56,7 @@ import de.gerdiproject.harvest.submission.elasticsearch.ElasticSearchSubmitter;
 import de.gerdiproject.harvest.utils.CancelableFuture;
 import de.gerdiproject.harvest.utils.cache.HarvesterCache;
 import de.gerdiproject.harvest.utils.cache.constants.CacheConstants;
+import de.gerdiproject.harvest.utils.cache.events.RegisterHarvesterCacheEvent;
 import de.gerdiproject.harvest.utils.data.HttpRequester;
 import de.gerdiproject.harvest.utils.data.constants.DataOperationConstants;
 import de.gerdiproject.json.GsonUtils;
@@ -177,6 +178,8 @@ public abstract class AbstractHarvester
         if (documentsCache == null) {
             cache = new HarvesterCache(this);
             cache.addEventListeners();
+
+            EventSystem.sendEvent(new RegisterHarvesterCacheEvent(cache));
         } else
             cache = documentsCache;
 

@@ -29,10 +29,8 @@ import de.gerdiproject.harvest.IDocument;
 import de.gerdiproject.harvest.MainContext;
 import de.gerdiproject.harvest.config.constants.ConfigurationConstants;
 import de.gerdiproject.harvest.config.events.GlobalParameterChangedEvent;
-import de.gerdiproject.harvest.config.parameters.IntegerParameter;
-import de.gerdiproject.harvest.config.parameters.StringParameter;
-import de.gerdiproject.harvest.config.parameters.UrlParameter;
 import de.gerdiproject.harvest.event.EventSystem;
+import de.gerdiproject.harvest.event.IEventListener;
 import de.gerdiproject.harvest.state.events.AbortingFinishedEvent;
 import de.gerdiproject.harvest.state.events.AbortingStartedEvent;
 import de.gerdiproject.harvest.state.events.StartAbortingEvent;
@@ -52,7 +50,7 @@ import de.gerdiproject.json.datacite.DataCiteJson;
  *
  * @author Robin Weiss
  */
-public abstract class AbstractSubmitter
+public abstract class AbstractSubmitter implements IEventListener
 {
     private CancelableFuture<Boolean> currentSubmissionProcess;
     private int failedDocumentCount;
@@ -102,6 +100,8 @@ public abstract class AbstractSubmitter
      */
     protected URL url;
 
+    private HarvesterCacheManager cacheManager;
+
 
     /**
      * Constructor that initializes the {@linkplain Logger}.
@@ -114,13 +114,32 @@ public abstract class AbstractSubmitter
     }
 
 
-    /**
-     * Adds event listeners.
-     */
-    public void init()
+    @Override
+    public void addEventListeners()
     {
         EventSystem.addListener(StartSubmissionEvent.class, onStartSubmission);
-        EventSystem.addListener(GlobalParameterChangedEvent.class, this::onGlobalParameterChanged);
+        EventSystem.addListener(GlobalParameterChangedEvent.class, onGlobalParameterChanged);
+
+    }
+
+
+    @Override
+    public void removeEventListeners()
+    {
+        EventSystem.removeListener(StartSubmissionEvent.class, onStartSubmission);
+        EventSystem.removeListener(GlobalParameterChangedEvent.class, onGlobalParameterChanged);
+
+    }
+
+
+    /**
+     * Changes the {@linkplain HarvesterCacheManager} used for retrieving the documents to be submitted.
+     *
+     * @param cacheManager the {@linkplain HarvesterCacheManager} used for retrieving documents
+     */
+    public void setCacheManager(HarvesterCacheManager cacheManager)
+    {
+        this.cacheManager = cacheManager;
     }
 
 
@@ -186,7 +205,7 @@ public abstract class AbstractSubmitter
             boolean areAllSubmissionsSuccessful = true;
 
             // go through all registered caches and process their documents
-            final List<HarvesterCache> cacheList = HarvesterCacheManager.instance().getHarvesterCaches();
+            final List<HarvesterCache> cacheList = cacheManager.getHarvesterCaches();
 
             for (final HarvesterCache cache : cacheList)
             {
@@ -400,20 +419,6 @@ public abstract class AbstractSubmitter
 
 
     /**
-     * Creates login credentials for a submission.
-     *
-     * @return a base64 encoded username/password string
-     */
-    protected String getCredentials()
-    {
-        if (userName == null || password == null || userName.isEmpty())
-            return null;
-        else
-            return Base64.getEncoder().encodeToString((userName + ":" + password).getBytes(MainContext.getCharset()));
-    }
-
-
-    /**
      * Iterates through all registered caches and calculates the total number of
      * submitted changes.
      *
@@ -421,14 +426,55 @@ public abstract class AbstractSubmitter
      */
     protected int getNumberOfSubmittableChanges()
     {
-        return HarvesterCacheManager.instance().getNumberOfHarvestedDocuments();
+        return cacheManager.getNumberOfHarvestedDocuments();
+    }
+
+
+    /**
+     * Changes the credentials that may be necessary to authenticate the submitter
+     * with the URL.
+     *
+     * @param userName the new user name used for authenticating the submitter
+     * @param password the new user password used for authenticating the submitter
+     */
+    protected void setCredentials(String userName, String password)
+    {
+        this.userName = userName;
+        this.password = password;
+
+        if (userName == null || password == null || userName.isEmpty())
+            this.credentials = null;
+        else
+            this.credentials = Base64.getEncoder().encodeToString((userName + ":" + password).getBytes(MainContext.getCharset()));
+    }
+
+
+    /**
+     * Changes the maximum allowed submission request size, used
+     * for dividing the submission into multiple submission requests.
+     *
+     * @param maxBatchSize the new submission request size in bytes
+     */
+    protected void setMaxBatchSize(int maxBatchSize)
+    {
+        this.maxBatchSize = maxBatchSize;
+    }
+
+
+    /**
+     * Changes the URL to which the documents are submitted.
+     *
+     * @param url the new URL to which documents are submitted
+     */
+    protected void setUrl(URL url)
+    {
+        this.url = url;
     }
 
 
     //////////////////////////////
     // Event Callback Functions //
     //////////////////////////////
-
 
     /**
      * Event callback: When a submission starts, submit the cache file via the
@@ -456,30 +502,29 @@ public abstract class AbstractSubmitter
      *
      * @param e the event that triggered the parameter change
      */
-    protected void onGlobalParameterChanged(GlobalParameterChangedEvent e)
-    {
-        final String paramName = e.getParameter().getKey();
+    private Consumer<GlobalParameterChangedEvent> onGlobalParameterChanged = (GlobalParameterChangedEvent e) -> {
+        final String parameterName = e.getParameter().getKey();
+        final Object newValue = e.getParameter().getValue();
 
-        switch (paramName) {
+        switch (parameterName)
+        {
             case ConfigurationConstants.SUBMISSION_SIZE:
-                this.maxBatchSize = ((IntegerParameter) e.getParameter()).getValue();
+                setMaxBatchSize((Integer) newValue);
                 break;
 
             case ConfigurationConstants.SUBMISSION_URL:
-                this.url = ((UrlParameter) e.getParameter()).getValue();
+                setUrl((URL) newValue);
                 break;
 
             case ConfigurationConstants.SUBMISSION_USER_NAME:
-                this.userName = ((StringParameter) e.getParameter()).getValue();
-                this.credentials = getCredentials();
+                setCredentials((String) newValue, password);
                 break;
 
             case ConfigurationConstants.SUBMISSION_PASSWORD:
-                this.password = ((StringParameter) e.getParameter()).getValue();
-                this.credentials = getCredentials();
+                setCredentials(userName, (String) newValue);
                 break;
 
-            default: // ignore
+            default: // ignore parameter
         }
     };
 }

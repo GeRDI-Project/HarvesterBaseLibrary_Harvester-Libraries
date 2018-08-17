@@ -19,6 +19,11 @@ package de.gerdiproject.harvest.utils.cache;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.function.Consumer;
+
+import de.gerdiproject.harvest.event.EventSystem;
+import de.gerdiproject.harvest.event.IEventListener;
+import de.gerdiproject.harvest.utils.cache.events.RegisterHarvesterCacheEvent;
 
 /**
  * This class manages a list of all {@linkplain HarvesterCache}s. It provides
@@ -26,29 +31,32 @@ import java.util.List;
  *
  * @author Robin Weiss
  */
-public class HarvesterCacheManager
+public class HarvesterCacheManager implements IEventListener
 {
-    private static HarvesterCacheManager instance = new HarvesterCacheManager();
     private final List<HarvesterCache> cacheList;
 
 
     /**
      * Private constructor for singleton usage.
      */
-    private HarvesterCacheManager()
+    public HarvesterCacheManager()
     {
         cacheList = Collections.synchronizedList(new LinkedList<>());
     }
 
 
-    /**
-     * Returns the singleton instance.
-     *
-     * @return the singletons instance
-     */
-    public static HarvesterCacheManager instance()
+    @Override
+    public void addEventListeners()
     {
-        return instance;
+        EventSystem.addListener(RegisterHarvesterCacheEvent.class, onRegisterHarvesterCache);
+
+    }
+
+
+    @Override
+    public void removeEventListeners()
+    {
+        EventSystem.removeListener(RegisterHarvesterCacheEvent.class, onRegisterHarvesterCache);
     }
 
 
@@ -88,4 +96,15 @@ public class HarvesterCacheManager
 
         return harvestedCount;
     }
+
+
+    //////////////////////////////
+    // Event Callback Functions //
+    //////////////////////////////
+
+    /**
+     * Callback function for registering a {@linkplain HarvesterCache}.
+     */
+    private Consumer<RegisterHarvesterCacheEvent> onRegisterHarvesterCache =
+        (RegisterHarvesterCacheEvent event) -> registerCache(event.getCache());
 }

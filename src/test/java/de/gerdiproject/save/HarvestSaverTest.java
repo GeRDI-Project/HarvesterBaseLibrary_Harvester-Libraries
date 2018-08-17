@@ -20,7 +20,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 
 import java.nio.charset.StandardCharsets;
-import java.util.Random;
 
 import org.junit.Test;
 
@@ -30,6 +29,7 @@ import de.gerdiproject.harvest.harvester.events.HarvestStartedEvent;
 import de.gerdiproject.harvest.save.HarvestSaver;
 import de.gerdiproject.harvest.save.constants.SaveConstants;
 import de.gerdiproject.harvest.save.events.StartSaveEvent;
+import de.gerdiproject.harvest.utils.cache.HarvesterCacheManager;
 import de.gerdiproject.harvest.utils.time.ProcessTimeMeasure;
 import de.gerdiproject.harvest.utils.time.ProcessTimeMeasure.ProcessStatus;
 
@@ -42,20 +42,22 @@ public class HarvestSaverTest extends AbstractFileSystemUnitTest<HarvestSaver>
 {
     private static final String TEST_NAME = "saveTest";
 
+    private HarvesterCacheManager cacheManager = new HarvesterCacheManager();
+
     private ProcessTimeMeasure measure;
 
 
     @Override
     protected HarvestSaver setUpTestObjects()
     {
-        final Random random = new Random();
         final long startTimestamp = random.nextLong();
         final long endTimestamp = random.longs(startTimestamp + 1, startTimestamp + 99999999).findAny().getAsLong();
 
         this.measure = new ProcessTimeMeasure();
         this.measure.set(startTimestamp, endTimestamp, ProcessStatus.Finished);
+        this.cacheManager = new HarvesterCacheManager();
 
-        HarvestSaver saver = new HarvestSaver(TEST_NAME, StandardCharsets.UTF_8, measure);
+        final HarvestSaver saver = new HarvestSaver(testFolder, TEST_NAME, StandardCharsets.UTF_8, measure, cacheManager);
         saver.addEventListeners();
 
         return saver;
@@ -66,6 +68,9 @@ public class HarvestSaverTest extends AbstractFileSystemUnitTest<HarvestSaver>
     public void after()
     {
         super.after();
+
+        cacheManager.removeEventListeners();
+        cacheManager = null;
 
         measure.removeEventListeners();
         measure = null;
@@ -111,5 +116,11 @@ public class HarvestSaverTest extends AbstractFileSystemUnitTest<HarvestSaver>
     {
         EventSystem.sendEvent(new StartSaveEvent(false));
         // TODO
+    }
+
+    @Test
+    public void testRemovingEventListeners()
+    {
+        testedObject.removeEventListeners();
     }
 }

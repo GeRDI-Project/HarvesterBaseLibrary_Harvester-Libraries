@@ -32,13 +32,16 @@ import de.gerdiproject.harvest.event.IEventListener;
 import de.gerdiproject.harvest.harvester.AbstractHarvester;
 import de.gerdiproject.harvest.harvester.events.HarvesterInitializedEvent;
 import de.gerdiproject.harvest.save.HarvestSaver;
+import de.gerdiproject.harvest.save.constants.SaveConstants;
 import de.gerdiproject.harvest.scheduler.Scheduler;
 import de.gerdiproject.harvest.scheduler.constants.SchedulerConstants;
 import de.gerdiproject.harvest.state.StateMachine;
 import de.gerdiproject.harvest.state.impl.InitializationState;
 import de.gerdiproject.harvest.submission.AbstractSubmitter;
 import de.gerdiproject.harvest.utils.CancelableFuture;
+import de.gerdiproject.harvest.utils.cache.HarvesterCacheManager;
 import de.gerdiproject.harvest.utils.cache.constants.CacheConstants;
+import de.gerdiproject.harvest.utils.cache.events.GetNumberOfHarvestedDocumentsEvent;
 import de.gerdiproject.harvest.utils.logger.HarvesterLog;
 import de.gerdiproject.harvest.utils.logger.constants.LoggerConstants;
 import de.gerdiproject.harvest.utils.logger.events.GetMainLogEvent;
@@ -60,6 +63,7 @@ public class MainContext implements IEventListener
 
     private final HarvestSaver saver;
     private final HarvesterLog log;
+    private final HarvesterCacheManager cacheManager;
     private final String moduleName;
     private final HarvestTimeKeeper timeKeeper;
     private final AbstractHarvester harvester;
@@ -72,6 +76,7 @@ public class MainContext implements IEventListener
     private final MavenUtils mavenUtils;
     private final Function<GetMainLogEvent, HarvesterLog> onGetMainLog;
     private final Function<GetMavenUtilsEvent, MavenUtils> onGetMavenUtils;
+    private final Function<GetNumberOfHarvestedDocumentsEvent, Integer> onGetNumberOfHarvestedDocuments;
 
 
     /**
@@ -109,16 +114,23 @@ public class MainContext implements IEventListener
         timeKeeper.loadFromDisk();
 
         this.mavenUtils = new MavenUtils(harvesterClass);
-        this.onGetMavenUtils = (GetMavenUtilsEvent event) -> { return mavenUtils;};
+        this.onGetMavenUtils = (GetMavenUtilsEvent event) -> mavenUtils;
 
-        // initialize saver
-        this.saver = new HarvestSaver(moduleName, charset, timeKeeper.getHarvestMeasure());
+        this.cacheManager = new HarvesterCacheManager();
+        this.cacheManager.addEventListeners();
+        this.onGetNumberOfHarvestedDocuments = (GetNumberOfHarvestedDocumentsEvent event) -> cacheManager.getNumberOfHarvestedDocuments();
 
-        // initialize submitter
+        this.saver = new HarvestSaver(
+            SaveConstants.DEFAULT_SAVE_FOLDER,
+            moduleName,
+            charset,
+            timeKeeper.getHarvestMeasure(),
+            cacheManager);
+
         this.submitter = submitter;
-        submitter.init();
+        submitter.setCacheManager(cacheManager);
+        submitter.addEventListeners();
 
-        // initialize harvester
         this.harvester = harvesterClass.newInstance();
         harvester.setAsMainHarvester();
 
@@ -192,6 +204,7 @@ public class MainContext implements IEventListener
     {
         EventSystem.addSynchronousListener(GetMainLogEvent.class, onGetMainLog);
         EventSystem.addSynchronousListener(GetMavenUtilsEvent.class, onGetMavenUtils);
+        EventSystem.addSynchronousListener(GetNumberOfHarvestedDocumentsEvent.class, onGetNumberOfHarvestedDocuments);
         saver.addEventListeners();
         timeKeeper.addEventListeners();
         scheduler.addEventListeners();

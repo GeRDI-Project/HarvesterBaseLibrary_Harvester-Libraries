@@ -28,8 +28,6 @@ import com.google.gson.Gson;
 
 import de.gerdiproject.harvest.IDocument;
 import de.gerdiproject.harvest.MainContext;
-import de.gerdiproject.harvest.config.constants.ConfigurationConstants;
-import de.gerdiproject.harvest.config.events.GlobalParameterChangedEvent;
 import de.gerdiproject.harvest.submission.AbstractSubmitter;
 import de.gerdiproject.harvest.submission.elasticsearch.constants.ElasticSearchConstants;
 import de.gerdiproject.harvest.submission.elasticsearch.json.ElasticSearchIndex;
@@ -47,7 +45,7 @@ import de.gerdiproject.harvest.utils.data.enums.RestRequestType;
  */
 public class ElasticSearchSubmitter extends AbstractSubmitter
 {
-    private HttpRequester httpRequester;
+    private final HttpRequester httpRequester;
     private final Gson gson;
 
 
@@ -58,13 +56,6 @@ public class ElasticSearchSubmitter extends AbstractSubmitter
     {
         super();
         this.gson = new Gson();
-    }
-
-
-    @Override
-    public void init()
-    {
-        super.init();
         httpRequester = new HttpRequester(MainContext.getCharset(), gson);
     }
 
@@ -175,12 +166,9 @@ public class ElasticSearchSubmitter extends AbstractSubmitter
 
 
     @Override
-    protected void onGlobalParameterChanged(GlobalParameterChangedEvent event)
+    protected void setUrl(URL url)
     {
-        super.onGlobalParameterChanged(event);
-
-        // if the url was changed, convert it to a bulk submission url
-        if (event.getParameter().getKey().equals(ConfigurationConstants.SUBMISSION_URL) && url != null) {
+        if (url != null) {
             String rawPath = url.getPath() + '/';
             String[] path = rawPath.substring(1).split("/");
             String bulkSubmitUrl = url.toString();
@@ -202,24 +190,23 @@ public class ElasticSearchSubmitter extends AbstractSubmitter
 
             try {
                 // check if the URL is valid
-                url = new URL(bulkSubmitUrl);
+                this.url = new URL(bulkSubmitUrl);
             } catch (MalformedURLException e) {
-                url = null;
+                this.url = null;
             }
-        }
+        } else
+            this.url = null;
     }
 
 
     @Override
-    protected String getCredentials()
+    protected void setCredentials(String userName, String password)
     {
-        String newCredentials = super.getCredentials();
+        super.setCredentials(userName, password);
 
         // prepend Basic-Authorization keyword
-        if (newCredentials != null)
-            return ElasticSearchConstants.BASIC_AUTH_PREFIX + newCredentials;
-        else
-            return null;
+        if (this.credentials != null)
+            this.credentials = ElasticSearchConstants.BASIC_AUTH_PREFIX + credentials;
     }
 
 

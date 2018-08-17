@@ -31,19 +31,6 @@ public class CacheConstants
 
     public static final String CACHE_FOLDER_PATH = "cache/%s/";
 
-    @Deprecated
-    public static final String UPDATE_CACHE_FILE_PATH =
-        CACHE_FOLDER_PATH
-        + "%s_updatedDocuments"
-        + JSON_FILE_EXTENSION
-        + JSON_FILE_EXTENSION;
-
-    @Deprecated
-    public static final String VERSIONS_CACHE_FILE_PATH =
-        CACHE_FOLDER_PATH
-        + "%s_documentVersions"
-        + JSON_FILE_EXTENSION;
-
     public static final String HARVEST_TIME_KEEPER_CACHE_FILE_PATH =
         CACHE_FOLDER_PATH
         + "processTimes"

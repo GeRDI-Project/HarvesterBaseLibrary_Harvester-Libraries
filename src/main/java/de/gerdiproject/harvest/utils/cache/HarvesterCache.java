@@ -77,8 +77,6 @@ public class HarvesterCache implements IEventListener
 
         // set clean up event listener
         this.onContextDestroyed = (ContextDestroyedEvent event) -> FileUtils.deleteFile(temporaryCacheFolder);
-
-        HarvesterCacheManager.instance().registerCache(this);
     }
 
 

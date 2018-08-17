@@ -33,7 +33,7 @@ public class SaveConstants
     public static final String HARVEST_FROM_JSON = "sourceRangeFrom";
     public static final String HARVEST_TO_JSON = "sourceRangeTo";
 
-    public static final File SAVE_FOLDER = new File("savedDocuments");
+    public static final File DEFAULT_SAVE_FOLDER = new File("savedDocuments");
     public static final String SAVE_FILE_NAME =  "%s_%d.json";
     public static final String SAVE_FAILED_EMPTY = "Could not save documents: There are no changes to save!";
 
