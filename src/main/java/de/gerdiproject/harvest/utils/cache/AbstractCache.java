@@ -22,6 +22,8 @@ import java.nio.charset.Charset;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.function.BiFunction;
 
 import de.gerdiproject.harvest.utils.FileUtils;
@@ -31,12 +33,12 @@ import de.gerdiproject.json.GsonUtils;
 
 
 /**
- * This abstract class represents two cache folders, one which is called
+ * This abstract class manages two cache folders, one which is called
  * "stable" and one which is called "work-in-progress" folder.
- * Both folders may contain subfolders with names that consist
+ * Both folders contain subfolders with names that consist
  * of the first two characters of a documentID. Inside these folders are
  * files that are named after the rest of the documentID. The content
- * of these files can be determined by setting the Template.
+ * of these files can be determined by setting the Java template class.
  * @author Robin Weiss
  *
  * @param <T> the class of the file content of each cached file
@@ -141,6 +143,22 @@ public abstract class AbstractCache <T>
 
 
     /**
+     * Returns a list of all cached stable document IDs.
+     *
+     * @return a list of all cached stable document IDs
+     */
+    public List<String> getDocumentIDs()
+    {
+        final List<String> documentIds = new LinkedList<>();
+        forEach((String documentId, T document) -> {
+            return documentIds.add(documentId);
+        });
+
+        return documentIds;
+    }
+
+
+    /**
      * Removes a file from the cache.
      *
      * @param documentId the ID of the file that is to be removed
@@ -196,6 +214,7 @@ public abstract class AbstractCache <T>
         else
             return null;
     }
+
 
     /**
      * Assembles the file path to a cached file.

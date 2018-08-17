@@ -18,6 +18,7 @@ package de.gerdiproject.harvest.utils.cache;
 
 import java.io.File;
 import java.nio.charset.Charset;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import de.gerdiproject.harvest.utils.FileUtils;
@@ -53,28 +54,23 @@ public class DocumentChangesCache extends AbstractCache<DataCiteJson>
 
 
     /**
-     * Initializes the cache by copying all documentIDs from a
-     * versions cache folder as empty files.
+     * Initializes the cache by creating empty files for every document
+     * that is expected to be harvested.
      *
-     * @param versionsCache a cache of previously harvested IDs
+     * @param documentIDs a List of documentIDs for which empty
      */
-    public void init(DocumentVersionsCache versionsCache)
+    public void init(List<String> documentIDs)
     {
         // create new file
         final AtomicInteger numberOfCopiedIds = new AtomicInteger(0);
 
         // copy documentIds and count them
-        boolean isSuccessful = false;
-        isSuccessful = versionsCache.forEach((String documentId, String documentHash) -> {
+        documentIDs.forEach((String documentId) -> {
             FileUtils.createEmptyFile(getFile(documentId, false));
             numberOfCopiedIds.incrementAndGet();
-            return true;
         });
 
-        if (isSuccessful)
-            this.size = numberOfCopiedIds.get();
-        else
-            this.size = 0;
+        this.size = numberOfCopiedIds.get();
     }
 
 

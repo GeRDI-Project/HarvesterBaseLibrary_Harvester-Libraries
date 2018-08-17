@@ -22,6 +22,8 @@ import static org.junit.Assert.assertNull;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -31,7 +33,6 @@ import org.junit.Test;
 
 import de.gerdiproject.harvest.utils.FileUtils;
 import de.gerdiproject.harvest.utils.cache.DocumentChangesCache;
-import de.gerdiproject.harvest.utils.cache.DocumentVersionsCache;
 import de.gerdiproject.harvest.utils.cache.constants.CacheConstants;
 import de.gerdiproject.json.datacite.DataCiteJson;
 
@@ -46,7 +47,6 @@ public class DocumentChangesCacheTest
     private static final String TEMP_CACHE_FOLDER = CACHE_PARENT_FOLDER.getPath() + "/temp/";
     private static final String STABLE_CACHE_FOLDER = CACHE_PARENT_FOLDER.getPath() + "/stable/";
 
-    private static final String HARVESTER_HASH = "ABC";
     private static final String DOCUMENT_ID = "mockedId";
     private static final String CLEANUP_ERROR = "Could not delete temporary test diectory: " + CACHE_PARENT_FOLDER;
 
@@ -94,23 +94,17 @@ public class DocumentChangesCacheTest
     @Test
     public void testInit()
     {
-        final DocumentVersionsCache versionsCache = new DocumentVersionsCache(
-            TEMP_CACHE_FOLDER,
-            STABLE_CACHE_FOLDER,
-            StandardCharsets.UTF_8);
-
-        versionsCache.init(HARVESTER_HASH);
-
         // add 1-10 version cache documents
         int size = 1 + random.nextInt(10);
 
-        for (int i = 0; i < size; i++)
-            versionsCache.putFile(DOCUMENT_ID + i, DOCUMENT_ID + i);
+        List<String> documentIDs = new LinkedList<>();
 
-        versionsCache.applyChanges();
+        for (int i = 0; i < size; i++)
+            documentIDs.add(DOCUMENT_ID + i);
+
 
         // initialize changes cache with the version cache
-        changesCache.init(versionsCache);
+        changesCache.init(documentIDs);
 
         // test if as many empty files were created as there were version files
         for (int i = 0; i < size; i++) {
@@ -126,7 +120,7 @@ public class DocumentChangesCacheTest
     @Test
     public void testPuttingFiles()
     {
-        final int numberOfPutFiles = putRandomAmountOfFiles(true);
+        final int numberOfPutFiles = putRandomNumberOfFiles(true);
 
         // test if as many non-empty files were created as there were version files
         for (int i = 0; i < numberOfPutFiles; i++) {
@@ -142,7 +136,7 @@ public class DocumentChangesCacheTest
     @Test
     public void testSizeWhenPuttingFiles()
     {
-        final int numberOfPutFiles = putRandomAmountOfFiles(true);
+        final int numberOfPutFiles = putRandomNumberOfFiles(true);
         assertEquals(numberOfPutFiles, changesCache.size());
     }
 
@@ -167,7 +161,7 @@ public class DocumentChangesCacheTest
     @Test
     public void testSizeWhenRemovingFiles()
     {
-        final int numberOfPutFiles = putRandomAmountOfFiles(true);
+        final int numberOfPutFiles = putRandomNumberOfFiles(true);
         final int numberOfRemovedFiles = 1 + random.nextInt(numberOfPutFiles);
 
         for (int i = 0; i < numberOfRemovedFiles; i++)
@@ -178,12 +172,27 @@ public class DocumentChangesCacheTest
 
 
     /**
+     * Tests if the getDocumentIDs() method returns all stable documentIDs.
+     */
+    @Test
+    public void testGettingDocumentIDs()
+    {
+        final int numberOfPutFiles = putRandomNumberOfFiles(false);
+
+        List<String> documentIDs = changesCache.getDocumentIDs();
+
+        for (int i = 0; i < numberOfPutFiles; i++)
+            assert documentIDs.contains(DOCUMENT_ID + i);
+    }
+
+
+    /**
      * Tests if the applyChanges() method moves all temporary files to the stable folder.
      */
     @Test
     public void testApplyingChanges()
     {
-        final int numberOfPutFiles = putRandomAmountOfFiles(true);
+        final int numberOfPutFiles = putRandomNumberOfFiles(true);
         changesCache.applyChanges();
 
         // test if as many non-empty files were created as there were version files
@@ -201,7 +210,7 @@ public class DocumentChangesCacheTest
     @Test
     public void testRetrievingTemporaryFileContent()
     {
-        final int numberOfPutFiles = putRandomAmountOfFiles(true);
+        final int numberOfPutFiles = putRandomNumberOfFiles(true);
 
         for (int i = 0; i < numberOfPutFiles; i++)
             assertNull(changesCache.getFileContent(DOCUMENT_ID + i));
@@ -215,7 +224,7 @@ public class DocumentChangesCacheTest
     @Test
     public void testRetrievingStableFileContent()
     {
-        final int numberOfPutFiles = putRandomAmountOfFiles(false);
+        final int numberOfPutFiles = putRandomNumberOfFiles(false);
 
         for (int i = 0; i < numberOfPutFiles; i++) {
             final DataCiteJson retrievedDocument = changesCache.getFileContent(DOCUMENT_ID + i);
@@ -231,7 +240,7 @@ public class DocumentChangesCacheTest
     @Test
     public void testForEachIntegrity()
     {
-        putRandomAmountOfFiles(false);
+        putRandomNumberOfFiles(false);
 
         // test if each document has a publication year that is equal to
         // the suffix of the document id
@@ -251,7 +260,7 @@ public class DocumentChangesCacheTest
     @Test
     public void testForEachTemporaryFiles()
     {
-        putRandomAmountOfFiles(true);
+        putRandomNumberOfFiles(true);
         boolean successfulIteration = changesCache.forEach(
         (String documentId, DataCiteJson document) -> {
             return false;
@@ -266,7 +275,7 @@ public class DocumentChangesCacheTest
     @Test
     public void testForEachNumberOfProcessedFiles()
     {
-        final int numberOfPutFiles = putRandomAmountOfFiles(false);
+        final int numberOfPutFiles = putRandomNumberOfFiles(false);
         final AtomicInteger numberOfProcessedFiles = new AtomicInteger(0);
 
         changesCache.forEach(
@@ -286,7 +295,7 @@ public class DocumentChangesCacheTest
     @Test
     public void testForEachReturningFalse()
     {
-        putRandomAmountOfFiles(false);
+        putRandomNumberOfFiles(false);
 
         boolean successfulIteration = changesCache.forEach(
         (String documentId, DataCiteJson document) -> {
@@ -308,7 +317,7 @@ public class DocumentChangesCacheTest
     {
         // add 2-10 files
         changesCache.putFile(DOCUMENT_ID + 10, new DataCiteJson(DOCUMENT_ID + 10));
-        putRandomAmountOfFiles(false);
+        putRandomNumberOfFiles(false);
 
         final AtomicInteger numberOfProcessedFiles = new AtomicInteger(0);
 
@@ -340,7 +349,7 @@ public class DocumentChangesCacheTest
      *
      * @return the number of files that were added
      */
-    private int putRandomAmountOfFiles(boolean isInTempFolder)
+    private int putRandomNumberOfFiles(boolean isInTempFolder)
     {
         final int size = 1 + random.nextInt(10);
 

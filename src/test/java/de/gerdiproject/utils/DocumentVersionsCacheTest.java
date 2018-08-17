@@ -22,6 +22,7 @@ import static org.junit.Assert.assertNull;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -154,6 +155,21 @@ public class DocumentVersionsCacheTest
 
         File deletedDocument = getCachedDocument(DOCUMENT_ID, true);
         assert !deletedDocument.exists();
+    }
+
+
+    /**
+     * Tests if the getDocumentIDs() method returns all stable documentIDs.
+     */
+    @Test
+    public void testGettingDocumentIDs()
+    {
+        final int numberOfPutFiles = putRandomNumberOfFiles(false);
+
+        List<String> documentIDs = versionsCache.getDocumentIDs();
+
+        for (int i = 0; i < numberOfPutFiles; i++)
+            assert documentIDs.contains(DOCUMENT_ID + i);
     }
 
 

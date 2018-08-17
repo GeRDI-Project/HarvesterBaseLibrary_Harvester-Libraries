@@ -96,7 +96,7 @@ public class HarvesterCache implements IEventListener
                                      ? null
                                      : hashGenerator.getShaHash(hash + harvestStartIndex + harvestEndIndex);
         versionsCache.init(harvesterHash);
-        changesCache.init(versionsCache);
+        changesCache.init(versionsCache.getDocumentIDs());
     }
 
 
