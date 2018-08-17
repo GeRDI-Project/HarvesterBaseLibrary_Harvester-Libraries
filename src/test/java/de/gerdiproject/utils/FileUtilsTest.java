@@ -34,23 +34,26 @@ import org.junit.Test;
 
 import com.google.gson.Gson;
 
-import ch.qos.logback.classic.Level;
+import de.gerdiproject.AbstractUnitTest;
 import de.gerdiproject.harvest.utils.FileUtils;
 import de.gerdiproject.harvest.utils.cache.constants.CacheConstants;
 import de.gerdiproject.harvest.utils.data.DiskIO;
-import de.gerdiproject.harvest.utils.logger.constants.LoggerConstants;
 
 /**
  * This class provides test cases for the {@linkplain FileUtils}.
  *
  * @author Robin Weiss
  */
-public class FileUtilsTest
+public class FileUtilsTest extends AbstractUnitTest
 {
-    private static final File TEST_FILE = new File("mocked/fileUtilsTestDir/fileUtilsTest.file");
+    private static final File TEST_FOLDER = new File("mocked");
+    private static final File FILE_TEST_FOLDER = new File("mocked/fileUtilsTestDir");
+    private static final File TEST_MULTI_DIRECTORY = new File(FILE_TEST_FOLDER, "moarTests/moar");
 
-    private static final File COPY_TEST_SOURCE_DIR = new File("mocked/fileUtilsTestDir/copyTestFrom/aaa/");
-    private static final File COPY_TEST_TARGET_DIR = new File("mocked/fileUtilsTestDir/copyTestTo/bbb/");
+    private static final File TEST_FILE = new File(FILE_TEST_FOLDER, "fileUtilsTest.file");
+
+    private static final File COPY_TEST_SOURCE_DIR = new File(FILE_TEST_FOLDER, "copyTestFrom/aaa/");
+    private static final File COPY_TEST_TARGET_DIR = new File(FILE_TEST_FOLDER, "copyTestTo/bbb/");
 
     private static final File COPY_TEST_SOURCE_FILE = new File(COPY_TEST_SOURCE_DIR, "fileUtilsCopyTestSource.file");
     private static final File COPY_TEST_TARGET_FILE = new File(COPY_TEST_TARGET_DIR, "fileUtilsCopyTestTarget.file");
@@ -59,39 +62,46 @@ public class FileUtilsTest
     private static final String COPY_TEST_TEXT = "Milch macht müde Männer munter.";
     private static final String COPY_TEST_OVERWRITE_TEXT = "Ohne Krimi geht die Mimi nie ins Bett.";
 
-    private static final File MERGE_TEST_SOURCE_DIR = new File("mocked/fileUtilsTestDir/mergeTestFrom");
-    private static final File MERGE_TEST_TARGET_DIR = new File("mocked/fileUtilsTestDir/mergeTestTo");
+    private static final File MERGE_TEST_SOURCE_DIR = new File(FILE_TEST_FOLDER, "mergeTestFrom");
+    private static final File MERGE_TEST_TARGET_DIR = new File(FILE_TEST_FOLDER, "mergeTestTo");
 
-    private static final List<File> MERGE_TEST_SOURCE_FILES = Collections.unmodifiableList(Arrays.asList(
-                                                                  new File("mocked/fileUtilsTestDir/mergeTestFrom/aaa/first.file"),
-                                                                  new File("mocked/fileUtilsTestDir/mergeTestFrom/ccc/fifth.file"),
-                                                                  new File("mocked/fileUtilsTestDir/mergeTestFrom/ccc/sixth.file")));
+    private static final List<File> MERGE_TEST_SOURCE_FILES =
+        Collections.unmodifiableList(
+            Arrays.asList(
+                new File(FILE_TEST_FOLDER, "mergeTestFrom/aaa/first.file"),
+                new File(FILE_TEST_FOLDER, "mergeTestFrom/ccc/fifth.file"),
+                new File(FILE_TEST_FOLDER, "mergeTestFrom/ccc/sixth.file")));
 
-    private static final List<File> MERGE_TEST_MERGED_SOURCE_FILES = Collections.unmodifiableList(Arrays.asList(
-                                                                         new File("mocked/fileUtilsTestDir/mergeTestTo/aaa/first.file"),
-                                                                         new File("mocked/fileUtilsTestDir/mergeTestTo/ccc/fifth.file"),
-                                                                         new File("mocked/fileUtilsTestDir/mergeTestTo/ccc/sixth.file")));
+    private static final List<File> MERGE_TEST_MERGED_SOURCE_FILES =
+        Collections.unmodifiableList(
+            Arrays.asList(
+                new File(FILE_TEST_FOLDER, "mergeTestTo/aaa/first.file"),
+                new File(FILE_TEST_FOLDER, "mergeTestTo/ccc/fifth.file"),
+                new File(FILE_TEST_FOLDER, "mergeTestTo/ccc/sixth.file")));
 
-    private static final List<File> MERGE_TEST_TARGET_FILES = Collections.unmodifiableList(Arrays.asList(
-                                                                  new File("mocked/fileUtilsTestDir/mergeTestTo/aaa/first.file"),
-                                                                  new File("mocked/fileUtilsTestDir/mergeTestTo/aaa/second.file"),
-                                                                  new File("mocked/fileUtilsTestDir/mergeTestTo/bbb/third.file"),
-                                                                  new File("mocked/fileUtilsTestDir/mergeTestTo/bbb/fourth.file")));
+    private static final List<File> MERGE_TEST_TARGET_FILES =
+        Collections.unmodifiableList(
+            Arrays.asList(
+                new File(FILE_TEST_FOLDER, "mergeTestTo/aaa/first.file"),
+                new File(FILE_TEST_FOLDER, "mergeTestTo/aaa/second.file"),
+                new File(FILE_TEST_FOLDER, "mergeTestTo/bbb/third.file"),
+                new File(FILE_TEST_FOLDER, "mergeTestTo/bbb/fourth.file")));
 
-    private static final List<File> MERGE_TEST_EXPECTED_TARGET_FILES = Collections.unmodifiableList(Arrays.asList(
-                                                                           new File("mocked/fileUtilsTestDir/mergeTestTo/aaa/first.file"),
-                                                                           new File("mocked/fileUtilsTestDir/mergeTestTo/aaa/second.file"),
-                                                                           new File("mocked/fileUtilsTestDir/mergeTestTo/bbb/third.file"),
-                                                                           new File("mocked/fileUtilsTestDir/mergeTestTo/bbb/fourth.file"),
-                                                                           new File("mocked/fileUtilsTestDir/mergeTestTo/ccc/fifth.file"),
-                                                                           new File("mocked/fileUtilsTestDir/mergeTestTo/ccc/sixth.file")));
-
-    private static final File TEST_DIRECTORY = new File("mocked/fileUtilsTestDir");
-    private static final File TEST_MULTI_DIRECTORY = new File("mocked/fileUtilsTestDir/moarTests/moar");
+    private static final List<File> MERGE_TEST_EXPECTED_TARGET_FILES =
+        Collections.unmodifiableList(
+            Arrays.asList(
+                new File(FILE_TEST_FOLDER, "mergeTestTo/aaa/first.file"),
+                new File(FILE_TEST_FOLDER, "mergeTestTo/aaa/second.file"),
+                new File(FILE_TEST_FOLDER, "mergeTestTo/bbb/third.file"),
+                new File(FILE_TEST_FOLDER, "mergeTestTo/bbb/fourth.file"),
+                new File(FILE_TEST_FOLDER, "mergeTestTo/ccc/fifth.file"),
+                new File(FILE_TEST_FOLDER, "mergeTestTo/ccc/sixth.file")));
 
     private static final String DUPLICATE_DIR_ERROR = "Creating directories that already exist, should not cause exceptions";
     private static final String DELETE_DIR_ERROR = "Deleting non-existing directories, should not cause exceptions";
     private static final String DELETE_FILE_ERROR = "Deleting non-existing files, should not cause exceptions";
+
+
 
     /**
      * Verifies that cache files are deleted.
@@ -101,9 +111,9 @@ public class FileUtilsTest
     @Before
     public void before() throws IOException
     {
-        FileUtils.deleteFile(TEST_DIRECTORY);
+        FileUtils.deleteFile(TEST_FOLDER);
 
-        if (TEST_DIRECTORY.exists())
+        if (TEST_FOLDER.exists())
             throw new IOException();
     }
 
@@ -114,7 +124,7 @@ public class FileUtilsTest
     @After
     public void after()
     {
-        FileUtils.deleteFile(TEST_DIRECTORY);
+        FileUtils.deleteFile(TEST_FOLDER);
     }
 
 
@@ -203,9 +213,9 @@ public class FileUtilsTest
     @Test
     public void testFileCopyingWithoutSource()
     {
-        disableLogging();
+        setLoggerEnabled(false);
         FileUtils.copyFile(COPY_TEST_SOURCE_FILE, COPY_TEST_TARGET_FILE);
-        enableLogging();
+        setLoggerEnabled(true);
 
         assert !COPY_TEST_TARGET_FILE.exists();
     }
@@ -248,9 +258,9 @@ public class FileUtilsTest
 
         try
             (InputStreamReader reader = new InputStreamReader(new FileInputStream(COPY_TEST_TARGET_FILE), StandardCharsets.UTF_8)) {
-            disableLogging();
+            setLoggerEnabled(false);
             FileUtils.copyFile(COPY_TEST_SOURCE_FILE, COPY_TEST_TARGET_FILE);
-            enableLogging();
+            setLoggerEnabled(true);
         }
 
         assertEquals(0L, COPY_TEST_TARGET_FILE.length());
@@ -332,9 +342,9 @@ public class FileUtilsTest
     @Test
     public void testFileReplacementWithoutSource()
     {
-        disableLogging();
+        setLoggerEnabled(false);
         FileUtils.replaceFile(COPY_TEST_TARGET_FILE, COPY_TEST_SOURCE_FILE);
-        enableLogging();
+        setLoggerEnabled(true);
 
         assert !COPY_TEST_TARGET_FILE.exists();
     }
@@ -358,9 +368,9 @@ public class FileUtilsTest
 
         try
             (InputStreamReader reader = new InputStreamReader(new FileInputStream(COPY_TEST_TARGET_FILE), StandardCharsets.UTF_8)) {
-            disableLogging();
+            setLoggerEnabled(false);
             FileUtils.replaceFile(COPY_TEST_TARGET_FILE, COPY_TEST_SOURCE_FILE);
-            enableLogging();
+            setLoggerEnabled(true);
         }
 
         assertEquals(0L, COPY_TEST_TARGET_FILE.length());
@@ -410,9 +420,9 @@ public class FileUtilsTest
     public void testDirectoryDeletion()
     {
         FileUtils.createDirectories(TEST_MULTI_DIRECTORY);
-        FileUtils.deleteFile(TEST_DIRECTORY);
+        FileUtils.deleteFile(FILE_TEST_FOLDER);
 
-        assert !TEST_DIRECTORY.exists();
+        assert !FILE_TEST_FOLDER.exists();
     }
 
 
@@ -424,7 +434,7 @@ public class FileUtilsTest
     public void testDirectoryDeletionNonExisting()
     {
         try {
-            FileUtils.deleteFile(TEST_DIRECTORY);
+            FileUtils.deleteFile(FILE_TEST_FOLDER);
         } catch (Exception e) {
             fail(DELETE_DIR_ERROR);
         }
@@ -457,9 +467,9 @@ public class FileUtilsTest
     @Test
     public void testDirectoryCopyingWithoutSource()
     {
-        disableLogging();
+        setLoggerEnabled(false);
         FileUtils.copyFile(COPY_TEST_SOURCE_DIR, COPY_TEST_TARGET_DIR);
-        enableLogging();
+        setLoggerEnabled(true);
 
         assert !COPY_TEST_TARGET_DIR.exists();
     }
@@ -566,9 +576,9 @@ public class FileUtilsTest
     @Test
     public void testDirectoryReplacementWithoutSource()
     {
-        disableLogging();
+        setLoggerEnabled(false);
         FileUtils.replaceFile(COPY_TEST_TARGET_DIR, COPY_TEST_SOURCE_DIR);
-        enableLogging();
+        setLoggerEnabled(true);
 
         assert !COPY_TEST_TARGET_DIR.exists();
     }
@@ -641,9 +651,9 @@ public class FileUtilsTest
     @Test
     public void testDirectoryMergeWithoutSource()
     {
-        disableLogging();
+        setLoggerEnabled(false);
         FileUtils.integrateDirectory(MERGE_TEST_SOURCE_DIR, MERGE_TEST_TARGET_DIR, false);
-        enableLogging();
+        setLoggerEnabled(true);
 
         assert !MERGE_TEST_TARGET_DIR.exists();
     }
@@ -697,23 +707,5 @@ public class FileUtilsTest
         final File possiblyReplacedFile = MERGE_TEST_TARGET_FILES.get(0);
         final String expectedFileContent = replaceFiles ? COPY_TEST_TEXT : COPY_TEST_OVERWRITE_TEXT;
         assertEquals(expectedFileContent, diskIo.getString(possiblyReplacedFile));
-    }
-
-
-    /**
-     * Disables logging.
-     */
-    private static void disableLogging()
-    {
-        LoggerConstants.ROOT_LOGGER.setLevel(Level.OFF);
-    }
-
-
-    /**
-     * Enables debug logging.
-     */
-    private static void enableLogging()
-    {
-        LoggerConstants.ROOT_LOGGER.setLevel(Level.DEBUG);
     }
 }

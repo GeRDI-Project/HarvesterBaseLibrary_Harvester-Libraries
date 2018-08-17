@@ -31,8 +31,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -41,7 +39,7 @@ import org.junit.runners.Parameterized.Parameters;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
-import ch.qos.logback.classic.Level;
+import de.gerdiproject.AbstractFileSystemUnitTest;
 import de.gerdiproject.harvest.config.Configuration;
 import de.gerdiproject.harvest.config.adapter.ConfigurationAdapter;
 import de.gerdiproject.harvest.config.events.GlobalParameterChangedEvent;
@@ -57,9 +55,7 @@ import de.gerdiproject.harvest.state.IState;
 import de.gerdiproject.harvest.state.StateMachine;
 import de.gerdiproject.harvest.state.impl.HarvestingState;
 import de.gerdiproject.harvest.state.impl.InitializationState;
-import de.gerdiproject.harvest.utils.FileUtils;
 import de.gerdiproject.harvest.utils.data.DiskIO;
-import de.gerdiproject.harvest.utils.logger.constants.LoggerConstants;
 
 /**
  * This class contains unit tests for the {@linkplain Configuration}.
@@ -70,39 +66,34 @@ import de.gerdiproject.harvest.utils.logger.constants.LoggerConstants;
  * @author Robin Weiss
  */
 @RunWith(Parameterized.class)
-public class ConfigurationTest
+public class ConfigurationTest extends AbstractFileSystemUnitTest<Configuration>
 {
     private static final String CUSTOM_PARAM_KEY = "customParam";
     private static final String CUSTOM_PARAM_VALUE = "customValue";
-
     private static final String URL_VALUE_1 = "http://www.gerdi-project.de";
     private static final String URL_VALUE_2 = "http://www.google.com";
-
     private static final String PASSWORD_VALUE_1 = "top secret";
     private static final String PASSWORD_VALUE_2 = "no one must know";
-
     private static final int INT_VALUE_1 = 42;
     private static final int INT_VALUE_2 = 1337;
-
     private static final boolean BOOL_VALUE_1 = false;
     private static final boolean BOOL_VALUE_2 = true;
-
-    private static final File CACHE_FILE = new File("mocked/config.json");
-
     private static final String ERROR_ARGUMENTS_MUST_DIFFER = "The old and new value of Parameter Change tests must differ!";
 
-
+    private static final String TEST_PARAM_HARVESTER = "harvester parameters";
+    private static final String TEST_PARAM_GLOBAL = "global parameters";
     @Parameters(name = "{0}")
     public static Object[] getParameters()
     {
-        return new Object[] {"harvester parameters", "global parameters"};
+        return new Object[] {TEST_PARAM_HARVESTER, TEST_PARAM_GLOBAL};
     }
 
-    private GlobalParameterChangedEvent lastGlobalParamChange;
-    private HarvesterParameterChangedEvent lastHarvesterParamChange;
-
+    private final File configFile = new File(testFolder, "config.json");
     private final boolean isTestingHarvesterParameters;
 
+    private StringParameter testedParam;
+    private GlobalParameterChangedEvent lastGlobalParamChange;
+    private HarvesterParameterChangedEvent lastHarvesterParamChange;
 
 
     /**
@@ -115,44 +106,38 @@ public class ConfigurationTest
     {
         this.lastGlobalParamChange = null;
         this.lastHarvesterParamChange = null;
-        this.isTestingHarvesterParameters = testingType.equals("harvester parameters");
+        this.isTestingHarvesterParameters = testingType.equals(TEST_PARAM_HARVESTER);
     }
 
 
-    /**
-     * Before each test:<br>
-     * Adds event listeners for parameter change events and resets helper variables.
-     *
-     * @throws IOException thrown when the temporary cache file could not be deleted
-     */
-    @Before
+    @Override
+    protected Configuration setUpTestObjects()
+    {
+        this.lastGlobalParamChange = null;
+        this.lastHarvesterParamChange = null;
+        this.testedParam = new StringParameter(CUSTOM_PARAM_KEY + 1, CUSTOM_PARAM_VALUE + 1);
+
+        return createConfigWithCustomParameters(testedParam);
+    }
+
+
+    @Override
     public void before() throws IOException
     {
-        FileUtils.deleteFile(CACHE_FILE);
-
-        if (CACHE_FILE.exists())
-            throw new IOException();
-
-
-        lastGlobalParamChange = null;
-        lastHarvesterParamChange = null;
+        super.before();
 
         EventSystem.addListener(GlobalParameterChangedEvent.class, this::onGlobalParameterChanged);
         EventSystem.addListener(HarvesterParameterChangedEvent.class, this::onHarvesterParameterChanged);
     }
 
 
-    /**
-     * After each test:<br>
-     * Removes event listeners for parameter change events and deletes created files.
-     */
-    @After
+    @Override
     public void after()
     {
+        super.after();
+
         EventSystem.removeAllListeners(GlobalParameterChangedEvent.class);
         EventSystem.removeAllListeners(HarvesterParameterChangedEvent.class);
-
-        FileUtils.deleteFile(CACHE_FILE);
     }
 
 
@@ -163,9 +148,9 @@ public class ConfigurationTest
     @Test
     public void testNullConstructor()
     {
-        final Configuration config = new Configuration(null, null);
+        testedObject = new Configuration(null, null);
 
-        assertEquals(0, getTestedParameters(config).size());
+        assertEquals(0, getTestedParameters(testedObject).size());
     }
 
 
@@ -176,9 +161,9 @@ public class ConfigurationTest
     @Test
     public void testNullHarvesterConstructor()
     {
-        final Configuration config = new Configuration(null);
+        testedObject = new Configuration(null);
 
-        assertNotEquals(0, getTestedParameters(config).size());
+        assertNotEquals(0, getTestedParameters(testedObject).size());
     }
 
 
@@ -189,10 +174,7 @@ public class ConfigurationTest
     @Test
     public void testCustomParamsConstructor()
     {
-        final AbstractParameter<?> param = new IntegerParameter(CUSTOM_PARAM_KEY, INT_VALUE_1);
-        final Configuration config = createConfigWithCustomParameters(param);
-
-        assertEquals(param.getValue(), config.getParameterValue(param.getKey(), param.getValue().getClass()));
+        assertEquals(testedParam.getValue(), testedObject.getParameterValue(testedParam.getKey(), testedParam.getValue().getClass()));
     }
 
 
@@ -211,11 +193,11 @@ public class ConfigurationTest
                 new StringParameter(CUSTOM_PARAM_KEY + 3, CUSTOM_PARAM_VALUE + 3)
             );
 
-        final Configuration customConfig = new Configuration(customHarvesterParams);
+        testedObject = new Configuration(customHarvesterParams);
 
         // check if all parameters can be retrieved
         for (AbstractParameter<?> param : customHarvesterParams)
-            assertEquals(param.getValue(), customConfig.getParameterValue(param.getKey(), param.getValue().getClass()));
+            assertEquals(param.getValue(), testedObject.getParameterValue(param.getKey(), param.getValue().getClass()));
     }
 
 
@@ -340,11 +322,9 @@ public class ConfigurationTest
     @Test
     public void testParameterChangedEventOnSameValue()
     {
-        final IntegerParameter param = new IntegerParameter(CUSTOM_PARAM_KEY, INT_VALUE_1);
-        final Configuration config = createConfigWithCustomParameters(param);
-
         // check that no events are fired when the value does not change
-        config.setParameter(param.getKey(), param.getStringValue());
+        testedObject.setParameter(testedParam.getKey(), testedParam.getStringValue());
+
         assertNull(getTestedEvent());
     }
 
@@ -356,15 +336,12 @@ public class ConfigurationTest
     @Test
     public void testParameterChangedEventPayloadParameter()
     {
-        final StringParameter param = new StringParameter(CUSTOM_PARAM_KEY, CUSTOM_PARAM_VALUE + 1);
-        final Configuration config = createConfigWithCustomParameters(param);
-
-        final String newValue = CUSTOM_PARAM_VALUE + 2;
+        final String newValue = testedParam.getStringValue() + 1;
 
         // check GlobalParameterChanged event
-        config.setParameter(param.getKey(), newValue);
+        testedObject.setParameter(testedParam.getKey(), newValue);
 
-        assertEquals(param, getTestedEvent().getParameter());
+        assertEquals(testedParam, getTestedEvent().getParameter());
     }
 
 
@@ -375,14 +352,11 @@ public class ConfigurationTest
     @Test
     public void testParameterChangedEventPayloadOldValue()
     {
-        final StringParameter param = new StringParameter(CUSTOM_PARAM_KEY, CUSTOM_PARAM_VALUE + 1);
-        final Configuration config = createConfigWithCustomParameters(param);
-
-        final String oldValue = param.getStringValue();
-        final String newValue = CUSTOM_PARAM_VALUE + 2;
+        final String oldValue = testedParam.getStringValue();
+        final String newValue = testedParam.getStringValue() + 1;
 
         // check GlobalParameterChanged event
-        config.setParameter(param.getKey(), newValue);
+        testedObject.setParameter(testedParam.getKey(), newValue);
 
         assertEquals(oldValue, getTestedEvent().getOldValue());
     }
@@ -394,12 +368,10 @@ public class ConfigurationTest
     @Test
     public void testSaveWithPath()
     {
-        final Configuration config = createConfigWithCustomParameters(new StringParameter(CUSTOM_PARAM_KEY, CUSTOM_PARAM_VALUE));
+        testedObject.setCacheFilePath(configFile.getAbsolutePath());
+        testedObject.saveToDisk();
 
-        config.setCacheFilePath(CACHE_FILE.getAbsolutePath());
-        config.saveToDisk();
-
-        assert CACHE_FILE.exists() && CACHE_FILE.isFile();
+        assert configFile.exists() && configFile.isFile();
     }
 
 
@@ -410,13 +382,11 @@ public class ConfigurationTest
     @Test
     public void testSaveWithoutPath()
     {
-        final Configuration config = createConfigWithCustomParameters(new StringParameter(CUSTOM_PARAM_KEY, CUSTOM_PARAM_VALUE));
+        setLoggerEnabled(false);
+        testedObject.saveToDisk();
+        setLoggerEnabled(true);
 
-        LoggerConstants.ROOT_LOGGER.setLevel(Level.OFF);
-        config.saveToDisk();
-        LoggerConstants.ROOT_LOGGER.setLevel(Level.DEBUG);
-
-        assert !CACHE_FILE.exists();
+        assert !configFile.exists();
     }
 
 
@@ -427,29 +397,27 @@ public class ConfigurationTest
     @Test
     public void testLoadingPresentValues()
     {
-        final StringParameter param = new StringParameter(CUSTOM_PARAM_KEY, CUSTOM_PARAM_VALUE);
-        final Object param1LoadedValue = param.getValue();
+        final Object savedParamValue = testedParam.getValue();
 
         // save a config with two custom parameters
-        final Configuration savedConfig = createConfigWithCustomParameters(param);
-        savedConfig.setCacheFilePath(CACHE_FILE.getAbsolutePath());
+        final Configuration savedConfig = createConfigWithCustomParameters(testedParam);
+        savedConfig.setCacheFilePath(configFile.getAbsolutePath());
         savedConfig.saveToDisk();
 
         // create a config with only the first custom parameter
-        final Configuration loadedConfig = createConfigWithCustomParameters(param);
-        loadedConfig.setCacheFilePath(CACHE_FILE.getAbsolutePath());
+        testedObject.setCacheFilePath(configFile.getAbsolutePath());
 
         // change the value of the shared custom parameter
         final String valueToBeRestored = "override me";
-        loadedConfig.setParameter(param.getKey(), valueToBeRestored);
+        testedObject.setParameter(testedParam.getKey(), valueToBeRestored);
 
         // load previously set up config
-        LoggerConstants.ROOT_LOGGER.setLevel(Level.OFF);
-        loadedConfig.loadFromDisk();
-        LoggerConstants.ROOT_LOGGER.setLevel(Level.DEBUG);
+        setLoggerEnabled(false);
+        testedObject.loadFromDisk();
+        setLoggerEnabled(true);
 
         // make sure the value of custom parameter was changed due to the loading
-        assertEquals(param1LoadedValue, loadedConfig.getParameterValue(param.getKey(), param.getValue().getClass()));
+        assertEquals(savedParamValue, testedObject.getParameterValue(testedParam.getKey(), testedParam.getValue().getClass()));
     }
 
 
@@ -460,24 +428,22 @@ public class ConfigurationTest
     @Test
     public void testLoadingNonPresentValues()
     {
-        final StringParameter param = new StringParameter(CUSTOM_PARAM_KEY, CUSTOM_PARAM_VALUE);
-
         // save a config with two custom parameters
-        final Configuration savedConfig = createConfigWithCustomParameters(param);
-        savedConfig.setCacheFilePath(CACHE_FILE.getAbsolutePath());
+        final Configuration savedConfig = createConfigWithCustomParameters(testedParam);
+        savedConfig.setCacheFilePath(configFile.getAbsolutePath());
         savedConfig.saveToDisk();
 
         // create a config with only the first custom parameter
-        final Configuration loadedConfig = new Configuration(null);
-        loadedConfig.setCacheFilePath(CACHE_FILE.getAbsolutePath());
+        testedObject = new Configuration(null);
+        testedObject.setCacheFilePath(configFile.getAbsolutePath());
 
         // load previously set up config
-        LoggerConstants.ROOT_LOGGER.setLevel(Level.OFF);
-        loadedConfig.loadFromDisk();
-        LoggerConstants.ROOT_LOGGER.setLevel(Level.DEBUG);
+        setLoggerEnabled(false);
+        testedObject.loadFromDisk();
+        setLoggerEnabled(true);
 
         // make sure custom parameter 2 was not created
-        assertNull(loadedConfig.getParameterStringValue(param.getKey()));
+        assertNull(testedObject.getParameterStringValue(testedParam.getKey()));
     }
 
 
@@ -487,19 +453,16 @@ public class ConfigurationTest
     @Test
     public void testLoadWithNonExistingPath()
     {
-        final StringParameter param = new StringParameter(CUSTOM_PARAM_KEY, CUSTOM_PARAM_VALUE);
-
         // save a config with two custom parameters
-        final Configuration loadedConfig = createConfigWithCustomParameters(param);
-        loadedConfig.setCacheFilePath(CACHE_FILE.getAbsolutePath());
+        testedObject.setCacheFilePath(configFile.getAbsolutePath());
 
         // attempt to load a non-existing path
-        LoggerConstants.ROOT_LOGGER.setLevel(Level.OFF);
-        loadedConfig.loadFromDisk();
-        LoggerConstants.ROOT_LOGGER.setLevel(Level.DEBUG);
+        setLoggerEnabled(false);
+        testedObject.loadFromDisk();
+        setLoggerEnabled(true);
 
         // make sure the old custom parameter still exists
-        assertEquals(param.getStringValue(), loadedConfig.getParameterStringValue(param.getKey()));
+        assertEquals(testedParam.getStringValue(), testedObject.getParameterStringValue(testedParam.getKey()));
     }
 
 
@@ -510,26 +473,22 @@ public class ConfigurationTest
     @Test
     public void testLoadWithoutSetPath()
     {
-        final AbstractParameter<?> param =
-            new StringParameter(CUSTOM_PARAM_KEY, CUSTOM_PARAM_VALUE);
-
         // save a config with a custom parameter
-        final Configuration savedConfig = createConfigWithCustomParameters(param);
-        savedConfig.setCacheFilePath(CACHE_FILE.getAbsolutePath());
+        final Configuration savedConfig = createConfigWithCustomParameters(testedParam);
+        savedConfig.setCacheFilePath(configFile.getAbsolutePath());
         savedConfig.saveToDisk();
 
         // create config with the same custom parameter, but a different value
         final String valueToBeOverridden = "override me";
-        param.setValue(valueToBeOverridden, null);
-        final Configuration loadedConfig = createConfigWithCustomParameters(param);
+        testedParam.setValue(valueToBeOverridden, null);
 
         // attempt to load without setting a path
-        LoggerConstants.ROOT_LOGGER.setLevel(Level.OFF);
-        loadedConfig.loadFromDisk();
-        LoggerConstants.ROOT_LOGGER.setLevel(Level.DEBUG);
+        setLoggerEnabled(false);
+        testedObject.loadFromDisk();
+        setLoggerEnabled(true);
 
         // make sure the old custom parameter value was not overridden
-        assertEquals(valueToBeOverridden, loadedConfig.getParameterStringValue(param.getKey()));
+        assertEquals(valueToBeOverridden, testedObject.getParameterStringValue(testedParam.getKey()));
     }
 
 
@@ -541,10 +500,10 @@ public class ConfigurationTest
     {
         // save config with all parameters to disk
         final Configuration savedConfig = createConfigWithAllParameterTypes();
-        final Configuration loadedConfig = saveAndLoadConfig(savedConfig);
+        testedObject = saveAndLoadConfig(savedConfig);
 
         // check if deserialized global parameters are correct
-        final Map<String, AbstractParameter<?>> loadedGlobalParams = getTestedParameters(loadedConfig);
+        final Map<String, AbstractParameter<?>> loadedGlobalParams = getTestedParameters(testedObject);
         getTestedParameters(savedConfig).forEach((String key, AbstractParameter<?> param) -> {
             assertEquals(param.getClass(), loadedGlobalParams.get(key).getClass());
         });
@@ -560,10 +519,10 @@ public class ConfigurationTest
     {
         // save config with all parameters to disk
         final Configuration savedConfig = createConfigWithAllParameterTypes();
-        final Configuration loadedConfig = saveAndLoadConfig(savedConfig);
+        testedObject = saveAndLoadConfig(savedConfig);
 
         // check if deserialized global parameters are correct
-        final Map<String, AbstractParameter<?>> loadedGlobalParams = getTestedParameters(loadedConfig);
+        final Map<String, AbstractParameter<?>> loadedGlobalParams = getTestedParameters(testedObject);
         getTestedParameters(savedConfig).forEach((String key, AbstractParameter<?> param) -> {
             assertEquals(param.getValue(), loadedGlobalParams.get(key).getValue());
         });
@@ -577,14 +536,9 @@ public class ConfigurationTest
     @Test
     public void testParameterUpdate()
     {
-        final AbstractParameter<?> param =
-            new StringParameter(CUSTOM_PARAM_KEY, CUSTOM_PARAM_VALUE);
-
-        final Configuration config = createConfigWithCustomParameters(param);
-
         // check GlobalParameterChanged event
-        config.updateParameter(param.getKey());
-        assertEquals(param, getTestedEvent().getParameter());
+        testedObject.updateParameter(testedParam.getKey());
+        assertEquals(testedParam, getTestedEvent().getParameter());
     }
 
 
@@ -595,14 +549,9 @@ public class ConfigurationTest
     @Test
     public void testAllParametersUpdate()
     {
-        final AbstractParameter<?> param =
-            new StringParameter(CUSTOM_PARAM_KEY, CUSTOM_PARAM_VALUE);
-
-        final Configuration config = createConfigWithCustomParameters(param);
-
         // check GlobalParameterChanged event
-        config.updateAllParameters();
-        assertEquals(param, getTestedEvent().getParameter());
+        testedObject.updateAllParameters();
+        assertEquals(testedParam, getTestedEvent().getParameter());
     }
 
 
@@ -612,10 +561,10 @@ public class ConfigurationTest
     @Test
     public void testToStringKeys()
     {
-        final Configuration config = createConfigWithAllParameterTypes();
-        final String configString = config.toString();
+        testedObject = createConfigWithAllParameterTypes();
+        final String configString = testedObject.toString();
 
-        getTestedParameters(config).forEach((String key, AbstractParameter<?> param) -> {
+        getTestedParameters(testedObject).forEach((String key, AbstractParameter<?> param) -> {
             assert configString.contains(key);
         });
     }
@@ -627,10 +576,10 @@ public class ConfigurationTest
     @Test
     public void testToStringValues()
     {
-        final Configuration config = createConfigWithAllParameterTypes();
-        final String configString = config.toString();
+        testedObject = createConfigWithAllParameterTypes();
+        final String configString = testedObject.toString();
 
-        getTestedParameters(config).forEach((String key, AbstractParameter<?> param) -> {
+        getTestedParameters(testedObject).forEach((String key, AbstractParameter<?> param) -> {
             assert configString.contains(param.getStringValue());
         });
     }
@@ -678,10 +627,9 @@ public class ConfigurationTest
         if (oldValue.equals(newValue))
             throw new IllegalArgumentException(ERROR_ARGUMENTS_MUST_DIFFER);
 
-        final Configuration config = createConfigWithCustomParameters(param);
-
-        config.setParameter(key, newValue.toString());
-        assertNotEquals(oldValue, config.getParameterValue(key, newValue.getClass()));
+        testedObject = createConfigWithCustomParameters(param);
+        testedObject.setParameter(key, newValue.toString());
+        assertNotEquals(oldValue, testedObject.getParameterValue(key, newValue.getClass()));
     }
 
 
@@ -719,7 +667,6 @@ public class ConfigurationTest
         final BooleanParameter globalBooleanParam = new BooleanParameter(CUSTOM_PARAM_KEY + 3, BOOL_VALUE_1);
         final UrlParameter globalUrlParam = new UrlParameter(CUSTOM_PARAM_KEY + 4, URL_VALUE_1);
         final PasswordParameter globalPasswordParam = new PasswordParameter(CUSTOM_PARAM_KEY + 5, PASSWORD_VALUE_1);
-        globalPasswordParam.setValue("top secret", null);
 
         final Map<String, AbstractParameter<?>> globalParams = new HashMap<>();
         globalParams.put(globalStringParam.getKey(), globalStringParam);
@@ -754,7 +701,7 @@ public class ConfigurationTest
     private Configuration saveAndLoadConfig(Configuration configToSave)
     {
         // save config with all parameters to disk
-        configToSave.setCacheFilePath(CACHE_FILE.getAbsolutePath());
+        configToSave.setCacheFilePath(configFile.getAbsolutePath());
         configToSave.saveToDisk();
 
         // deserialize cache file
@@ -763,7 +710,7 @@ public class ConfigurationTest
         .registerTypeAdapter(Configuration.class, new ConfigurationAdapter())
         .create();
         final DiskIO diskIo = new DiskIO(gson, StandardCharsets.UTF_8);
-        return diskIo.getObject(CACHE_FILE, Configuration.class);
+        return diskIo.getObject(configFile, Configuration.class);
     }
 
 
@@ -809,15 +756,14 @@ public class ConfigurationTest
         final String valueAfter = CUSTOM_PARAM_VALUE + 2;
         final String key = CUSTOM_PARAM_KEY;
 
-
-        final StringParameter param = new StringParameter(key, Arrays.asList(allowedState), valueBefore);
-        final Configuration config = createConfigWithCustomParameters(param);
+        testedParam = new StringParameter(key, Arrays.asList(allowedState), valueBefore);
+        testedObject = createConfigWithCustomParameters(testedParam);
 
         // explicitly test a state that is not among the valid states of the parameter
         StateMachine.setState(testedState);
-        config.setParameter(key, valueAfter);
+        testedObject.setParameter(key, valueAfter);
         StateMachine.setState(null);
 
-        return param.getValue().equals(valueAfter);
+        return testedParam.getValue().equals(valueAfter);
     }
 }

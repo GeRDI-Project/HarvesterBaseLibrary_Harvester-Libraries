@@ -21,19 +21,16 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 
 import java.io.File;
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Random;
 
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 
 import com.google.gson.Gson;
 
+import de.gerdiproject.AbstractFileSystemUnitTest;
 import de.gerdiproject.harvest.application.events.ContextDestroyedEvent;
 import de.gerdiproject.harvest.event.EventSystem;
-import de.gerdiproject.harvest.utils.FileUtils;
 import de.gerdiproject.harvest.utils.cache.HarvesterCache;
 import de.gerdiproject.harvest.utils.cache.constants.CacheConstants;
 import de.gerdiproject.harvest.utils.data.DiskIO;
@@ -45,45 +42,25 @@ import de.gerdiproject.utils.examples.harvestercache.MockedHarvester;
  *
  * @author Robin Weiss
  */
-public class HarvesterCacheTest
+public class HarvesterCacheTest extends AbstractFileSystemUnitTest<HarvesterCache>
 {
-    private static final File CACHE_FOLDER = new File("mocked/harvesterCacheTestDir/");
     private static final String HARVESTER_HASH = "abc";
 
     private static final String SOURCE_ID = "source1";
     private static final String DOCUMENT_ID = "463c6c7494bc6a5f6eb5a731f462fcfefd4288fb";
-    private static final String CLEAN_UP_ERROR = "Could not remove test folder: " + CACHE_FOLDER;
 
     private MockedHarvester harvester;
-    private HarvesterCache cache;
 
 
-    /**
-     * Removes the test folder and initializes a new {@linkplain HarvesterCache}.
-     *
-     * @throws IOException thrown when temporary files could not be deleted
-     */
-    @Before
-    public void before() throws IOException
+    @Override
+    protected HarvesterCache setUpTestObjects()
     {
-        FileUtils.deleteFile(CACHE_FOLDER);
+        harvester = new MockedHarvester(testFolder);
 
-        if (CACHE_FOLDER.exists())
-            throw new IOException(CLEAN_UP_ERROR);
-
-        harvester = new MockedHarvester(CACHE_FOLDER.getPath() + "/");
-        cache = new HarvesterCache(harvester);
+        HarvesterCache cache = new HarvesterCache(harvester);
         cache.init(HARVESTER_HASH, 0, 1);
-    }
 
-
-    /**
-     * Removes the test folder to free up some space.
-     */
-    @After
-    public void after()
-    {
-        FileUtils.deleteFile(CACHE_FOLDER);
+        return cache;
     }
 
 
@@ -93,7 +70,7 @@ public class HarvesterCacheTest
     @Test
     public void testGettingChangesCache()
     {
-        assertNotNull(cache.getChangesCache());
+        assertNotNull(testedObject.getChangesCache());
     }
 
 
@@ -103,7 +80,7 @@ public class HarvesterCacheTest
     @Test
     public void testGettingVersionsCache()
     {
-        assertNotNull(cache.getVersionsCache());
+        assertNotNull(testedObject.getVersionsCache());
     }
 
 
@@ -120,7 +97,7 @@ public class HarvesterCacheTest
         final DiskIO diskReader = new DiskIO(new Gson(), StandardCharsets.UTF_8);
 
         final String sourceHash01 = diskReader.getString(sourceHashFile);
-        cache.init(HARVESTER_HASH, 0, 2);
+        testedObject.init(HARVESTER_HASH, 0, 2);
         final String sourceHash02 = diskReader.getString(sourceHashFile);
 
         assertNotEquals(sourceHash01, sourceHash02);
@@ -135,7 +112,7 @@ public class HarvesterCacheTest
     @Test
     public void testAddingEventListeners()
     {
-        cache.addEventListeners();
+        testedObject.addEventListeners();
 
         // send the ContextDestroyedEvent
         EventSystem.sendEvent(new ContextDestroyedEvent());
@@ -154,8 +131,8 @@ public class HarvesterCacheTest
     @Test
     public void testRemovingEventListeners()
     {
-        cache.addEventListeners();
-        cache.removeEventListeners();
+        testedObject.addEventListeners();
+        testedObject.removeEventListeners();
 
         // send the ContextDestroyedEvent
         EventSystem.sendEvent(new ContextDestroyedEvent());
@@ -172,7 +149,7 @@ public class HarvesterCacheTest
     @Test
     public void testCachingNewDocumentVersionFile()
     {
-        cache.cacheDocument(new DataCiteJson(SOURCE_ID), true);
+        testedObject.cacheDocument(new DataCiteJson(SOURCE_ID), true);
 
         File versionFile = new File(String.format(
                                         CacheConstants.DOCUMENT_HASH_FILE_PATH,
@@ -190,7 +167,7 @@ public class HarvesterCacheTest
     @Test
     public void testCachingNewDocumentChangesFile()
     {
-        cache.cacheDocument(new DataCiteJson(SOURCE_ID), true);
+        testedObject.cacheDocument(new DataCiteJson(SOURCE_ID), true);
 
         File changesFile = new File(String.format(
                                         CacheConstants.DOCUMENT_HASH_FILE_PATH,
@@ -209,10 +186,10 @@ public class HarvesterCacheTest
     @Test
     public void testApplyingChangesFile()
     {
-        cache.cacheDocument(new DataCiteJson(SOURCE_ID), true);
-        cache.applyChanges(true, false);
+        testedObject.cacheDocument(new DataCiteJson(SOURCE_ID), true);
+        testedObject.applyChanges(true, false);
 
-        assertNotNull(cache.getChangesCache().getFileContent(DOCUMENT_ID));
+        assertNotNull(testedObject.getChangesCache().getFileContent(DOCUMENT_ID));
     }
 
 
@@ -223,10 +200,10 @@ public class HarvesterCacheTest
     @Test
     public void testApplyingVersionFile()
     {
-        cache.cacheDocument(new DataCiteJson(SOURCE_ID), true);
-        cache.applyChanges(true, false);
+        testedObject.cacheDocument(new DataCiteJson(SOURCE_ID), true);
+        testedObject.applyChanges(true, false);
 
-        assertNotNull(cache.getVersionsCache().getFileContent(DOCUMENT_ID));
+        assertNotNull(testedObject.getVersionsCache().getFileContent(DOCUMENT_ID));
     }
 
 
@@ -351,12 +328,12 @@ public class HarvesterCacheTest
         final int numberOfSkippedDocuments = 2 + new Random().nextInt(8);
 
         for (int i = 0; i < numberOfSkippedDocuments; i++)
-            cache.cacheDocument(new DataCiteJson(SOURCE_ID + i), true);
+            testedObject.cacheDocument(new DataCiteJson(SOURCE_ID + i), true);
 
-        cache.applyChanges(true, false);
-        cache.init(HARVESTER_HASH + 1, 0, 1);
+        testedObject.applyChanges(true, false);
+        testedObject.init(HARVESTER_HASH + 1, 0, 1);
 
-        cache.skipAllDocuments();
+        testedObject.skipAllDocuments();
         File tempChangesFolder = new File(harvester.getTemporaryCacheFolder(), CacheConstants.CHANGES_FOLDER_NAME);
 
         assertEquals(0, tempChangesFolder.listFiles().length);
@@ -380,15 +357,15 @@ public class HarvesterCacheTest
      */
     private boolean addDocumentAfterApply(DataCiteJson firstDoc, DataCiteJson secondDoc, boolean isForced)
     {
-        final int oldSize = cache.getChangesCache().size();
-        cache.cacheDocument(firstDoc, isForced);
-        cache.applyChanges(true, false);
+        final int oldSize = testedObject.getChangesCache().size();
+        testedObject.cacheDocument(firstDoc, isForced);
+        testedObject.applyChanges(true, false);
 
-        cache.init(HARVESTER_HASH + 1, 0, 1);
-        cache.cacheDocument(secondDoc, isForced);
-        cache.applyChanges(true, false);
+        testedObject.init(HARVESTER_HASH + 1, 0, 1);
+        testedObject.cacheDocument(secondDoc, isForced);
+        testedObject.applyChanges(true, false);
 
-        return cache.getChangesCache().size() > oldSize;
+        return testedObject.getChangesCache().size() > oldSize;
     }
 
 
@@ -403,13 +380,13 @@ public class HarvesterCacheTest
     private boolean doesVersionFileExistAfterApplying(boolean isSuccessful, boolean isAborting)
     {
         // add one document to the stable cache
-        cache.cacheDocument(new DataCiteJson(SOURCE_ID), true);
-        cache.applyChanges(true, false);
+        testedObject.cacheDocument(new DataCiteJson(SOURCE_ID), true);
+        testedObject.applyChanges(true, false);
 
         // apply with zero documents, causing the old document to be removed
-        cache.init(HARVESTER_HASH + 2, 0, 1);
-        cache.applyChanges(isSuccessful, isAborting);
+        testedObject.init(HARVESTER_HASH + 2, 0, 1);
+        testedObject.applyChanges(isSuccessful, isAborting);
 
-        return cache.getVersionsCache().getFileContent(DOCUMENT_ID) != null;
+        return testedObject.getVersionsCache().getFileContent(DOCUMENT_ID) != null;
     }
 }

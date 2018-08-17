@@ -95,7 +95,11 @@ public class HttpRequester implements IEventListener
      */
     public HttpRequester(Charset httpCharset, Gson gson, boolean readFromDisk, boolean writeToDisk, String cacheFolder)
     {
+        if (cacheFolder != null && !cacheFolder.endsWith("/"))
+            cacheFolder += '/';
+
         this.cacheFolder = cacheFolder;
+
         this.readFromDisk = readFromDisk && cacheFolder != null;
         this.writeToDisk = writeToDisk && cacheFolder != null;
         this.httpCharset = httpCharset;

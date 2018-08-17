@@ -18,16 +18,12 @@ package de.gerdiproject.utils;
 
 import static org.junit.Assert.assertEquals;
 
-import java.io.File;
-import java.io.IOException;
-
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
+import de.gerdiproject.AbstractFileSystemUnitTest;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.event.IEvent;
 import de.gerdiproject.harvest.harvester.events.HarvestFinishedEvent;
@@ -37,8 +33,6 @@ import de.gerdiproject.harvest.save.events.SaveStartedEvent;
 import de.gerdiproject.harvest.state.events.AbortingStartedEvent;
 import de.gerdiproject.harvest.submission.events.SubmissionFinishedEvent;
 import de.gerdiproject.harvest.submission.events.SubmissionStartedEvent;
-import de.gerdiproject.harvest.utils.FileUtils;
-import de.gerdiproject.harvest.utils.cache.constants.CacheConstants;
 import de.gerdiproject.harvest.utils.time.HarvestTimeKeeper;
 import de.gerdiproject.harvest.utils.time.ProcessTimeMeasure;
 import de.gerdiproject.harvest.utils.time.ProcessTimeMeasure.ProcessStatus;
@@ -50,13 +44,8 @@ import de.gerdiproject.harvest.utils.time.ProcessTimeMeasure.ProcessStatus;
  *
  */
 @RunWith(Parameterized.class)
-public class HarvestTimeKeeperTest
+public class HarvestTimeKeeperTest extends AbstractFileSystemUnitTest<HarvestTimeKeeper>
 {
-    private static final String CACHE_PATH =
-        "mocked/" + String.format(
-            CacheConstants.HARVEST_TIME_KEEPER_CACHE_FILE_PATH,
-            "timeKeeperTest");
-
     private static final String HARVEST_MEASURE = "harvest";
     private static final String SUBMISSION_MEASURE = "submission";
     private static final String SAVE_MEASURE = "save";
@@ -67,12 +56,13 @@ public class HarvestTimeKeeperTest
         return new Object[] {HARVEST_MEASURE, SUBMISSION_MEASURE, SAVE_MEASURE};
     }
 
-    private final HarvestTimeKeeper keeper;
+    private final String cachePath = testFolder + "/processTimes.json";
     private final String testedMeasureType;
-    private final ProcessTimeMeasure testedMeasure;
-    private final IEvent startEvent;
-    private final IEvent finishedEvent;
-    private final IEvent failedEvent;
+
+    private ProcessTimeMeasure testedMeasure;
+    private IEvent startEvent;
+    private IEvent finishedEvent;
+    private IEvent failedEvent;
 
 
     /**
@@ -81,30 +71,35 @@ public class HarvestTimeKeeperTest
      *
      * @param measureType a string representing the measure being tested
      */
-    public HarvestTimeKeeperTest(String measureType)
+    public HarvestTimeKeeperTest(String testedMeasureType)
     {
-        keeper = new HarvestTimeKeeper(CACHE_PATH);
-        keeper.addEventListeners();
+        this.testedMeasureType = testedMeasureType;
+    }
 
-        testedMeasureType = measureType;
 
-        switch (measureType) {
+    @Override
+    protected HarvestTimeKeeper setUpTestObjects()
+    {
+        final HarvestTimeKeeper timeKeeper = new HarvestTimeKeeper(cachePath);
+        timeKeeper.addEventListeners();
+
+        switch (testedMeasureType) {
             case HARVEST_MEASURE:
-                testedMeasure = keeper.getHarvestMeasure();
+                testedMeasure = timeKeeper.getHarvestMeasure();
                 startEvent = new HarvestStartedEvent(0, 1, null);
                 finishedEvent = new HarvestFinishedEvent(true, null);
                 failedEvent = new HarvestFinishedEvent(false, null);
                 break;
 
             case SUBMISSION_MEASURE:
-                testedMeasure = keeper.getSubmissionMeasure();
+                testedMeasure = timeKeeper.getSubmissionMeasure();
                 startEvent = new SubmissionStartedEvent(1);
                 finishedEvent = new SubmissionFinishedEvent(true);
                 failedEvent = new SubmissionFinishedEvent(false);
                 break;
 
             case SAVE_MEASURE:
-                testedMeasure = keeper.getSaveMeasure();
+                testedMeasure = timeKeeper.getSaveMeasure();
                 startEvent = new SaveStartedEvent(false, 1);
                 finishedEvent = new SaveFinishedEvent(true);
                 failedEvent = new SaveFinishedEvent(false);
@@ -113,35 +108,8 @@ public class HarvestTimeKeeperTest
             default:
                 throw new IllegalArgumentException();
         }
-    }
 
-
-    /**
-     * Verifies that cache files are deleted and creates a {@linkplain HarvestTimeKeeper}.
-     *
-     * @throws IOException thrown when the temporary cache file could not be deleted
-     */
-    @Before
-    public void before() throws IOException
-    {
-        final File cacheFile = new File(CACHE_PATH);
-        FileUtils.deleteFile(cacheFile);
-
-        if (cacheFile.exists())
-            throw new IOException();
-    }
-
-
-    /**
-     * Removes event listeners and deletes the cache file.
-     */
-    @After
-    public void after()
-    {
-        if (keeper != null)
-            keeper.removeEventListeners();
-
-        FileUtils.deleteFile(new File(CACHE_PATH));
+        return timeKeeper;
     }
 
 
@@ -152,7 +120,7 @@ public class HarvestTimeKeeperTest
     @Test
     public void testHarvestIncompleteDuringNotStartedProcess()
     {
-        assert !keeper.isHarvestIncomplete();
+        assert !testedObject.isHarvestIncomplete();
     }
 
 
@@ -164,7 +132,7 @@ public class HarvestTimeKeeperTest
     public void testHarvestIncompleteDuringStartedProcess()
     {
         EventSystem.sendEvent(new HarvestStartedEvent(0, 1, null));
-        assert !keeper.isHarvestIncomplete();
+        assert !testedObject.isHarvestIncomplete();
     }
 
 
@@ -177,7 +145,7 @@ public class HarvestTimeKeeperTest
     {
         EventSystem.sendEvent(new HarvestStartedEvent(0, 1, null));
         EventSystem.sendEvent(new HarvestFinishedEvent(true, null));
-        assert !keeper.isHarvestIncomplete();
+        assert !testedObject.isHarvestIncomplete();
     }
 
 
@@ -190,7 +158,7 @@ public class HarvestTimeKeeperTest
     {
         EventSystem.sendEvent(new HarvestStartedEvent(0, 1, null));
         EventSystem.sendEvent(new HarvestFinishedEvent(false, null));
-        assert keeper.isHarvestIncomplete();
+        assert testedObject.isHarvestIncomplete();
     }
 
 
@@ -203,7 +171,7 @@ public class HarvestTimeKeeperTest
     {
         EventSystem.sendEvent(new HarvestStartedEvent(0, 1, null));
         EventSystem.sendEvent(new AbortingStartedEvent());
-        assert keeper.isHarvestIncomplete();
+        assert testedObject.isHarvestIncomplete();
     }
 
 
@@ -214,7 +182,7 @@ public class HarvestTimeKeeperTest
     @Test
     public void testInitialUnsubmittedChangesGetter()
     {
-        assert !keeper.hasUnsubmittedChanges();
+        assert !testedObject.hasUnsubmittedChanges();
     }
 
 
@@ -415,7 +383,7 @@ public class HarvestTimeKeeperTest
      */
     private ProcessTimeMeasure loadMeasureFromCache()
     {
-        final HarvestTimeKeeper loadedKeeper = new HarvestTimeKeeper(CACHE_PATH);
+        final HarvestTimeKeeper loadedKeeper = new HarvestTimeKeeper(cachePath);
         loadedKeeper.loadFromDisk();
 
         switch (testedMeasureType) {

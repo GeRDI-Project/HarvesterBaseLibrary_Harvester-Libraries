@@ -22,10 +22,9 @@ import static org.junit.Assert.assertNotEquals;
 import java.nio.charset.StandardCharsets;
 import java.util.Random;
 
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 
+import de.gerdiproject.AbstractFileSystemUnitTest;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.harvester.events.HarvestStartedEvent;
 import de.gerdiproject.harvest.save.HarvestSaver;
@@ -39,44 +38,36 @@ import de.gerdiproject.harvest.utils.time.ProcessTimeMeasure.ProcessStatus;
  *
  * @author Robin Weiss
  */
-public class HarvestSaverTest
+public class HarvestSaverTest extends AbstractFileSystemUnitTest<HarvestSaver>
 {
     private static final String TEST_NAME = "saveTest";
 
     private ProcessTimeMeasure measure;
-    private HarvestSaver saver;
 
 
-    /**
-     * Constructs a dummy harvest {@linkplain ProcessTimeMeasure} and uses it to
-     * construct a {@linkplain HarvestSaver}.
-     */
-    @Before
-    public void before()
+    @Override
+    protected HarvestSaver setUpTestObjects()
     {
         final Random random = new Random();
         final long startTimestamp = random.nextLong();
         final long endTimestamp = random.longs(startTimestamp + 1, startTimestamp + 99999999).findAny().getAsLong();
 
-        measure = new ProcessTimeMeasure();
-        measure.set(startTimestamp, endTimestamp, ProcessStatus.Finished);
-        saver = new HarvestSaver(TEST_NAME, StandardCharsets.UTF_8, measure);
+        this.measure = new ProcessTimeMeasure();
+        this.measure.set(startTimestamp, endTimestamp, ProcessStatus.Finished);
+
+        HarvestSaver saver = new HarvestSaver(TEST_NAME, StandardCharsets.UTF_8, measure);
         saver.addEventListeners();
+
+        return saver;
     }
 
 
-    /**
-     * Cleans up event listeners and temporary field values.
-     */
-    @After
+    @Override
     public void after()
     {
-        saver.removeEventListeners();
+        super.after();
+
         measure.removeEventListeners();
-
-        //saver.getTargetFile().delete();
-
-        saver = null;
         measure = null;
     }
 
@@ -88,7 +79,7 @@ public class HarvestSaverTest
     @Test
     public void testFileName()
     {
-        final String fileName = saver.getTargetFile().getName();
+        final String fileName = testedObject.getTargetFile().getName();
         final String expectedFileName = String.format(
                                             SaveConstants.SAVE_FILE_NAME,
                                             TEST_NAME,
@@ -105,11 +96,11 @@ public class HarvestSaverTest
     @Test
     public void testFileNameChangeAfterHarvest()
     {
-        final String fileNameBeforeHarvest = saver.getTargetFile().getName();
+        final String fileNameBeforeHarvest = testedObject.getTargetFile().getName();
 
         EventSystem.sendEvent(new HarvestStartedEvent(0, 1, null));
 
-        final String fileNameAfterHarvest = saver.getTargetFile().getName();
+        final String fileNameAfterHarvest = testedObject.getTargetFile().getName();
 
         assertNotEquals(fileNameBeforeHarvest, fileNameAfterHarvest);
     }

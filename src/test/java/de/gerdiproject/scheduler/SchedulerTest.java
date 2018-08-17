@@ -22,75 +22,64 @@ import static org.junit.Assert.fail;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Random;
 
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import ch.qos.logback.classic.Level;
+import de.gerdiproject.AbstractFileSystemUnitTest;
 import de.gerdiproject.harvest.application.events.ContextDestroyedEvent;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.scheduler.Scheduler;
-import de.gerdiproject.harvest.scheduler.constants.SchedulerConstants;
 import de.gerdiproject.harvest.scheduler.events.AddSchedulerTaskEvent;
 import de.gerdiproject.harvest.scheduler.events.DeleteSchedulerTaskEvent;
 import de.gerdiproject.harvest.scheduler.events.GetScheduleEvent;
-import de.gerdiproject.harvest.utils.FileUtils;
-import de.gerdiproject.harvest.utils.logger.constants.LoggerConstants;
 
 /**
  * This class contains unit tests for the {@linkplain Scheduler}.
  *
  * @author Robin Weiss
  */
-public class SchedulerTest
+public class SchedulerTest extends AbstractFileSystemUnitTest<Scheduler>
 {
-
     private static final String INVALID_CRON = "abc";
     private static final String RANDOM_CRON_TAB = "%d 0 1 1 *";
     private static final String SOME_CRON_TAB = "0 0 1 1 *";
-    private static final File CACHE_FILE = new File(
-        "mocked/" + String.format(
-            SchedulerConstants.CACHE_PATH,
-            "schedulerTest"));
+
+    private final File scheduleFile = new File(testFolder, "schedule.json");
 
 
-    private static final String CANNOT_CLEAN_ERROR =
-        "Could not delete the temporary test folder: "
-        + CACHE_FILE.getAbsolutePath();
-
-    private Scheduler scheduler;
-    private final Random random = new Random();
+    @Override
+    protected Scheduler setUpTestObjects()
+    {
+        Scheduler scheduler = new Scheduler(scheduleFile.toString());
+        scheduler.addEventListeners();
+        return scheduler;
+    }
 
 
     /**
      * Creates a new scheduler.
      * @throws IOException thrown when the test files were not properly cleaned up
      */
+    @Override
     @Before
     public void before() throws IOException
     {
-        if (CACHE_FILE.exists())
-            throw new IOException(CANNOT_CLEAN_ERROR);
-
-        LoggerConstants.ROOT_LOGGER.setLevel(Level.ERROR);
-
-        scheduler = new Scheduler(CACHE_FILE.getAbsolutePath());
-        scheduler.addEventListeners();
+        super.before();
+        setLoggerEnabled(false);
     }
 
 
     /**
      * Deletes the cache directory of test files and clears the scheduler.
      */
+    @Override
     @After
     public void after()
     {
-        FileUtils.deleteFile(CACHE_FILE);
-        scheduler.removeEventListeners();
-        scheduler = null;
-        LoggerConstants.ROOT_LOGGER.setLevel(Level.DEBUG);
+        super.after();
+        setLoggerEnabled(true);
     }
 
 
@@ -100,7 +89,7 @@ public class SchedulerTest
     @Test
     public void testConstructor()
     {
-        assertEquals(0, scheduler.size());
+        assertEquals(0, testedObject.size());
     }
 
 
@@ -111,7 +100,7 @@ public class SchedulerTest
     public void testSavingToDisk()
     {
         addTasks(1);
-        assertNotEquals(0, CACHE_FILE.length());
+        assertNotEquals(0, scheduleFile.length());
     }
 
 
@@ -124,11 +113,12 @@ public class SchedulerTest
     {
         addRandomNumberOfTasks();
 
-        Scheduler anotherScheduler = new Scheduler(CACHE_FILE.getAbsolutePath());
+        Scheduler anotherScheduler = new Scheduler(scheduleFile.toString());
         anotherScheduler.addEventListeners();
         anotherScheduler.loadFromDisk();
+        anotherScheduler.removeEventListeners();
 
-        assertEquals(scheduler.size(), anotherScheduler.size());
+        assertEquals(testedObject.size(), anotherScheduler.size());
     }
 
 
@@ -140,11 +130,11 @@ public class SchedulerTest
     public void testLoadingFromDiskNoExists()
     {
         addRandomNumberOfTasks();
-        final int oldSize = scheduler.size();
+        final int oldSize = testedObject.size();
 
-        scheduler.loadFromDisk();
+        testedObject.loadFromDisk();
 
-        assertEquals(oldSize, scheduler.size());
+        assertEquals(oldSize, testedObject.size());
     }
 
 
@@ -158,7 +148,7 @@ public class SchedulerTest
         final int numberOfTasks = random.nextInt(10);
         addTasks(numberOfTasks);
 
-        assertEquals(numberOfTasks, scheduler.size());
+        assertEquals(numberOfTasks, testedObject.size());
     }
 
 
@@ -210,7 +200,7 @@ public class SchedulerTest
             EventSystem.sendSynchronousEvent(new DeleteSchedulerTaskEvent(randomCron));
         }
 
-        assertEquals(10 - numberOfDeletions, scheduler.size());
+        assertEquals(10 - numberOfDeletions, testedObject.size());
     }
 
 
@@ -237,7 +227,7 @@ public class SchedulerTest
     {
         addTasks(10);
         EventSystem.sendSynchronousEvent(new DeleteSchedulerTaskEvent(null));
-        assertEquals(0, scheduler.size());
+        assertEquals(0, testedObject.size());
     }
 
 
@@ -267,7 +257,7 @@ public class SchedulerTest
 
         final String scheduleText = EventSystem.sendSynchronousEvent(new GetScheduleEvent());
 
-        for (int i = 0; i < scheduler.size(); i++)
+        for (int i = 0; i < testedObject.size(); i++)
             assert scheduleText.contains(String.format(RANDOM_CRON_TAB, i) + "\n");
     }
 
@@ -292,7 +282,7 @@ public class SchedulerTest
         addRandomNumberOfTasks();
         EventSystem.sendEvent(new ContextDestroyedEvent());
 
-        assertEquals(0, scheduler.size());
+        assertEquals(0, testedObject.size());
     }
 
 
@@ -306,7 +296,7 @@ public class SchedulerTest
         EventSystem.sendEvent(new ContextDestroyedEvent());
 
         addTasks(1);
-        assertEquals(0, scheduler.size());
+        assertEquals(0, testedObject.size());
     }
 
 

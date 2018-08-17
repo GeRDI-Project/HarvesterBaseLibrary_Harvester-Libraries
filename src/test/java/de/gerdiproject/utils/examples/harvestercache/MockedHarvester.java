@@ -16,6 +16,7 @@
  */
 package de.gerdiproject.utils.examples.harvestercache;
 
+import java.io.File;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
@@ -43,11 +44,11 @@ public class MockedHarvester extends AbstractListHarvester<String>
      * @param mockedEntries a list of strings to be harvested
      * @param cacheFolder the folder where documents are cached
      */
-    public MockedHarvester(final List<String> mockedEntries, final String cacheFolder)
+    public MockedHarvester(final List<String> mockedEntries, final File cacheFolder)
     {
         super(1);
         this.mockedEntries = mockedEntries;
-        this.cacheFolder = cacheFolder;
+        this.cacheFolder = cacheFolder + "/";
     }
 
 
@@ -55,7 +56,7 @@ public class MockedHarvester extends AbstractListHarvester<String>
      * This constructor generates a short list to be used as entries.
      * @param cacheFolder the folder where documents are cached
      */
-    public MockedHarvester(final String cacheFolder)
+    public MockedHarvester(final File cacheFolder)
     {
         this(Arrays.asList("mockedEntry1", "mockedEntry2", "mockedEntry3"), cacheFolder);
     }

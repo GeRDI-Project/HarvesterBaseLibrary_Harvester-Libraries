@@ -29,8 +29,6 @@ import java.util.Map;
 import javax.xml.ws.http.HTTPException;
 
 import org.jsoup.nodes.Document;
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -39,16 +37,14 @@ import org.junit.runners.Parameterized.Parameters;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 
-import ch.qos.logback.classic.Level;
+import de.gerdiproject.AbstractFileSystemUnitTest;
 import de.gerdiproject.harvest.config.constants.ConfigurationConstants;
 import de.gerdiproject.harvest.config.events.GlobalParameterChangedEvent;
 import de.gerdiproject.harvest.config.parameters.BooleanParameter;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.event.IEvent;
-import de.gerdiproject.harvest.utils.FileUtils;
 import de.gerdiproject.harvest.utils.data.HttpRequester;
 import de.gerdiproject.harvest.utils.data.enums.RestRequestType;
-import de.gerdiproject.harvest.utils.logger.constants.LoggerConstants;
 
 /**
  * This class provides test cases for the {@linkplain HttpRequester}.
@@ -59,13 +55,11 @@ import de.gerdiproject.harvest.utils.logger.constants.LoggerConstants;
  * @author Robin Weiss
  */
 @RunWith(Parameterized.class)
-public class HttpRequesterTest
+public class HttpRequesterTest extends AbstractFileSystemUnitTest<HttpRequester>
 {
-    private static final File TEST_RESPONSE_CACHE_FOLDER = new File("mocked/httpRequesterTestDir");
     private static final String MOCKED_RESPONSE_CACHE_FOLDER = "src/test/java/de/gerdiproject/utils/examples/httpRequester/";
     private static final String JSON_OBJECT_URL = "http://fenixservices.fao.org/faostat/api/v1/en/documents/RFB/";
     private static final String DEFAULT_URL = "http://www.gerdi-project.de/";
-    private static final String CLEAN_UP_ERROR = "Could not remove temporary test folder!";
     private static final String UNEXPECTED_FILE_ERROR = "This file should not exist: ";
     private static final String CACHED_JSON = "response.json";
     private static final String CACHED_HTML = "response.html";
@@ -82,7 +76,6 @@ public class HttpRequesterTest
     private final IEvent changeReadFromDiskEvent;
     private final IEvent changeWriteToDiskEvent;
 
-    private HttpRequester requester = null;
 
 
     /**
@@ -105,32 +98,15 @@ public class HttpRequesterTest
     }
 
 
-    /**
-     * After each test, removes remaining event listeners from a {@linkplain HttpRequester}.
-     * @throws IOException thrown when the temporary cache folder could not be removed
-     */
-    @Before
-    public void before() throws IOException
+    @Override
+    protected HttpRequester setUpTestObjects()
     {
-        FileUtils.deleteFile(TEST_RESPONSE_CACHE_FOLDER);
-
-        if (TEST_RESPONSE_CACHE_FOLDER.exists())
-            throw new IOException(CLEAN_UP_ERROR);
-    }
-
-
-    /**
-     * After each test, removes remaining event listeners from a {@linkplain HttpRequester}.
-     */
-    @After
-    public void after()
-    {
-        if (requester != null)
-            requester.removeEventListeners();
-
-        requester = null;
-
-        FileUtils.deleteFile(TEST_RESPONSE_CACHE_FOLDER);
+        return new HttpRequester(
+                   StandardCharsets.UTF_8,
+                   new Gson(),
+                   isCachingEnabled,
+                   isCachingEnabled,
+                   testFolder.getPath());
     }
 
 
@@ -141,8 +117,7 @@ public class HttpRequesterTest
     @Test
     public void testReadFromDiskFlag()
     {
-        requester = createHttpRequester();
-        assertEquals(isCachingEnabled, requester.isReadingFromDisk());
+        assertEquals(isCachingEnabled, testedObject.isReadingFromDisk());
     }
 
     /**
@@ -152,8 +127,7 @@ public class HttpRequesterTest
     @Test
     public void testWriteToDiskFlag()
     {
-        requester = createHttpRequester();
-        assertEquals(isCachingEnabled, requester.isWritingToDisk());
+        assertEquals(isCachingEnabled, testedObject.isWritingToDisk());
     }
 
 
@@ -163,8 +137,7 @@ public class HttpRequesterTest
     @Test
     public void testCacheFolder()
     {
-        requester = createHttpRequester();
-        assertNotNull(requester.getCacheFolder());
+        assertNotNull(testedObject.getCacheFolder());
     }
 
 
@@ -176,8 +149,7 @@ public class HttpRequesterTest
     @Test
     public void testChangingReadFromDiskFlagAfterAddingEventListeners()
     {
-        requester = createHttpRequester();
-        requester.addEventListeners();
+        testedObject.addEventListeners();
         assertReadFromDiskFlagCanChange(true);
     }
 
@@ -190,7 +162,6 @@ public class HttpRequesterTest
     @Test
     public void testChangingReadFromDiskFlagBeforeAddingEventListeners()
     {
-        requester = createHttpRequester();
         assertReadFromDiskFlagCanChange(false);
     }
 
@@ -203,9 +174,8 @@ public class HttpRequesterTest
     @Test
     public void testChangingReadFromDiskFlagAfterRemovingEventListeners()
     {
-        requester = createHttpRequester();
-        requester.addEventListeners();
-        requester.removeEventListeners();
+        testedObject.addEventListeners();
+        testedObject.removeEventListeners();
         assertReadFromDiskFlagCanChange(false);
     }
 
@@ -218,8 +188,7 @@ public class HttpRequesterTest
     @Test
     public void testChangingWriteToDiskFlagAfterAddingEventListeners()
     {
-        requester = createHttpRequester();
-        requester.addEventListeners();
+        testedObject.addEventListeners();
         assertWriteToDiskFlagCanChange(true);
     }
 
@@ -232,7 +201,6 @@ public class HttpRequesterTest
     @Test
     public void testChangingWriteToDiskFlagBeforeAddingEventListeners()
     {
-        requester = createHttpRequester();
         assertWriteToDiskFlagCanChange(false);
     }
 
@@ -245,9 +213,8 @@ public class HttpRequesterTest
     @Test
     public void testChangingWriteToDiskFlagAfterRemovingEventListeners()
     {
-        requester = createHttpRequester();
-        requester.addEventListeners();
-        requester.removeEventListeners();
+        testedObject.addEventListeners();
+        testedObject.removeEventListeners();
         assertWriteToDiskFlagCanChange(false);
     }
 
@@ -258,19 +225,19 @@ public class HttpRequesterTest
     @Test
     public void testChangingWriteToDiskFlagWithMissingCachePath()
     {
-        requester = new HttpRequester(
+        testedObject = new HttpRequester(
             StandardCharsets.UTF_8,
             new Gson(),
             isCachingEnabled,
             isCachingEnabled,
             null);
 
-        requester.addEventListeners();
+        testedObject.addEventListeners();
 
         EventSystem.sendEvent(new GlobalParameterChangedEvent(
                                   new BooleanParameter(ConfigurationConstants.WRITE_HTTP_TO_DISK, true),
                                   null));
-        assert !requester.isWritingToDisk();
+        assert !testedObject.isWritingToDisk();
     }
 
 
@@ -280,19 +247,19 @@ public class HttpRequesterTest
     @Test
     public void testChangingReadFromDiskFlagWithMissingCachePath()
     {
-        requester = new HttpRequester(
+        testedObject = new HttpRequester(
             StandardCharsets.UTF_8,
             new Gson(),
             isCachingEnabled,
             isCachingEnabled,
             null);
 
-        requester.addEventListeners();
+        testedObject.addEventListeners();
 
         EventSystem.sendEvent(new GlobalParameterChangedEvent(
                                   new BooleanParameter(ConfigurationConstants.READ_HTTP_FROM_DISK, true),
                                   null));
-        assert !requester.isWritingToDisk();
+        assert !testedObject.isWritingToDisk();
     }
 
 
@@ -303,11 +270,12 @@ public class HttpRequesterTest
     @Test
     public void testGettingHtml()
     {
-        requester = createReadOnlyExampleHttpRequester();
+        testedObject = createReadOnlyExampleHttpRequester();
+
         final String requestUrl = isCachingEnabled
                                   ? DEFAULT_URL + MOCKED_RESPONSE_FOLDER
                                   : DEFAULT_URL;
-        Document htmlObject = requester.getHtmlFromUrl(requestUrl);
+        Document htmlObject = testedObject.getHtmlFromUrl(requestUrl);
 
         assertNotNull(htmlObject);
     }
@@ -320,11 +288,11 @@ public class HttpRequesterTest
     @Test
     public void testGettingHtmlFromInvalidUrl()
     {
-        requester = createReadOnlyExampleHttpRequester();
+        testedObject = createReadOnlyExampleHttpRequester();
 
-        LoggerConstants.ROOT_LOGGER.setLevel(Level.OFF);
-        Document htmlObject = requester.getHtmlFromUrl(DEFAULT_URL + "/thisDoesNotExist");
-        LoggerConstants.ROOT_LOGGER.setLevel(Level.DEBUG);
+        setLoggerEnabled(false);
+        Document htmlObject = testedObject.getHtmlFromUrl(DEFAULT_URL + "/thisDoesNotExist");
+        setLoggerEnabled(true);
 
         assertNull(htmlObject);
     }
@@ -339,18 +307,18 @@ public class HttpRequesterTest
     @Test
     public void testGettingUncachedHtml() throws IOException
     {
-        requester = createReadOnlyExampleHttpRequester();
+        testedObject = createReadOnlyExampleHttpRequester();
 
         final File cachedResponse =
             new File(
-            requester.getCacheFolder()
+            testedObject.getCacheFolder()
             + DEFAULT_URL.substring(7)
             + CACHED_HTML);
 
         if (cachedResponse.exists())
             throw new IOException(UNEXPECTED_FILE_ERROR + cachedResponse.getAbsolutePath());
 
-        final Document htmlObject = requester.getHtmlFromUrl(DEFAULT_URL);
+        final Document htmlObject = testedObject.getHtmlFromUrl(DEFAULT_URL);
         assertNotNull(htmlObject);
     }
 
@@ -361,17 +329,15 @@ public class HttpRequesterTest
     @Test
     public void testCachingHtml()
     {
-        requester = createHttpRequester();
-
         final File cachedResponse = new File(
-            requester.getCacheFolder()
+            testedObject.getCacheFolder()
             + DEFAULT_URL.substring(7)
             + CACHED_HTML);
 
         // no need to check if the file already exists, as this is done in before()
 
         // make a request, causing the response to be cached
-        requester.getHtmlFromUrl(DEFAULT_URL);
+        testedObject.getHtmlFromUrl(DEFAULT_URL);
 
         // verify the cache file was created (or not)
         assertEquals(isCachingEnabled, cachedResponse.exists());
@@ -385,11 +351,11 @@ public class HttpRequesterTest
     @Test
     public void testGettingObject()
     {
-        requester = createReadOnlyExampleHttpRequester();
+        testedObject = createReadOnlyExampleHttpRequester();
         final String requestUrl = isCachingEnabled
                                   ? JSON_OBJECT_URL + MOCKED_RESPONSE_FOLDER
                                   : JSON_OBJECT_URL;
-        final JsonObject obj = requester.getObjectFromUrl(requestUrl, JsonObject.class);
+        final JsonObject obj = testedObject.getObjectFromUrl(requestUrl, JsonObject.class);
 
         assertNotNull(obj);
     }
@@ -404,17 +370,17 @@ public class HttpRequesterTest
     @Test
     public void testGettingUncachedObject() throws IOException
     {
-        requester = createReadOnlyExampleHttpRequester();
+        testedObject = createReadOnlyExampleHttpRequester();
 
         final File cachedResponse =
-            new File(requester.getCacheFolder()
+            new File(testedObject.getCacheFolder()
                      + JSON_OBJECT_URL.substring(7)
                      + CACHED_JSON);
 
         if (cachedResponse.exists())
             throw new IOException(UNEXPECTED_FILE_ERROR + cachedResponse.getAbsolutePath());
 
-        JsonObject obj = requester.getObjectFromUrl(
+        JsonObject obj = testedObject.getObjectFromUrl(
                              JSON_OBJECT_URL,
                              JsonObject.class);
 
@@ -428,17 +394,15 @@ public class HttpRequesterTest
     @Test
     public void testCachingObject() throws IOException
     {
-        requester = createHttpRequester();
-
         final File cachedResponse = new File(
-            requester.getCacheFolder()
+            testedObject.getCacheFolder()
             + JSON_OBJECT_URL.substring(7)
             + CACHED_JSON);
 
         // no need to check if the file already exists, as this is done in before()
 
         // request JSON response
-        requester.getObjectFromUrl(JSON_OBJECT_URL, JsonObject.class);
+        testedObject.getObjectFromUrl(JSON_OBJECT_URL, JsonObject.class);
 
         // verify the cache file was created (or not)
         assertEquals(isCachingEnabled, cachedResponse.exists());
@@ -454,8 +418,8 @@ public class HttpRequesterTest
     @Test
     public void testGetRequestResponse() throws IOException, HTTPException
     {
-        requester = createReadOnlyExampleHttpRequester();
-        String response = requester.getRestResponse(RestRequestType.GET, DEFAULT_URL, null, null, "text/html");
+        testedObject = createReadOnlyExampleHttpRequester();
+        String response = testedObject.getRestResponse(RestRequestType.GET, DEFAULT_URL, null, null, "text/html");
         assertNotNull(response);
     }
 
@@ -469,9 +433,9 @@ public class HttpRequesterTest
     @Test
     public void testGettingHeader() throws IOException, HTTPException
     {
-        requester = createReadOnlyExampleHttpRequester();
+        testedObject = createReadOnlyExampleHttpRequester();
 
-        Map<String, List<String>> header = requester.getRestHeader(RestRequestType.GET, DEFAULT_URL, null);
+        Map<String, List<String>> header = testedObject.getRestHeader(RestRequestType.GET, DEFAULT_URL, null);
         assert header.size() > 0;
     }
 
@@ -497,22 +461,6 @@ public class HttpRequesterTest
 
 
     /**
-     * Creates a {@linkplain HttpRequester} that depends on the parameter.
-     *
-     * @return a {@linkplain HttpRequester} with enabled response caching
-     */
-    private HttpRequester createHttpRequester()
-    {
-        return new HttpRequester(
-                   StandardCharsets.UTF_8,
-                   new Gson(),
-                   isCachingEnabled,
-                   isCachingEnabled,
-                   TEST_RESPONSE_CACHE_FOLDER.getPath() + "/");
-    }
-
-
-    /**
      * Checks if the readFromDisk flag can be changed via a
      * GlobalParameterChangedEvent, and asserts that the behavior is expected.
      *
@@ -521,11 +469,11 @@ public class HttpRequesterTest
      */
     private void assertReadFromDiskFlagCanChange(boolean expectedResult)
     {
-        final boolean oldValue = requester.isReadingFromDisk();
+        final boolean oldValue = testedObject.isReadingFromDisk();
 
         EventSystem.sendEvent(changeReadFromDiskEvent);
 
-        assertEquals(expectedResult, oldValue != requester.isReadingFromDisk());
+        assertEquals(expectedResult, oldValue != testedObject.isReadingFromDisk());
     }
 
     /**
@@ -537,10 +485,10 @@ public class HttpRequesterTest
      */
     private void assertWriteToDiskFlagCanChange(boolean expectedResult)
     {
-        final boolean oldValue = requester.isWritingToDisk();
+        final boolean oldValue = testedObject.isWritingToDisk();
 
         EventSystem.sendEvent(changeWriteToDiskEvent);
 
-        assertEquals(expectedResult, oldValue != requester.isWritingToDisk());
+        assertEquals(expectedResult, oldValue != testedObject.isWritingToDisk());
     }
 }

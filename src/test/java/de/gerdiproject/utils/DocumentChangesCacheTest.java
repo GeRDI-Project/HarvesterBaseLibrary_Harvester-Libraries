@@ -20,18 +20,14 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
 import java.io.File;
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 
-import de.gerdiproject.harvest.utils.FileUtils;
+import de.gerdiproject.AbstractFileSystemUnitTest;
 import de.gerdiproject.harvest.utils.cache.DocumentChangesCache;
 import de.gerdiproject.harvest.utils.cache.constants.CacheConstants;
 import de.gerdiproject.json.datacite.DataCiteJson;
@@ -41,49 +37,21 @@ import de.gerdiproject.json.datacite.DataCiteJson;
  *
  * @author Robin Weiss
  */
-public class DocumentChangesCacheTest
+public class DocumentChangesCacheTest extends AbstractFileSystemUnitTest<DocumentChangesCache>
 {
-    private static final File CACHE_PARENT_FOLDER = new File("mocked/harvesterCacheTestDir/");
-    private static final String TEMP_CACHE_FOLDER = CACHE_PARENT_FOLDER.getPath() + "/temp/";
-    private static final String STABLE_CACHE_FOLDER = CACHE_PARENT_FOLDER.getPath() + "/stable/";
-
     private static final String DOCUMENT_ID = "mockedId";
-    private static final String CLEANUP_ERROR = "Could not delete temporary test diectory: " + CACHE_PARENT_FOLDER;
 
-    private final Random random = new Random();
-    private DocumentChangesCache changesCache;
+    private String wipFolder = testFolder + "/documents_temp/";
+    private String stableFolder = testFolder + "/documents/";
 
 
-    /**
-     * Removes the test folder and validates if it really
-     * has been deleted.
-     * Also creates an instance of a {@linkplain DocumentChangesCache}.
-     *
-     * @throws IOException thrown when the test folder could not be deleted
-     */
-    @Before
-    public void before() throws IOException
+    @Override
+    protected DocumentChangesCache setUpTestObjects()
     {
-        FileUtils.deleteFile(CACHE_PARENT_FOLDER);
-
-        if (CACHE_PARENT_FOLDER.exists())
-            throw new IOException(CLEANUP_ERROR);
-
-        changesCache = new DocumentChangesCache(
-            TEMP_CACHE_FOLDER,
-            STABLE_CACHE_FOLDER,
-            StandardCharsets.UTF_8);
-    }
-
-
-    /**
-     * Removes the test folder to free up some space.
-     */
-    @After
-    public void after()
-    {
-        changesCache = null;
-        FileUtils.deleteFile(CACHE_PARENT_FOLDER);
+        return new DocumentChangesCache(
+                   wipFolder,
+                   stableFolder,
+                   StandardCharsets.UTF_8);
     }
 
 
@@ -95,7 +63,7 @@ public class DocumentChangesCacheTest
     public void testInit()
     {
         // add 1-10 version cache documents
-        int size = 1 + random.nextInt(10);
+        final int size = 1 + random.nextInt(10);
 
         List<String> documentIDs = new LinkedList<>();
 
@@ -104,7 +72,7 @@ public class DocumentChangesCacheTest
 
 
         // initialize changes cache with the version cache
-        changesCache.init(documentIDs);
+        testedObject.init(documentIDs);
 
         // test if as many empty files were created as there were version files
         for (int i = 0; i < size; i++) {
@@ -137,7 +105,7 @@ public class DocumentChangesCacheTest
     public void testSizeWhenPuttingFiles()
     {
         final int numberOfPutFiles = putRandomNumberOfFiles(true);
-        assertEquals(numberOfPutFiles, changesCache.size());
+        assertEquals(numberOfPutFiles, testedObject.size());
     }
 
 
@@ -147,8 +115,8 @@ public class DocumentChangesCacheTest
     @Test
     public void testRemovingFiles()
     {
-        changesCache.putFile(DOCUMENT_ID, new DataCiteJson(DOCUMENT_ID));
-        changesCache.removeFile(DOCUMENT_ID);
+        testedObject.putFile(DOCUMENT_ID, new DataCiteJson(DOCUMENT_ID));
+        testedObject.removeFile(DOCUMENT_ID);
 
         File deletedDocument = getCachedDocument(DOCUMENT_ID, true);
         assert !deletedDocument.exists();
@@ -165,9 +133,9 @@ public class DocumentChangesCacheTest
         final int numberOfRemovedFiles = 1 + random.nextInt(numberOfPutFiles);
 
         for (int i = 0; i < numberOfRemovedFiles; i++)
-            changesCache.removeFile(DOCUMENT_ID + i);
+            testedObject.removeFile(DOCUMENT_ID + i);
 
-        assertEquals(numberOfPutFiles - numberOfRemovedFiles, changesCache.size());
+        assertEquals(numberOfPutFiles - numberOfRemovedFiles, testedObject.size());
     }
 
 
@@ -179,7 +147,7 @@ public class DocumentChangesCacheTest
     {
         final int numberOfPutFiles = putRandomNumberOfFiles(false);
 
-        List<String> documentIDs = changesCache.getDocumentIDs();
+        List<String> documentIDs = testedObject.getDocumentIDs();
 
         for (int i = 0; i < numberOfPutFiles; i++)
             assert documentIDs.contains(DOCUMENT_ID + i);
@@ -193,7 +161,7 @@ public class DocumentChangesCacheTest
     public void testApplyingChanges()
     {
         final int numberOfPutFiles = putRandomNumberOfFiles(true);
-        changesCache.applyChanges();
+        testedObject.applyChanges();
 
         // test if as many non-empty files were created as there were version files
         for (int i = 0; i < numberOfPutFiles; i++) {
@@ -213,7 +181,7 @@ public class DocumentChangesCacheTest
         final int numberOfPutFiles = putRandomNumberOfFiles(true);
 
         for (int i = 0; i < numberOfPutFiles; i++)
-            assertNull(changesCache.getFileContent(DOCUMENT_ID + i));
+            assertNull(testedObject.getFileContent(DOCUMENT_ID + i));
     }
 
 
@@ -227,7 +195,7 @@ public class DocumentChangesCacheTest
         final int numberOfPutFiles = putRandomNumberOfFiles(false);
 
         for (int i = 0; i < numberOfPutFiles; i++) {
-            final DataCiteJson retrievedDocument = changesCache.getFileContent(DOCUMENT_ID + i);
+            final DataCiteJson retrievedDocument = testedObject.getFileContent(DOCUMENT_ID + i);
             assertEquals(i, retrievedDocument.getPublicationYear());
         }
     }
@@ -244,7 +212,7 @@ public class DocumentChangesCacheTest
 
         // test if each document has a publication year that is equal to
         // the suffix of the document id
-        boolean successfulIteration = changesCache.forEach(
+        boolean successfulIteration = testedObject.forEach(
         (String documentId, DataCiteJson document) -> {
             short year = document.getPublicationYear();
             return documentId.endsWith(String.valueOf(year));
@@ -261,7 +229,7 @@ public class DocumentChangesCacheTest
     public void testForEachTemporaryFiles()
     {
         putRandomNumberOfFiles(true);
-        boolean successfulIteration = changesCache.forEach(
+        boolean successfulIteration = testedObject.forEach(
         (String documentId, DataCiteJson document) -> {
             return false;
         });
@@ -278,7 +246,7 @@ public class DocumentChangesCacheTest
         final int numberOfPutFiles = putRandomNumberOfFiles(false);
         final AtomicInteger numberOfProcessedFiles = new AtomicInteger(0);
 
-        changesCache.forEach(
+        testedObject.forEach(
         (String documentId, DataCiteJson document) -> {
             numberOfProcessedFiles.incrementAndGet();
             return true;
@@ -297,7 +265,7 @@ public class DocumentChangesCacheTest
     {
         putRandomNumberOfFiles(false);
 
-        boolean successfulIteration = changesCache.forEach(
+        boolean successfulIteration = testedObject.forEach(
         (String documentId, DataCiteJson document) -> {
             return false;
         });
@@ -316,13 +284,13 @@ public class DocumentChangesCacheTest
     public void testForEachAborting()
     {
         // add 2-10 files
-        changesCache.putFile(DOCUMENT_ID + 10, new DataCiteJson(DOCUMENT_ID + 10));
+        testedObject.putFile(DOCUMENT_ID + 10, new DataCiteJson(DOCUMENT_ID + 10));
         putRandomNumberOfFiles(false);
 
         final AtomicInteger numberOfProcessedFiles = new AtomicInteger(0);
 
         // abort forEach() after one iteration
-        changesCache.forEach(
+        testedObject.forEach(
         (String documentId, DataCiteJson document) -> {
             if (numberOfProcessedFiles.get() == 1)
                 return false;
@@ -356,11 +324,11 @@ public class DocumentChangesCacheTest
         for (int i = 0; i < size; i++) {
             final DataCiteJson putDocument = new DataCiteJson(DOCUMENT_ID + i);
             putDocument.setPublicationYear((short) i);
-            changesCache.putFile(DOCUMENT_ID + i, putDocument);
+            testedObject.putFile(DOCUMENT_ID + i, putDocument);
         }
 
         if (!isInTempFolder)
-            changesCache.applyChanges();
+            testedObject.applyChanges();
 
         return size;
     }
@@ -376,7 +344,7 @@ public class DocumentChangesCacheTest
      */
     private File getCachedDocument(String documentId, boolean isInTempFolder)
     {
-        final String topFolder = isInTempFolder ? TEMP_CACHE_FOLDER : STABLE_CACHE_FOLDER;
+        final String topFolder = isInTempFolder ? wipFolder : stableFolder;
         return new File(String.format(
                             CacheConstants.DOCUMENT_HASH_FILE_PATH,
                             topFolder + CacheConstants.CHANGES_FOLDER_NAME,

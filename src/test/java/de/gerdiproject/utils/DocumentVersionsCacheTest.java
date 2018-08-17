@@ -20,19 +20,15 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
 import java.io.File;
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
-import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 
 import com.google.gson.Gson;
 
-import de.gerdiproject.harvest.utils.FileUtils;
+import de.gerdiproject.AbstractFileSystemUnitTest;
 import de.gerdiproject.harvest.utils.cache.DocumentChangesCache;
 import de.gerdiproject.harvest.utils.cache.DocumentVersionsCache;
 import de.gerdiproject.harvest.utils.cache.constants.CacheConstants;
@@ -43,50 +39,22 @@ import de.gerdiproject.harvest.utils.data.DiskIO;
  *
  * @author Robin Weiss
  */
-public class DocumentVersionsCacheTest
+public class DocumentVersionsCacheTest extends AbstractFileSystemUnitTest<DocumentVersionsCache>
 {
-    private static final File CACHE_PARENT_FOLDER = new File("mocked/harvesterCacheTestDir/");
-    private static final String TEMP_CACHE_FOLDER = CACHE_PARENT_FOLDER.getPath() + "/temp/";
-    private static final String STABLE_CACHE_FOLDER = CACHE_PARENT_FOLDER.getPath() + "/stable/";
-
     private static final String HARVESTER_HASH = "ABC";
     private static final String DOCUMENT_ID = "mockedId";
-    private static final String CLEANUP_ERROR = "Could not delete temporary test diectory: " + CACHE_PARENT_FOLDER;
 
-    private final Random random = new Random();
-    private DocumentVersionsCache versionsCache;
+    private String wipFolder = testFolder + "/documents_temp/";
+    private String stableFolder = testFolder + "/documents/";
 
 
-    /**
-     * Removes the test folder and validates if it really
-     * has been deleted.
-     * Also creates an instance of a {@linkplain DocumentChangesCache}.
-     *
-     * @throws IOException thrown when the test folder could not be deleted
-     */
-    @Before
-    public void before() throws IOException
+    @Override
+    protected DocumentVersionsCache setUpTestObjects()
     {
-        FileUtils.deleteFile(CACHE_PARENT_FOLDER);
-
-        if (CACHE_PARENT_FOLDER.exists())
-            throw new IOException(CLEANUP_ERROR);
-
-        versionsCache = new DocumentVersionsCache(
-            TEMP_CACHE_FOLDER,
-            STABLE_CACHE_FOLDER,
-            StandardCharsets.UTF_8);
-    }
-
-
-    /**
-     * Removes the test folder to free up some space.
-     */
-    @After
-    public void after()
-    {
-        versionsCache = null;
-        FileUtils.deleteFile(CACHE_PARENT_FOLDER);
+        return new DocumentVersionsCache(
+                   wipFolder,
+                   stableFolder,
+                   StandardCharsets.UTF_8);
     }
 
 
@@ -99,11 +67,11 @@ public class DocumentVersionsCacheTest
     public void testInit()
     {
         final String sourceHash = HARVESTER_HASH + random.nextInt(1000);
-        versionsCache.init(sourceHash);
+        testedObject.init(sourceHash);
 
         final File sourceHashFile = new File(
             String.format(CacheConstants.SOURCE_HASH_FILE_PATH,
-                          TEMP_CACHE_FOLDER + CacheConstants.VERSIONS_FOLDER_NAME));
+                          wipFolder + CacheConstants.VERSIONS_FOLDER_NAME));
 
         final DiskIO diskReader = new DiskIO(new Gson(), StandardCharsets.UTF_8);
         assertEquals(sourceHash, diskReader.getString(sourceHashFile));
@@ -117,11 +85,11 @@ public class DocumentVersionsCacheTest
     @Test
     public void testInitWithNull()
     {
-        versionsCache.init(null);
+        testedObject.init(null);
 
         final File sourceHashFile = new File(
             String.format(CacheConstants.SOURCE_HASH_FILE_PATH,
-                          TEMP_CACHE_FOLDER + CacheConstants.VERSIONS_FOLDER_NAME));
+                          wipFolder + CacheConstants.VERSIONS_FOLDER_NAME));
 
         assert !sourceHashFile.exists();
     }
@@ -150,8 +118,8 @@ public class DocumentVersionsCacheTest
     @Test
     public void testRemovingFiles()
     {
-        versionsCache.putFile(DOCUMENT_ID, DOCUMENT_ID);
-        versionsCache.removeFile(DOCUMENT_ID);
+        testedObject.putFile(DOCUMENT_ID, DOCUMENT_ID);
+        testedObject.removeFile(DOCUMENT_ID);
 
         File deletedDocument = getCachedDocument(DOCUMENT_ID, true);
         assert !deletedDocument.exists();
@@ -166,7 +134,7 @@ public class DocumentVersionsCacheTest
     {
         final int numberOfPutFiles = putRandomNumberOfFiles(false);
 
-        List<String> documentIDs = versionsCache.getDocumentIDs();
+        List<String> documentIDs = testedObject.getDocumentIDs();
 
         for (int i = 0; i < numberOfPutFiles; i++)
             assert documentIDs.contains(DOCUMENT_ID + i);
@@ -194,7 +162,7 @@ public class DocumentVersionsCacheTest
     @Test
     public void testApplyingChangesPreservingOldFiles()
     {
-        versionsCache.putFile(DOCUMENT_ID + 10, DOCUMENT_ID + 10);
+        testedObject.putFile(DOCUMENT_ID + 10, DOCUMENT_ID + 10);
         putRandomNumberOfFiles(false);
 
         final File oldFile = getCachedDocument(DOCUMENT_ID + 10, false);
@@ -212,7 +180,7 @@ public class DocumentVersionsCacheTest
         final int numberOfPutFiles = putRandomNumberOfFiles(true);
 
         for (int i = 0; i < numberOfPutFiles; i++)
-            assertNull(versionsCache.getFileContent(DOCUMENT_ID + i));
+            assertNull(testedObject.getFileContent(DOCUMENT_ID + i));
     }
 
 
@@ -226,7 +194,7 @@ public class DocumentVersionsCacheTest
         final int numberOfPutFiles = putRandomNumberOfFiles(false);
 
         for (int i = 0; i < numberOfPutFiles; i++) {
-            final String retrievedValue = versionsCache.getFileContent(DOCUMENT_ID + i);
+            final String retrievedValue = testedObject.getFileContent(DOCUMENT_ID + i);
             assertEquals(DOCUMENT_ID + i, retrievedValue);
         }
     }
@@ -242,7 +210,7 @@ public class DocumentVersionsCacheTest
         putRandomNumberOfFiles(false);
 
         // test if each documentID match the documentHash
-        boolean successfulIteration = versionsCache.forEach(
+        boolean successfulIteration = testedObject.forEach(
         (String documentId, String documentHash) -> {
             return documentId.equals(documentHash);
         });
@@ -258,7 +226,7 @@ public class DocumentVersionsCacheTest
     public void testForEachTemporaryFiles()
     {
         putRandomNumberOfFiles(true);
-        boolean successfulIteration = versionsCache.forEach(
+        boolean successfulIteration = testedObject.forEach(
         (String documentId, String documentHash) -> {
             return false;
         });
@@ -275,7 +243,7 @@ public class DocumentVersionsCacheTest
         final int numberOfPutFiles = putRandomNumberOfFiles(false);
         final AtomicInteger numberOfProcessedFiles = new AtomicInteger(0);
 
-        versionsCache.forEach(
+        testedObject.forEach(
         (String documentId, String documentHash) -> {
             numberOfProcessedFiles.incrementAndGet();
             return true;
@@ -294,7 +262,7 @@ public class DocumentVersionsCacheTest
     {
         putRandomNumberOfFiles(false);
 
-        boolean successfulIteration = versionsCache.forEach(
+        boolean successfulIteration = testedObject.forEach(
         (String documentId, String documentHash) -> {
             return false;
         });
@@ -313,13 +281,13 @@ public class DocumentVersionsCacheTest
     public void testForEachAborting()
     {
         // add 2-10 files
-        versionsCache.putFile(DOCUMENT_ID + 10, DOCUMENT_ID + 10);
+        testedObject.putFile(DOCUMENT_ID + 10, DOCUMENT_ID + 10);
         putRandomNumberOfFiles(false);
 
         final AtomicInteger numberOfProcessedFiles = new AtomicInteger(0);
 
         // abort forEach() after one iteration
-        versionsCache.forEach(
+        testedObject.forEach(
         (String documentId, String documentHash) -> {
             if (numberOfProcessedFiles.get() == 1)
                 return false;
@@ -339,11 +307,11 @@ public class DocumentVersionsCacheTest
     @Test
     public void testDeletingEmptyFilesFromStableFolder()
     {
-        versionsCache.init(HARVESTER_HASH);
+        testedObject.init(HARVESTER_HASH);
         putRandomNumberOfFiles(false);
 
-        versionsCache.removeFile(DOCUMENT_ID + 0);
-        versionsCache.deleteEmptyFiles();
+        testedObject.removeFile(DOCUMENT_ID + 0);
+        testedObject.deleteEmptyFiles();
 
         assert !getCachedDocument(DOCUMENT_ID + 0, false).exists();
     }
@@ -356,11 +324,11 @@ public class DocumentVersionsCacheTest
     @Test
     public void testDeletingEmptyFilesFromTemporaryFolder()
     {
-        versionsCache.init(HARVESTER_HASH);
+        testedObject.init(HARVESTER_HASH);
         putRandomNumberOfFiles(false);
 
-        versionsCache.removeFile(DOCUMENT_ID + 0);
-        versionsCache.deleteEmptyFiles();
+        testedObject.removeFile(DOCUMENT_ID + 0);
+        testedObject.deleteEmptyFiles();
 
         assert !getCachedDocument(DOCUMENT_ID + 0, true).exists();
     }
@@ -373,10 +341,10 @@ public class DocumentVersionsCacheTest
     @Test
     public void testOutDated()
     {
-        versionsCache.init(HARVESTER_HASH);
-        versionsCache.applyChanges();
-        versionsCache.init(HARVESTER_HASH + 2);
-        assert versionsCache.isOutdated();
+        testedObject.init(HARVESTER_HASH);
+        testedObject.applyChanges();
+        testedObject.init(HARVESTER_HASH + 2);
+        assert testedObject.isOutdated();
     }
 
 
@@ -387,10 +355,10 @@ public class DocumentVersionsCacheTest
     @Test
     public void testOutDatedSameSourceHash()
     {
-        versionsCache.init(HARVESTER_HASH);
-        versionsCache.applyChanges();
-        versionsCache.init(HARVESTER_HASH);
-        assert !versionsCache.isOutdated();
+        testedObject.init(HARVESTER_HASH);
+        testedObject.applyChanges();
+        testedObject.init(HARVESTER_HASH);
+        assert !testedObject.isOutdated();
     }
 
 
@@ -413,10 +381,10 @@ public class DocumentVersionsCacheTest
         final int size = 1 + random.nextInt(10);
 
         for (int i = 0; i < size; i++)
-            versionsCache.putFile(DOCUMENT_ID + i, DOCUMENT_ID + i);
+            testedObject.putFile(DOCUMENT_ID + i, DOCUMENT_ID + i);
 
         if (!isInTempFolder)
-            versionsCache.applyChanges();
+            testedObject.applyChanges();
 
         return size;
     }
@@ -432,7 +400,7 @@ public class DocumentVersionsCacheTest
      */
     private File getCachedDocument(String documentId, boolean isInTempFolder)
     {
-        final String topFolder = isInTempFolder ? TEMP_CACHE_FOLDER : STABLE_CACHE_FOLDER;
+        final String topFolder = isInTempFolder ? wipFolder : stableFolder;
         return new File(String.format(
                             CacheConstants.DOCUMENT_HASH_FILE_PATH,
                             topFolder + CacheConstants.VERSIONS_FOLDER_NAME,

@@ -66,6 +66,7 @@ public class StateMachineTest
         assertEquals(testState, StateMachine.getCurrentState());
     }
 
+
     /**
      * Tests if the constructor of a state does not automatically
      * call the onStateEnter() function.
@@ -89,6 +90,7 @@ public class StateMachineTest
         StateMachine.setState(testState);
         assert testState.isActive();
     }
+
 
     /**
      * Tests if the onStateLeave() function of {@linkplain IState}

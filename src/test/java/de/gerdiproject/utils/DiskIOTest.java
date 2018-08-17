@@ -21,16 +21,13 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 
 import java.io.File;
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 
 import com.google.gson.Gson;
 
-import de.gerdiproject.harvest.utils.FileUtils;
+import de.gerdiproject.AbstractFileSystemUnitTest;
 import de.gerdiproject.harvest.utils.data.DiskIO;
 import de.gerdiproject.utils.examples.diskio.MockedObject;
 
@@ -40,51 +37,20 @@ import de.gerdiproject.utils.examples.diskio.MockedObject;
  *
  * @author Robin Weiss
  */
-public class DiskIOTest
+public class DiskIOTest extends AbstractFileSystemUnitTest<DiskIO>
 {
     private static final String TEST_STRING = "Döner macht schöner!";
-    private static final File STRING_TEST_FILE = new File("mocked/testDiskIoString.json");
-
-    private static final File OBJECT_TEST_FILE = new File("mocked/testDiskIoObject.json");
     private static final int OBJECT_TEST_INT = 1337;
     private static final String OBJECT_TEST_STRING = "Test String in Map";
-    private static final String CLEAN_UP_ERROR = "Could not remove test file: ";
 
-    private DiskIO diskIoUtf8;
+    private final File testStringFile = new File(testFolder, "testDiskIoString.json");
+    private final File testObjectFile = new File(testFolder, "testDiskIoObject.json");
 
 
-    /**
-     * Removes test files and verifies that they have been deleted.
-     * Creates a UTF-8 {@linkplain DiskIO} for testing.
-     *
-     * @throws IOException thrown when temporary files could not be deleted
-     */
-    @Before
-    public void before() throws IOException
+    @Override
+    protected DiskIO setUpTestObjects()
     {
-        FileUtils.deleteFile(STRING_TEST_FILE);
-        FileUtils.deleteFile(OBJECT_TEST_FILE);
-
-        if (STRING_TEST_FILE.exists())
-            throw new IOException(CLEAN_UP_ERROR + STRING_TEST_FILE.getAbsolutePath());
-
-        if (OBJECT_TEST_FILE.exists())
-            throw new IOException(CLEAN_UP_ERROR + STRING_TEST_FILE.getAbsolutePath());
-
-        diskIoUtf8 = new DiskIO(new Gson(), StandardCharsets.UTF_8);
-    }
-
-
-    /**
-     * Removes test files.
-     */
-    @After
-    public void after()
-    {
-        diskIoUtf8 = null;
-
-        FileUtils.deleteFile(STRING_TEST_FILE);
-        FileUtils.deleteFile(OBJECT_TEST_FILE);
+        return new DiskIO(new Gson(), StandardCharsets.UTF_8);
     }
 
 
@@ -94,11 +60,11 @@ public class DiskIOTest
     @Test
     public void testCharsets()
     {
-        diskIoUtf8.writeStringToFile(STRING_TEST_FILE, TEST_STRING);
-        final String retrievedUtf8 = diskIoUtf8.getString(STRING_TEST_FILE);
+        testedObject.writeStringToFile(testStringFile, TEST_STRING);
+        final String retrievedUtf8 = testedObject.getString(testStringFile);
 
         final DiskIO diskIoAscii = new DiskIO(new Gson(), StandardCharsets.US_ASCII);
-        final String retrievedAscii = diskIoAscii.getString(STRING_TEST_FILE);
+        final String retrievedAscii = diskIoAscii.getString(testStringFile);
 
         assertNotEquals(retrievedUtf8, retrievedAscii);
     }
@@ -111,9 +77,9 @@ public class DiskIOTest
     @Test
     public void testWritingStrings()
     {
-        diskIoUtf8.writeStringToFile(STRING_TEST_FILE, TEST_STRING);
+        testedObject.writeStringToFile(testStringFile, TEST_STRING);
 
-        assert STRING_TEST_FILE.exists();
+        assert testStringFile.exists();
     }
 
 
@@ -123,9 +89,9 @@ public class DiskIOTest
     @Test
     public void testReadingStrings()
     {
-        diskIoUtf8.writeStringToFile(STRING_TEST_FILE, TEST_STRING);
+        testedObject.writeStringToFile(testStringFile, TEST_STRING);
 
-        assertEquals(diskIoUtf8.getString(STRING_TEST_FILE), TEST_STRING);
+        assertEquals(testedObject.getString(testStringFile), TEST_STRING);
     }
 
 
@@ -135,11 +101,11 @@ public class DiskIOTest
     @Test
     public void testOverwritingStrings()
     {
-        diskIoUtf8.writeStringToFile(STRING_TEST_FILE, TEST_STRING);
-        final String firstReadString = diskIoUtf8.getString(STRING_TEST_FILE);
+        testedObject.writeStringToFile(testStringFile, TEST_STRING);
+        final String firstReadString = testedObject.getString(testStringFile);
 
-        diskIoUtf8.writeStringToFile(STRING_TEST_FILE, TEST_STRING);
-        final String secondReadString = diskIoUtf8.getString(STRING_TEST_FILE);
+        testedObject.writeStringToFile(testStringFile, TEST_STRING);
+        final String secondReadString = testedObject.getString(testStringFile);
 
         assertEquals(firstReadString, secondReadString);
     }
@@ -152,9 +118,9 @@ public class DiskIOTest
     public void testWritingObjects()
     {
         final MockedObject testObject = new MockedObject(OBJECT_TEST_STRING, OBJECT_TEST_INT);
-        diskIoUtf8.writeObjectToFile(OBJECT_TEST_FILE, testObject);
+        testedObject.writeObjectToFile(testObjectFile, testObject);
 
-        assertTrue(OBJECT_TEST_FILE.exists());
+        assertTrue(testObjectFile.exists());
     }
 
 
@@ -165,9 +131,9 @@ public class DiskIOTest
     public void testReadingObjects()
     {
         final MockedObject testObject = new MockedObject(OBJECT_TEST_STRING, OBJECT_TEST_INT);
-        diskIoUtf8.writeObjectToFile(OBJECT_TEST_FILE, testObject);
+        testedObject.writeObjectToFile(testObjectFile, testObject);
 
-        final MockedObject readObject = diskIoUtf8.getObject(OBJECT_TEST_FILE, testObject.getClass());
+        final MockedObject readObject = testedObject.getObject(testObjectFile, testObject.getClass());
         assertEquals(readObject, testObject);
     }
 
@@ -180,14 +146,14 @@ public class DiskIOTest
     {
         // write object
         final MockedObject writtenObject = new MockedObject(OBJECT_TEST_STRING, OBJECT_TEST_INT);
-        diskIoUtf8.writeObjectToFile(OBJECT_TEST_FILE, writtenObject);
+        testedObject.writeObjectToFile(testObjectFile, writtenObject);
 
         // write the same object again
-        final MockedObject firstReadObject = diskIoUtf8.getObject(OBJECT_TEST_FILE, writtenObject.getClass());
-        diskIoUtf8.writeObjectToFile(OBJECT_TEST_FILE, writtenObject);
+        final MockedObject firstReadObject = testedObject.getObject(testObjectFile, writtenObject.getClass());
+        testedObject.writeObjectToFile(testObjectFile, writtenObject);
 
         // read the object
-        final MockedObject secondReadObject = diskIoUtf8.getObject(OBJECT_TEST_FILE, writtenObject.getClass());
+        final MockedObject secondReadObject = testedObject.getObject(testObjectFile, writtenObject.getClass());
         assertEquals(firstReadObject, secondReadObject);
     }
 }
