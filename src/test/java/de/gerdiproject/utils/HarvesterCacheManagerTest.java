@@ -18,16 +18,15 @@ package de.gerdiproject.utils;
 
 import static org.junit.Assert.assertEquals;
 
-import java.io.File;
-
 import org.junit.Test;
 
-import de.gerdiproject.AbstractUnitTest;
+import de.gerdiproject.AbstractFileSystemUnitTest;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.save.HarvestSaver;
 import de.gerdiproject.harvest.utils.cache.HarvesterCache;
 import de.gerdiproject.harvest.utils.cache.HarvesterCacheManager;
 import de.gerdiproject.harvest.utils.cache.events.RegisterHarvesterCacheEvent;
+import de.gerdiproject.json.datacite.DataCiteJson;
 import de.gerdiproject.utils.examples.harvestercache.MockedHarvester;
 
 /**
@@ -35,8 +34,10 @@ import de.gerdiproject.utils.examples.harvestercache.MockedHarvester;
  *
  * @author Robin Weiss
  */
-public class HarvesterCacheManagerTest extends AbstractUnitTest<HarvesterCacheManager>
+public class HarvesterCacheManagerTest extends AbstractFileSystemUnitTest<HarvesterCacheManager>
 {
+    private static final String SOURCE_ID = "source";
+
     @Override
     protected HarvesterCacheManager setUpTestObjects()
     {
@@ -82,11 +83,26 @@ public class HarvesterCacheManagerTest extends AbstractUnitTest<HarvesterCacheMa
 
 
     /**
-     * Tests if
+     * Tests if the getNumberOfHarvestedDocuments() method correctly returns the total
+     * number of all cached changes.
      */
     @Test
-    public void test()
+    public void testGettingNumberOfHarvestedDocuments()
     {
+        registerRandomNumberOfCaches();
+
+        int numberOfHarvestedDocs = 0;
+
+        for (HarvesterCache cache : testedObject.getHarvesterCaches()) {
+            final int addedDocs = 1 + random.nextInt(10);
+
+            for (int i = 0; i < addedDocs; i++)
+                cache.cacheDocument(new DataCiteJson(SOURCE_ID + (numberOfHarvestedDocs + i)), true);
+
+            numberOfHarvestedDocs += addedDocs;
+        }
+
+        assertEquals(numberOfHarvestedDocs, testedObject.getNumberOfHarvestedDocuments());
     }
 
 
@@ -118,7 +134,7 @@ public class HarvesterCacheManagerTest extends AbstractUnitTest<HarvesterCacheMa
      */
     private HarvesterCache registerCache()
     {
-        final MockedHarvester mockedHarvester = new MockedHarvester(new File(""));
+        final MockedHarvester mockedHarvester = new MockedHarvester(testFolder);
         final HarvesterCache registeredCache = new HarvesterCache(mockedHarvester);
         final RegisterHarvesterCacheEvent registerEvent = new RegisterHarvesterCacheEvent(registeredCache);
 

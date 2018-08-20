@@ -110,7 +110,7 @@ public class HarvesterCacheTest extends AbstractFileSystemUnitTest<HarvesterCach
      * undeploys the harvester service.
      */
     @Test
-    public void testAddingEventListeners()
+    public void testContextDestroyedEvent()
     {
         testedObject.addEventListeners();
 
@@ -120,26 +120,6 @@ public class HarvesterCacheTest extends AbstractFileSystemUnitTest<HarvesterCach
         // make sure temporary files are cleaned up
         final File cacheFolder = new File(harvester.getTemporaryCacheFolder());
         assert !cacheFolder.exists();
-    }
-
-
-    /**
-     * Tests if removing event listeners is working as expected.
-     * In this case, tests if temporary files are no longer cleaned up when the server
-     * undeploys the harvester service.
-     */
-    @Test
-    public void testRemovingEventListeners()
-    {
-        testedObject.addEventListeners();
-        testedObject.removeEventListeners();
-
-        // send the ContextDestroyedEvent
-        EventSystem.sendEvent(new ContextDestroyedEvent());
-
-        // make sure temporary files are not cleaned up
-        final File cacheFolder = new File(harvester.getTemporaryCacheFolder());
-        assert cacheFolder.exists();
     }
 
 

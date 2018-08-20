@@ -210,7 +210,7 @@ public class HarvestTimeKeeperTest extends AbstractFileSystemUnitTest<HarvestTim
     public void testCachingStartedProcess()
     {
         testedObject.addEventListeners();
-        
+
         // send events to change status
         EventSystem.sendEvent(startEvent);
 
@@ -228,7 +228,7 @@ public class HarvestTimeKeeperTest extends AbstractFileSystemUnitTest<HarvestTim
     public void testCachingFinishedProcess()
     {
         testedObject.addEventListeners();
-        
+
         // send events to change status
         EventSystem.sendEvent(startEvent);
         EventSystem.sendEvent(finishedEvent);
@@ -247,7 +247,7 @@ public class HarvestTimeKeeperTest extends AbstractFileSystemUnitTest<HarvestTim
     public void testCachingFailedProcess()
     {
         testedObject.addEventListeners();
-        
+
         // send events to change status
         EventSystem.sendEvent(startEvent);
         EventSystem.sendEvent(failedEvent);
@@ -266,7 +266,7 @@ public class HarvestTimeKeeperTest extends AbstractFileSystemUnitTest<HarvestTim
     public void testCachingAbortedProcess()
     {
         testedObject.addEventListeners();
-        
+
         // send events to change status
         EventSystem.sendEvent(startEvent);
         EventSystem.sendEvent(new AbortingStartedEvent());
@@ -295,7 +295,7 @@ public class HarvestTimeKeeperTest extends AbstractFileSystemUnitTest<HarvestTim
     public void testProcessStart()
     {
         testedObject.addEventListeners();
-        
+
         EventSystem.sendEvent(startEvent);
         assertEquals(ProcessStatus.Started, testedMeasure.getStatus());
     }
@@ -309,7 +309,7 @@ public class HarvestTimeKeeperTest extends AbstractFileSystemUnitTest<HarvestTim
     public void testProcessFinished()
     {
         testedObject.addEventListeners();
-        
+
         EventSystem.sendEvent(startEvent);
         EventSystem.sendEvent(finishedEvent);
         assertEquals(ProcessStatus.Finished, testedMeasure.getStatus());
@@ -324,7 +324,7 @@ public class HarvestTimeKeeperTest extends AbstractFileSystemUnitTest<HarvestTim
     public void testProcessFailed()
     {
         testedObject.addEventListeners();
-        
+
         EventSystem.sendEvent(startEvent);
         EventSystem.sendEvent(failedEvent);
         assertEquals(ProcessStatus.Failed, testedMeasure.getStatus());
@@ -339,7 +339,7 @@ public class HarvestTimeKeeperTest extends AbstractFileSystemUnitTest<HarvestTim
     public void testProcessAborted()
     {
         testedObject.addEventListeners();
-        
+
         EventSystem.sendEvent(startEvent);
         EventSystem.sendEvent(new AbortingStartedEvent());
         assertEquals(ProcessStatus.Aborted, testedMeasure.getStatus());
@@ -354,7 +354,7 @@ public class HarvestTimeKeeperTest extends AbstractFileSystemUnitTest<HarvestTim
     public void testProcessRestartAfterFinished()
     {
         testedObject.addEventListeners();
-        
+
         EventSystem.sendEvent(startEvent);
         EventSystem.sendEvent(finishedEvent);
         EventSystem.sendEvent(startEvent);
@@ -370,7 +370,7 @@ public class HarvestTimeKeeperTest extends AbstractFileSystemUnitTest<HarvestTim
     public void testProcessRestartAfterFailed()
     {
         testedObject.addEventListeners();
-        
+
         EventSystem.sendEvent(startEvent);
         EventSystem.sendEvent(failedEvent);
         EventSystem.sendEvent(startEvent);
@@ -386,7 +386,7 @@ public class HarvestTimeKeeperTest extends AbstractFileSystemUnitTest<HarvestTim
     public void testProcessRestartAfterAborted()
     {
         testedObject.addEventListeners();
-        
+
         EventSystem.sendEvent(startEvent);
         EventSystem.sendEvent(new AbortingStartedEvent());
         EventSystem.sendEvent(startEvent);
