@@ -273,6 +273,8 @@ public class EventSystem
      */
     public static boolean hasAsynchronousEventListeners()
     {
+        System.out.println("ASYNC:");
+        instance.callbackMap.forEach((a, b) -> System.out.println(a.getSimpleName()));
         return !instance.callbackMap.isEmpty();
     }
 
@@ -284,6 +286,8 @@ public class EventSystem
      */
     public static boolean hasSynchronousEventListeners()
     {
+        System.out.println("SYNC:");
+        instance.synchronousCallbackMap.forEach((a, b) -> System.out.println(a.getSimpleName()));
         return !instance.synchronousCallbackMap.isEmpty();
     }
 }

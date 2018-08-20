@@ -57,10 +57,7 @@ public class HarvestSaverTest extends AbstractFileSystemUnitTest<HarvestSaver>
         this.measure.set(startTimestamp, endTimestamp, ProcessStatus.Finished);
         this.cacheManager = new HarvesterCacheManager();
 
-        final HarvestSaver saver = new HarvestSaver(testFolder, TEST_NAME, StandardCharsets.UTF_8, measure, cacheManager);
-        saver.addEventListeners();
-
-        return saver;
+        return new HarvestSaver(testFolder, TEST_NAME, StandardCharsets.UTF_8, measure, cacheManager);
     }
 
 
@@ -103,6 +100,7 @@ public class HarvestSaverTest extends AbstractFileSystemUnitTest<HarvestSaver>
     {
         final String fileNameBeforeHarvest = testedObject.getTargetFile().getName();
 
+        testedObject.addEventListeners();
         EventSystem.sendEvent(new HarvestStartedEvent(0, 1, null));
 
         final String fileNameAfterHarvest = testedObject.getTargetFile().getName();
@@ -116,11 +114,5 @@ public class HarvestSaverTest extends AbstractFileSystemUnitTest<HarvestSaver>
     {
         EventSystem.sendEvent(new StartSaveEvent(false));
         // TODO
-    }
-
-    @Test
-    public void testRemovingEventListeners()
-    {
-        testedObject.removeEventListeners();
     }
 }

@@ -94,8 +94,8 @@ public abstract class AbstractUnitTest<T>
     public void testForNoInitialEventListeners()
     {
         if (testedObject instanceof IEventListener) {
-            assert EventSystem.hasSynchronousEventListeners()
-            || EventSystem.hasAsynchronousEventListeners();
+            assert !EventSystem.hasSynchronousEventListeners()
+            && !EventSystem.hasAsynchronousEventListeners();
         }
     }
 

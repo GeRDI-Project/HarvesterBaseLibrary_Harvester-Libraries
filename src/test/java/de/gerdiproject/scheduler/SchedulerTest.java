@@ -50,7 +50,6 @@ public class SchedulerTest extends AbstractFileSystemUnitTest<Scheduler>
     protected Scheduler setUpTestObjects()
     {
         Scheduler scheduler = new Scheduler(scheduleFile.toString());
-        scheduler.addEventListeners();
         return scheduler;
     }
 
@@ -90,6 +89,7 @@ public class SchedulerTest extends AbstractFileSystemUnitTest<Scheduler>
     @Test
     public void testSavingToDisk()
     {
+        testedObject.addEventListeners();
         addTasks(1);
         assertNotEquals(0, scheduleFile.length());
     }
@@ -102,6 +102,7 @@ public class SchedulerTest extends AbstractFileSystemUnitTest<Scheduler>
     @Test
     public void testLoadingFromDisk()
     {
+        testedObject.addEventListeners();
         addRandomNumberOfTasks();
 
         Scheduler anotherScheduler = new Scheduler(scheduleFile.toString());
@@ -120,6 +121,7 @@ public class SchedulerTest extends AbstractFileSystemUnitTest<Scheduler>
     @Test
     public void testLoadingFromDiskNoExists()
     {
+        testedObject.addEventListeners();
         addRandomNumberOfTasks();
         final int oldSize = testedObject.size();
 
@@ -136,6 +138,7 @@ public class SchedulerTest extends AbstractFileSystemUnitTest<Scheduler>
     @Test
     public void testAddingTask()
     {
+        testedObject.addEventListeners();
         final int numberOfTasks = random.nextInt(10);
         addTasks(numberOfTasks);
 
@@ -149,6 +152,8 @@ public class SchedulerTest extends AbstractFileSystemUnitTest<Scheduler>
     @Test
     public void testAddingTaskTwice()
     {
+        testedObject.addEventListeners();
+
         try {
             EventSystem.sendSynchronousEvent(new AddSchedulerTaskEvent(SOME_CRON_TAB));
             EventSystem.sendSynchronousEvent(new AddSchedulerTaskEvent(SOME_CRON_TAB));
@@ -166,6 +171,8 @@ public class SchedulerTest extends AbstractFileSystemUnitTest<Scheduler>
     @Test
     public void testAddingTaskInvalidCronTab()
     {
+        testedObject.addEventListeners();
+
         try {
             EventSystem.sendSynchronousEvent(new AddSchedulerTaskEvent(INVALID_CRON));
 
@@ -183,6 +190,7 @@ public class SchedulerTest extends AbstractFileSystemUnitTest<Scheduler>
     @Test
     public void testDeletingTask()
     {
+        testedObject.addEventListeners();
         addTasks(10);
         final int numberOfDeletions = 1 + random.nextInt(10);
 
@@ -201,6 +209,8 @@ public class SchedulerTest extends AbstractFileSystemUnitTest<Scheduler>
     @Test
     public void testDeletingTaskNonExisting()
     {
+        testedObject.addEventListeners();
+
         try {
             EventSystem.sendSynchronousEvent(new DeleteSchedulerTaskEvent(SOME_CRON_TAB));
             fail("Deleting a non-existing cron tab should throw an exception!");
@@ -216,6 +226,7 @@ public class SchedulerTest extends AbstractFileSystemUnitTest<Scheduler>
     @Test
     public void testDeletingAllTasks()
     {
+        testedObject.addEventListeners();
         addTasks(10);
         EventSystem.sendSynchronousEvent(new DeleteSchedulerTaskEvent(null));
         assertEquals(0, testedObject.size());
@@ -229,6 +240,8 @@ public class SchedulerTest extends AbstractFileSystemUnitTest<Scheduler>
     @Test
     public void testDeletingAllTasksNonExisting()
     {
+        testedObject.addEventListeners();
+
         try {
             EventSystem.sendSynchronousEvent(new DeleteSchedulerTaskEvent(null));
         } catch (Exception ex) {
@@ -244,6 +257,7 @@ public class SchedulerTest extends AbstractFileSystemUnitTest<Scheduler>
     @Test
     public void testScheduleGetter()
     {
+        testedObject.addEventListeners();
         addRandomNumberOfTasks();
 
         final String scheduleText = EventSystem.sendSynchronousEvent(new GetScheduleEvent());
@@ -259,6 +273,7 @@ public class SchedulerTest extends AbstractFileSystemUnitTest<Scheduler>
     @Test
     public void testScheduleGetterEmpty()
     {
+        testedObject.addEventListeners();
         final String scheduleText = EventSystem.sendSynchronousEvent(new GetScheduleEvent());
         assert scheduleText.isEmpty();
     }
@@ -270,6 +285,7 @@ public class SchedulerTest extends AbstractFileSystemUnitTest<Scheduler>
     @Test
     public void testTaskRemovalOnContextDestruction()
     {
+        testedObject.addEventListeners();
         addRandomNumberOfTasks();
         EventSystem.sendEvent(new ContextDestroyedEvent());
 
@@ -284,6 +300,7 @@ public class SchedulerTest extends AbstractFileSystemUnitTest<Scheduler>
     @Test
     public void testForNoEventsOnContextDestruction()
     {
+        testedObject.addEventListeners();
         EventSystem.sendEvent(new ContextDestroyedEvent());
 
         addTasks(1);

@@ -68,6 +68,30 @@ public abstract class AbstractCompositeHarvester extends AbstractHarvester
 
 
     @Override
+    public void init()
+    {
+        subHarvesters.forEach((AbstractHarvester subHarvester) -> subHarvester.init());
+        super.init();
+    }
+
+
+    @Override
+    public void addEventListeners()
+    {
+        super.addEventListeners();
+        subHarvesters.forEach((AbstractHarvester subHarvester) -> subHarvester.addEventListeners());
+    }
+
+
+    @Override
+    public void removeEventListeners()
+    {
+        subHarvesters.forEach((AbstractHarvester subHarvester) -> subHarvester.removeEventListeners());
+        super.removeEventListeners();
+    }
+
+
+    @Override
     protected void setStartIndex(int startIndex)
     {
         updateRangeIndex(startIndex, (AbstractHarvester h, Integer index) -> {
@@ -154,14 +178,6 @@ public abstract class AbstractCompositeHarvester extends AbstractHarvester
         CompletableFuture.allOf(futureArray).get();
 
         return true;
-    }
-
-
-    @Override
-    public void init()
-    {
-        subHarvesters.forEach((AbstractHarvester subHarvester) -> subHarvester.init());
-        super.init();
     }
 
 

@@ -40,6 +40,7 @@ import de.gerdiproject.harvest.application.constants.ApplicationConstants;
 import de.gerdiproject.harvest.config.constants.ConfigurationConstants;
 import de.gerdiproject.harvest.config.events.HarvesterParameterChangedEvent;
 import de.gerdiproject.harvest.event.EventSystem;
+import de.gerdiproject.harvest.event.IEventListener;
 import de.gerdiproject.harvest.harvester.constants.HarvesterConstants;
 import de.gerdiproject.harvest.harvester.events.DocumentsHarvestedEvent;
 import de.gerdiproject.harvest.harvester.events.GetHarvesterOutdatedEvent;
@@ -73,7 +74,7 @@ import de.gerdiproject.json.GsonUtils;
  *
  * @author Robin Weiss
  */
-public abstract class AbstractHarvester
+public abstract class AbstractHarvester implements IEventListener
 {
     private final Map<String, String> properties;
     private final AtomicInteger maxDocumentCount;
@@ -117,7 +118,6 @@ public abstract class AbstractHarvester
             false,
             false,
             String.format(DataOperationConstants.CACHE_FOLDER_PATH, MainContext.getModuleName()));
-        httpRequester.addEventListeners();
 
         properties = new HashMap<>();
 
@@ -163,6 +163,38 @@ public abstract class AbstractHarvester
      *             implementation
      */
     protected abstract String initHash() throws NoSuchAlgorithmException, NullPointerException;
+
+
+
+    @Override
+    public void addEventListeners()
+    {
+        httpRequester.addEventListeners();
+
+        if (isMainHarvester) {
+            EventSystem.addListener(HarvesterParameterChangedEvent.class, onParameterChanged);
+            EventSystem.addListener(StartHarvestEvent.class, onStartHarvest);
+            EventSystem.addSynchronousListener(GetMaxDocumentCountEvent.class, this::onGetMaxDocumentCount);
+            EventSystem.addSynchronousListener(GetProviderNameEvent.class, this::onGetDataProviderName);
+            EventSystem.addSynchronousListener(GetHarvesterOutdatedEvent.class, this::onGetHarvesterOutdated);
+        }
+    }
+
+
+    @Override
+    public void removeEventListeners()
+    {
+        httpRequester.removeEventListeners();
+
+        if (isMainHarvester) {
+            EventSystem.removeListener(HarvesterParameterChangedEvent.class, onParameterChanged);
+            EventSystem.removeListener(StartHarvestEvent.class, onStartHarvest);
+            EventSystem.removeSynchronousListener(GetMaxDocumentCountEvent.class);
+            EventSystem.removeSynchronousListener(GetProviderNameEvent.class);
+            EventSystem.removeSynchronousListener(GetHarvesterOutdatedEvent.class);
+            EventSystem.removeListener(StartAbortingEvent.class, onStartAborting);
+        }
+    }
 
 
     /**
@@ -269,13 +301,6 @@ public abstract class AbstractHarvester
     public void setAsMainHarvester()
     {
         isMainHarvester = true;
-
-        // only the main harvester needs event interactions. if it is composite, it calls its subharvesters accordingly
-        EventSystem.addListener(HarvesterParameterChangedEvent.class, this::onParameterChanged);
-        EventSystem.addListener(StartHarvestEvent.class, this::onStartHarvest);
-        EventSystem.addSynchronousListener(GetMaxDocumentCountEvent.class, this::onGetMaxDocumentCount);
-        EventSystem.addSynchronousListener(GetProviderNameEvent.class, this::onGetDataProviderName);
-        EventSystem.addSynchronousListener(GetHarvesterOutdatedEvent.class, this::onGetHarvesterOutdated);
     }
 
 
@@ -636,13 +661,22 @@ public abstract class AbstractHarvester
 
 
     /**
+     * Event callback for starting the harvester.
+     *
+     * @param event the event that triggered this callback function
+     */
+    private final Consumer<StartHarvestEvent> onStartHarvest = (StartHarvestEvent event) -> {
+        harvest();
+    };
+
+
+    /**
      * Event callback for harvester parameter changes. Parameters include the
      * harvesting range, as well as any implementation specific properties.
      *
      * @param event the event that triggered this callback function
      */
-    private void onParameterChanged(HarvesterParameterChangedEvent event)
-    {
+    private final Consumer<HarvesterParameterChangedEvent> onParameterChanged = (HarvesterParameterChangedEvent event) -> {
         final String key = event.getParameter().getKey();
         final Object value = event.getParameter().getValue();
 
@@ -697,17 +731,6 @@ public abstract class AbstractHarvester
     {
         init();
         return isOutdated();
-    }
-
-
-    /**
-     * Event callback for starting the harvester.
-     *
-     * @param event the event that triggered this callback function
-     */
-    private void onStartHarvest(StartHarvestEvent event) // NOPMD events must be defined as parameter, even if not used
-    {
-        harvest();
     }
 
 

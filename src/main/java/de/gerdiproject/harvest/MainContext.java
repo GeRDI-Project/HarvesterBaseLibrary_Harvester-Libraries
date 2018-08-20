@@ -133,6 +133,7 @@ public class MainContext implements IEventListener
 
         this.harvester = harvesterClass.newInstance();
         harvester.setAsMainHarvester();
+        harvester.addEventListeners();
 
         // initialize the configuration
         this.configuration = new Configuration(harvesterParams);
