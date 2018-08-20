@@ -19,6 +19,9 @@ package de.gerdiproject;
 import java.io.IOException;
 import java.lang.reflect.ParameterizedType;
 import java.util.Random;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.function.Consumer;
 
 import org.junit.After;
 import org.junit.Before;
@@ -26,7 +29,10 @@ import org.junit.Test;
 
 import ch.qos.logback.classic.Level;
 import de.gerdiproject.harvest.event.EventSystem;
+import de.gerdiproject.harvest.event.IEvent;
 import de.gerdiproject.harvest.event.IEventListener;
+import de.gerdiproject.harvest.utils.CancelableFuture;
+import de.gerdiproject.harvest.utils.Procedure;
 import de.gerdiproject.harvest.utils.logger.constants.LoggerConstants;
 
 /**
@@ -38,6 +44,7 @@ import de.gerdiproject.harvest.utils.logger.constants.LoggerConstants;
 public abstract class AbstractUnitTest<T>
 {
     private static final String CLEANUP_ERROR = "Could not instantiate object: ";
+    protected static final int DEFAULT_EVENT_TIMEOUT = 2000;
 
     private final Level initialLogLevel = LoggerConstants.ROOT_LOGGER.getLevel();
     protected final Random random = new Random();
@@ -66,7 +73,7 @@ public abstract class AbstractUnitTest<T>
     public void after()
     {
         EventSystem.reset();
-        //testedObject = null;
+        testedObject = null;
     }
 
 
@@ -143,9 +150,61 @@ public abstract class AbstractUnitTest<T>
      *
      * @return the class that is being tested
      */
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings("unchecked") // NOPMD the cast will always succeed
     protected Class<T> getTestedClass()
     {
         return (Class<T>)((ParameterizedType) getClass().getGenericSuperclass()).getActualTypeArguments()[0];
+    }
+
+
+    /**
+     * This method executes a procedure and then waits for an event to be dispatched before returning it.
+     * If a specified timeout is reached, null is returned instead.
+     *
+     * @param eventClass the class of the event that is to be retrieved
+     * @param timeout the timeout in milliseconds until the method returns null
+     * @param startAction a procedure that ultimately causes the expected event to be sent
+     *
+     * @param <E> the type of the event that is expected
+     *
+     * @return the received event or null, if an exception or a timeout occurred
+     */
+    @SuppressWarnings("unchecked") // NOPMD - this function is horrible but useful. The cast will always succeed
+    protected <E extends IEvent> E waitForEvent(Class<E> eventClass, int timeout, final Procedure startAction)
+    {
+        // add a listener that memorizes the event when it is dispatched
+        final Object[] receivedEvent = new Object[1];
+        final Consumer<E> onEventReceived = (E event) -> receivedEvent[0] = event;
+        EventSystem.addListener(eventClass, onEventReceived);
+
+        // execute this asynchronously
+        try {
+            CancelableFuture<Boolean> asyncProcess = new CancelableFuture<>(() -> {
+
+                // execute the action that ultimately triggers the expected event
+                startAction.run();
+
+                // wait for the event to be dispatched or the timeout to be reached
+                int passedTime = 0;
+
+                while (receivedEvent[0] == null && passedTime < timeout)
+                {
+                    Thread.sleep(100);
+                    passedTime += 100;
+                }
+                return true;
+            });
+
+            // wait for the asynchronous process to finish
+            CompletableFuture.allOf(asyncProcess).get();
+        } catch (InterruptedException | ExecutionException e) {
+            return null;
+        }
+
+        // clean up the temporary listener
+        EventSystem.removeListener(eventClass, onEventReceived);
+
+        // cast and return the event
+        return (E) receivedEvent[0];
     }
 }

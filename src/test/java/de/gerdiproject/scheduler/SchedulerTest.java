@@ -62,9 +62,6 @@ public class SchedulerTest extends AbstractFileSystemUnitTest<Scheduler>
     }
 
 
-    /**
-     * Deletes the cache directory of test files and clears the scheduler.
-     */
     @Override
     public void after()
     {

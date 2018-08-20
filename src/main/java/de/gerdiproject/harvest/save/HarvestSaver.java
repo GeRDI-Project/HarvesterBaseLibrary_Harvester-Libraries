@@ -137,7 +137,11 @@ public class HarvestSaver implements IEventListener
 
         // exception handler
         currentSavingProcess.thenApply((isSuccessful) -> {
-            onSaveFinishedSuccessfully(isSuccessful);
+            if (isSuccessful)
+                onSaveFinishedSuccessfully();
+            else
+                onSaveFailed(null);
+
             return isSuccessful;
         }).exceptionally(throwable -> {
             onSaveFailed(throwable);
@@ -151,16 +155,13 @@ public class HarvestSaver implements IEventListener
      *
      * @param isSuccessful if true, the save was successful
      */
-    private void onSaveFinishedSuccessfully(boolean isSuccessful)
+    private void onSaveFinishedSuccessfully()
     {
-        if (isSuccessful)
-            LOGGER.info(SaveConstants.SAVE_OK);
-        else
-            LOGGER.info(SaveConstants.SAVE_FAILED);
+        LOGGER.info(SaveConstants.SAVE_OK);
 
         currentSavingProcess = null;
         EventSystem.removeListener(StartAbortingEvent.class, onStartAborting);
-        EventSystem.sendEvent(new SaveFinishedEvent(isSuccessful));
+        EventSystem.sendEvent(new SaveFinishedEvent(true));
 
         // if the save was aborted while it finished, notify listeners to
         // prevent dead-locks
@@ -190,8 +191,12 @@ public class HarvestSaver implements IEventListener
         if (isAborting) {
             isAborting = false;
             EventSystem.sendEvent(new AbortingFinishedEvent());
-        } else
+
+        } else if (reason != null)
             LOGGER.error(SaveConstants.SAVE_FAILED, reason);
+
+        else
+            LOGGER.error(SaveConstants.SAVE_FAILED);
 
         EventSystem.sendEvent(new SaveFinishedEvent(false));
     }

@@ -17,7 +17,7 @@
 package de.gerdiproject.harvest.utils;
 
 /**
- * This interface represents a lmbda expression that accepts no arguments and returns
+ * This interface represents a lambda expression that accepts no arguments and returns
  * nothing.
  *
  * @author https://stackoverflow.com/users/5299539/charana

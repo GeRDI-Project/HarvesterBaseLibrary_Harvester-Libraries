@@ -240,6 +240,7 @@ public abstract class AbstractHarvester implements IEventListener
                    getName());
     }
 
+
     /**
      * Returns a path to a directory in which harvested documents of this
      * harvester are stored permanently.
@@ -636,6 +637,7 @@ public abstract class AbstractHarvester implements IEventListener
         return name;
     }
 
+
     /**
      * Returns the charset of the harvested data.
      *
@@ -645,6 +647,7 @@ public abstract class AbstractHarvester implements IEventListener
     {
         return StandardCharsets.UTF_8;
     }
+
 
     //////////////////////////////
     // Event Callback Functions //
