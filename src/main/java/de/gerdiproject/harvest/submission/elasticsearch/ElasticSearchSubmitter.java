@@ -18,6 +18,7 @@ package de.gerdiproject.harvest.submission.elasticsearch;
 
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.charset.Charset;
 import java.rmi.ServerException;
 import java.util.List;
 import java.util.Map;
@@ -27,7 +28,6 @@ import javax.ws.rs.core.MediaType;
 import com.google.gson.Gson;
 
 import de.gerdiproject.harvest.IDocument;
-import de.gerdiproject.harvest.MainContext;
 import de.gerdiproject.harvest.submission.AbstractSubmitter;
 import de.gerdiproject.harvest.submission.elasticsearch.constants.ElasticSearchConstants;
 import de.gerdiproject.harvest.submission.elasticsearch.json.ElasticSearchIndex;
@@ -45,7 +45,7 @@ import de.gerdiproject.harvest.utils.data.enums.RestRequestType;
  */
 public class ElasticSearchSubmitter extends AbstractSubmitter
 {
-    private final HttpRequester httpRequester;
+    private HttpRequester httpRequester;
     private final Gson gson;
 
 
@@ -56,7 +56,14 @@ public class ElasticSearchSubmitter extends AbstractSubmitter
     {
         super();
         this.gson = new Gson();
-        httpRequester = new HttpRequester(MainContext.getCharset(), gson);
+    }
+
+
+    @Override
+    public void setCharset(Charset charset)
+    {
+        super.setCharset(charset);
+        httpRequester = new HttpRequester(charset, gson);
     }
 
 
@@ -213,7 +220,7 @@ public class ElasticSearchSubmitter extends AbstractSubmitter
     @Override
     protected int getSizeOfDocument(String documentId, IDocument document)
     {
-        return createBulkInstruction(documentId, document).getBytes(MainContext.getCharset()).length;
+        return createBulkInstruction(documentId, document).getBytes(charset).length;
     }
 
 

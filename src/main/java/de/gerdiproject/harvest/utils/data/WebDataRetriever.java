@@ -61,6 +61,18 @@ public class WebDataRetriever implements IDataRetriever
     }
 
 
+    /**
+     * Constructor that copies settings from another {@linkplain WebDataRetriever}.
+     *
+     * @param other the {@linkplain WebDataRetriever} of which the settings are copied
+     */
+    public WebDataRetriever(WebDataRetriever other)
+    {
+        this.gson = other.gson;
+        this.charset = other.charset;
+    }
+
+
     @Override
     public String getString(String url)
     {

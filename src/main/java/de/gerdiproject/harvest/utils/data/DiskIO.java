@@ -68,6 +68,18 @@ public class DiskIO implements IDataRetriever
 
 
     /**
+     * Constructor that copies over settings from another {@linkplain DiskIO}.
+     *
+     * @param other the {@linkplain DiskIO} of which the settings are copied
+     */
+    public DiskIO(DiskIO other)
+    {
+        this.gson = other.gson;
+        this.charset = other.charset;
+    }
+
+
+    /**
      * Writes a string to a file on disk.
      * @param filePath
      *      the complete path to the file

@@ -22,6 +22,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.stream.Collectors;
@@ -53,9 +54,8 @@ public class HarvesterLog
      * a standard logging pattern to it.
      *
      * @param logFilePath the path to the log file
-     * @param charset the charset of the log file
      */
-    public HarvesterLog(final String logFilePath, final Charset charset)
+    public HarvesterLog(final String logFilePath)
     {
         final LoggerContext loggerContext = (LoggerContext) LoggerFactory.getILoggerFactory();
 
@@ -71,7 +71,7 @@ public class HarvesterLog
         fileAppender.setFile(logFilePath);
         fileAppender.setEncoder(encoder);
 
-        this.charset = charset;
+        this.charset = StandardCharsets.UTF_8;
     }
 
 

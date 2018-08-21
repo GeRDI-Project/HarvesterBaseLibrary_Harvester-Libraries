@@ -16,14 +16,13 @@
 package de.gerdiproject.harvest.utils.cache;
 
 import java.io.File;
+import java.nio.charset.Charset;
 import java.util.function.Consumer;
 
 import de.gerdiproject.harvest.IDocument;
 import de.gerdiproject.harvest.application.events.ContextDestroyedEvent;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.event.IEventListener;
-import de.gerdiproject.harvest.harvester.AbstractHarvester;
-import de.gerdiproject.harvest.harvester.events.GetProviderNameEvent;
 import de.gerdiproject.harvest.save.HarvestSaver;
 import de.gerdiproject.harvest.submission.AbstractSubmitter;
 import de.gerdiproject.harvest.utils.FileUtils;
@@ -51,29 +50,31 @@ public class HarvesterCache implements IEventListener
     /**
      * Constructs a cache for a harvester.
      *
-     * @param harvester the harvester of which the documents are to be cached
+     * @param harvesterId a unique key for the harvester and harvester service
+     * @param wipPath the path to the folder were documents are stored temporarily
+     * @param stablePath the path to the folder were documents are persisted
+     * @param charset the charset for parsing documents
      */
-    public HarvesterCache(final AbstractHarvester harvester)
+    public HarvesterCache(final String harvesterId, final String wipPath, final String stablePath, final Charset charset)
     {
-        this.hashGenerator = new HashGenerator(harvester.getCharset());
+        this.hashGenerator = new HashGenerator(charset);
 
         // set harvesterID
-        final String providerName = EventSystem.sendSynchronousEvent(new GetProviderNameEvent());
-        this.harvesterId = providerName + harvester.getName();
+        this.harvesterId = harvesterId;
 
         // set cache folder
-        this.temporaryCacheFolder = new File(harvester.getTemporaryCacheFolder());
+        this.temporaryCacheFolder = new File(wipPath);
 
         // set versions and changes caches
         this.versionsCache = new DocumentVersionsCache(
-            harvester.getTemporaryCacheFolder(),
-            harvester.getStableCacheFolder(),
-            harvester.getCharset());
+            wipPath,
+            stablePath,
+            charset);
 
         this.changesCache = new DocumentChangesCache(
-            harvester.getTemporaryCacheFolder(),
-            harvester.getStableCacheFolder(),
-            harvester.getCharset());
+            wipPath,
+            stablePath,
+            charset);
 
         // set clean up event listener
         this.onContextDestroyed = (ContextDestroyedEvent event) -> FileUtils.deleteFile(temporaryCacheFolder);

@@ -20,7 +20,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 
 import java.io.File;
-import java.nio.charset.StandardCharsets;
 
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -46,7 +45,7 @@ public class HarvesterLogTest extends AbstractFileSystemUnitTest<HarvesterLog>
     @Override
     protected HarvesterLog setUpTestObjects()
     {
-        HarvesterLog log = new HarvesterLog(logFile.getPath(), StandardCharsets.UTF_8);
+        HarvesterLog log = new HarvesterLog(logFile.getPath());
         log.registerLogger();
         return log;
     }

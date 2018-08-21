@@ -17,8 +17,6 @@ package de.gerdiproject.harvest;
 
 
 import java.lang.reflect.ParameterizedType;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 import javax.servlet.ServletContextEvent;
@@ -82,17 +80,6 @@ public class ContextListener<T extends AbstractHarvester> implements ServletCont
 
 
     /**
-     * Retrieves the charset that is used for harvesting and file operations.
-     *
-     * @return a charset
-     */
-    protected Charset getCharset()
-    {
-        return StandardCharsets.UTF_8;
-    }
-
-
-    /**
      * Returns additional parameters that are specific to the harvester
      * implementation.
      *
@@ -136,7 +123,6 @@ public class ContextListener<T extends AbstractHarvester> implements ServletCont
         MainContext.init(
             getServiceName(),
             harvesterClass,
-            getCharset(),
             getHarvesterSpecificParameters(),
             createSubmitter());
 

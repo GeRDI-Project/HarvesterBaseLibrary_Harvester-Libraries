@@ -61,15 +61,12 @@ public class MockedHarvester extends AbstractListHarvester<String>
         this(Arrays.asList("mockedEntry1", "mockedEntry2", "mockedEntry3"), cacheFolder);
     }
 
-
-    @Override
     public String getTemporaryCacheFolder()
     {
         return cacheFolder + "documents_temp/";
     }
 
 
-    @Override
     public String getStableCacheFolder()
     {
         return cacheFolder + "documents/";

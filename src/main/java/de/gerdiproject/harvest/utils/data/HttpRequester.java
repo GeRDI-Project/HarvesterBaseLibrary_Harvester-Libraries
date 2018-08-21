@@ -110,6 +110,27 @@ public class HttpRequester implements IEventListener
 
 
     /**
+     * Constructor that copies the settings from another {@linkplain HttpRequester}.
+     *
+     * @param other the {@linkplain HttpRequester} from which the settings are copied
+     */
+    public HttpRequester(HttpRequester other)
+    {
+        if (cacheFolder != null && !cacheFolder.endsWith("/"))
+            cacheFolder += '/';
+
+        this.cacheFolder = other.cacheFolder;
+
+        this.readFromDisk = other.readFromDisk;
+        this.writeToDisk = other.writeToDisk;
+        this.httpCharset = other.httpCharset;
+
+        this.diskIO = new DiskIO(other.diskIO);
+        this.webDataRetriever = new WebDataRetriever(other.webDataRetriever);
+    }
+
+
+    /**
      * Constructor that disallows caching http responses on disk
      *
      * @param httpCharset the encoding charset

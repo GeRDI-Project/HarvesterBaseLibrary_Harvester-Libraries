@@ -25,6 +25,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.lang.reflect.ParameterizedType;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
@@ -35,8 +36,10 @@ import com.google.gson.stream.JsonWriter;
 import de.gerdiproject.harvest.IDocument;
 import de.gerdiproject.harvest.MainContext;
 import de.gerdiproject.harvest.application.events.ContextDestroyedEvent;
+import de.gerdiproject.harvest.config.parameters.AbstractParameter;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.harvester.constants.HarvesterConstants;
+import de.gerdiproject.harvest.utils.FileUtils;
 import de.gerdiproject.harvest.utils.cache.constants.CacheConstants;
 
 
@@ -59,6 +62,8 @@ public abstract class AbstractStreamHarvester<T> extends AbstractHarvester
     protected final int numberOfDocumentsPerEntry;
 
     protected final Gson gson;
+
+    protected File streamFile;
 
 
     /**
@@ -95,6 +100,32 @@ public abstract class AbstractStreamHarvester<T> extends AbstractHarvester
     public AbstractStreamHarvester(int numberOfDocumentsPerEntry)
     {
         this(null, numberOfDocumentsPerEntry);
+    }
+
+
+    @Override
+    public void init(boolean isMainHarvester, String moduleName, Map<String, AbstractParameter<?>> harvesterParameters)
+    {
+        super.init(isMainHarvester, moduleName, harvesterParameters);
+        initStreamFile(moduleName);
+    }
+
+
+    /**
+     * Initializes the file were entries are cached.
+     *
+     * @param moduleName the name of the harvester service
+     *
+     * @return a file were entries are cached
+     */
+    protected File initStreamFile(String moduleName)
+    {
+        String filePath = String.format(CacheConstants.CACHE_ENTRY_STREAM_PATH, MainContext.getModuleName(), getName());
+
+        File cacheFile = new File(filePath);
+        FileUtils.createEmptyFile(cacheFile);
+
+        return cacheFile;
     }
 
 
@@ -199,7 +230,7 @@ public abstract class AbstractStreamHarvester<T> extends AbstractHarvester
 
 
     @Override
-    public void init()
+    public void update()
     {
         // delete left-over cache file
         deleteEntryStreamFile();
@@ -210,7 +241,7 @@ public abstract class AbstractStreamHarvester<T> extends AbstractHarvester
             logger.error(String.format(CacheConstants.ENTRY_STREAM_WRITE_ERROR, e));
         }
 
-        super.init();
+        super.update();
     }
 
 
@@ -251,12 +282,10 @@ public abstract class AbstractStreamHarvester<T> extends AbstractHarvester
      */
     private JsonWriter createEntryStreamWriter() throws FileNotFoundException
     {
-        File cacheFile = getEntryStreamFile();
-
-        if (cacheFile == null)
+        if (streamFile == null)
             throw new FileNotFoundException();
 
-        return new JsonWriter(new OutputStreamWriter(new FileOutputStream(cacheFile), MainContext.getCharset()));
+        return new JsonWriter(new OutputStreamWriter(new FileOutputStream(streamFile), getCharset()));
     }
 
 
@@ -273,12 +302,10 @@ public abstract class AbstractStreamHarvester<T> extends AbstractHarvester
      */
     private JsonReader createEntryStreamReader() throws FileNotFoundException
     {
-        File cacheFile = getEntryStreamFile();
-
-        if (cacheFile == null)
+        if (streamFile == null)
             throw new FileNotFoundException();
 
-        return new JsonReader(new InputStreamReader(new FileInputStream(cacheFile), MainContext.getCharset()));
+        return new JsonReader(new InputStreamReader(new FileInputStream(streamFile), getCharset()));
     }
 
 
@@ -287,47 +314,20 @@ public abstract class AbstractStreamHarvester<T> extends AbstractHarvester
      */
     private void deleteEntryStreamFile()
     {
-        File cacheFile = getEntryStreamFile();
-
-        if (cacheFile != null && cacheFile.exists()) {
+        if (streamFile != null && streamFile.exists()) {
             boolean deleteSuccess;
 
             try {
-                deleteSuccess = cacheFile.delete();
+                deleteSuccess = streamFile.delete();
             } catch (SecurityException e) {
                 deleteSuccess = false;
             }
 
             if (deleteSuccess)
-                logger.info(String.format(CacheConstants.DELETE_FILE_SUCCESS, cacheFile.getName()));
+                logger.info(String.format(CacheConstants.DELETE_FILE_SUCCESS, streamFile.getName()));
             else
-                logger.error(String.format(CacheConstants.DELETE_FILE_FAILED, cacheFile.getName()));
+                logger.error(String.format(CacheConstants.DELETE_FILE_FAILED, streamFile.getName()));
         }
-    }
-
-
-    /**
-     * Creates or returns a cache file to which the entry stream is written.
-     *
-     * @return a cache file or null, if the file could not be created
-     */
-    protected File getEntryStreamFile()
-    {
-        String filePath = String.format(CacheConstants.CACHE_ENTRY_STREAM_PATH, MainContext.getModuleName(), name);
-
-        File cacheFile = new File(filePath);
-
-        // create directories, exit if they could not be created
-        boolean isDirectoryCreated;
-
-        try {
-            isDirectoryCreated = cacheFile.getParentFile().exists() || cacheFile.getParentFile().mkdirs();
-        } catch (SecurityException e) {
-            isDirectoryCreated = false;
-        }
-
-
-        return isDirectoryCreated ? cacheFile : null;
     }
 
 

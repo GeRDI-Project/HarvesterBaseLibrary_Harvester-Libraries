@@ -19,10 +19,11 @@ package de.gerdiproject.harvest.harvester;
 import java.security.NoSuchAlgorithmException;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiConsumer;
 
-import de.gerdiproject.harvest.MainContext;
+import de.gerdiproject.harvest.config.parameters.AbstractParameter;
 import de.gerdiproject.harvest.utils.HashGenerator;
 import de.gerdiproject.harvest.utils.cache.HarvesterCache;
 
@@ -68,10 +69,18 @@ public abstract class AbstractCompositeHarvester extends AbstractHarvester
 
 
     @Override
-    public void init()
+    public void init(final boolean isMainHarvester, final String moduleName, Map<String, AbstractParameter<?>> harvesterParameters)
     {
-        subHarvesters.forEach((AbstractHarvester subHarvester) -> subHarvester.init());
-        super.init();
+        subHarvesters.forEach((AbstractHarvester subHarvester) -> subHarvester.init(false, moduleName, harvesterParameters));
+        super.init(isMainHarvester, moduleName, harvesterParameters);
+    }
+
+
+    @Override
+    public void update()
+    {
+        subHarvesters.forEach((AbstractHarvester subHarvester) -> subHarvester.update());
+        super.update();
     }
 
 
@@ -196,9 +205,13 @@ public abstract class AbstractCompositeHarvester extends AbstractHarvester
     /**
      * The composite harvester does not harvest documents on its own. Therefore,
      * no cache is required.
+     *
+     * @param temporaryPath the path to a folder were documents are temporarily stored
+     * @param stablePath the path to a folder were documents are permanently stored
+     *         when the harvest was successful
      */
     @Override
-    protected HarvesterCache initCache()
+    protected HarvesterCache initCache(final String temporaryPath, final String stablePath)
     {
         return null;
     }
@@ -212,7 +225,7 @@ public abstract class AbstractCompositeHarvester extends AbstractHarvester
 
         subHarvesters.forEach((AbstractHarvester subHarvester) -> hashBuilder.append(subHarvester.getHash(false)));
 
-        final HashGenerator generator = new HashGenerator(MainContext.getCharset());
+        final HashGenerator generator = new HashGenerator(getCharset());
         return generator.getShaHash(hashBuilder.toString());
     }
 

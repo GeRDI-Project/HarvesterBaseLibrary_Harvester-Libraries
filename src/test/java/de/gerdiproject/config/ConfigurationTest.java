@@ -522,19 +522,6 @@ public class ConfigurationTest extends AbstractFileSystemUnitTest<Configuration>
 
 
     /**
-     * Tests if the {@linkplain Configuration}'s updateParameter() function sends events for
-     * both harvester- and global parameters.
-     */
-    @Test
-    public void testParameterUpdate()
-    {
-        // check GlobalParameterChanged event
-        testedObject.updateParameter(testedParam.getKey());
-        assertEquals(testedParam, getTestedEvent().getParameter());
-    }
-
-
-    /**
      * Tests if the {@linkplain Configuration}'s updateAllParameters() function sends events for
      * all parameters.
      */

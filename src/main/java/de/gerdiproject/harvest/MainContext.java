@@ -67,7 +67,6 @@ public class MainContext implements IEventListener
     private final String moduleName;
     private final HarvestTimeKeeper timeKeeper;
     private final AbstractHarvester harvester;
-    private final Charset charset;
     private final Configuration configuration;
 
     @SuppressWarnings("unused") // the submitter is connected via the event system
@@ -85,7 +84,6 @@ public class MainContext implements IEventListener
      * @param <T> an AbstractHarvester subclass
      * @param moduleName name of this application
      * @param harvesterClass an AbstractHarvester subclass
-     * @param charset the default charset for processing strings
      * @param harvesterParams additional parameters, specific to the harvester,
      *            or null
      * @param submitter the class responsible for submitting documents to a
@@ -95,13 +93,11 @@ public class MainContext implements IEventListener
      *
      * @see de.gerdiproject.harvest.harvester.AbstractHarvester
      */
-    private <T extends AbstractHarvester> MainContext(String moduleName, Class<T> harvesterClass,
-                                                      Charset charset, List<AbstractParameter<?>> harvesterParams, AbstractSubmitter submitter) throws InstantiationException, IllegalAccessException
+    private <T extends AbstractHarvester> MainContext(String moduleName, Class<T> harvesterClass, List<AbstractParameter<?>> harvesterParams, AbstractSubmitter submitter) throws InstantiationException, IllegalAccessException
     {
         this.moduleName = moduleName;
-        this.charset = charset;
 
-        this.log = new HarvesterLog(String.format(LoggerConstants.LOG_FILE_PATH, moduleName), charset);
+        this.log = new HarvesterLog(String.format(LoggerConstants.LOG_FILE_PATH, moduleName));
         log.registerLogger();
         this.onGetMainLog = (GetMainLogEvent event) -> {return log;};
 
@@ -120,6 +116,20 @@ public class MainContext implements IEventListener
         this.cacheManager.addEventListeners();
         this.onGetNumberOfHarvestedDocuments = (GetNumberOfHarvestedDocumentsEvent event) -> cacheManager.getNumberOfHarvestedDocuments();
 
+        // initialize the configuration
+        this.configuration = new Configuration(harvesterParams);
+        configuration.setCacheFilePath(String.format(ConfigurationConstants.CONFIG_PATH, moduleName));
+        configuration.loadFromEnvironmentVariables(moduleName);
+        configuration.loadFromDisk();
+
+        // initialize the harvester
+        this.harvester = harvesterClass.newInstance();
+        harvester.init(true, moduleName, configuration.getHarvesterParameters());
+        harvester.update();
+        harvester.addEventListeners();
+
+        Charset charset = harvester.getCharset();
+
         this.saver = new HarvestSaver(
             SaveConstants.DEFAULT_SAVE_FOLDER,
             moduleName,
@@ -128,25 +138,9 @@ public class MainContext implements IEventListener
             cacheManager);
 
         this.submitter = submitter;
+        submitter.setCharset(charset);
         submitter.setCacheManager(cacheManager);
         submitter.addEventListeners();
-
-        this.harvester = harvesterClass.newInstance();
-        harvester.setAsMainHarvester();
-        harvester.addEventListeners();
-
-        // initialize the configuration
-        this.configuration = new Configuration(harvesterParams);
-        configuration.setCacheFilePath(String.format(ConfigurationConstants.CONFIG_PATH, moduleName));
-        configuration.loadFromEnvironmentVariables(moduleName);
-        configuration.loadFromDisk();
-
-        // initialize the harvester properly (relies on the configuration)
-        harvester.init();
-
-        // update the harvesting range
-        configuration.updateParameter(ConfigurationConstants.HARVEST_START_INDEX);
-        configuration.updateParameter(ConfigurationConstants.HARVEST_END_INDEX);
 
         // init scheduler
         final String schedulerCachePath = String.format(SchedulerConstants.CACHE_PATH, moduleName);
@@ -161,7 +155,6 @@ public class MainContext implements IEventListener
      * @param <T> an AbstractHarvester subclass
      * @param moduleName name of this application
      * @param harvesterClass an AbstractHarvester subclass
-     * @param charset the default charset for processing strings
      * @param harvesterParams additional parameters, specific to the harvester,
      *            or null
      * @param submitter the class responsible for submitting documents to a
@@ -170,7 +163,7 @@ public class MainContext implements IEventListener
      * @see de.gerdiproject.harvest.harvester.AbstractHarvester
      */
     public static <T extends AbstractHarvester> void init(String moduleName, Class<T> harvesterClass,
-                                                          Charset charset, List<AbstractParameter<?>> harvesterParams, AbstractSubmitter submitter)
+                                                          List<AbstractParameter<?>> harvesterParams, AbstractSubmitter submitter)
     {
         LOGGER.info(ApplicationConstants.INIT_HARVESTER_START);
         StateMachine.setState(new InitializationState());
@@ -180,7 +173,7 @@ public class MainContext implements IEventListener
             if (instance != null)
                 instance.clear();
 
-            instance = new MainContext(moduleName, harvesterClass, charset, harvesterParams, submitter);
+            instance = new MainContext(moduleName, harvesterClass, harvesterParams, submitter);
             return true;
         });
 
@@ -235,17 +228,6 @@ public class MainContext implements IEventListener
 
 
     /**
-     * Retrieves the charset used for processing strings.
-     *
-     * @return the charset that is used for processing strings
-     */
-    public static Charset getCharset()
-    {
-        return instance != null ? instance.charset : null;
-    }
-
-
-    /**
      * Retrieves the global configuration.
      *
      * @return the harvester configuration
@@ -280,7 +262,7 @@ public class MainContext implements IEventListener
     private static Boolean onHarvesterInitializedSuccess(Boolean state)
     {
         // log sucess
-        LOGGER.info(String.format(ApplicationConstants.INIT_HARVESTER_SUCCESS, getModuleName()));
+        LOGGER.info(String.format(ApplicationConstants.INIT_HARVESTER_SUCCESS, instance.moduleName));
 
         // change state
         EventSystem.sendEvent(new HarvesterInitializedEvent(state));

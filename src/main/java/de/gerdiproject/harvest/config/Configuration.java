@@ -352,31 +352,6 @@ public class Configuration implements ICachedObject
 
 
     /**
-     * Sends out a parameter changed event for a specified parameter.
-     * @param key the key of the parameter
-     */
-    public void updateParameter(String key)
-    {
-        // look up the key in the global parameters
-        AbstractParameter<?> param = globalParameters.get(key);
-        boolean isHarvesterParam = false;
-
-        // if no global parameter with the specific name exists, look in the harvester parameters
-        if (param == null) {
-            param = harvesterParameters.get(key);
-            isHarvesterParam = true;
-        }
-
-        if (param != null) {
-            if (isHarvesterParam)
-                EventSystem.sendEvent(new HarvesterParameterChangedEvent(param, null));
-            else
-                EventSystem.sendEvent(new GlobalParameterChangedEvent(param, null));
-        }
-    }
-
-
-    /**
      * Sends out a parameter changed events for all parameters.
      */
     public void updateAllParameters()

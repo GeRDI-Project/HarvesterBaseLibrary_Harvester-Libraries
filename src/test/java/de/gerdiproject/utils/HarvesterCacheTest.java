@@ -45,19 +45,23 @@ import de.gerdiproject.utils.examples.harvestercache.MockedHarvester;
 public class HarvesterCacheTest extends AbstractFileSystemUnitTest<HarvesterCache>
 {
     private static final String HARVESTER_HASH = "abc";
+    private static final String HARVESTER_ID = "harvesterId";
 
     private static final String SOURCE_ID = "source1";
-    private static final String DOCUMENT_ID = "463c6c7494bc6a5f6eb5a731f462fcfefd4288fb";
+    private static final String DOCUMENT_ID = "381f236a968160abe96cfb223a43bbf2e917c14c";
 
     private MockedHarvester harvester;
+    private String tempFolder;
 
 
     @Override
     protected HarvesterCache setUpTestObjects()
     {
         harvester = new MockedHarvester(testFolder);
+        tempFolder = harvester.getTemporaryCacheFolder();
 
-        HarvesterCache cache = new HarvesterCache(harvester);
+        String stableFolder = harvester.getStableCacheFolder();
+        HarvesterCache cache = new HarvesterCache(HARVESTER_ID, tempFolder, stableFolder, StandardCharsets.UTF_8);
         cache.init(HARVESTER_HASH, 0, 1);
 
         return cache;
@@ -92,7 +96,7 @@ public class HarvesterCacheTest extends AbstractFileSystemUnitTest<HarvesterCach
     {
         final File sourceHashFile = new File(
             String.format(CacheConstants.SOURCE_HASH_FILE_PATH,
-                          harvester.getTemporaryCacheFolder() + CacheConstants.VERSIONS_FOLDER_NAME));
+                          tempFolder + CacheConstants.VERSIONS_FOLDER_NAME));
 
         final DiskIO diskReader = new DiskIO(new Gson(), StandardCharsets.UTF_8);
 
@@ -118,7 +122,7 @@ public class HarvesterCacheTest extends AbstractFileSystemUnitTest<HarvesterCach
         EventSystem.sendEvent(new ContextDestroyedEvent());
 
         // make sure temporary files are cleaned up
-        final File cacheFolder = new File(harvester.getTemporaryCacheFolder());
+        final File cacheFolder = new File(tempFolder);
         assert !cacheFolder.exists();
     }
 
@@ -133,7 +137,7 @@ public class HarvesterCacheTest extends AbstractFileSystemUnitTest<HarvesterCach
 
         File versionFile = new File(String.format(
                                         CacheConstants.DOCUMENT_HASH_FILE_PATH,
-                                        harvester.getTemporaryCacheFolder() + CacheConstants.VERSIONS_FOLDER_NAME,
+                                        tempFolder + CacheConstants.VERSIONS_FOLDER_NAME,
                                         DOCUMENT_ID.substring(0, 2),
                                         DOCUMENT_ID.substring(2)));
 
@@ -151,7 +155,7 @@ public class HarvesterCacheTest extends AbstractFileSystemUnitTest<HarvesterCach
 
         File changesFile = new File(String.format(
                                         CacheConstants.DOCUMENT_HASH_FILE_PATH,
-                                        harvester.getTemporaryCacheFolder() + CacheConstants.CHANGES_FOLDER_NAME,
+                                        tempFolder + CacheConstants.CHANGES_FOLDER_NAME,
                                         DOCUMENT_ID.substring(0, 2),
                                         DOCUMENT_ID.substring(2)));
 
@@ -314,7 +318,7 @@ public class HarvesterCacheTest extends AbstractFileSystemUnitTest<HarvesterCach
         testedObject.init(HARVESTER_HASH + 1, 0, 1);
 
         testedObject.skipAllDocuments();
-        File tempChangesFolder = new File(harvester.getTemporaryCacheFolder(), CacheConstants.CHANGES_FOLDER_NAME);
+        File tempChangesFolder = new File(tempFolder, CacheConstants.CHANGES_FOLDER_NAME);
 
         assertEquals(0, tempChangesFolder.listFiles().length);
     }

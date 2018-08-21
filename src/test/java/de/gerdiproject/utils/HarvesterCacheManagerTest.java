@@ -18,6 +18,8 @@ package de.gerdiproject.utils;
 
 import static org.junit.Assert.assertEquals;
 
+import java.nio.charset.StandardCharsets;
+
 import org.junit.Test;
 
 import de.gerdiproject.AbstractFileSystemUnitTest;
@@ -37,6 +39,7 @@ import de.gerdiproject.utils.examples.harvestercache.MockedHarvester;
 public class HarvesterCacheManagerTest extends AbstractFileSystemUnitTest<HarvesterCacheManager>
 {
     private static final String SOURCE_ID = "source";
+    private static final String HARVESTER_ID = "harvesterId";
 
     @Override
     protected HarvesterCacheManager setUpTestObjects()
@@ -135,7 +138,11 @@ public class HarvesterCacheManagerTest extends AbstractFileSystemUnitTest<Harves
     private HarvesterCache registerCache()
     {
         final MockedHarvester mockedHarvester = new MockedHarvester(testFolder);
-        final HarvesterCache registeredCache = new HarvesterCache(mockedHarvester);
+        final HarvesterCache registeredCache = new HarvesterCache(
+            HARVESTER_ID,
+            mockedHarvester.getTemporaryCacheFolder(),
+            mockedHarvester.getStableCacheFolder(),
+            StandardCharsets.UTF_8);
         final RegisterHarvesterCacheEvent registerEvent = new RegisterHarvesterCacheEvent(registeredCache);
 
         EventSystem.sendEvent(registerEvent);

@@ -16,6 +16,7 @@
 package de.gerdiproject.harvest.harvester.rest;
 
 
+import java.io.File;
 import java.util.Arrays;
 import java.util.List;
 
@@ -27,6 +28,7 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.ResponseBuilder;
 
 import de.gerdiproject.harvest.MainContext;
 import de.gerdiproject.harvest.config.Configuration;
@@ -34,6 +36,7 @@ import de.gerdiproject.harvest.config.constants.ConfigurationConstants;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.harvester.constants.HarvesterConstants;
 import de.gerdiproject.harvest.harvester.events.GetMaxDocumentCountEvent;
+import de.gerdiproject.harvest.save.events.SaveHarvestEvent;
 import de.gerdiproject.harvest.state.StateMachine;
 import de.gerdiproject.harvest.utils.ServerResponseFactory;
 import de.gerdiproject.harvest.utils.logger.HarvesterLog;
@@ -153,14 +156,24 @@ public class HarvesterFacade
      *
      * @return a status message describing if the saving could be started or not
      */
-    @POST
+    @GET
     @Path("save")
     @Produces({
         MediaType.TEXT_PLAIN
     })
     public Response saveDocuments()
     {
-        return StateMachine.getCurrentState().save();
+        final File harvestFile = EventSystem.sendSynchronousEvent(new SaveHarvestEvent());
+
+        if (harvestFile == null)
+            return ServerResponseFactory.createBadRequestResponse();
+        else {
+            ResponseBuilder response = Response.ok(harvestFile);
+            response.header("Content-Disposition", String.format("attachment; filename=\"%s\"", harvestFile.getName()));
+            return response.build();
+
+        }
+
     }
 
 

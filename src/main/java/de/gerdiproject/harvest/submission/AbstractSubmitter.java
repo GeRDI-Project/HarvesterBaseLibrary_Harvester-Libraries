@@ -16,6 +16,8 @@
 package de.gerdiproject.harvest.submission;
 
 import java.net.URL;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
@@ -58,6 +60,8 @@ public abstract class AbstractSubmitter implements IEventListener
     private String password;
     private boolean canSubmitOutdatedDocs;
     private boolean canSubmitFailedDocs;
+
+    protected Charset charset;
 
     protected final Logger logger; // NOPMD - we want to retrieve the type of the inheriting class
 
@@ -445,7 +449,7 @@ public abstract class AbstractSubmitter implements IEventListener
         if (userName == null || password == null || userName.isEmpty())
             this.credentials = null;
         else
-            this.credentials = Base64.getEncoder().encodeToString((userName + ":" + password).getBytes(MainContext.getCharset()));
+            this.credentials = Base64.getEncoder().encodeToString((userName + ":" + password).getBytes(StandardCharsets.UTF_8));
     }
 
 
@@ -527,4 +531,15 @@ public abstract class AbstractSubmitter implements IEventListener
             default: // ignore parameter
         }
     };
+
+
+    /**
+     * Sets the charset of the harvested documents.
+     *
+     * @param charset the charset of the harvested documents
+     */
+    public void setCharset(Charset charset)
+    {
+        this.charset = charset;
+    }
 }

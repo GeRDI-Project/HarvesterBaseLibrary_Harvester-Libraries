@@ -39,6 +39,7 @@ import de.gerdiproject.harvest.MainContext;
 import de.gerdiproject.harvest.application.constants.ApplicationConstants;
 import de.gerdiproject.harvest.config.constants.ConfigurationConstants;
 import de.gerdiproject.harvest.config.events.HarvesterParameterChangedEvent;
+import de.gerdiproject.harvest.config.parameters.AbstractParameter;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.event.IEventListener;
 import de.gerdiproject.harvest.harvester.constants.HarvesterConstants;
@@ -83,7 +84,8 @@ public abstract class AbstractHarvester implements IEventListener
     private HarvesterCache documentsCache;
 
     protected final Logger logger; // NOPMD - we want to retrieve the type of the inheriting class
-    protected final HttpRequester httpRequester;
+
+    protected HttpRequester httpRequester;
     protected CancelableFuture<Boolean> currentHarvestingProcess;
     protected boolean isMainHarvester;
     protected boolean isAborting;
@@ -112,13 +114,6 @@ public abstract class AbstractHarvester implements IEventListener
         name = (harvesterName != null) ? harvesterName : getClass().getSimpleName();
         logger = LoggerFactory.getLogger(name);
 
-        httpRequester = new HttpRequester(
-            MainContext.getCharset(),
-            createGsonBuilder().create(),
-            false,
-            false,
-            String.format(DataOperationConstants.CACHE_FOLDER_PATH, MainContext.getModuleName()));
-
         properties = new HashMap<>();
 
         currentHarvestingProcess = null;
@@ -141,29 +136,6 @@ public abstract class AbstractHarvester implements IEventListener
      * @return true, if everything was harvested
      */
     protected abstract boolean harvestInternal(int startIndex, int endIndex) throws Exception; // NOPMD - we want the inheriting class to be able to throw any exception
-
-
-    /**
-     * Calculates the total number of harvested documents.
-     *
-     * @return the total number of documents that are to be harvested
-     */
-    protected abstract int initMaxNumberOfDocuments();
-
-
-    /**
-     * Computes a hash value of the files that are to be harvested, which is
-     * used for checking if the files have changed.
-     *
-     * @return a hash as a checksum of the data which is to be harvested
-     *
-     * @throws NoSuchAlgorithmException occurs if an invalid algorithm is used
-     *             for a {@linkplain MessageDigest}
-     * @throws NullPointerException occurs for several reasons, depending on the
-     *             implementation
-     */
-    protected abstract String initHash() throws NoSuchAlgorithmException, NullPointerException;
-
 
 
     @Override
@@ -198,66 +170,6 @@ public abstract class AbstractHarvester implements IEventListener
 
 
     /**
-     * Creates or updates a cache for harvested documents.
-     *
-     * @return a cache for harvested documents
-     */
-    protected HarvesterCache initCache()
-    {
-        final HarvesterCache cache;
-
-        // create a new cache lazily
-        if (documentsCache == null) {
-            cache = new HarvesterCache(this);
-            cache.addEventListeners();
-
-            EventSystem.sendEvent(new RegisterHarvesterCacheEvent(cache));
-        } else
-            cache = documentsCache;
-
-
-        // update the harvester hash in the cache file
-        final int from = startIndex.get() == Integer.MAX_VALUE ? maxDocumentCount.get() : startIndex.get();
-        final int to = endIndex.get() == Integer.MAX_VALUE ? maxDocumentCount.get() : endIndex.get();
-        cache.init(hash, from, to);
-
-        return cache;
-    }
-
-
-    /**
-     * Returns a path to a directory in which harvested documents of this
-     * harvester are stored temporarily.
-     *
-     * @return a path to a directory in which harvested documents of this
-     * harvester are stored temporarily
-     */
-    public String getTemporaryCacheFolder()
-    {
-        return String.format(
-                   CacheConstants.TEMP_HARVESTER_CACHE_FOLDER_PATH,
-                   MainContext.getModuleName(),
-                   getName());
-    }
-
-
-    /**
-     * Returns a path to a directory in which harvested documents of this
-     * harvester are stored permanently.
-     *
-     * @return a path to a directory in which harvested documents of this
-     * harvester are stored permanently
-     */
-    public String getStableCacheFolder()
-    {
-        return String.format(
-                   CacheConstants.STABLE_HARVESTER_CACHE_FOLDER_PATH,
-                   MainContext.getModuleName(),
-                   getName());
-    }
-
-
-    /**
      * Aborts the harvesting process, allowing a new harvest to be started.
      */
     protected void abortHarvest()
@@ -270,8 +182,108 @@ public abstract class AbstractHarvester implements IEventListener
     /**
      * Initializes the Harvester, calculating the hash and maximum number of
      * harvestable documents.
+     *
+     * @param isMainHarvester if true, this is the harvester that can be triggered via REST
+     * @param moduleName the name of the harvester service
+     * @param harvesterParameters a map of parameters used to initialize the harvester
      */
-    public void init()
+    public void init(final boolean isMainHarvester, final String moduleName, Map<String, AbstractParameter<?>> harvesterParameters)
+    {
+        this.isMainHarvester = isMainHarvester;
+        this.httpRequester = new HttpRequester(
+            getCharset(),
+            GsonUtils.createGerdiDocumentGsonBuilder().create(),
+            false,
+            false,
+            String.format(DataOperationConstants.CACHE_FOLDER_PATH, moduleName));
+
+        // prepare documents cache
+        String tempPath = String.format(
+                              CacheConstants.TEMP_HARVESTER_CACHE_FOLDER_PATH,
+                              moduleName,
+                              getName());
+
+        String stablePath = String.format(
+                                CacheConstants.STABLE_HARVESTER_CACHE_FOLDER_PATH,
+                                moduleName,
+                                getName());
+
+        this.documentsCache = initCache(tempPath, stablePath);
+
+        // init parameters
+        harvesterParameters.forEach((String key, AbstractParameter<?> param) ->
+                                    setProperty(key, param.getValue() == null ? null : param.getValue().toString())
+                                   );
+    }
+
+
+    /**
+     * Calculates the total number of harvested documents.
+     *
+     * @return the total number of documents that are to be harvested
+     */
+    protected abstract int initMaxNumberOfDocuments();
+
+
+    /**
+     * Computes a hash value of the files that are to be harvested, which is
+     * used for checking if the files have changed.
+     *
+     * @return a hash as a checksum of the data which is to be harvested
+     *
+     * @throws NoSuchAlgorithmException occurs if an invalid algorithm is used
+     *             for a {@linkplain MessageDigest}
+     * @throws NullPointerException occurs for several reasons, depending on the
+     *             implementation
+     */
+    protected abstract String initHash() throws NoSuchAlgorithmException, NullPointerException;
+
+
+    /**
+     * Creates a cache for harvested documents.
+     *
+     * @param temporaryPath the path to a folder were documents are temporarily stored
+     * @param stablePath the path to a folder were documents are permanently stored
+     *         when the harvest was successful
+     *
+     * @return a cache for harvested documents
+     */
+    protected HarvesterCache initCache(final String temporaryPath, final String stablePath)
+    {
+        final String harvesterID = onGetDataProviderName(null) + getName();
+
+        final HarvesterCache cache = new HarvesterCache(
+            harvesterID,
+            temporaryPath,
+            stablePath,
+            getCharset());
+
+        cache.addEventListeners();
+
+        EventSystem.sendEvent(new RegisterHarvesterCacheEvent(cache));
+        return cache;
+    }
+
+
+    /**
+     * Updates the cache for harvested documents, if it exists.
+     */
+    protected void updateCache()
+    {
+        if (documentsCache != null) {
+            // update the harvester hash in the cache file
+            final int from = startIndex.get() == Integer.MAX_VALUE ? maxDocumentCount.get() : startIndex.get();
+            final int to = endIndex.get() == Integer.MAX_VALUE ? maxDocumentCount.get() : endIndex.get();
+            documentsCache.init(hash, from, to);
+        }
+    }
+
+
+    /**
+     * Updates the harvested source documents, calculating the hash and maximum number of
+     * harvestable documents.
+     */
+    public void update()
     {
         isFailing = false;
 
@@ -289,19 +301,8 @@ public abstract class AbstractHarvester implements IEventListener
         maxDocumentCount.set(maxHarvestableDocs);
         endIndex.set(maxHarvestableDocs);
 
-        // prepare documents cache
-        documentsCache = initCache();
-    }
-
-
-    /**
-     * Marks this harvester as the main harvester. Warning: This should not be
-     * called manually! This is only called once by the
-     * {@linkplain MainContext}.
-     */
-    public void setAsMainHarvester()
-    {
-        isMainHarvester = true;
+        // update documents cache
+        updateCache();
     }
 
 
@@ -325,7 +326,22 @@ public abstract class AbstractHarvester implements IEventListener
      */
     protected void setProperty(String key, String value)
     {
-        properties.put(key, value);
+        switch (key) {
+            case ConfigurationConstants.HARVEST_START_INDEX:
+                setStartIndex(Integer.parseInt(value));
+                break;
+
+            case ConfigurationConstants.HARVEST_END_INDEX:
+                setEndIndex(Integer.parseInt(value));
+                break;
+
+            case ConfigurationConstants.FORCE_HARVEST:
+                setForceHarvest(Boolean.getBoolean(value));
+                break;
+
+            default:
+                properties.put(key, value);
+        }
     }
 
 
@@ -376,7 +392,7 @@ public abstract class AbstractHarvester implements IEventListener
             startIndex.set(from);
 
         // when the range changes, the cache hash will change, too
-        documentsCache = initCache();
+        updateCache();
     }
 
 
@@ -397,7 +413,7 @@ public abstract class AbstractHarvester implements IEventListener
             endIndex.set(to);
 
         // when the range changes, the cache hash will change, too
-        documentsCache = initCache();
+        updateCache();
     }
 
 
@@ -420,8 +436,8 @@ public abstract class AbstractHarvester implements IEventListener
     {
         logger.info(String.format(HarvesterConstants.HARVESTER_START, name));
 
-        // init again to check if source data has changed
-        init();
+        // update to check if source data has changed
+        update();
 
         // convert max value to what is actually possible
         final int from = startIndex.get() == Integer.MAX_VALUE ? maxDocumentCount.get() : startIndex.get();
@@ -683,20 +699,7 @@ public abstract class AbstractHarvester implements IEventListener
         final String key = event.getParameter().getKey();
         final Object value = event.getParameter().getValue();
 
-        if (key.equals(ConfigurationConstants.HARVEST_START_INDEX))
-            setStartIndex((Integer) value);
-
-        else if (key.equals(ConfigurationConstants.HARVEST_END_INDEX))
-            setEndIndex((Integer) value);
-
-        else if (key.equals(ConfigurationConstants.FORCE_HARVEST))
-            setForceHarvest((Boolean) value);
-
-        else if (value != null)
-            setProperty(key, value.toString());
-
-        else
-            setProperty(key, null);
+        setProperty(key, value == null ? null : value.toString());
     };
 
 
@@ -732,7 +735,7 @@ public abstract class AbstractHarvester implements IEventListener
      */
     private Boolean onGetHarvesterOutdated(GetHarvesterOutdatedEvent event) // NOPMD events must be defined as parameter, even if not used
     {
-        init();
+        update();
         return isOutdated();
     }
 
