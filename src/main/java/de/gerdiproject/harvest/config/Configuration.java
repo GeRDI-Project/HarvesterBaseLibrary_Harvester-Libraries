@@ -94,7 +94,6 @@ public class Configuration implements ICachedObject
             ParameterFactory.createDefaultParameters(),
             ParameterFactory.createHarvesterParameters(harvesterParams)
         );
-        updateAllParameters();
     }
 
 
@@ -196,15 +195,19 @@ public class Configuration implements ICachedObject
 
         try {
             // copy harvester parameters
-            configJson.harvesterParameters.forEach((String key, AbstractParameter<?> param) -> {
-                if (harvesterParameters.containsKey(key))
-                    setParameter(key, param.getStringValue());
+            harvesterParameters.forEach((String key, AbstractParameter<?> param) -> {
+                AbstractParameter<?> externalParam = configJson.harvesterParameters.get(key);
+
+                if (externalParam != null)
+                    param.setValue(externalParam.getValue().toString(), null);
             });
 
             // copy global parameters
-            configJson.globalParameters.forEach((String key, AbstractParameter<?> param) -> {
-                if (globalParameters.containsKey(key))
-                    setParameter(key, param.getStringValue());
+            globalParameters.forEach((String key, AbstractParameter<?> param) -> {
+                AbstractParameter<?> externalParam = configJson.globalParameters.get(key);
+
+                if (externalParam != null)
+                    param.setValue(externalParam.getValue().toString(), null);
             });
 
             LOGGER.info(String.format(ConfigurationConstants.LOAD_OK, cacheFilePath));
@@ -239,7 +242,7 @@ public class Configuration implements ICachedObject
 
             if (envVal != null)
             {
-                LOGGER.debug(setParameter(key, envVal));
+                param.setValue(envVal, null);
                 changeCount.incrementAndGet();
             }
         });
@@ -251,7 +254,7 @@ public class Configuration implements ICachedObject
 
             if (envVal != null)
             {
-                LOGGER.debug(setParameter(key, envVal));
+                param.setValue(envVal, null);
                 changeCount.incrementAndGet();
             }
         });
