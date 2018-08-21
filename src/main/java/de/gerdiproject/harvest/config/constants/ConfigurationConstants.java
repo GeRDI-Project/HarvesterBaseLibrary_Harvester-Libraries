@@ -24,7 +24,6 @@ import de.gerdiproject.harvest.state.IState;
 import de.gerdiproject.harvest.state.impl.ErrorState;
 import de.gerdiproject.harvest.state.impl.IdleState;
 import de.gerdiproject.harvest.state.impl.InitializationState;
-import de.gerdiproject.harvest.state.impl.SavingState;
 import de.gerdiproject.harvest.state.impl.SubmittingState;
 import de.gerdiproject.harvest.utils.cache.constants.CacheConstants;
 
@@ -36,7 +35,6 @@ import de.gerdiproject.harvest.utils.cache.constants.CacheConstants;
  */
 public class ConfigurationConstants
 {
-    public static final String AUTO_SAVE = "autoSave";
     public static final String AUTO_SUBMIT = "autoSubmit";
     public static final String WRITE_HTTP_TO_DISK = "writeToDisk";
     public static final String READ_HTTP_FROM_DISK = "readFromDisk";
@@ -49,7 +47,6 @@ public class ConfigurationConstants
     public static final String SUBMIT_INCOMPLETE = "submitIncomplete";
     public static final String SUBMIT_FORCED = "submitOutdated";
     public static final String FORCE_HARVEST = "forceHarvest";
-    public static final String DELETE_UNFINISHED_SAVE = "deleteFailedSaves";
 
     public static final String CHANGED_PARAM = "Set parameter '%s' to '%s'.";
 
@@ -98,7 +95,6 @@ public class ConfigurationConstants
                 InitializationState.class,
                 ErrorState.class,
                 IdleState.class,
-                SavingState.class,
                 SubmittingState.class));
 
     public static final String URL_PREFIX = "%URL_PARAMETER%";

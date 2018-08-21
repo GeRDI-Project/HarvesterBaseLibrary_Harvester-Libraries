@@ -37,16 +37,6 @@ public enum HealthStatus {
     SUBMISSION_FAILED,
 
     /**
-     * The saving could not be completed, due to an exception.
-     */
-    SAVING_FAILED,
-
-    /**
-     * Both the saving and submission could not be completed, due to an exception.
-     */
-    SAVING_AND_SUBMISSION_FAILED,
-
-    /**
      * The harvester service could not be started.
      */
     FUBAR

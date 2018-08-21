@@ -127,13 +127,6 @@ public class ConfigurationTest extends AbstractFileSystemUnitTest<Configuration>
     }
 
 
-    @Override
-    public void after()
-    {
-        super.after();
-    }
-
-
     /**
      * Tests the constructor that requires both types of parameters by passing null
      * for each argument, and verifies that empty parameter maps are created.

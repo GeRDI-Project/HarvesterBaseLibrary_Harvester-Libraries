@@ -27,14 +27,11 @@ import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.harvester.events.HarvestFinishedEvent;
 import de.gerdiproject.harvest.harvester.events.HarvestStartedEvent;
 import de.gerdiproject.harvest.harvester.events.HarvesterInitializedEvent;
-import de.gerdiproject.harvest.save.events.SaveStartedEvent;
-import de.gerdiproject.harvest.save.events.StartSaveEvent;
 import de.gerdiproject.harvest.state.StateMachine;
 import de.gerdiproject.harvest.state.events.AbortingFinishedEvent;
 import de.gerdiproject.harvest.state.impl.ErrorState;
 import de.gerdiproject.harvest.state.impl.HarvestingState;
 import de.gerdiproject.harvest.state.impl.IdleState;
-import de.gerdiproject.harvest.state.impl.SavingState;
 import de.gerdiproject.harvest.state.impl.SubmittingState;
 import de.gerdiproject.harvest.submission.events.StartSubmissionEvent;
 import de.gerdiproject.harvest.submission.events.SubmissionFinishedEvent;
@@ -73,8 +70,7 @@ public class StateEventHandlerConstants
 
     /**
      * If the harvesting process is done either go to the
-     * {@linkplain IdleState}, {@linkplain SavingState}, or
-     * {@linkplain SubmittingState}, depending on the configuration.
+     * {@linkplain IdleState} or {@linkplain SubmittingState}, depending on the configuration.
      */
     public static final Consumer<HarvestFinishedEvent> ON_HARVEST_FINISHED = (HarvestFinishedEvent e) -> {
         // was the harvest successful? then choose the next automatic
@@ -85,12 +81,7 @@ public class StateEventHandlerConstants
 
             final Configuration config = MainContext.getConfiguration();
 
-            if (config.getParameterValue(ConfigurationConstants.AUTO_SAVE, Boolean.class)) {
-                EventSystem.sendEvent(new StartSaveEvent(true));
-                return;
-            }
-
-            else if (config.getParameterValue(ConfigurationConstants.AUTO_SUBMIT, Boolean.class)) {
+            if (config.getParameterValue(ConfigurationConstants.AUTO_SUBMIT, Boolean.class)) {
                 EventSystem.sendEvent(new StartSubmissionEvent());
                 return;
             }
@@ -108,17 +99,6 @@ public class StateEventHandlerConstants
     public static final Consumer<SubmissionStartedEvent> ON_SUBMISSION_STARTED = (SubmissionStartedEvent e) -> {
 
         SubmittingState nextState = new SubmittingState(e.getNumberOfDocuments());
-        StateMachine.setState(nextState);
-    };
-
-
-    /**
-     * Switches the state to {@linkplain SavingState} when a document saving
-     * process was started.
-     */
-    public static final Consumer<SaveStartedEvent> ON_SAVE_STARTED = (SaveStartedEvent e) -> {
-
-        SavingState nextState = new SavingState(e.getNumberOfDocuments(), e.isAutoTriggered());
         StateMachine.setState(nextState);
     };
 

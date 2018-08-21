@@ -24,8 +24,6 @@ import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.event.IEventListener;
 import de.gerdiproject.harvest.harvester.events.HarvestFinishedEvent;
 import de.gerdiproject.harvest.harvester.events.HarvestStartedEvent;
-import de.gerdiproject.harvest.save.events.SaveFinishedEvent;
-import de.gerdiproject.harvest.save.events.SaveStartedEvent;
 import de.gerdiproject.harvest.submission.events.SubmissionFinishedEvent;
 import de.gerdiproject.harvest.submission.events.SubmissionStartedEvent;
 import de.gerdiproject.harvest.utils.cache.ICachedObject;
@@ -43,7 +41,6 @@ public class HarvestTimeKeeper implements IEventListener, ICachedObject
 {
     private final ProcessTimeMeasure harvestMeasure;
     private final ProcessTimeMeasure submissionMeasure;
-    private final ProcessTimeMeasure saveMeasure;
 
     private final transient DiskIO diskIo;
     private final transient String cacheFilePath;
@@ -60,7 +57,6 @@ public class HarvestTimeKeeper implements IEventListener, ICachedObject
     {
         this.diskIo = new DiskIO(new GsonBuilder().create(), StandardCharsets.UTF_8);
         this.harvestMeasure = new ProcessTimeMeasure(HarvestStartedEvent.class, HarvestFinishedEvent.class);
-        this.saveMeasure = new ProcessTimeMeasure(SaveStartedEvent.class, SaveFinishedEvent.class);
         this.submissionMeasure = new ProcessTimeMeasure(SubmissionStartedEvent.class, SubmissionFinishedEvent.class);
 
         this.cacheFilePath = cacheFilePath;
@@ -71,7 +67,6 @@ public class HarvestTimeKeeper implements IEventListener, ICachedObject
     public void addEventListeners()
     {
         harvestMeasure.addEventListeners();
-        saveMeasure.addEventListeners();
         submissionMeasure.addEventListeners();
 
         EventSystem.addListener(HarvestStartedEvent.class, onHarvestStarted);
@@ -83,7 +78,6 @@ public class HarvestTimeKeeper implements IEventListener, ICachedObject
     public void removeEventListeners()
     {
         harvestMeasure.removeEventListeners();
-        saveMeasure.removeEventListeners();
         submissionMeasure.removeEventListeners();
 
         EventSystem.removeListener(HarvestStartedEvent.class, onHarvestStarted);
@@ -108,9 +102,6 @@ public class HarvestTimeKeeper implements IEventListener, ICachedObject
             // copy status if it is not started
             if (parsedKeeper.harvestMeasure.getStatus() != ProcessStatus.Started)
                 harvestMeasure.set(parsedKeeper.harvestMeasure);
-
-            if (parsedKeeper.saveMeasure.getStatus() != ProcessStatus.Started)
-                saveMeasure.set(parsedKeeper.saveMeasure);
 
             if (parsedKeeper.submissionMeasure.getStatus() != ProcessStatus.Started)
                 submissionMeasure.set(parsedKeeper.submissionMeasure);
@@ -141,17 +132,6 @@ public class HarvestTimeKeeper implements IEventListener, ICachedObject
 
 
     /**
-     * Returns the process time measure of the saving process.
-     *
-     * @return the process time measure of the saving process
-     */
-    public ProcessTimeMeasure getSaveMeasure()
-    {
-        return saveMeasure;
-    }
-
-
-    /**
      * Returns true if the harvest was finished prematurely due to an exception
      * or a user triggered abort.
      *
@@ -176,9 +156,8 @@ public class HarvestTimeKeeper implements IEventListener, ICachedObject
     }
 
 
-    private void resetSaveAndSubmissionMeasures()
+    private void resetSubmissionMeasure()
     {
-        saveMeasure.set(-1, -1, ProcessStatus.NotStarted);
         submissionMeasure.set(-1, -1, ProcessStatus.NotStarted);
     }
 
@@ -194,7 +173,7 @@ public class HarvestTimeKeeper implements IEventListener, ICachedObject
      * @param event the event that triggered the callback
      */
     private final transient Consumer<HarvestStartedEvent> onHarvestStarted = (HarvestStartedEvent event)  -> {
-        resetSaveAndSubmissionMeasures();
+        resetSubmissionMeasure();
     };
 
 

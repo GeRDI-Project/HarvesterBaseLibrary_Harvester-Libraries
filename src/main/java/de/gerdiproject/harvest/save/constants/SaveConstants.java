@@ -34,16 +34,19 @@ public class SaveConstants
     public static final String HARVEST_TO_JSON = "sourceRangeTo";
 
     public static final File DEFAULT_SAVE_FOLDER = new File("savedDocuments");
-    public static final String SAVE_FILE_NAME =  "%s_%d.json";
-    public static final String SAVE_FAILED_EMPTY = "Could not save documents: There are no changes to save!";
+    public static final String SAVE_FILE_NAME =  "%s.json";
 
 
     public static final String SAVE_START = "Saving documents to: %s";
     public static final String SAVE_OK = "Saving done!";
-    public static final String SAVE_FAILED = "Saving failed!";
-    public static final String SAVE_INTERRUPTED = "Saving interrupted unexpectedly!";
+    public static final String SAVE_FAILED_EXCEPTION = "Could not download harvest: %s!";
+    public static final String SAVE_FAILED_EMPTY = "Could not download harvest: There are no changes to save!";
+    public static final String SAVE_FAILED_CANNOT_CREATE = "Could not download harvest: Could not create file '%s' on the server!";
 
     public static final String DOCUMENTS_JSON = "documents";
+
+    public static final String CONTENT_HEADER = "Content-Disposition";
+    public static final String CONTENT_HEADER_VALUE = "attachment; filename=\"%s\"";
 
 
     /**

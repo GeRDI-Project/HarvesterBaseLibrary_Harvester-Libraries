@@ -63,7 +63,6 @@ public class SubmittingState extends AbstractProgressingState
         return String.format(
                    StateConstants.IDLE_STATUS,
                    timeKeeper.getHarvestMeasure().toString(),
-                   timeKeeper.getSaveMeasure().toString(),
                    super.getStatusString());
     }
 

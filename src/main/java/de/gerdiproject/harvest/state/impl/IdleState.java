@@ -33,7 +33,11 @@
  */
 package de.gerdiproject.harvest.state.impl;
 
+import java.io.File;
+import java.io.UncheckedIOException;
+
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.ResponseBuilder;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,8 +48,8 @@ import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.harvester.events.GetHarvesterOutdatedEvent;
 import de.gerdiproject.harvest.harvester.events.HarvestStartedEvent;
 import de.gerdiproject.harvest.harvester.events.StartHarvestEvent;
-import de.gerdiproject.harvest.save.events.SaveStartedEvent;
-import de.gerdiproject.harvest.save.events.StartSaveEvent;
+import de.gerdiproject.harvest.save.constants.SaveConstants;
+import de.gerdiproject.harvest.save.events.SaveHarvestEvent;
 import de.gerdiproject.harvest.state.IState;
 import de.gerdiproject.harvest.state.StateMachine;
 import de.gerdiproject.harvest.state.constants.StateConstants;
@@ -70,7 +74,6 @@ public class IdleState implements IState
     {
         EventSystem.addListener(HarvestStartedEvent.class, StateEventHandlerConstants.ON_HARVEST_STARTED);
         EventSystem.addListener(SubmissionStartedEvent.class, StateEventHandlerConstants.ON_SUBMISSION_STARTED);
-        EventSystem.addListener(SaveStartedEvent.class, StateEventHandlerConstants.ON_SAVE_STARTED);
 
         LOGGER.info(String.format(StateConstants.READY, MainContext.getModuleName()));
     }
@@ -81,7 +84,6 @@ public class IdleState implements IState
     {
         EventSystem.removeListener(HarvestStartedEvent.class, StateEventHandlerConstants.ON_HARVEST_STARTED);
         EventSystem.removeListener(SubmissionStartedEvent.class, StateEventHandlerConstants.ON_SUBMISSION_STARTED);
-        EventSystem.removeListener(SaveStartedEvent.class, StateEventHandlerConstants.ON_SAVE_STARTED);
     }
 
 
@@ -92,7 +94,6 @@ public class IdleState implements IState
         return String.format(
                    StateConstants.IDLE_STATUS,
                    timeKeeper.getHarvestMeasure().toString(),
-                   timeKeeper.getSaveMeasure().toString(),
                    timeKeeper.getSubmissionMeasure().toString());
     }
 
@@ -129,9 +130,23 @@ public class IdleState implements IState
     @Override
     public Response save()
     {
-        EventSystem.sendEvent(new StartSaveEvent(false));
-        return ServerResponseFactory.createAcceptedResponse(
-                   StateConstants.SAVING_STATUS);
+        try {
+            final File harvestFile = EventSystem.sendSynchronousEvent(new SaveHarvestEvent());
+
+            if (harvestFile != null) {
+                ResponseBuilder response = Response.ok(harvestFile);
+                response.header(
+                    SaveConstants.CONTENT_HEADER,
+                    String.format(SaveConstants.CONTENT_HEADER_VALUE, harvestFile.getName()));
+                return response.build();
+            }
+        } catch (IllegalStateException iex) {
+            return ServerResponseFactory.createBadRequestResponse(iex.getMessage());
+        } catch (UncheckedIOException uex) {
+            return ServerResponseFactory.createKnownErrorResponse((uex.getMessage()));
+        }
+
+        return ServerResponseFactory.createServerErrorResponse();
     }
 
 

@@ -28,8 +28,6 @@ import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.event.IEvent;
 import de.gerdiproject.harvest.harvester.events.HarvestFinishedEvent;
 import de.gerdiproject.harvest.harvester.events.HarvestStartedEvent;
-import de.gerdiproject.harvest.save.events.SaveFinishedEvent;
-import de.gerdiproject.harvest.save.events.SaveStartedEvent;
 import de.gerdiproject.harvest.state.events.AbortingStartedEvent;
 import de.gerdiproject.harvest.submission.events.SubmissionFinishedEvent;
 import de.gerdiproject.harvest.submission.events.SubmissionStartedEvent;
@@ -48,12 +46,11 @@ public class HarvestTimeKeeperTest extends AbstractFileSystemUnitTest<HarvestTim
 {
     private static final String HARVEST_MEASURE = "harvest";
     private static final String SUBMISSION_MEASURE = "submission";
-    private static final String SAVE_MEASURE = "save";
 
     @Parameters(name = "tested measure: {0}")
     public static Object[] getParameters()
     {
-        return new Object[] {HARVEST_MEASURE, SUBMISSION_MEASURE, SAVE_MEASURE};
+        return new Object[] {HARVEST_MEASURE, SUBMISSION_MEASURE};
     }
 
     private final String cachePath = testFolder + "/processTimes.json";
@@ -95,13 +92,6 @@ public class HarvestTimeKeeperTest extends AbstractFileSystemUnitTest<HarvestTim
                 startEvent = new SubmissionStartedEvent(1);
                 finishedEvent = new SubmissionFinishedEvent(true);
                 failedEvent = new SubmissionFinishedEvent(false);
-                break;
-
-            case SAVE_MEASURE:
-                testedMeasure = timeKeeper.getSaveMeasure();
-                startEvent = new SaveStartedEvent(false, 1);
-                finishedEvent = new SaveFinishedEvent(true);
-                failedEvent = new SaveFinishedEvent(false);
                 break;
 
             default:
@@ -417,9 +407,6 @@ public class HarvestTimeKeeperTest extends AbstractFileSystemUnitTest<HarvestTim
 
             case SUBMISSION_MEASURE:
                 return loadedKeeper.getSubmissionMeasure();
-
-            case SAVE_MEASURE:
-                return loadedKeeper.getSaveMeasure();
 
             default:
                 throw new IllegalArgumentException();

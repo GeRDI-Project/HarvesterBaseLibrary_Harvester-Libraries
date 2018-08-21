@@ -61,12 +61,31 @@ public class MockedHarvester extends AbstractListHarvester<String>
         this(Arrays.asList("mockedEntry1", "mockedEntry2", "mockedEntry3"), cacheFolder);
     }
 
+    /**
+     * Returns a unique identifier, used for Unit Tests of caching classes.
+     *
+     * @return a unique harvester identifier
+     */
+    public String getId()
+    {
+        return name;
+    }
+
+
+    /**
+     * Returns a temporary cache folder path, used for Unit Tests of caching classes.
+     * @return a temporary cache folder path
+     */
     public String getTemporaryCacheFolder()
     {
         return cacheFolder + "documents_temp/";
     }
 
 
+    /**
+     * Returns a permanent cache folder path, used for Unit Tests of caching classes.
+     * @return a permanent cache folder path
+     */
     public String getStableCacheFolder()
     {
         return cacheFolder + "documents/";

@@ -107,7 +107,7 @@ public abstract class AbstractStreamHarvester<T> extends AbstractHarvester
     public void init(boolean isMainHarvester, String moduleName, Map<String, AbstractParameter<?>> harvesterParameters)
     {
         super.init(isMainHarvester, moduleName, harvesterParameters);
-        initStreamFile(moduleName);
+        streamFile = initStreamFile(moduleName);
     }
 
 

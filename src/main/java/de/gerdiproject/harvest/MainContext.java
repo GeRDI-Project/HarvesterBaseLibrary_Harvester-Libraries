@@ -121,6 +121,7 @@ public class MainContext implements IEventListener
         configuration.setCacheFilePath(String.format(ConfigurationConstants.CONFIG_PATH, moduleName));
         configuration.loadFromEnvironmentVariables(moduleName);
         configuration.loadFromDisk();
+        configuration.updateAllParameters();
 
         // initialize the harvester
         this.harvester = harvesterClass.newInstance();

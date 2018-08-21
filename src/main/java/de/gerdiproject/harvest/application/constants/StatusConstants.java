@@ -32,10 +32,6 @@ public class StatusConstants
                                                                  StateConstants.HARVEST_STATUS,
                                                                  ProcessTimeMeasure.ProcessStatus.Failed.toString());
 
-    public static final String FAILED_SAVE_HEALTH_CHECK = String.format(
-                                                              StateConstants.SAVE_STATUS,
-                                                              ProcessTimeMeasure.ProcessStatus.Failed.toString());
-
     public static final String FAILED_SUBMISSION_HEALTH_CHECK = String.format(
                                                                     StateConstants.SUBMIT_STATUS,
                                                                     ProcessTimeMeasure.ProcessStatus.Failed.toString());

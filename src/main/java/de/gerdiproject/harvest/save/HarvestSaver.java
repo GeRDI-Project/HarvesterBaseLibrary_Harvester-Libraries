@@ -19,10 +19,10 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
+import java.io.UncheckedIOException;
 import java.nio.charset.Charset;
 import java.time.Instant;
 import java.util.List;
-import java.util.concurrent.Callable;
 import java.util.function.Consumer;
 
 import org.slf4j.Logger;
@@ -35,14 +35,7 @@ import de.gerdiproject.harvest.event.IEventListener;
 import de.gerdiproject.harvest.harvester.events.HarvestFinishedEvent;
 import de.gerdiproject.harvest.harvester.events.HarvestStartedEvent;
 import de.gerdiproject.harvest.save.constants.SaveConstants;
-import de.gerdiproject.harvest.save.events.DocumentSavedEvent;
-import de.gerdiproject.harvest.save.events.SaveFinishedEvent;
-import de.gerdiproject.harvest.save.events.SaveStartedEvent;
-import de.gerdiproject.harvest.save.events.StartSaveEvent;
-import de.gerdiproject.harvest.state.events.AbortingFinishedEvent;
-import de.gerdiproject.harvest.state.events.AbortingStartedEvent;
-import de.gerdiproject.harvest.state.events.StartAbortingEvent;
-import de.gerdiproject.harvest.utils.CancelableFuture;
+import de.gerdiproject.harvest.save.events.SaveHarvestEvent;
 import de.gerdiproject.harvest.utils.FileUtils;
 import de.gerdiproject.harvest.utils.cache.HarvesterCache;
 import de.gerdiproject.harvest.utils.cache.HarvesterCacheManager;
@@ -57,10 +50,6 @@ import de.gerdiproject.json.datacite.DataCiteJson;
 public class HarvestSaver implements IEventListener
 {
     private final static Logger LOGGER = LoggerFactory.getLogger(HarvestSaver.class);
-
-    private CancelableFuture<Boolean> currentSavingProcess;
-    private boolean isAborting;
-    private File saveFile;
 
     private int harvestFrom;
     private int harvestTo;
@@ -100,166 +89,67 @@ public class HarvestSaver implements IEventListener
     }
 
 
+    /**
+     * Event callback and main method for saving harvested documents to disk.
+     *
+     * @param event the event that triggered the callback
+     *
+     * @return a File that contains all documents and harvest metadata
+     * @throws IOException thrown when there was an error saving the file
+     */
+    private File saveHarvest(SaveHarvestEvent event) // NOPMD event listeners must have the event as paramete
+    {
+        int documentCount = cacheManager.getNumberOfHarvestedDocuments();
+
+        // abort if there is nothing to save
+        if (documentCount == 0) {
+            LOGGER.error(SaveConstants.SAVE_FAILED_EMPTY);
+            throw new IllegalStateException(SaveConstants.SAVE_FAILED_EMPTY);
+        }
+
+        // create empty file
+        File result = new File(saveFolder, String.format(SaveConstants.SAVE_FILE_NAME, fileName));
+        FileUtils.createEmptyFile(result);
+
+        // abort if the file could not be created
+        if (!result.exists())
+            throw new UncheckedIOException(new IOException(String.format(SaveConstants.SAVE_FAILED_CANNOT_CREATE, result)));
+
+        LOGGER.info(String.format(SaveConstants.SAVE_START, result.getAbsolutePath()));
+
+        try
+            (JsonWriter writer = new JsonWriter(
+                new OutputStreamWriter(new FileOutputStream(result), charset))) {
+
+            // transfer data to target file
+            writeDocuments(writer);
+
+        } catch (IOException e) {
+            LOGGER.error(String.format(SaveConstants.SAVE_FAILED_EXCEPTION, e.getClass().getSimpleName()), e);
+            throw new UncheckedIOException(String.format(SaveConstants.SAVE_FAILED_EXCEPTION, e.getMessage()), e);
+        }
+
+        LOGGER.info(SaveConstants.SAVE_OK);
+
+        return result;
+    }
+
+
     @Override
     public void addEventListeners()
     {
-        EventSystem.addListener(StartSaveEvent.class, onStartSave);
         EventSystem.addListener(HarvestStartedEvent.class, onHarvestStarted);
         EventSystem.addListener(HarvestFinishedEvent.class, onHarvestFinished);
+        EventSystem.addSynchronousListener(SaveHarvestEvent.class, this::saveHarvest);
     }
 
 
     @Override
     public void removeEventListeners()
     {
-        EventSystem.removeListener(StartSaveEvent.class, onStartSave);
         EventSystem.removeListener(HarvestStartedEvent.class, onHarvestStarted);
         EventSystem.removeListener(HarvestFinishedEvent.class, onHarvestFinished);
-        EventSystem.removeListener(StartAbortingEvent.class, onStartAborting);
-    }
-
-
-    /**
-     * Saves cached harvested documents to disk.
-     *
-     * @param isAutoTriggered true if the save was not explicitly triggered via
-     *            a REST call
-     */
-    private void save(boolean isAutoTriggered)
-    {
-        // listen to abort requests
-        isAborting = false;
-        EventSystem.addListener(StartAbortingEvent.class, onStartAborting);
-
-        // start asynchronous save
-        currentSavingProcess =
-            new CancelableFuture<>(createSaveProcess(isAutoTriggered));
-
-        // exception handler
-        currentSavingProcess.thenApply((isSuccessful) -> {
-            if (isSuccessful)
-                onSaveFinishedSuccessfully();
-            else
-                onSaveFailed(null);
-
-            return isSuccessful;
-        }).exceptionally(throwable -> {
-            onSaveFailed(throwable);
-            return false;
-        });
-    }
-
-
-    /**
-     * This function is executed after the saving process.
-     *
-     * @param isSuccessful if true, the save was successful
-     */
-    private void onSaveFinishedSuccessfully()
-    {
-        LOGGER.info(SaveConstants.SAVE_OK);
-
-        currentSavingProcess = null;
-        EventSystem.removeListener(StartAbortingEvent.class, onStartAborting);
-        EventSystem.sendEvent(new SaveFinishedEvent(true));
-
-        // if the save was aborted while it finished, notify listeners to
-        // prevent dead-locks
-        if (isAborting) {
-            isAborting = false;
-            EventSystem.sendEvent(new AbortingFinishedEvent());
-        }
-    }
-
-
-    /**
-     * This function is executed if the saving process is interrupted due to an
-     * exception.
-     *
-     * @param reason the exception that caused the saving to be interrupted
-     */
-    private void onSaveFailed(Throwable reason)
-    {
-        // clean up unfinished save file
-        if (saveFile != null)
-            FileUtils.deleteFile(saveFile);
-
-        currentSavingProcess = null;
-        EventSystem.removeListener(StartAbortingEvent.class, onStartAborting);
-
-        // if the save was aborted, notify listeners
-        if (isAborting) {
-            isAborting = false;
-            EventSystem.sendEvent(new AbortingFinishedEvent());
-
-        } else if (reason != null)
-            LOGGER.error(SaveConstants.SAVE_FAILED, reason);
-
-        else
-            LOGGER.error(SaveConstants.SAVE_FAILED);
-
-        EventSystem.sendEvent(new SaveFinishedEvent(false));
-    }
-
-
-    /**
-     * Creates a saving-process that can be called asynchronously.
-     *
-     * @param isAutoTriggered true if the save was not explicitly triggered via
-     *            a REST call
-     *
-     * @return true, if the file was saved successfully
-     */
-    private Callable<Boolean> createSaveProcess(boolean isAutoTriggered)
-    {
-        return () -> {
-            int documentCount = cacheManager.getNumberOfHarvestedDocuments();
-            EventSystem.sendEvent(new SaveStartedEvent(isAutoTriggered, documentCount));
-
-            if (documentCount == 0)
-            {
-                LOGGER.error(SaveConstants.SAVE_FAILED_EMPTY);
-                return false;
-            }
-
-            saveFile = getTargetFile();
-            FileUtils.createEmptyFile(saveFile);
-            boolean isSuccessful = saveFile.exists();
-
-            if (isSuccessful)
-            {
-                LOGGER.info(String.format(SaveConstants.SAVE_START, saveFile.getAbsolutePath()));
-
-                try {
-                    // prepare json writer for the save file
-                    JsonWriter writer = new JsonWriter(
-                        new OutputStreamWriter(new FileOutputStream(saveFile), charset));
-
-                    // transfer data to target file
-                    writeDocuments(writer);
-
-                } catch (IOException e) {
-                    LOGGER.error(SaveConstants.SAVE_INTERRUPTED, e);
-                    isSuccessful = false;
-                }
-            }
-
-            return isSuccessful;
-        };
-    }
-
-
-    /**
-     * Returns the target file for the documents that are to be saved.
-     *
-     * @return a target save file
-     */
-    public File getTargetFile()
-    {
-        return new File(saveFolder, String.format(
-                            SaveConstants.SAVE_FILE_NAME,
-                            fileName,
-                            harvestStartTime));
+        EventSystem.removeSynchronousListener(SaveHarvestEvent.class);
     }
 
 
@@ -275,7 +165,6 @@ public class HarvestSaver implements IEventListener
     {
         // this event holds no unique data, we can resubmit it as often as we
         // want
-        DocumentSavedEvent savedEvent = new DocumentSavedEvent();
 
         writer.beginObject();
         writer.name(SaveConstants.HARVEST_DATE_JSON);
@@ -309,22 +198,16 @@ public class HarvestSaver implements IEventListener
         for (HarvesterCache cache : cacheList) {
             isSuccessful =
             cache.getChangesCache().forEach((String documentId, DataCiteJson document) -> {
-                if (isAborting)
-                    return false;
-                else
+                // write a document to the array
+                if (document != null)
                 {
-                    // write a document to the array
-                    if (document != null) {
-                        try {
-                            writer.jsonValue(document.toJson());
-                        } catch (IOException e) {
-                            return false;
-                        }
+                    try {
+                        writer.jsonValue(document.toJson());
+                    } catch (IOException e) {
+                        return false;
                     }
-
-                    EventSystem.sendEvent(savedEvent);
-                    return true;
                 }
+                return true;
             });
 
             if (!isSuccessful)
@@ -334,27 +217,12 @@ public class HarvestSaver implements IEventListener
         // close writer
         writer.endArray();
         writer.endObject();
-        writer.close();
-
-        // cancel the asynchronous process
-        if (!isSuccessful)
-            currentSavingProcess.cancel(false);
     }
 
 
     //////////////////////////////
     // Event Callback Functions //
     //////////////////////////////
-
-
-    /**
-     * Event callback: When a save starts, save the cache file via the
-     * {@linkplain HarvestSaver}.
-     */
-    private final Consumer<StartSaveEvent> onStartSave = (StartSaveEvent e) -> {
-        save(e.isAutoTriggered());
-    };
-
 
     /**
      * Event callback that saves the parameters that were set at the beginning of a harvest.
@@ -373,15 +241,5 @@ public class HarvestSaver implements IEventListener
      */
     private final Consumer<HarvestFinishedEvent> onHarvestFinished = (HarvestFinishedEvent event) -> {
         this.harvestEndTime = Instant.now().toEpochMilli();
-    };
-
-
-    /**
-     * Event listener for aborting the submitter.
-     */
-    private final Consumer<StartAbortingEvent> onStartAborting = (StartAbortingEvent e) -> {
-        isAborting = true;
-        EventSystem.removeListener(StartAbortingEvent.class, this.onStartAborting);
-        EventSystem.sendEvent(new AbortingStartedEvent());
     };
 }

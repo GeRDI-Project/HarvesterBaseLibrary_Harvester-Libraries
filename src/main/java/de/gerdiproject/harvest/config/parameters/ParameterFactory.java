@@ -27,7 +27,6 @@ import de.gerdiproject.harvest.state.impl.ErrorState;
 import de.gerdiproject.harvest.state.impl.HarvestingState;
 import de.gerdiproject.harvest.state.impl.IdleState;
 import de.gerdiproject.harvest.state.impl.InitializationState;
-import de.gerdiproject.harvest.state.impl.SavingState;
 import de.gerdiproject.harvest.state.impl.SubmittingState;
 
 
@@ -48,7 +47,6 @@ public final class ParameterFactory
     {
         Map<String, AbstractParameter<?>> params = new LinkedHashMap<>();
 
-        AbstractParameter<?> autoSave = createAutoSave();
         AbstractParameter<?> autoSubmit = createAutoSubmit();
         AbstractParameter<?> readFromDisk = createReadFromDisk();
         AbstractParameter<?> writeToDisk = createWriteToDisk();
@@ -56,11 +54,9 @@ public final class ParameterFactory
         AbstractParameter<?> submitSize = createSubmissionSize();
         AbstractParameter<?> submitName = createSubmissionUserName();
         AbstractParameter<?> submitPassword = createSubmissionPassword();
-        AbstractParameter<?> deleteUnfinishedSaves = createDeleteUnfinishedSaves();
         AbstractParameter<?> submitIncompleteHarvests = createSubmitIncomplete();
         AbstractParameter<?> submitOutdated = createSubmitOutdated();
 
-        params.put(autoSave.getKey(), autoSave);
         params.put(autoSubmit.getKey(), autoSubmit);
         params.put(submitUrl.getKey(), submitUrl);
         params.put(submitName.getKey(), submitName);
@@ -70,7 +66,6 @@ public final class ParameterFactory
         params.put(submitOutdated.getKey(), submitOutdated);
         params.put(readFromDisk.getKey(), readFromDisk);
         params.put(writeToDisk.getKey(), writeToDisk);
-        params.put(deleteUnfinishedSaves.getKey(), deleteUnfinishedSaves);
 
         return params;
     }
@@ -107,26 +102,6 @@ public final class ParameterFactory
 
 
     /**
-     * Creates a flag-parameter for changing the automatic saving of harvested
-     * documents to disk.
-     *
-     * @return a flag-parameter for the automatic saving of harvested documents
-     *         to disk
-     */
-    public static BooleanParameter createAutoSave()
-    {
-        final List<Class<? extends IState>> allowedStates = Arrays.asList(
-                                                                InitializationState.class,
-                                                                ErrorState.class,
-                                                                IdleState.class,
-                                                                HarvestingState.class,
-                                                                SavingState.class,
-                                                                SubmittingState.class);
-        return new BooleanParameter(ConfigurationConstants.AUTO_SAVE, allowedStates, true);
-    }
-
-
-    /**
      * Creates a flag-parameter for changing the automatic submission of
      * harvested documents.
      *
@@ -140,7 +115,6 @@ public final class ParameterFactory
                                                                 ErrorState.class,
                                                                 IdleState.class,
                                                                 HarvestingState.class,
-                                                                SavingState.class,
                                                                 SubmittingState.class);
         return new BooleanParameter(ConfigurationConstants.AUTO_SUBMIT, allowedStates, false);
     }
@@ -158,7 +132,6 @@ public final class ParameterFactory
         final List<Class<? extends IState>> allowedStates = Arrays.asList(
                                                                 ErrorState.class,
                                                                 IdleState.class,
-                                                                SavingState.class,
                                                                 SubmittingState.class);
         return new BooleanParameter(ConfigurationConstants.WRITE_HTTP_TO_DISK, allowedStates, false);
     }
@@ -176,7 +149,6 @@ public final class ParameterFactory
         final List<Class<? extends IState>> allowedStates = Arrays.asList(
                                                                 ErrorState.class,
                                                                 IdleState.class,
-                                                                SavingState.class,
                                                                 SubmittingState.class);
         return new BooleanParameter(ConfigurationConstants.READ_HTTP_FROM_DISK, allowedStates, false);
     }
@@ -195,28 +167,8 @@ public final class ParameterFactory
                                                                 InitializationState.class,
                                                                 ErrorState.class,
                                                                 IdleState.class,
-                                                                SavingState.class,
                                                                 SubmittingState.class);
         return new BooleanParameter(ConfigurationConstants.FORCE_HARVEST, allowedStates, false);
-    }
-
-
-    /**
-     * Creates a flag-parameter for changing whether saved documents should be
-     * deleted when the save process is aborted or fails.
-     *
-     * @return a flag-parameter for whether cached documents should be deleted
-     *         when the save process is aborted or fails
-     */
-    public static AbstractParameter<?> createDeleteUnfinishedSaves()
-    {
-        final List<Class<? extends IState>> allowedStates = Arrays.asList(
-                                                                InitializationState.class,
-                                                                ErrorState.class,
-                                                                IdleState.class,
-                                                                HarvestingState.class,
-                                                                SubmittingState.class);
-        return new BooleanParameter(ConfigurationConstants.DELETE_UNFINISHED_SAVE, allowedStates, true);
     }
 
 
@@ -233,8 +185,7 @@ public final class ParameterFactory
                                                                 InitializationState.class,
                                                                 ErrorState.class,
                                                                 IdleState.class,
-                                                                HarvestingState.class,
-                                                                SavingState.class);
+                                                                HarvestingState.class);
         return new UrlParameter(ConfigurationConstants.SUBMISSION_URL, allowedStates, null);
     }
 
@@ -250,8 +201,7 @@ public final class ParameterFactory
                                                                 InitializationState.class,
                                                                 ErrorState.class,
                                                                 IdleState.class,
-                                                                HarvestingState.class,
-                                                                SavingState.class);
+                                                                HarvestingState.class);
         return new StringParameter(ConfigurationConstants.SUBMISSION_USER_NAME, allowedStates, null);
     }
 
@@ -267,8 +217,7 @@ public final class ParameterFactory
                                                                 InitializationState.class,
                                                                 ErrorState.class,
                                                                 IdleState.class,
-                                                                HarvestingState.class,
-                                                                SavingState.class);
+                                                                HarvestingState.class);
         return new PasswordParameter(ConfigurationConstants.SUBMISSION_PASSWORD, allowedStates);
     }
 
@@ -286,8 +235,7 @@ public final class ParameterFactory
                                                                 InitializationState.class,
                                                                 ErrorState.class,
                                                                 IdleState.class,
-                                                                HarvestingState.class,
-                                                                SavingState.class);
+                                                                HarvestingState.class);
         return new IntegerParameter(ConfigurationConstants.SUBMISSION_SIZE, allowedStates, 1048576);
     }
 
@@ -305,8 +253,7 @@ public final class ParameterFactory
                                                                 InitializationState.class,
                                                                 ErrorState.class,
                                                                 IdleState.class,
-                                                                HarvestingState.class,
-                                                                SavingState.class);
+                                                                HarvestingState.class);
         return new BooleanParameter(ConfigurationConstants.SUBMIT_FORCED, allowedStates, false);
     }
 
@@ -324,8 +271,7 @@ public final class ParameterFactory
                                                                 InitializationState.class,
                                                                 ErrorState.class,
                                                                 IdleState.class,
-                                                                HarvestingState.class,
-                                                                SavingState.class);
+                                                                HarvestingState.class);
         return new BooleanParameter(ConfigurationConstants.SUBMIT_INCOMPLETE, allowedStates, false);
     }
 

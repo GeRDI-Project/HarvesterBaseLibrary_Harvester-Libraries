@@ -199,20 +199,12 @@ public final class StatusFacade
             final String status = currentState.getStatusString();
 
             final boolean hasHarvestFailed = status.contains(StatusConstants.FAILED_HARVEST_HEALTH_CHECK);
+            final boolean hasSubmissionFailed = status.contains(StatusConstants.FAILED_SUBMISSION_HEALTH_CHECK);
 
             if (hasHarvestFailed)
                 health = HealthStatus.HARVEST_FAILED;
-            else {
-                final boolean hasSavingFailed = status.contains(StatusConstants.FAILED_SAVE_HEALTH_CHECK);
-                final boolean hasSubmissionFailed = status.contains(StatusConstants.FAILED_SUBMISSION_HEALTH_CHECK);
-
-                if (hasSavingFailed && hasSubmissionFailed)
-                    health = HealthStatus.SAVING_AND_SUBMISSION_FAILED;
-                else if (hasSavingFailed)
-                    health = HealthStatus.SAVING_FAILED;
-                else if (hasSubmissionFailed)
-                    health = HealthStatus.SUBMISSION_FAILED;
-            }
+            else if (hasSubmissionFailed)
+                health = HealthStatus.SUBMISSION_FAILED;
         }
 
         final Status status =  health == HealthStatus.OK

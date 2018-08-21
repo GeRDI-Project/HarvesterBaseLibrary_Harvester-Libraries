@@ -23,7 +23,6 @@ import de.gerdiproject.harvest.MainContext;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.harvester.events.DocumentsHarvestedEvent;
 import de.gerdiproject.harvest.harvester.events.HarvestFinishedEvent;
-import de.gerdiproject.harvest.save.events.SaveStartedEvent;
 import de.gerdiproject.harvest.state.AbstractProgressingState;
 import de.gerdiproject.harvest.state.constants.StateConstants;
 import de.gerdiproject.harvest.state.constants.StateEventHandlerConstants;
@@ -63,7 +62,6 @@ public class HarvestingState extends AbstractProgressingState
 
         EventSystem.addListener(HarvestFinishedEvent.class, StateEventHandlerConstants.ON_HARVEST_FINISHED);
         EventSystem.addListener(SubmissionStartedEvent.class, StateEventHandlerConstants.ON_SUBMISSION_STARTED);
-        EventSystem.addListener(SaveStartedEvent.class, StateEventHandlerConstants.ON_SAVE_STARTED);
         EventSystem.addListener(DocumentsHarvestedEvent.class, onDocumentHarvested);
     }
 
@@ -75,7 +73,6 @@ public class HarvestingState extends AbstractProgressingState
 
         EventSystem.removeListener(HarvestFinishedEvent.class, StateEventHandlerConstants.ON_HARVEST_FINISHED);
         EventSystem.removeListener(SubmissionStartedEvent.class, StateEventHandlerConstants.ON_SUBMISSION_STARTED);
-        EventSystem.removeListener(SaveStartedEvent.class, StateEventHandlerConstants.ON_SAVE_STARTED);
         EventSystem.removeListener(DocumentsHarvestedEvent.class, onDocumentHarvested);
     }
 
@@ -87,7 +84,6 @@ public class HarvestingState extends AbstractProgressingState
         return String.format(
                    StateConstants.IDLE_STATUS,
                    super.getStatusString(),
-                   timeKeeper.getSaveMeasure().toString(),
                    timeKeeper.getSubmissionMeasure().toString());
     }
 

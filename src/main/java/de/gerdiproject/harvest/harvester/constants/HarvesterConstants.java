@@ -48,12 +48,12 @@ public class HarvesterConstants
 
     // REST
     public static final String REST_INFO = "- %s -%n%n%s%n%nRange:  %s-%s%n%n"
-                                           + "GET/outdated Checks if there is unharvested metadata%n"
-                                           + "POST         Starts the harvest%n"
-                                           + "POST/abort   Aborts an ongoing harvest, saving, or submission%n"
-                                           + "POST/submit  Submits harvested documents to a DataBase%n"
-                                           + "POST/save    Saves harvested documents to disk%n"
-                                           + "POST/reset   Attempts to re-initialize this service%n"
+                                           + "GET/outdated  Checks if there is unharvested metadata%n"
+                                           + "POST          Starts the harvest%n"
+                                           + "POST/abort    Aborts an ongoing harvest, saving, or submission%n"
+                                           + "POST/submit   Submits harvested documents to a DataBase%n"
+                                           + "POST/download Downloads harvested documents to disk%n"
+                                           + "POST/reset    Attempts to re-initialize this service%n"
                                            + "%n"
                                            + "GET/config    Displays a table of parameters and a means of%n"
                                            + "              configuring them%n"

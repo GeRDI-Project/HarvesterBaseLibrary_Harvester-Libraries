@@ -133,6 +133,23 @@ public class ServerResponseFactory
 
 
     /**
+     * Creates a HTTP-500 response for a known but unexpected server error.
+     *
+     * @param message the message that is passed as an entity of the response
+     *
+     * @return a HTTP-500 response
+     */
+    public static Response createKnownErrorResponse(String message)
+    {
+        return Response
+               .status(Status.INTERNAL_SERVER_ERROR)
+               .entity(message)
+               .type(MediaType.TEXT_PLAIN)
+               .build();
+    }
+
+
+    /**
      * Creates a HTTP-400 response with "N/A" as message.
      *
      * @return a HTTP-400 response with "N/A" as message
