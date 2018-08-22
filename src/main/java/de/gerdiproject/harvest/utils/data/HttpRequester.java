@@ -59,10 +59,10 @@ public class HttpRequester implements IEventListener
 
     public boolean suppressWarnings;
 
-    private final Charset httpCharset;
     private final DiskIO diskIO;
     private final WebDataRetriever webDataRetriever;
     private String cacheFolder;
+    private Charset httpCharset;
     private boolean readFromDisk;
     private boolean writeToDisk;
 
@@ -75,10 +75,10 @@ public class HttpRequester implements IEventListener
         AbstractParameter<?> param = event.getParameter();
 
         if (param.getKey().equals(ConfigurationConstants.READ_HTTP_FROM_DISK))
-            readFromDisk = (Boolean) param.getValue() && cacheFolder != null;
+            readFromDisk = (Boolean) param.getValue();
 
         if (param.getKey().equals(ConfigurationConstants.WRITE_HTTP_TO_DISK))
-            writeToDisk = (Boolean) param.getValue() && cacheFolder != null;
+            writeToDisk = (Boolean) param.getValue();
     };
 
 
@@ -100,8 +100,8 @@ public class HttpRequester implements IEventListener
 
         this.cacheFolder = cacheFolder;
 
-        this.readFromDisk = readFromDisk && cacheFolder != null;
-        this.writeToDisk = writeToDisk && cacheFolder != null;
+        this.readFromDisk = readFromDisk;
+        this.writeToDisk = writeToDisk;
         this.httpCharset = httpCharset;
 
         this.diskIO = new DiskIO(gson, httpCharset);
@@ -188,7 +188,7 @@ public class HttpRequester implements IEventListener
         }
 
         // write whole response to disk, if the option is enabled
-        if (isResponseReadFromWeb && writeToDisk) {
+        if (isResponseReadFromWeb && writeToDisk && cacheFolder != null) {
             // deliberately write an empty object to disk, if the response could
             // not be retrieved
             String responseText = (htmlResponse == null) ? "" : htmlResponse.toString();
@@ -226,7 +226,7 @@ public class HttpRequester implements IEventListener
         }
 
         // write whole response to disk, if the option is enabled
-        if (isResponseReadFromWeb && writeToDisk) {
+        if (isResponseReadFromWeb && writeToDisk && cacheFolder != null) {
             // deliberately write an empty object to disk, if the response could
             // not be retrieved
             diskIO.writeObjectToFile(urlToFilePath(url, DataOperationConstants.FILE_ENDING_JSON), targetObject);
@@ -263,7 +263,7 @@ public class HttpRequester implements IEventListener
         }
 
         // write whole response to disk, if the option is enabled
-        if (isResponseReadFromWeb && writeToDisk) {
+        if (isResponseReadFromWeb && writeToDisk && cacheFolder != null) {
             // deliberately write an empty object to disk, if the response could
             // not be retrieved
             diskIO.writeObjectToFile(urlToFilePath(url, DataOperationConstants.FILE_ENDING_JSON), targetObject);
@@ -508,6 +508,16 @@ public class HttpRequester implements IEventListener
 
 
     /**
+     * Changes the folder were responses are cached when the writeToDisk parameter is set.
+     * @param cacheFolder the folder were responses can be cached
+     */
+    public void setCacheFolder(String cacheFolder)
+    {
+        this.cacheFolder = cacheFolder;
+    }
+
+
+    /**
      * Returns true if HTTP responses are read from a cache on disk.
      *
      * @return true if HTTP responses are read from a cache on disk
@@ -526,5 +536,16 @@ public class HttpRequester implements IEventListener
     public boolean isWritingToDisk()
     {
         return writeToDisk;
+    }
+
+
+    /**
+     * Changes the charset that is used for reading and writing responses.
+     *
+     * @param httpCharset the charset that is used for reading and writing responses
+     */
+    public void setCharset(Charset httpCharset)
+    {
+        this.httpCharset = httpCharset;
     }
 }

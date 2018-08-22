@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.gerdiproject.harvest;
+package de.gerdiproject.harvest.application;
 
 
 import java.lang.reflect.ParameterizedType;
@@ -112,7 +112,7 @@ public class ContextListener<T extends AbstractHarvester> implements ServletCont
      * harvester and sets them in the MainContext.
      *
      * @param sce the servlet context event that was initialized
-     * @see de.gerdiproject.harvest.MainContext
+     * @see de.gerdiproject.harvest.application.MainContext
      */
     @Override
     public void contextInitialized(ServletContextEvent sce)

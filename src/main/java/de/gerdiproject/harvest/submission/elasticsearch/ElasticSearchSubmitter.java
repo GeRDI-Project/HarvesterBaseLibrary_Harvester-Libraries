@@ -45,7 +45,7 @@ import de.gerdiproject.harvest.utils.data.enums.RestRequestType;
  */
 public class ElasticSearchSubmitter extends AbstractSubmitter
 {
-    private HttpRequester httpRequester;
+    private final HttpRequester httpRequester;
     private final Gson gson;
 
 
@@ -56,6 +56,7 @@ public class ElasticSearchSubmitter extends AbstractSubmitter
     {
         super();
         this.gson = new Gson();
+        this.httpRequester = new HttpRequester(charset, gson);
     }
 
 
@@ -63,7 +64,7 @@ public class ElasticSearchSubmitter extends AbstractSubmitter
     public void setCharset(Charset charset)
     {
         super.setCharset(charset);
-        httpRequester = new HttpRequester(charset, gson);
+        httpRequester.setCharset(charset);
     }
 
 

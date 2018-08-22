@@ -16,7 +16,7 @@
  */
 package de.gerdiproject.application.examples;
 
-import de.gerdiproject.harvest.ContextListener;
+import de.gerdiproject.harvest.application.ContextListener;
 import de.gerdiproject.utils.examples.harvestercache.MockedHarvester;
 
 /**

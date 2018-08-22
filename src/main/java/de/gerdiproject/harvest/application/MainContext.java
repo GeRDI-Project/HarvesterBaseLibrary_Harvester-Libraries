@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.gerdiproject.harvest;
+package de.gerdiproject.harvest.application;
 
 
 import java.nio.charset.Charset;

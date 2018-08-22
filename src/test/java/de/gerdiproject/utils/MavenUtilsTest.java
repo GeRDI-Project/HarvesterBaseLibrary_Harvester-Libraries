@@ -21,7 +21,7 @@ import static org.junit.Assert.assertNotEquals;
 
 import org.junit.Test;
 
-import de.gerdiproject.harvest.MainContext;
+import de.gerdiproject.harvest.application.MainContext;
 import de.gerdiproject.harvest.utils.maven.MavenUtils;
 import de.gerdiproject.json.datacite.DataCiteJson;
 

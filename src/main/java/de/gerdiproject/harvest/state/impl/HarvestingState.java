@@ -19,7 +19,7 @@ import java.util.function.Consumer;
 
 import javax.ws.rs.core.Response;
 
-import de.gerdiproject.harvest.MainContext;
+import de.gerdiproject.harvest.application.MainContext;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.harvester.events.DocumentsHarvestedEvent;
 import de.gerdiproject.harvest.harvester.events.HarvestFinishedEvent;

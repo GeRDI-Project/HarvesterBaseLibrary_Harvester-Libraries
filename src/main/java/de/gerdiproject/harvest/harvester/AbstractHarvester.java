@@ -35,7 +35,7 @@ import com.google.gson.JsonSerializer;
 
 import de.gerdiproject.harvest.ICleanable;
 import de.gerdiproject.harvest.IDocument;
-import de.gerdiproject.harvest.MainContext;
+import de.gerdiproject.harvest.application.MainContext;
 import de.gerdiproject.harvest.application.constants.ApplicationConstants;
 import de.gerdiproject.harvest.config.constants.ConfigurationConstants;
 import de.gerdiproject.harvest.config.events.HarvesterParameterChangedEvent;
@@ -82,10 +82,10 @@ public abstract class AbstractHarvester implements IEventListener
     private final AtomicInteger startIndex;
     private final AtomicInteger endIndex;
     private HarvesterCache documentsCache;
+    protected HttpRequester httpRequester;
 
     protected final Logger logger; // NOPMD - we want to retrieve the type of the inheriting class
 
-    protected HttpRequester httpRequester;
     protected CancelableFuture<Boolean> currentHarvestingProcess;
     protected boolean isMainHarvester;
     protected boolean isAborting;
@@ -192,7 +192,7 @@ public abstract class AbstractHarvester implements IEventListener
         this.isMainHarvester = isMainHarvester;
         this.httpRequester = new HttpRequester(
             getCharset(),
-            GsonUtils.createGerdiDocumentGsonBuilder().create(),
+            createGsonBuilder().create(),
             false,
             false,
             String.format(DataOperationConstants.CACHE_FOLDER_PATH, moduleName));

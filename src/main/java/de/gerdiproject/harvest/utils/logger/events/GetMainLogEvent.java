@@ -16,7 +16,7 @@
  */
 package de.gerdiproject.harvest.utils.logger.events;
 
-import de.gerdiproject.harvest.MainContext;
+import de.gerdiproject.harvest.application.MainContext;
 import de.gerdiproject.harvest.event.ISynchronousEvent;
 import de.gerdiproject.harvest.utils.logger.HarvesterLog;
 
