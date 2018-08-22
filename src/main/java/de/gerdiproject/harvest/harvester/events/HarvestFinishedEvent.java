@@ -15,6 +15,8 @@
  */
 package de.gerdiproject.harvest.harvester.events;
 
+import java.time.Instant;
+
 import de.gerdiproject.harvest.event.AbstractSucceededOrFailedEvent;
 
 /**
@@ -25,10 +27,11 @@ import de.gerdiproject.harvest.event.AbstractSucceededOrFailedEvent;
 public class HarvestFinishedEvent extends AbstractSucceededOrFailedEvent
 {
     private final String documentChecksum;
+    private final long endTimestamp;
 
 
     /**
-     * Simple Constructor.
+     * Constructor that sets up the payload and uses the current time as the end timestamp.
      *
      * @param isSuccessful true if the harvest finished successfully
      * @param documentChecksum a hash value over all harvested documents
@@ -37,6 +40,22 @@ public class HarvestFinishedEvent extends AbstractSucceededOrFailedEvent
     {
         super(isSuccessful);
         this.documentChecksum = documentChecksum;
+        this.endTimestamp = Instant.now().toEpochMilli();
+    }
+
+
+    /**
+     * Constructor that sets up the payload and allows the current time as the end timestamp.
+     *
+     * @param isSuccessful true if the harvest finished successfully
+     * @param documentChecksum a hash value over all harvested documents
+     * @param timestamp the time at which the harvest ended
+     */
+    public HarvestFinishedEvent(boolean isSuccessful, String documentChecksum, long timestamp)
+    {
+        super(isSuccessful);
+        this.documentChecksum = documentChecksum;
+        this.endTimestamp = timestamp;
     }
 
 
@@ -47,5 +66,16 @@ public class HarvestFinishedEvent extends AbstractSucceededOrFailedEvent
     public String getDocumentChecksum()
     {
         return documentChecksum;
+    }
+
+
+    /**
+     * Returns the unix timestamp at which the event was created.
+     *
+     * @return the unix timestamp at which the event was created
+     */
+    public long getEndTimestamp()
+    {
+        return endTimestamp;
     }
 }

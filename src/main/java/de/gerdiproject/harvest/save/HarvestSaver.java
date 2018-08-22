@@ -21,7 +21,6 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.UncheckedIOException;
 import java.nio.charset.Charset;
-import java.time.Instant;
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -111,8 +110,10 @@ public class HarvestSaver implements IEventListener
         File result = new File(saveFolder, String.format(SaveConstants.SAVE_FILE_NAME, fileName));
         FileUtils.createEmptyFile(result);
 
-        // abort if the file could not be created
-        if (!result.exists())
+        System.out.println(result + " : " + result.length());
+
+        // abort if the file could not be created or cleaned up
+        if (!result.exists() || result.length() != 0)
             throw new UncheckedIOException(new IOException(String.format(SaveConstants.SAVE_FAILED_CANNOT_CREATE, result)));
 
         LOGGER.info(String.format(SaveConstants.SAVE_START, result.getAbsolutePath()));
@@ -240,6 +241,6 @@ public class HarvestSaver implements IEventListener
      * Event callback that saves a timestamp when the harvest finishes.
      */
     private final Consumer<HarvestFinishedEvent> onHarvestFinished = (HarvestFinishedEvent event) -> {
-        this.harvestEndTime = Instant.now().toEpochMilli();
+        this.harvestEndTime = event.getEndTimestamp();
     };
 }

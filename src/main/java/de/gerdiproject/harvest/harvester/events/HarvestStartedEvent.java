@@ -33,7 +33,7 @@ public class HarvestStartedEvent implements IEvent
 
 
     /**
-     * Simple constructor that requires the harvesting range.
+     * Constructor that sets up the payload, and uses the current time as the start timestamp.
      *
      * @param startIndex the index of the first document to be harvested
      * @param endIndex the index of the last document that is to be harvested + 1
@@ -45,6 +45,23 @@ public class HarvestStartedEvent implements IEvent
         this.endIndex = endIndex;
         this.harvesterHash = harvesterHash;
         this.startTimestamp = Instant.now().toEpochMilli();
+    }
+
+
+    /**
+     * Constructor that sets up the payload, and allows to define the start timestamp.
+     *
+     * @param startIndex the index of the first document to be harvested
+     * @param endIndex the index of the last document that is to be harvested + 1
+     * @param harvesterHash a hash value representing the current state of the source data
+     * @param timestamp the time at wich the harvest started
+     */
+    public HarvestStartedEvent(int startIndex, int endIndex, String harvesterHash, long timestamp)
+    {
+        this.startIndex = startIndex;
+        this.endIndex = endIndex;
+        this.harvesterHash = harvesterHash;
+        this.startTimestamp = timestamp;
     }
 
 

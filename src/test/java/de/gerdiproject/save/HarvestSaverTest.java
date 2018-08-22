@@ -17,8 +17,15 @@
 package de.gerdiproject.save;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 
 import org.junit.Test;
@@ -29,10 +36,12 @@ import com.google.gson.JsonObject;
 
 import de.gerdiproject.AbstractFileSystemUnitTest;
 import de.gerdiproject.harvest.event.EventSystem;
+import de.gerdiproject.harvest.harvester.events.HarvestFinishedEvent;
 import de.gerdiproject.harvest.harvester.events.HarvestStartedEvent;
 import de.gerdiproject.harvest.save.HarvestSaver;
 import de.gerdiproject.harvest.save.constants.SaveConstants;
 import de.gerdiproject.harvest.save.events.SaveHarvestEvent;
+import de.gerdiproject.harvest.utils.FileUtils;
 import de.gerdiproject.harvest.utils.cache.HarvesterCache;
 import de.gerdiproject.harvest.utils.cache.HarvesterCacheManager;
 import de.gerdiproject.harvest.utils.cache.events.RegisterHarvesterCacheEvent;
@@ -117,6 +126,33 @@ public class HarvestSaverTest extends AbstractFileSystemUnitTest<HarvestSaver>
 
 
     /**
+     * Tests if the harvesting duration in seconds is correctly saved to the file.
+     */
+    @Test
+    public void testFileContentHarvestDuration()
+    {
+        testedObject.addEventListeners();
+
+        addRandomNumberOfSaveableDocuments();
+
+        final long startTimeStamp = (1 + random.nextInt(1000)) * 1000L;
+        final long endTimeStamp = startTimeStamp + random.nextInt(1000) * 1000L;
+
+        EventSystem.sendEvent(new HarvestStartedEvent(0, 1, HARVESTER_HASH, startTimeStamp));
+        EventSystem.sendEvent(new HarvestFinishedEvent(true, HARVESTER_HASH, endTimeStamp));
+
+        // write file
+        final File savedFile = EventSystem.sendSynchronousEvent(new SaveHarvestEvent());
+
+        // read file
+        final DiskIO diskReader = new DiskIO(new Gson(), StandardCharsets.UTF_8);
+        final JsonObject fileContent = diskReader.getObject(savedFile, JsonObject.class);
+
+        assertEquals((endTimeStamp - startTimeStamp) / 1000L, fileContent.get(SaveConstants.DURATION_JSON).getAsInt());
+    }
+
+
+    /**
      * Tests if the start index of the harvesting range is correctly set and saved when a
      * {@linkplain HarvestStartedEvent} changes it.
      */
@@ -191,10 +227,55 @@ public class HarvestSaverTest extends AbstractFileSystemUnitTest<HarvestSaver>
     }
 
 
+    /**
+     * Tests if an {@linkplain IllegalStateException} is thrown if a save is attempted when there
+     * are no documents to save.
+     */
     @Test
-    public void testSaveFailed()
+    public void testSaveFailedNoDocuments()
     {
+        testedObject.addEventListeners();
 
+        try {
+            EventSystem.sendSynchronousEvent(new SaveHarvestEvent());
+        } catch (IllegalStateException e) {
+            return;
+        }
+
+        fail("Expected an IllegalStateException to be thrown!");
+    }
+
+
+    /**
+     * Tests if an {@linkplain UncheckedIOException} is thrown if a save is attempted
+     * while the target file exists and cannot be overwritten.
+     *
+     * @throws IOException thrown if the file cannot be written to prior to saving it
+     * @throws FileNotFoundException thrown if the file cannot be created
+     */
+    @Test
+    public void testSaveFailedCannotWriteToFile() throws FileNotFoundException, IOException
+    {
+        testedObject.addEventListeners();
+        addRandomNumberOfSaveableDocuments();
+
+        // create the save file
+        final File savedFile = new File(testFolder, String.format(SaveConstants.SAVE_FILE_NAME, TEST_NAME));
+        FileUtils.createEmptyFile(savedFile);
+
+        // open the save file, blocking the HarvestSaver from writing to it
+        try
+            (BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(savedFile), StandardCharsets.UTF_8))) {
+            // write something to the file, causing it to be not-empty
+            writer.write(HARVESTER_HASH);
+            writer.flush();
+
+            EventSystem.sendSynchronousEvent(new SaveHarvestEvent());
+        } catch (UncheckedIOException e) {
+            return;
+        }
+
+        fail("Expected an UncheckedIOException to be thrown!");
     }
 
 
