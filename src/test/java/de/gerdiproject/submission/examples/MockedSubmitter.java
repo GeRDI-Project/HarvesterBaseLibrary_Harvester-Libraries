@@ -40,6 +40,15 @@ public class MockedSubmitter extends AbstractSubmitter
     }
 
 
+
+    @Override
+    public String getId()
+    {
+        return "MockedTarget";
+    }
+
+
+
     @Override
     protected int getSizeOfDocument(String documentId, IDocument document)
     {

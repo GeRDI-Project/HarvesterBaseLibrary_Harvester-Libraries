@@ -36,6 +36,7 @@ public class SubmissionConstants
     public static final String SUBMIT_PARTIAL_FAILED = "Error submitting documents %s to %s.";
     public static final String UNKNOWN_DOCUMENT_COUNT = "???";
 
+    public static final String REGISTER_ERROR = "Could not register submitter: %s";
     public static final String NO_URL_ERROR = "Cannot submit documents: You need to set up a valid submission URL!";
     public static final String NO_DOCS_ERROR = "Cannot submit documents: There are no documents to submit!";
     public static final String DOCUMENT_TOO_LARGE =

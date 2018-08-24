@@ -199,7 +199,11 @@ public class Configuration implements ICachedObject
                 AbstractParameter<?> externalParam = configJson.harvesterParameters.get(key);
 
                 if (externalParam != null)
-                    param.setValue(externalParam.getValue().toString(), null);
+                {
+                    String value = externalParam.getValue()
+                    == null ? null : externalParam.getValue().toString();
+                    param.setValue(value, null);
+                }
             });
 
             // copy global parameters
@@ -207,7 +211,11 @@ public class Configuration implements ICachedObject
                 AbstractParameter<?> externalParam = configJson.globalParameters.get(key);
 
                 if (externalParam != null)
-                    param.setValue(externalParam.getValue().toString(), null);
+                {
+                    String value = externalParam.getValue()
+                    == null ? null : externalParam.getValue().toString();
+                    param.setValue(value, null);
+                }
             });
 
             LOGGER.info(String.format(ConfigurationConstants.LOAD_OK, cacheFilePath));

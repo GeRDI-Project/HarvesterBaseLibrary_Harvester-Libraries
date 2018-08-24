@@ -17,6 +17,7 @@ package de.gerdiproject.harvest.application;
 
 
 import java.lang.reflect.ParameterizedType;
+import java.util.LinkedList;
 import java.util.List;
 
 import javax.servlet.ServletContextEvent;
@@ -93,13 +94,15 @@ public class ContextListener<T extends AbstractHarvester> implements ServletCont
 
 
     /**
-     * Creates a means to submit documents to any place.
+     * Creates a list of submitter classes that can be chosen to transfer data to the search index.
      *
      * @return a harvested documents submitter
      */
-    protected AbstractSubmitter createSubmitter()
+    protected List<Class<? extends AbstractSubmitter>> getSubmitterClasses()
     {
-        return new ElasticSearchSubmitter();
+        final List<Class<? extends AbstractSubmitter>> submitterClasses = new LinkedList<>();
+        submitterClasses.add(ElasticSearchSubmitter.class);
+        return submitterClasses;
     }
 
 
@@ -124,7 +127,7 @@ public class ContextListener<T extends AbstractHarvester> implements ServletCont
             getServiceName(),
             harvesterClass,
             getHarvesterSpecificParameters(),
-            createSubmitter());
+            getSubmitterClasses());
 
         EventSystem.sendEvent(new ContextInitializedEvent());
     }

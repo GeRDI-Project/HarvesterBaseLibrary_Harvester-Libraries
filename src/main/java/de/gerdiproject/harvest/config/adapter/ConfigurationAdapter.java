@@ -36,6 +36,7 @@ import de.gerdiproject.harvest.config.parameters.BooleanParameter;
 import de.gerdiproject.harvest.config.parameters.IntegerParameter;
 import de.gerdiproject.harvest.config.parameters.PasswordParameter;
 import de.gerdiproject.harvest.config.parameters.StringParameter;
+import de.gerdiproject.harvest.config.parameters.SubmitterParameter;
 import de.gerdiproject.harvest.config.parameters.UrlParameter;
 
 /**
@@ -96,6 +97,9 @@ public class ConfigurationAdapter implements JsonDeserializer<Configuration>, Js
                 else if (stringVal.startsWith(ConfigurationConstants.PASSWORD_PREFIX))
                     param = new PasswordParameter(key, stringVal.substring(ConfigurationConstants.PASSWORD_PREFIX.length()));
 
+                else if (stringVal.startsWith(ConfigurationConstants.SUBMITTER_PREFIX))
+                    param = new SubmitterParameter(key, stringVal.substring(ConfigurationConstants.SUBMITTER_PREFIX.length()));
+
                 else
                     param = new StringParameter(key, stringVal);
 
@@ -154,6 +158,9 @@ public class ConfigurationAdapter implements JsonDeserializer<Configuration>, Js
 
             else if (param instanceof PasswordParameter && param.getValue() != null)
                 paramsJson.addProperty(key, ConfigurationConstants.PASSWORD_PREFIX + param.getValue().toString());
+
+            else if (param instanceof SubmitterParameter && param.getValue() != null)
+                paramsJson.addProperty(key, ConfigurationConstants.SUBMITTER_PREFIX + param.getValue().toString());
 
             else if (param instanceof StringParameter)
                 paramsJson.addProperty(key, (String) param.getValue());

@@ -28,6 +28,7 @@ import de.gerdiproject.harvest.state.impl.HarvestingState;
 import de.gerdiproject.harvest.state.impl.IdleState;
 import de.gerdiproject.harvest.state.impl.InitializationState;
 import de.gerdiproject.harvest.state.impl.SubmittingState;
+import de.gerdiproject.harvest.submission.elasticsearch.constants.ElasticSearchConstants;
 
 
 /**
@@ -50,6 +51,7 @@ public final class ParameterFactory
         AbstractParameter<?> autoSubmit = createAutoSubmit();
         AbstractParameter<?> readFromDisk = createReadFromDisk();
         AbstractParameter<?> writeToDisk = createWriteToDisk();
+        AbstractParameter<?> submitter = createSubmitter();
         AbstractParameter<?> submitUrl = createSubmissionUrl();
         AbstractParameter<?> submitSize = createSubmissionSize();
         AbstractParameter<?> submitName = createSubmissionUserName();
@@ -57,6 +59,7 @@ public final class ParameterFactory
         AbstractParameter<?> submitIncompleteHarvests = createSubmitIncomplete();
         AbstractParameter<?> submitOutdated = createSubmitOutdated();
 
+        params.put(submitter.getKey(), submitter);
         params.put(autoSubmit.getKey(), autoSubmit);
         params.put(submitUrl.getKey(), submitUrl);
         params.put(submitName.getKey(), submitName);
@@ -98,6 +101,22 @@ public final class ParameterFactory
         }
 
         return params;
+    }
+
+
+    /**
+     * Creates a parameter for changing the target of the submitted documents.
+     *
+     * @return a parameter for changing the target of the submitted documents
+     */
+    public static SubmitterParameter createSubmitter()
+    {
+        final List<Class<? extends IState>> allowedStates = Arrays.asList(
+                                                                InitializationState.class,
+                                                                ErrorState.class,
+                                                                IdleState.class,
+                                                                HarvestingState.class);
+        return new SubmitterParameter(ConfigurationConstants.SUBMITTER_TYPE, allowedStates, ElasticSearchConstants.SUBMITTER_ID);
     }
 
 

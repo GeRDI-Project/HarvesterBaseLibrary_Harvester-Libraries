@@ -46,6 +46,7 @@ public class ConfigurationConstants
     public static final String SUBMISSION_SIZE = "submissionSize";
     public static final String SUBMIT_INCOMPLETE = "submitIncomplete";
     public static final String SUBMIT_OUTDATED = "submitOutdated";
+    public static final String SUBMITTER_TYPE = "submissionType";
     public static final String FORCE_HARVEST = "forceHarvest";
 
     public static final String CHANGED_PARAM = "Set parameter '%s' to '%s'.";
@@ -58,6 +59,8 @@ public class ConfigurationConstants
 
     public static final String CANNOT_CHANGE_PARAM_INVALID_URL =
         "Cannot change parameter '%s'. '%s' is not a valid URL!";
+
+    public static final String CANNOT_CHANGE_PARAM_INVALID_SUBMITTER = null;
 
     public static final String NO_CHANGES = "No parameters were changed!";
     public static final String UNKNOWN_PARAM = "Cannot change parameter '%s'. Unknown parameter!";
@@ -99,6 +102,7 @@ public class ConfigurationConstants
 
     public static final String URL_PREFIX = "%URL_PARAMETER%";
     public static final String PASSWORD_PREFIX = "%PASSWORD_PARAMETER%";
+    public static final String SUBMITTER_PREFIX = "%SUBMITTER_PARAMETER%";
     public static final String GLOBAL_PARAMETERS_JSON = "globalParameters";
     public static final String HARVESTER_PARAMETERS_JSON = "harvesterParameters";
     public static final String BASIC_PARAMETER_FORMAT = "%%1$-%ds :  %%2$s%%n";

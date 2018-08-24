@@ -190,7 +190,7 @@ public abstract class AbstractSubmitter implements IEventListener
      * @throws IllegalStateException thrown when the submission cannot start due to
      * unfulfilled preconditions
      */
-    protected String submitAll() throws IllegalStateException // NOPMD events need arguments
+    protected String submitAll() throws IllegalStateException
     {
         final int numberOfDocuments = getNumberOfSubmittableChanges();
         failedDocumentCount = numberOfDocuments;
@@ -325,6 +325,16 @@ public abstract class AbstractSubmitter implements IEventListener
             currentBatchSize += documentSize;
         }
     }
+
+
+    /**
+     * Returns a unique identifier of this submitter class.
+     * This identifier is used to be able to set the submitter during runtime
+     * via the Configuration.
+     *
+     * @return a unique identifier of this submitter class
+     */
+    public abstract String getId();
 
 
     /**
@@ -536,6 +546,24 @@ public abstract class AbstractSubmitter implements IEventListener
     protected void setSubmitFailedDocs(boolean state)
     {
         this.canSubmitFailedDocs = state;
+    }
+
+
+    /**
+     * Copies all field values from another submitter to this one.
+     *
+     * @param other the submitter of which the values are copied
+     */
+    public void setValues(AbstractSubmitter other)
+    {
+        setMaxBatchSize(other.maxBatchSize);
+        setUrl(other.url);
+        setCredentials(other.userName, other.password);
+        setSubmitOutdatedDocs(other.canSubmitOutdatedDocs);
+        setSubmitFailedDocs(other.canSubmitFailedDocs);
+        setCharset(other.charset);
+        setHasSubmittedAll(other.hasSubmittedAll);
+        setHarvestIncomplete(other.isHarvestIncomplete);
     }
 
 

@@ -27,8 +27,10 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -48,12 +50,14 @@ import de.gerdiproject.harvest.config.parameters.BooleanParameter;
 import de.gerdiproject.harvest.config.parameters.IntegerParameter;
 import de.gerdiproject.harvest.config.parameters.PasswordParameter;
 import de.gerdiproject.harvest.config.parameters.StringParameter;
+import de.gerdiproject.harvest.config.parameters.SubmitterParameter;
 import de.gerdiproject.harvest.config.parameters.UrlParameter;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.state.IState;
 import de.gerdiproject.harvest.state.StateMachine;
 import de.gerdiproject.harvest.state.impl.HarvestingState;
 import de.gerdiproject.harvest.state.impl.InitializationState;
+import de.gerdiproject.harvest.submission.events.GetSubmitterIdsEvent;
 import de.gerdiproject.harvest.utils.data.DiskIO;
 
 /**
@@ -240,9 +244,50 @@ public class ConfigurationTest extends AbstractFileSystemUnitTest<Configuration>
 
 
     /**
+     * Tests if the value of a {@linkplain SubmitterParameter} can be changed via
+     * the setter function of the {@linkplain Configuration} if the ID is registered.
+     */
+    @Test
+    public void testSubmitterParameterChange()
+    {
+        final String valueBefore = CUSTOM_PARAM_VALUE + 1;
+        final String valueAfter = CUSTOM_PARAM_VALUE + 2;
+
+        // mock the registration of the submitter IDs
+        EventSystem.addSynchronousListener(GetSubmitterIdsEvent.class, (event) -> {
+            Set<String> validValues = new HashSet<String>();
+            validValues.add(valueBefore);
+            validValues.add(valueAfter);
+            return validValues;
+        });
+
+        final SubmitterParameter param = new SubmitterParameter(CUSTOM_PARAM_KEY, valueBefore);
+        testParameterChange(param, valueAfter);
+    }
+
+
+    /**
+     * Tests if the value of a {@linkplain SubmitterParameter} can be changed via
+     * the setter function of the {@linkplain Configuration} if the ID is registered.
+     */
+    @Test
+    public void testSubmitterParameterChangeUnregistered()
+    {
+        final String valueBefore = CUSTOM_PARAM_VALUE + 1;
+        final String valueAfter = CUSTOM_PARAM_VALUE + 2;
+
+        final SubmitterParameter param = new SubmitterParameter(CUSTOM_PARAM_KEY, valueBefore);
+
+        testedObject = createConfigWithCustomParameters(param);
+        testedObject.setParameter(CUSTOM_PARAM_KEY, valueAfter);
+
+        assertNotEquals(valueAfter, testedObject.getParameterValue(CUSTOM_PARAM_KEY, String.class));
+    }
+
+
+    /**
      * Tests if the value of a {@linkplain PasswordParameter} can be changed via
-     * the setter function of the {@linkplain Configuration} and if it is always
-     * hidden when being retrieved via its string value.
+     * the setter function of the {@linkplain Configuration}.
      */
     @Test
     public void testPasswordParameterChange()
@@ -639,6 +684,7 @@ public class ConfigurationTest extends AbstractFileSystemUnitTest<Configuration>
         final BooleanParameter globalBooleanParam = new BooleanParameter(CUSTOM_PARAM_KEY + 3, BOOL_VALUE_1);
         final UrlParameter globalUrlParam = new UrlParameter(CUSTOM_PARAM_KEY + 4, URL_VALUE_1);
         final PasswordParameter globalPasswordParam = new PasswordParameter(CUSTOM_PARAM_KEY + 5, PASSWORD_VALUE_1);
+        final SubmitterParameter globalSubmitterParam = new SubmitterParameter(CUSTOM_PARAM_KEY + 11, CUSTOM_PARAM_VALUE);
 
         final Map<String, AbstractParameter<?>> globalParams = new HashMap<>();
         globalParams.put(globalStringParam.getKey(), globalStringParam);
@@ -646,12 +692,14 @@ public class ConfigurationTest extends AbstractFileSystemUnitTest<Configuration>
         globalParams.put(globalBooleanParam.getKey(), globalBooleanParam);
         globalParams.put(globalUrlParam.getKey(), globalUrlParam);
         globalParams.put(globalPasswordParam.getKey(), globalPasswordParam);
+        globalParams.put(globalSubmitterParam.getKey(), globalSubmitterParam);
 
         final StringParameter harvesterStringParam = new StringParameter(CUSTOM_PARAM_KEY + 6, CUSTOM_PARAM_VALUE + 2);
         final IntegerParameter harvesterIntegerParam = new IntegerParameter(CUSTOM_PARAM_KEY + 7, INT_VALUE_2);
         final BooleanParameter harvesterBooleanParam = new BooleanParameter(CUSTOM_PARAM_KEY + 8, BOOL_VALUE_2);
         final UrlParameter harvesterUrlParam = new UrlParameter(CUSTOM_PARAM_KEY + 9, URL_VALUE_2);
         final PasswordParameter harvesterPasswordParam = new PasswordParameter(CUSTOM_PARAM_KEY + 10, PASSWORD_VALUE_2);
+        final SubmitterParameter harvesterSubmitterParam = new SubmitterParameter(CUSTOM_PARAM_KEY + 12, CUSTOM_PARAM_VALUE);
 
         final Map<String, AbstractParameter<?>> harvesterParams = new HashMap<>();
         harvesterParams.put(harvesterStringParam.getKey(), harvesterStringParam);
@@ -659,6 +707,7 @@ public class ConfigurationTest extends AbstractFileSystemUnitTest<Configuration>
         harvesterParams.put(harvesterBooleanParam.getKey(), harvesterBooleanParam);
         harvesterParams.put(harvesterUrlParam.getKey(), harvesterUrlParam);
         harvesterParams.put(harvesterPasswordParam.getKey(), harvesterPasswordParam);
+        harvesterParams.put(harvesterSubmitterParam.getKey(), harvesterSubmitterParam);
 
         return new Configuration(globalParams, harvesterParams);
     }

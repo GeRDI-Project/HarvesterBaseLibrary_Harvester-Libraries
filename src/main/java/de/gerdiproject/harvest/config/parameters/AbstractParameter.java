@@ -54,6 +54,17 @@ public abstract class AbstractParameter<T>
 
 
     /**
+     * Returns a String explaining which values are allowed to be set.
+     *
+     * @return a String explaining which values are allowed to be set
+     */
+    protected String getAllowedValues()
+    {
+        return allowedValues;
+    }
+
+
+    /**
      * This function attempts to convert a String value to the actual Type of the parameter.
      * @param value a String representation of the new value
      *
@@ -118,7 +129,7 @@ public abstract class AbstractParameter<T>
                 this.value = stringToValue(value);
                 returnMessage = String.format(ConfigurationConstants.CHANGED_PARAM, key, getStringValue());
             } catch (ClassCastException e) {
-                returnMessage = String.format(ConfigurationConstants.CANNOT_CHANGE_PARAM_INVALID_VALUE, key, value, allowedValues);
+                returnMessage = String.format(ConfigurationConstants.CANNOT_CHANGE_PARAM_INVALID_VALUE, key, value, getAllowedValues());
             } catch (ParseException e) {
                 returnMessage = e.getMessage();
             }

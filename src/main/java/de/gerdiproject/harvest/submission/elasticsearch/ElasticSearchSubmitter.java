@@ -208,6 +208,13 @@ public class ElasticSearchSubmitter extends AbstractSubmitter
 
 
     @Override
+    public String getId()
+    {
+        return ElasticSearchConstants.SUBMITTER_ID;
+    }
+
+
+    @Override
     protected void setCredentials(String userName, String password)
     {
         super.setCredentials(userName, password);

@@ -38,6 +38,8 @@ import de.gerdiproject.harvest.scheduler.constants.SchedulerConstants;
 import de.gerdiproject.harvest.state.StateMachine;
 import de.gerdiproject.harvest.state.impl.InitializationState;
 import de.gerdiproject.harvest.submission.AbstractSubmitter;
+import de.gerdiproject.harvest.submission.SubmitterManager;
+import de.gerdiproject.harvest.submission.constants.SubmissionConstants;
 import de.gerdiproject.harvest.utils.CancelableFuture;
 import de.gerdiproject.harvest.utils.cache.HarvesterCacheManager;
 import de.gerdiproject.harvest.utils.cache.constants.CacheConstants;
@@ -71,7 +73,7 @@ public class MainContext implements IEventListener
     private final Configuration configuration;
 
     @SuppressWarnings("unused") // the submitter is connected via the event system
-    private final AbstractSubmitter submitter;
+    private final SubmitterManager submitterManager;
     private final Scheduler scheduler;
     private final MavenUtils mavenUtils;
     private final Function<GetMainLogEvent, HarvesterLog> onGetMainLog;
@@ -87,14 +89,17 @@ public class MainContext implements IEventListener
      * @param harvesterClass an AbstractHarvester subclass
      * @param harvesterParams additional parameters, specific to the harvester,
      *            or null
-     * @param submitter the class responsible for submitting documents to a
+     * @param submitterClasses a list of classes responsible for submitting documents to a
      *            search index
      * @throws IllegalAccessException can be thrown when the harvester class cannot be instantiated
      * @throws InstantiationException can be thrown when the harvester class cannot be instantiated
      *
      * @see de.gerdiproject.harvest.harvester.AbstractHarvester
      */
-    private <T extends AbstractHarvester> MainContext(String moduleName, Class<T> harvesterClass, List<AbstractParameter<?>> harvesterParams, AbstractSubmitter submitter) throws InstantiationException, IllegalAccessException
+    private <T extends AbstractHarvester> MainContext(String moduleName,
+                                                      Class<T> harvesterClass,
+                                                      List<AbstractParameter<?>> harvesterParams,
+                                                      List<Class<? extends AbstractSubmitter>> submitterClasses) throws InstantiationException, IllegalAccessException
     {
         this.moduleName = moduleName;
 
@@ -131,25 +136,15 @@ public class MainContext implements IEventListener
 
         Charset charset = harvester.getCharset();
 
-        this.saver = new HarvestSaver(
-            SaveConstants.DEFAULT_SAVE_FOLDER,
-            moduleName,
-            charset,
-            timeKeeper.getHarvestMeasure(),
-            cacheManager);
+        this.saver = createHarvestSaver(moduleName, charset, timeKeeper, cacheManager);
 
-        this.submitter = submitter;
-        submitter.setCharset(charset);
-        submitter.setCacheManager(cacheManager);
-        submitter.setHarvestIncomplete(timeKeeper.isHarvestIncomplete());
-        submitter.setHasSubmittedAll(timeKeeper.getSubmissionMeasure().getStatus() == ProcessStatus.Finished);
-        submitter.addEventListeners();
+        this.submitterManager = createSubmitterManager(submitterClasses, charset, timeKeeper, cacheManager);
 
         // init scheduler
         final String schedulerCachePath = String.format(SchedulerConstants.CACHE_PATH, moduleName);
         this.scheduler = new Scheduler(schedulerCachePath);
         scheduler.loadFromDisk();
-        
+
         configuration.updateAllParameters();
     }
 
@@ -162,13 +157,14 @@ public class MainContext implements IEventListener
      * @param harvesterClass an AbstractHarvester subclass
      * @param harvesterParams additional parameters, specific to the harvester,
      *            or null
-     * @param submitter the class responsible for submitting documents to a
+     * @param submitterClasses a list of viable classes responsible for submitting documents to a
      *            search index
      *
      * @see de.gerdiproject.harvest.harvester.AbstractHarvester
      */
     public static <T extends AbstractHarvester> void init(String moduleName, Class<T> harvesterClass,
-                                                          List<AbstractParameter<?>> harvesterParams, AbstractSubmitter submitter)
+                                                          List<AbstractParameter<?>> harvesterParams,
+                                                          List<Class<? extends AbstractSubmitter>> submitterClasses)
     {
         LOGGER.info(ApplicationConstants.INIT_HARVESTER_START);
         StateMachine.setState(new InitializationState());
@@ -178,7 +174,7 @@ public class MainContext implements IEventListener
             if (instance != null)
                 instance.clear();
 
-            instance = new MainContext(moduleName, harvesterClass, harvesterParams, submitter);
+            instance = new MainContext(moduleName, harvesterClass, harvesterParams, submitterClasses);
             return true;
         });
 
@@ -252,6 +248,62 @@ public class MainContext implements IEventListener
     public static HarvestTimeKeeper getTimeKeeper()
     {
         return instance != null ? instance.timeKeeper : null;
+    }
+
+
+    /**
+     * Creates an instance of the {@linkplain HarvestSaver}.
+     *
+     * @param modName the name of this service
+     * @param charset the charset with wich the documents will be written
+     * @param keeper the time keeper
+     * @param harvesterCacheManager the cache manager
+     *
+     * @return an instance of the {@linkplain HarvestSaver}
+     */
+    private HarvestSaver createHarvestSaver(String modName, Charset charset, HarvestTimeKeeper keeper, HarvesterCacheManager harvesterCacheManager)
+    {
+        return new HarvestSaver(
+                   SaveConstants.DEFAULT_SAVE_FOLDER,
+                   modName,
+                   charset,
+                   keeper.getHarvestMeasure(),
+                   harvesterCacheManager);
+    }
+
+
+    /**
+     * Creates a {@linkplain SubmitterManager}, instantiating and registering all submitter classes.
+     *
+     * @param submitterClass the class of the submitter that is to be instantiated
+     * @param charset the charset for writing the submitted data
+     * @param keeper the harvest time keeper
+     * @param harvesterCacheManager the documents cache
+     * @param submitterManager the submitter manager where the submitter is to be registered
+     *
+     * @return a {@linkplain SubmitterManager}
+     */
+    private SubmitterManager createSubmitterManager(List<Class<? extends AbstractSubmitter>> submitterClasses,
+                                                    Charset charset, HarvestTimeKeeper keeper, HarvesterCacheManager harvesterCacheManager)
+    {
+        final SubmitterManager manager = new SubmitterManager();
+
+        for (Class<? extends AbstractSubmitter> submitterClass : submitterClasses) {
+            try {
+                AbstractSubmitter newSubmitter = submitterClass.newInstance();
+                newSubmitter.setCharset(charset);
+                newSubmitter.setCacheManager(harvesterCacheManager);
+                newSubmitter.setHarvestIncomplete(keeper.isHarvestIncomplete());
+                newSubmitter.setHasSubmittedAll(keeper.getSubmissionMeasure().getStatus() == ProcessStatus.Finished);
+                manager.registerSubmitter(newSubmitter);
+            } catch (InstantiationException | IllegalAccessException ex) {
+                LOGGER.error(String.format(SubmissionConstants.REGISTER_ERROR, submitterClass.getName()), ex);
+            }
+        }
+
+        manager.addEventListeners();
+
+        return manager;
     }
 
 
