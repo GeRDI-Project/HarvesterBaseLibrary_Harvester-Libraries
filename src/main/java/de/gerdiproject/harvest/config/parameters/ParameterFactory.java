@@ -254,7 +254,7 @@ public final class ParameterFactory
                                                                 ErrorState.class,
                                                                 IdleState.class,
                                                                 HarvestingState.class);
-        return new BooleanParameter(ConfigurationConstants.SUBMIT_FORCED, allowedStates, false);
+        return new BooleanParameter(ConfigurationConstants.SUBMIT_OUTDATED, allowedStates, false);
     }
 
 

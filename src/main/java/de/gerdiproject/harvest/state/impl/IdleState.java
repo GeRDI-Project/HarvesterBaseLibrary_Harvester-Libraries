@@ -121,9 +121,15 @@ public class IdleState implements IState
     @Override
     public Response submit()
     {
-        EventSystem.sendEvent(new StartSubmissionEvent());
-        return ServerResponseFactory.createAcceptedResponse(
-                   StateConstants.SUBMITTING_STATUS);
+        Response response;
+
+        try {
+            response = ServerResponseFactory.createSynchronousEventResponse(new StartSubmissionEvent());
+        } catch (IllegalStateException e) {
+            response = ServerResponseFactory.createBadRequestResponse(e.getMessage());
+        }
+
+        return response;
     }
 
 

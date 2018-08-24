@@ -51,6 +51,13 @@ public class HarvesterLogTest extends AbstractFileSystemUnitTest<HarvesterLog>
     }
 
 
+    @Override
+    protected boolean isLoggingEnabledDuringTests()
+    {
+        return true;
+    }
+
+
     /**
      * After each test, the logger is unregistered and the log file removed.
      */

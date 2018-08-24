@@ -54,22 +54,6 @@ public class SchedulerTest extends AbstractFileSystemUnitTest<Scheduler>
     }
 
 
-    @Override
-    public void before() throws InstantiationException
-    {
-        super.before();
-        setLoggerEnabled(false);
-    }
-
-
-    @Override
-    public void after()
-    {
-        super.after();
-        setLoggerEnabled(true);
-    }
-
-
     /**
      * Tests if a new scheduler starts with no tasks assigned.
      */

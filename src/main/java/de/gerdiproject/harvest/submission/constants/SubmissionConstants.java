@@ -44,7 +44,7 @@ public class SubmissionConstants
     public static final String OUTDATED_ERROR =
         "Cannot submit documents: There are no changes since the last submission!\n"
         + "If you want to submit anyway, set the '"
-        + ConfigurationConstants.SUBMIT_FORCED
+        + ConfigurationConstants.SUBMIT_OUTDATED
         + "'-flag in the configuration.";
     public static final String FAILED_HARVEST_ERROR =
         "Cannot submit documents: The harvest was not completed successfully!\n"

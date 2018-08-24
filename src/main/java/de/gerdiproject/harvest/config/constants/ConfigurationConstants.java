@@ -45,7 +45,7 @@ public class ConfigurationConstants
     public static final String SUBMISSION_PASSWORD = "submissionPassword";
     public static final String SUBMISSION_SIZE = "submissionSize";
     public static final String SUBMIT_INCOMPLETE = "submitIncomplete";
-    public static final String SUBMIT_FORCED = "submitOutdated";
+    public static final String SUBMIT_OUTDATED = "submitOutdated";
     public static final String FORCE_HARVEST = "forceHarvest";
 
     public static final String CHANGED_PARAM = "Set parameter '%s' to '%s'.";

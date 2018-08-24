@@ -63,6 +63,8 @@ public abstract class AbstractUnitTest<T>
 
         if (testedObject == null)
             throw new InstantiationException(CLEANUP_ERROR + getTestedClass().getName());
+
+        setLoggerEnabled(isLoggingEnabledDuringTests());
     }
 
 
@@ -74,6 +76,8 @@ public abstract class AbstractUnitTest<T>
     {
         EventSystem.reset();
         testedObject = null;
+
+        setLoggerEnabled(true);
     }
 
 
@@ -142,6 +146,16 @@ public abstract class AbstractUnitTest<T>
     {
         final Level newLevel = state ? initialLogLevel : Level.OFF;
         LoggerConstants.ROOT_LOGGER.setLevel(newLevel);
+    }
+
+
+    /**
+     * If true, the logger is enabled during testing.
+     * @return true if logs are to be generated during testing
+     */
+    protected boolean isLoggingEnabledDuringTests()
+    {
+        return false;
     }
 
 

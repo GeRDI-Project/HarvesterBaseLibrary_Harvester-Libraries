@@ -28,11 +28,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import de.gerdiproject.harvest.IDocument;
-import de.gerdiproject.harvest.application.MainContext;
 import de.gerdiproject.harvest.config.constants.ConfigurationConstants;
 import de.gerdiproject.harvest.config.events.GlobalParameterChangedEvent;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.event.IEventListener;
+import de.gerdiproject.harvest.harvester.events.HarvestFinishedEvent;
 import de.gerdiproject.harvest.state.events.AbortingFinishedEvent;
 import de.gerdiproject.harvest.state.events.AbortingStartedEvent;
 import de.gerdiproject.harvest.state.events.StartAbortingEvent;
@@ -61,6 +61,8 @@ public abstract class AbstractSubmitter implements IEventListener
     private boolean canSubmitOutdatedDocs;
     private boolean canSubmitFailedDocs;
 
+    protected boolean isHarvestIncomplete;
+    protected boolean hasSubmittedAll;
     protected Charset charset;
 
     protected final Logger logger; // NOPMD - we want to retrieve the type of the inheriting class
@@ -121,18 +123,18 @@ public abstract class AbstractSubmitter implements IEventListener
     @Override
     public void addEventListeners()
     {
-        EventSystem.addListener(StartSubmissionEvent.class, onStartSubmission);
+        EventSystem.addSynchronousListener(StartSubmissionEvent.class, this::onStartSubmission);
         EventSystem.addListener(GlobalParameterChangedEvent.class, onGlobalParameterChanged);
-
+        EventSystem.addListener(HarvestFinishedEvent.class, onHarvestFinished);
     }
 
 
     @Override
     public void removeEventListeners()
     {
-        EventSystem.removeListener(StartSubmissionEvent.class, onStartSubmission);
+        EventSystem.removeSynchronousListener(StartSubmissionEvent.class);
         EventSystem.removeListener(GlobalParameterChangedEvent.class, onGlobalParameterChanged);
-
+        EventSystem.removeListener(HarvestFinishedEvent.class, onHarvestFinished);
     }
 
 
@@ -148,9 +150,47 @@ public abstract class AbstractSubmitter implements IEventListener
 
 
     /**
-     * Reads cached documents and submits them.
+     * Sets the charset of the harvested documents.
+     *
+     * @param charset the charset of the harvested documents
      */
-    public void submitAll()
+    public void setCharset(Charset charset)
+    {
+        this.charset = charset;
+    }
+
+
+    /**
+     * Sets the indicator that determines if the latest harvest has failed.
+     *
+     * @param state if true, the latest harvest failed or was aborted
+     */
+    public void setHarvestIncomplete(boolean state)
+    {
+        this.isHarvestIncomplete = state;
+    }
+
+
+    /**
+     * Sets the indicator that determines if there are unsubmitted changes.
+     *
+     * @param state if true, there are unsubmitted changes
+     */
+    public void setHasSubmittedAll(boolean state)
+    {
+        this.hasSubmittedAll = state;
+    }
+
+
+    /**
+     * Reads cached documents and submits them.
+     *
+     * @return a feedback message
+     *
+     * @throws IllegalStateException thrown when the submission cannot start due to
+     * unfulfilled preconditions
+     */
+    protected String submitAll() throws IllegalStateException // NOPMD events need arguments
     {
         final int numberOfDocuments = getNumberOfSubmittableChanges();
         failedDocumentCount = numberOfDocuments;
@@ -163,37 +203,40 @@ public abstract class AbstractSubmitter implements IEventListener
         EventSystem.sendEvent(new SubmissionStartedEvent(numberOfDocuments));
 
         // check if we can submit
-        boolean canSubmit = canStartSubmission();
+        final String errorMessage = checkPreconditionErrors();
 
-        if (canSubmit) {
+        if (errorMessage != null) {
+            finishSubmission();
+            throw new IllegalStateException(errorMessage);
+        }
 
-            // listen to abort requests
-            EventSystem.addListener(StartAbortingEvent.class, onStartAborting);
+        // listen to abort requests
+        EventSystem.addListener(StartAbortingEvent.class, onStartAborting);
 
-            // log the beginning of the submission
-            logger.info(String.format(SubmissionConstants.SUBMISSION_START, url.toString()));
+        // log the beginning of the submission
+        logger.info(String.format(SubmissionConstants.SUBMISSION_START, url.toString()));
 
-            // start asynchronous submission
-            currentSubmissionProcess = startSubmissionProcess();
+        // start asynchronous submission
+        currentSubmissionProcess = startSubmissionProcess();
 
-            // finished handler
-            currentSubmissionProcess.thenApply((isSuccessful) -> {
-                onSubmissionFinished();
-                return isSuccessful;
-            })
-            // exception handler
-            .exceptionally(throwable -> {
-                if (isAborting)
-                    onSubmissionAborted();
-                else
-                {
-                    logger.error(SubmissionConstants.SUBMISSION_INTERRUPTED, throwable);
-                    onSubmissionFinished();
-                }
-                return false;
-            });
-        } else // fail the submission
-            onSubmissionFinished();
+        // finished handler
+        currentSubmissionProcess.thenApply((isSuccessful) -> {
+            finishSubmission();
+            return isSuccessful;
+        })
+        // exception handler
+        .exceptionally(throwable -> {
+            if (isAborting)
+                finishAbortingSubmission();
+            else
+            {
+                logger.error(SubmissionConstants.SUBMISSION_INTERRUPTED, throwable);
+                finishSubmission();
+            }
+            return false;
+        });
+
+        return String.format(SubmissionConstants.SUBMISSION_START, url.toString());
     }
 
 
@@ -312,32 +355,26 @@ public abstract class AbstractSubmitter implements IEventListener
     /**
      * Checks if the submission can start
      *
-     * @return true, if the submission can proceed
+     * @return a message explaining if the preconditions failed
      */
-    protected boolean canStartSubmission()
+    protected String checkPreconditionErrors()
     {
-        if (url == null) {
-            logger.error(SubmissionConstants.NO_URL_ERROR);
-            return false;
-        }
+        if (url == null)
+            return SubmissionConstants.NO_URL_ERROR;
 
-        if (getNumberOfSubmittableChanges() == 0) {
-            logger.error(SubmissionConstants.NO_DOCS_ERROR);
-            return false;
-        }
+        if (getNumberOfSubmittableChanges() == 0)
+            return SubmissionConstants.NO_DOCS_ERROR;
 
         // check if the cache was submitted already
-        if (!canSubmitOutdatedDocs && !MainContext.getTimeKeeper().hasUnsubmittedChanges()) {
-            logger.error(SubmissionConstants.OUTDATED_ERROR);
-            return false;
+        if (!canSubmitOutdatedDocs && hasSubmittedAll)
+            return SubmissionConstants.OUTDATED_ERROR;
 
-            // check if the harvest is incomplete
-        } else if (!canSubmitFailedDocs && MainContext.getTimeKeeper().isHarvestIncomplete()) {
-            logger.error(SubmissionConstants.FAILED_HARVEST_ERROR);
-            return false;
-        }
+        // check if the harvest is incomplete
+        if (!canSubmitFailedDocs && isHarvestIncomplete)
+            return SubmissionConstants.FAILED_HARVEST_ERROR;
 
-        return true;
+
+        return null;
     }
 
 
@@ -345,7 +382,7 @@ public abstract class AbstractSubmitter implements IEventListener
      * Marks the submission as finished, logging a brief summary and sending an
      * event.
      */
-    protected void onSubmissionFinished()
+    protected void finishSubmission()
     {
         currentSubmissionProcess = null;
         EventSystem.removeListener(StartAbortingEvent.class, onStartAborting);
@@ -355,8 +392,10 @@ public abstract class AbstractSubmitter implements IEventListener
         if (failedDocumentCount == processedDocumentCount || processedDocumentCount == 0)
             logger.warn(SubmissionConstants.SUBMISSION_DONE_ALL_FAILED);
 
-        else if (failedDocumentCount == 0)
+        else if (failedDocumentCount == 0) {
             logger.info(SubmissionConstants.SUBMISSION_DONE_ALL_OK);
+            setHasSubmittedAll(true);
+        }
 
         else
             logger.warn(String.format(SubmissionConstants.SUBMISSION_DONE_SOME_FAILED, failedDocumentCount));
@@ -365,7 +404,7 @@ public abstract class AbstractSubmitter implements IEventListener
 
         // prevents dead-locks if the submission was aborted after it finished
         if (isAborting)
-            onSubmissionAborted();
+            finishAbortingSubmission();
     }
 
 
@@ -373,7 +412,7 @@ public abstract class AbstractSubmitter implements IEventListener
      * This function is called after the submission process was stopped due to
      * being aborted.
      */
-    protected void onSubmissionAborted()
+    protected void finishAbortingSubmission()
     {
         currentSubmissionProcess = null;
         isAborting = false;
@@ -476,6 +515,30 @@ public abstract class AbstractSubmitter implements IEventListener
     }
 
 
+    /**
+     * Changes the flag that determines if documents that have been submitted already
+     * can be submitted again.
+     *
+     * @param state the new value of the flag
+     */
+    protected void setSubmitOutdatedDocs(boolean state)
+    {
+        this.canSubmitOutdatedDocs = state;
+    }
+
+
+    /**
+     * Changes the flag that determines if documents that have been harvested incompletely
+     * due to a failed harvest can be submitted.
+     *
+     * @param state the new value of the flag
+     */
+    protected void setSubmitFailedDocs(boolean state)
+    {
+        this.canSubmitFailedDocs = state;
+    }
+
+
     //////////////////////////////
     // Event Callback Functions //
     //////////////////////////////
@@ -484,11 +547,10 @@ public abstract class AbstractSubmitter implements IEventListener
      * Event callback: When a submission starts, submit the cache file via the
      * {@linkplain AbstractSubmitter}.
      */
-    private final Consumer<StartSubmissionEvent> onStartSubmission = (StartSubmissionEvent e) -> {
-        canSubmitOutdatedDocs = e.canSubmitOutdatedDocuments();
-        canSubmitFailedDocs = e.isCanSubmitFailedDocuments();
-        submitAll();
-    };
+    private String onStartSubmission(StartSubmissionEvent e)
+    {
+        return submitAll();
+    }
 
 
     /**
@@ -498,6 +560,16 @@ public abstract class AbstractSubmitter implements IEventListener
         isAborting = true;
         EventSystem.removeListener(StartAbortingEvent.class, this.onStartAborting);
         EventSystem.sendEvent(new AbortingStartedEvent());
+    };
+
+
+    /**
+     * Event callback: When a harvest is finished, notify that there are unsubmitted changes.
+     * {@linkplain AbstractSubmitter}.
+     */
+    private final Consumer<HarvestFinishedEvent> onHarvestFinished = (HarvestFinishedEvent e) -> {
+        setHarvestIncomplete(!e.isSuccessful());
+        setHasSubmittedAll(false);
     };
 
 
@@ -528,18 +600,15 @@ public abstract class AbstractSubmitter implements IEventListener
                 setCredentials(userName, (String) newValue);
                 break;
 
+            case ConfigurationConstants.SUBMIT_OUTDATED:
+                setSubmitOutdatedDocs((Boolean) newValue);
+                break;
+
+            case ConfigurationConstants.SUBMIT_INCOMPLETE:
+                setSubmitFailedDocs((Boolean) newValue);
+                break;
+
             default: // ignore parameter
         }
     };
-
-
-    /**
-     * Sets the charset of the harvested documents.
-     *
-     * @param charset the charset of the harvested documents
-     */
-    public void setCharset(Charset charset)
-    {
-        this.charset = charset;
-    }
 }

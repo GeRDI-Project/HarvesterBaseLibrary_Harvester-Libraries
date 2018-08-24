@@ -16,13 +16,12 @@
  */
 package de.gerdiproject.harvest.utils.maven.events;
 
-import de.gerdiproject.harvest.application.MainContext;
 import de.gerdiproject.harvest.event.ISynchronousEvent;
 import de.gerdiproject.harvest.utils.maven.MavenUtils;
 
 /**
  * This synchronous event returns the {@linkplain MavenUtils} that is attached
- * to the {@linkplain MainContext}.
+ * to the MainContext.
  *
  * @author Robin Weiss
  */

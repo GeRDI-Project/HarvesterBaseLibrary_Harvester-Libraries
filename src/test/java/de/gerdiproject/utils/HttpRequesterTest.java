@@ -219,50 +219,6 @@ public class HttpRequesterTest extends AbstractFileSystemUnitTest<HttpRequester>
 
 
     /**
-    * Tests if the writeToDisk flag always remains disabled if no path was set.
-    */
-    @Test
-    public void testChangingWriteToDiskFlagWithMissingCachePath()
-    {
-        testedObject = new HttpRequester(
-            StandardCharsets.UTF_8,
-            new Gson(),
-            isCachingEnabled,
-            isCachingEnabled,
-            null);
-
-        testedObject.addEventListeners();
-
-        EventSystem.sendEvent(new GlobalParameterChangedEvent(
-                                  new BooleanParameter(ConfigurationConstants.WRITE_HTTP_TO_DISK, true),
-                                  null));
-        assert !testedObject.isWritingToDisk();
-    }
-
-
-    /**
-     * Tests if the readFromDisk flag always remains disabled if no path was set.
-     */
-    @Test
-    public void testChangingReadFromDiskFlagWithMissingCachePath()
-    {
-        testedObject = new HttpRequester(
-            StandardCharsets.UTF_8,
-            new Gson(),
-            isCachingEnabled,
-            isCachingEnabled,
-            null);
-
-        testedObject.addEventListeners();
-
-        EventSystem.sendEvent(new GlobalParameterChangedEvent(
-                                  new BooleanParameter(ConfigurationConstants.READ_HTTP_FROM_DISK, true),
-                                  null));
-        assert !testedObject.isWritingToDisk();
-    }
-
-
-    /**
      * Tests if a HTML Java object is returned when a GET-request
      * is sent to a valid URL or its cached response.
      */

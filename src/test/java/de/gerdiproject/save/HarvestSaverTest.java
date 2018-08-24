@@ -64,7 +64,6 @@ public class HarvestSaverTest extends AbstractFileSystemUnitTest<HarvestSaver>
     private static final String JSON_PUBLICATION_YEAR = "publicationYear";
 
     private HarvesterCacheManager cacheManager = new HarvesterCacheManager();
-    private ProcessTimeMeasure measure;
 
 
     @Override
@@ -73,8 +72,8 @@ public class HarvestSaverTest extends AbstractFileSystemUnitTest<HarvestSaver>
         final long startTimestamp = random.nextLong();
         final long endTimestamp = random.longs(startTimestamp + 1, startTimestamp + 99999999).findAny().getAsLong();
 
-        this.measure = new ProcessTimeMeasure();
-        this.measure.set(startTimestamp, endTimestamp, ProcessStatus.Finished);
+        ProcessTimeMeasure measure = new ProcessTimeMeasure();
+        measure.set(startTimestamp, endTimestamp, ProcessStatus.Finished);
 
         this.cacheManager = new HarvesterCacheManager();
         return new HarvestSaver(testFolder, TEST_NAME, StandardCharsets.UTF_8, measure, cacheManager);
@@ -82,21 +81,10 @@ public class HarvestSaverTest extends AbstractFileSystemUnitTest<HarvestSaver>
 
 
     @Override
-    public void before() throws InstantiationException
-    {
-        super.before();
-        setLoggerEnabled(false);
-    }
-
-
-    @Override
     public void after()
     {
-        super.after();
-        setLoggerEnabled(true);
-
         cacheManager = null;
-        measure = null;
+        super.after();
     }
 
 
@@ -283,7 +271,6 @@ public class HarvestSaverTest extends AbstractFileSystemUnitTest<HarvestSaver>
     // Non-test Methods //
     //////////////////////
 
-
     /**
      * Caches 1 to 10 documents in a {@linkplain HarvesterCache} that is then registered at
      * the {@linkplain HarvesterCacheManager}, allowing the documents to be saved.
@@ -316,5 +303,4 @@ public class HarvestSaverTest extends AbstractFileSystemUnitTest<HarvestSaver>
 
         return numberOfHarvestedDocuments;
     }
-
 }

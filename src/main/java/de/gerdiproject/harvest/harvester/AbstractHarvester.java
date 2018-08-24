@@ -568,6 +568,7 @@ public abstract class AbstractHarvester implements IEventListener
         if (isMainHarvester) {
             applyCacheChanges();
             EventSystem.sendEvent(new AbortingFinishedEvent());
+            EventSystem.sendEvent(new HarvestFinishedEvent(false, getHash(false)));
         }
 
         isAborting = false;

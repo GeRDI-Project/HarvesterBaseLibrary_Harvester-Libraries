@@ -110,8 +110,6 @@ public class HarvestSaver implements IEventListener
         File result = new File(saveFolder, String.format(SaveConstants.SAVE_FILE_NAME, fileName));
         FileUtils.createEmptyFile(result);
 
-        System.out.println(result + " : " + result.length());
-
         // abort if the file could not be created or cleaned up
         if (!result.exists() || result.length() != 0)
             throw new UncheckedIOException(new IOException(String.format(SaveConstants.SAVE_FAILED_CANNOT_CREATE, result)));

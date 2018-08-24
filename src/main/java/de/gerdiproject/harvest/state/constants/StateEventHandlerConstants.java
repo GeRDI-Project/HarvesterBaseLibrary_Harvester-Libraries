@@ -82,7 +82,8 @@ public class StateEventHandlerConstants
             final Configuration config = MainContext.getConfiguration();
 
             if (config.getParameterValue(ConfigurationConstants.AUTO_SUBMIT, Boolean.class)) {
-                EventSystem.sendEvent(new StartSubmissionEvent());
+                String response = EventSystem.sendSynchronousEvent(new StartSubmissionEvent());
+                LOGGER.info(response);
                 return;
             }
         } else

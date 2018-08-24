@@ -48,6 +48,7 @@ import de.gerdiproject.harvest.utils.logger.events.GetMainLogEvent;
 import de.gerdiproject.harvest.utils.maven.MavenUtils;
 import de.gerdiproject.harvest.utils.maven.events.GetMavenUtilsEvent;
 import de.gerdiproject.harvest.utils.time.HarvestTimeKeeper;
+import de.gerdiproject.harvest.utils.time.ProcessTimeMeasure.ProcessStatus;
 
 
 /**
@@ -121,7 +122,6 @@ public class MainContext implements IEventListener
         configuration.setCacheFilePath(String.format(ConfigurationConstants.CONFIG_PATH, moduleName));
         configuration.loadFromEnvironmentVariables(moduleName);
         configuration.loadFromDisk();
-        configuration.updateAllParameters();
 
         // initialize the harvester
         this.harvester = harvesterClass.newInstance();
@@ -141,12 +141,16 @@ public class MainContext implements IEventListener
         this.submitter = submitter;
         submitter.setCharset(charset);
         submitter.setCacheManager(cacheManager);
+        submitter.setHarvestIncomplete(timeKeeper.isHarvestIncomplete());
+        submitter.setHasSubmittedAll(timeKeeper.getSubmissionMeasure().getStatus() == ProcessStatus.Finished);
         submitter.addEventListeners();
 
         // init scheduler
         final String schedulerCachePath = String.format(SchedulerConstants.CACHE_PATH, moduleName);
         this.scheduler = new Scheduler(schedulerCachePath);
         scheduler.loadFromDisk();
+        
+        configuration.updateAllParameters();
     }
 
 
