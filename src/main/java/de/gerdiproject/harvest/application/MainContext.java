@@ -95,44 +95,15 @@ public class MainContext implements IEventListener
     {
         this.moduleName = moduleName;
 
-        this.log = new HarvesterLog(String.format(LoggerConstants.LOG_FILE_PATH, moduleName));
-        log.registerLogger();
-
-        // initialize the configuration
-        this.configuration = new Configuration();
-        configuration.setCacheFilePath(String.format(ConfigurationConstants.CONFIG_PATH, moduleName));
-        configuration.loadFromDisk();
-        configuration.addEventListeners();
-
-        final String timeKeeperCachePath =
-            String.format(
-                CacheConstants.HARVEST_TIME_KEEPER_CACHE_FILE_PATH,
-                moduleName);
-
-        this.timeKeeper = new HarvestTimeKeeper(timeKeeperCachePath);
-        timeKeeper.loadFromDisk();
-
-        this.mavenUtils = new MavenUtils(harvesterClass);
-
-        this.cacheManager = new HarvesterCacheManager();
-        this.cacheManager.addEventListeners();
-
-        // initialize the harvester
-        this.harvester = harvesterClass.newInstance();
-        harvester.init(true, moduleName);
-        harvester.update();
-        harvester.addEventListeners();
-
-        Charset charset = harvester.getCharset();
-
-        this.saver = createHarvestSaver(moduleName, charset, timeKeeper, cacheManager);
-
-        this.submitterManager = createSubmitterManager(submitterClasses, charset, timeKeeper, cacheManager);
-
-        // init scheduler
-        final String schedulerCachePath = String.format(SchedulerConstants.CACHE_PATH, moduleName);
-        this.scheduler = new Scheduler(schedulerCachePath);
-        scheduler.loadFromDisk();
+        this.log = createLog(moduleName);
+        this.configuration = createConfiguration(moduleName);
+        this.timeKeeper = createTimeKeeper(moduleName);
+        this.mavenUtils = createMavenUtils(harvesterClass);
+        this.cacheManager = createCacheManager();
+        this.harvester = createHarvester(moduleName, harvesterClass);
+        this.saver = createHarvestSaver(moduleName, harvester.getCharset(), timeKeeper, cacheManager);
+        this.submitterManager = createSubmitterManager(submitterClasses, harvester.getCharset(), timeKeeper, cacheManager);
+        this.scheduler = createScheduler(moduleName);
     }
 
 
@@ -150,7 +121,7 @@ public class MainContext implements IEventListener
     public static <T extends AbstractHarvester> void init(String moduleName, Class<T> harvesterClass,
                                                           List<Class<? extends AbstractSubmitter>> submitterClasses)
     {
-        LOGGER.info(ApplicationConstants.INIT_HARVESTER_START);
+        LOGGER.info(ApplicationConstants.INIT_SERVICE);
         StateMachine.setState(new InitializationState());
 
         CancelableFuture<Boolean> initProcess = new CancelableFuture<>(() -> {
@@ -187,6 +158,7 @@ public class MainContext implements IEventListener
         saver.addEventListeners();
         timeKeeper.addEventListeners();
         scheduler.addEventListeners();
+        harvester.addEventListeners();
     }
 
 
@@ -199,6 +171,9 @@ public class MainContext implements IEventListener
         saver.removeEventListeners();
         timeKeeper.removeEventListeners();
         scheduler.removeEventListeners();
+        configuration.removeEventListeners();
+        cacheManager.removeEventListeners();
+        harvester.removeEventListeners();
     }
 
 
@@ -284,12 +259,17 @@ public class MainContext implements IEventListener
      */
     private HarvestSaver createHarvestSaver(String modName, Charset charset, HarvestTimeKeeper keeper, HarvesterCacheManager harvesterCacheManager)
     {
-        return new HarvestSaver(
-                   SaveConstants.DEFAULT_SAVE_FOLDER,
-                   modName,
-                   charset,
-                   keeper.getHarvestMeasure(),
-                   harvesterCacheManager);
+        LOGGER.info(String.format(ApplicationConstants.INIT_FIELD, HarvestSaver.class.getSimpleName()));
+
+        HarvestSaver saver = new HarvestSaver(
+            SaveConstants.DEFAULT_SAVE_FOLDER,
+            modName,
+            charset,
+            keeper.getHarvestMeasure(),
+            harvesterCacheManager);
+        LOGGER.info(String.format(ApplicationConstants.INIT_FIELD_SUCCESS, HarvestSaver.class.getSimpleName()));
+
+        return saver;
     }
 
 
@@ -307,6 +287,8 @@ public class MainContext implements IEventListener
     private SubmitterManager createSubmitterManager(List<Class<? extends AbstractSubmitter>> submitterClasses,
                                                     Charset charset, HarvestTimeKeeper keeper, HarvesterCacheManager harvesterCacheManager)
     {
+        LOGGER.info(String.format(ApplicationConstants.INIT_FIELD, SubmitterManager.class.getSimpleName()));
+
         final SubmitterManager manager = new SubmitterManager();
 
         for (Class<? extends AbstractSubmitter> submitterClass : submitterClasses) {
@@ -325,7 +307,160 @@ public class MainContext implements IEventListener
 
         manager.addEventListeners();
 
+        LOGGER.info(String.format(ApplicationConstants.INIT_FIELD_SUCCESS, SubmitterManager.class.getSimpleName()));
+
         return manager;
+    }
+
+
+    /**
+     * Creates a {@linkplain HarvesterLog} and assigns it to this context.
+     *
+     * @param moduleName the name of this service
+     *
+     * @return a new {@linkplain HarvesterLog} for this context
+     */
+    private HarvesterLog createLog(String moduleName)
+    {
+        LOGGER.info(String.format(ApplicationConstants.INIT_FIELD, HarvesterLog.class.getSimpleName()));
+
+        HarvesterLog serviceLog = new HarvesterLog(String.format(LoggerConstants.LOG_FILE_PATH, moduleName));
+        serviceLog.registerLogger();
+
+        LOGGER.info(String.format(ApplicationConstants.INIT_FIELD_SUCCESS, HarvesterLog.class.getSimpleName()));
+
+        return serviceLog;
+    }
+
+
+    /**
+     * Creates a {@linkplain MavenUtils} and assigns it to this context.
+     *
+     * @param harvesterClass the class of the main harvester
+     *
+     * @return a new {@linkplain MavenUtils} for this context
+     */
+    private MavenUtils createMavenUtils(Class<?> harvesterClass)
+    {
+        LOGGER.info(String.format(ApplicationConstants.INIT_FIELD, MavenUtils.class.getSimpleName()));
+
+        MavenUtils utils = new MavenUtils(harvesterClass);
+
+        LOGGER.info(String.format(ApplicationConstants.INIT_FIELD_SUCCESS, MavenUtils.class.getSimpleName()));
+
+        return utils;
+    }
+
+
+
+    /**
+     * Creates a {@linkplain HarvesterCacheManager} and assigns it to this context.
+     *
+     * @return a new {@linkplain HarvesterCacheManager} for this context
+     */
+    private HarvesterCacheManager createCacheManager()
+    {
+        LOGGER.info(String.format(ApplicationConstants.INIT_FIELD, HarvesterCacheManager.class.getSimpleName()));
+
+        HarvesterCacheManager manager = new HarvesterCacheManager();
+        manager.addEventListeners();
+
+        LOGGER.info(String.format(ApplicationConstants.INIT_FIELD_SUCCESS, HarvesterCacheManager.class.getSimpleName()));
+        return manager;
+    }
+
+
+
+    /**
+     * Creates the main {@linkplain AbstractHarvester} and assigns it to this context.
+     *
+     * @param moduleName the name of this service
+     * @param harvesterClass the class of the main harvester
+     *
+     * @return a new {@linkplain AbstractHarvester} for this context
+     */
+    private <T extends AbstractHarvester> T createHarvester(String moduleName, Class<T> harvesterClass)
+    throws InstantiationException, IllegalAccessException
+    {
+        LOGGER.info(String.format(ApplicationConstants.INIT_FIELD, harvesterClass.getSimpleName()));
+
+        T initializedHarvester = harvesterClass.newInstance();
+        initializedHarvester.init(true, moduleName);
+        initializedHarvester.update();
+
+        LOGGER.info(String.format(ApplicationConstants.INIT_FIELD_SUCCESS, harvesterClass.getSimpleName()));
+
+        return initializedHarvester;
+
+    }
+
+
+    /**
+     * Creates a {@linkplain Scheduler} and assigns it to this context.
+     *
+     * @param moduleName the name of this service
+     *
+     * @return a new {@linkplain Scheduler} for this context
+     */
+    private Scheduler createScheduler(String moduleName)
+    {
+        LOGGER.info(String.format(ApplicationConstants.INIT_FIELD, Scheduler.class.getSimpleName()));
+
+        final String schedulerCachePath = String.format(SchedulerConstants.CACHE_PATH, moduleName);
+        Scheduler sched = new Scheduler(schedulerCachePath);
+        sched.loadFromDisk();
+
+        LOGGER.info(String.format(ApplicationConstants.INIT_FIELD_SUCCESS, Scheduler.class.getSimpleName()));
+        return sched;
+    }
+
+
+    /**
+     * Creates a {@linkplain HarvestTimeKeeper} and assigns it to this context.
+     *
+     * @param moduleName the name of this service
+     *
+     * @return a new {@linkplain HarvestTimeKeeper} for this context
+     */
+    private HarvestTimeKeeper createTimeKeeper(String moduleName)
+    {
+        LOGGER.info(String.format(ApplicationConstants.INIT_FIELD, HarvestTimeKeeper.class.getSimpleName()));
+
+        final String timeKeeperCachePath =
+            String.format(
+                CacheConstants.HARVEST_TIME_KEEPER_CACHE_FILE_PATH,
+                moduleName);
+
+        HarvestTimeKeeper keeper = new HarvestTimeKeeper(timeKeeperCachePath);
+        keeper.loadFromDisk();
+
+        LOGGER.info(String.format(ApplicationConstants.INIT_FIELD_SUCCESS, HarvestTimeKeeper.class.getSimpleName()));
+
+        return keeper;
+    }
+
+
+    /**
+     * Creates a {@linkplain Configuration} and assigns it to this context.
+     *
+     * @param moduleName the name of this service
+     *
+     * @return a new {@linkplain Configuration} for this context
+     */
+    private Configuration createConfiguration(String moduleName)
+    {
+        LOGGER.info(String.format(ApplicationConstants.INIT_FIELD, Configuration.class.getSimpleName()));
+
+        Configuration config = new Configuration();
+        config.setCacheFilePath(String.format(ConfigurationConstants.CONFIG_PATH, moduleName));
+        config.loadFromDisk();
+        config.addEventListeners();
+
+        Configuration.registerParameter(SubmissionConstants.AUTO_SUBMIT_PARAM);
+
+        LOGGER.info(String.format(ApplicationConstants.INIT_FIELD_SUCCESS, Configuration.class.getSimpleName()));
+
+        return config;
     }
 
 
@@ -340,8 +475,8 @@ public class MainContext implements IEventListener
      */
     private static Boolean onHarvesterInitializedSuccess(Boolean state)
     {
-        // log sucess
-        LOGGER.info(String.format(ApplicationConstants.INIT_HARVESTER_SUCCESS, instance.moduleName));
+        // log success
+        LOGGER.info(String.format(ApplicationConstants.INIT_SERVICE_SUCCESS, instance.moduleName));
 
         // change state
         EventSystem.sendEvent(new HarvesterInitializedEvent(state));
@@ -363,7 +498,7 @@ public class MainContext implements IEventListener
     private static Boolean onHarvesterInitializedFailed(Throwable reason)
     {
         // log exception that caused the failure
-        LOGGER.error(ApplicationConstants.INIT_HARVESTER_FAILED, reason.getCause());
+        LOGGER.error(ApplicationConstants.INIT_SERVICE_FAILED, reason.getCause());
 
         // change stage
         EventSystem.sendEvent(new HarvesterInitializedEvent(false));

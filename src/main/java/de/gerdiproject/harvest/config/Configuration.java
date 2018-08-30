@@ -110,7 +110,7 @@ public class Configuration implements ICachedObject, IEventListener
      *
      * @return the length of the longest string key in the map
      */
-    private String getPaddedKeyFormat()
+    private String getParameterFormat()
     {
         int maxLength = 0;
 
@@ -136,11 +136,15 @@ public class Configuration implements ICachedObject, IEventListener
     {
         final StringBuilder validValues = new StringBuilder();
 
-        for (String compositeKey : parameterMap.keySet()) {
+        for (AbstractParameter<?> param : getParameters()) {
+            // ignore unregistered parameters
+            if (!param.isRegistered())
+                continue;
+
             if (validValues.length() != 0)
                 validValues.append(", ");
 
-            validValues.append(compositeKey);
+            validValues.append(param.getCompositeKey());
         }
 
         // return assembled string
@@ -301,10 +305,15 @@ public class Configuration implements ICachedObject, IEventListener
     @Override
     public String toString()
     {
-        final String format = getPaddedKeyFormat();
+        final String format = getParameterFormat();
         final Map<String, StringBuilder> categoryStringBuilders = new HashMap<>();
 
         for (AbstractParameter<?> param : getParameters()) {
+
+            // ignore unregistered parameters
+            if (!param.isRegistered())
+                continue;
+
             final String categoryName = param.getCategory().getName();
 
             if (!categoryStringBuilders.containsKey(categoryName)) {

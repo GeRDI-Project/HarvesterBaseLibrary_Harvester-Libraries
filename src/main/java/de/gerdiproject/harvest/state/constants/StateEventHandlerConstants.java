@@ -22,7 +22,6 @@ import org.slf4j.LoggerFactory;
 
 import de.gerdiproject.harvest.application.MainContext;
 import de.gerdiproject.harvest.config.Configuration;
-import de.gerdiproject.harvest.config.constants.ConfigurationConstants;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.harvester.events.HarvestFinishedEvent;
 import de.gerdiproject.harvest.harvester.events.HarvestStartedEvent;
@@ -33,6 +32,7 @@ import de.gerdiproject.harvest.state.impl.ErrorState;
 import de.gerdiproject.harvest.state.impl.HarvestingState;
 import de.gerdiproject.harvest.state.impl.IdleState;
 import de.gerdiproject.harvest.state.impl.SubmittingState;
+import de.gerdiproject.harvest.submission.constants.SubmissionConstants;
 import de.gerdiproject.harvest.submission.events.StartSubmissionEvent;
 import de.gerdiproject.harvest.submission.events.SubmissionFinishedEvent;
 import de.gerdiproject.harvest.submission.events.SubmissionStartedEvent;
@@ -81,7 +81,7 @@ public class StateEventHandlerConstants
 
             final Configuration config = MainContext.getConfiguration();
 
-            boolean isAutoSubmitEnabled = config.getParameterValue(ConfigurationConstants.AUTO_SUBMIT);
+            boolean isAutoSubmitEnabled = config.getParameterValue(SubmissionConstants.AUTO_SUBMIT_PARAM.getCompositeKey());
 
             if (isAutoSubmitEnabled) {
                 String response = EventSystem.sendSynchronousEvent(new StartSubmissionEvent());

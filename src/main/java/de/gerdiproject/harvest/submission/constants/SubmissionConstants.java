@@ -68,13 +68,13 @@ public class SubmissionConstants
 
     public static final BooleanParameter SUBMIT_OUTDATED_PARAM =
         new BooleanParameter(
-        "submitOutdated",
+        "canBeOutdated",
         PARAMETER_CATEGORY,
         false);
 
     public static final BooleanParameter SUBMIT_INCOMPLETE_PARAM =
         new BooleanParameter(
-        "submitIncomplete",
+        "canBeIncomplete",
         PARAMETER_CATEGORY,
         false);
 
@@ -83,6 +83,12 @@ public class SubmissionConstants
         "size",
         PARAMETER_CATEGORY,
         1048576);
+
+    public static final BooleanParameter AUTO_SUBMIT_PARAM =
+        new BooleanParameter(
+        "autoSubmit",
+        PARAMETER_CATEGORY,
+        true);
 
     public static final SubmitterParameter SUBMITTER_TYPE_PARAM =
         new SubmitterParameter(

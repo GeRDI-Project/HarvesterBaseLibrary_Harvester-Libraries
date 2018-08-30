@@ -34,8 +34,6 @@ import de.gerdiproject.harvest.utils.cache.constants.CacheConstants;
  */
 public class ConfigurationConstants
 {
-    public static final String AUTO_SUBMIT = "autoSubmit";
-
     public static final String CHANGED_PARAM = "Set parameter '%s' to '%s'.";
 
     public static final String CANNOT_CHANGE_PARAM_INVALID_STATE =
@@ -78,8 +76,6 @@ public class ConfigurationConstants
     public static final String SAVE_FAILED_NO_PATH = "Could not save configuration: " + NO_PATH;
     public static final String PARSE_ERROR = "Could not read configuration parameter value '%s' from key '%s'!";
 
-    public static final String GLOBAL_PARAMETERS_JSON = "globalParameters";
-    public static final String HARVESTER_PARAMETERS_JSON = "harvesterParameters";
     public static final String BASIC_PARAMETER_FORMAT = "%%1$-%ds :  %%2$s%%n";
     public static final String CATEGORY_FORMAT = "%n- %s -%n";
 
