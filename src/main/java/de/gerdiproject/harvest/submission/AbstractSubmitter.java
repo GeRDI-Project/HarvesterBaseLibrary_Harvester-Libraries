@@ -227,7 +227,7 @@ public abstract class AbstractSubmitter implements IEventListener
         EventSystem.addListener(StartAbortingEvent.class, onStartAborting);
 
         // log the beginning of the submission
-        logger.info(String.format(SubmissionConstants.SUBMISSION_START, url.toString()));
+        logger.info(String.format(SubmissionConstants.SUBMISSION_START, getUrl()));
 
         // start asynchronous submission
         currentSubmissionProcess = startSubmissionProcess();
@@ -420,9 +420,7 @@ public abstract class AbstractSubmitter implements IEventListener
         else if (failedDocumentCount == 0) {
             logger.info(SubmissionConstants.SUBMISSION_DONE_ALL_OK);
             setHasSubmittedAll(true);
-        }
-
-        else
+        } else
             logger.warn(String.format(SubmissionConstants.SUBMISSION_DONE_SOME_FAILED, failedDocumentCount));
 
         EventSystem.sendEvent(new SubmissionFinishedEvent(failedDocumentCount == 0 && processedDocumentCount > 0));

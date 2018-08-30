@@ -66,7 +66,7 @@ class ParameterJson
         AbstractParameter<?> param = null;
 
         if (type.equals(BooleanParameter.class.getSimpleName()))
-            param = new BooleanParameter(key, category, value != null && Boolean.getBoolean(value));
+            param = new BooleanParameter(key, category, Boolean.valueOf(value));
 
         if (type.equals(IntegerParameter.class.getSimpleName()))
             param = new IntegerParameter(key, category, value == null ? 0 : Integer.parseInt(value));

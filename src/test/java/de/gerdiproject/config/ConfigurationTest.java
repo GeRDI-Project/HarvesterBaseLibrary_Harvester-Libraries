@@ -20,6 +20,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.fail;
 
 import java.io.File;
 import java.net.MalformedURLException;
@@ -77,6 +78,7 @@ public class ConfigurationTest extends AbstractFileSystemUnitTest<Configuration>
     private static final boolean BOOL_VALUE_2 = true;
     private static final ParameterCategory TEST_CATEGORY = new ParameterCategory("TestCategory", Arrays.asList());
     private static final String ERROR_ARGUMENTS_MUST_DIFFER = "The old and new value of parameter change tests must differ!";
+    private static final String ERROR_MISSING_LOADED_PARAM  = "Expected parameter '%s' to be loaded after being saved!";
 
     private final File configFile = new File(testFolder, "config.json");
     private StringParameter testedParam;
@@ -402,6 +404,7 @@ public class ConfigurationTest extends AbstractFileSystemUnitTest<Configuration>
 
         // save a config with two custom parameters
         final Configuration savedConfig = createConfigWithCustomParameters(testedParam);
+
         savedConfig.setCacheFilePath(configFile.getAbsolutePath());
         savedConfig.saveToDisk();
 
@@ -429,12 +432,13 @@ public class ConfigurationTest extends AbstractFileSystemUnitTest<Configuration>
     @Test
     public void testLoadingNonPresentValues()
     {
-        // save a config with two custom parameters
+        // save a config with one parameter
+        testedParam.setRegistered(true);
         final Configuration savedConfig = createConfigWithCustomParameters(testedParam);
         savedConfig.setCacheFilePath(configFile.getAbsolutePath());
         savedConfig.saveToDisk();
 
-        // create a config with only the first custom parameter
+        // create a config without parameters
         testedObject = new Configuration();
         testedObject.setCacheFilePath(configFile.getAbsolutePath());
 
@@ -454,7 +458,8 @@ public class ConfigurationTest extends AbstractFileSystemUnitTest<Configuration>
     @Test
     public void testLoadWithNonExistingPath()
     {
-        // save a config with two custom parameters
+        // save the config
+        testedParam.setRegistered(true);
         testedObject.setCacheFilePath(configFile.getAbsolutePath());
 
         // attempt to load a non-existing path
@@ -475,6 +480,7 @@ public class ConfigurationTest extends AbstractFileSystemUnitTest<Configuration>
     public void testLoadWithoutSetPath()
     {
         // save a config with a custom parameter
+        testedParam.setRegistered(true);
         final Configuration savedConfig = createConfigWithCustomParameters(testedParam);
         savedConfig.setCacheFilePath(configFile.getAbsolutePath());
         savedConfig.saveToDisk();
@@ -503,19 +509,28 @@ public class ConfigurationTest extends AbstractFileSystemUnitTest<Configuration>
     {
         // save config with all parameters to disk
         final Configuration savedConfig = createConfigWithAllParameterTypes();
+
+        // register parameter to mark it for serialization
+        savedConfig.getParameters().forEach((AbstractParameter<?> param) -> param.setRegistered(true));
+
         testedObject = saveAndLoadConfig(savedConfig);
 
         // check if deserialized global parameters are correct
         final Collection<AbstractParameter<?>> loadedParams = testedObject.getParameters();
 
         savedConfig.getParameters().forEach((AbstractParameter<?> param) -> {
+            boolean hasLoadedParameter = false;
+
             for (AbstractParameter<?> loadedParam : loadedParams)
             {
                 if (loadedParam.getCompositeKey().equals(param.getCompositeKey())) {
                     assertEquals(param.getClass(), loadedParam.getClass());
+                    hasLoadedParameter = true;
                     break;
                 }
             }
+            if (!hasLoadedParameter)
+                fail(String.format(ERROR_MISSING_LOADED_PARAM, param));
         });
     }
 
@@ -727,7 +742,8 @@ public class ConfigurationTest extends AbstractFileSystemUnitTest<Configuration>
         final String configString = testedObject.toString();
 
         testedObject.getParameters().forEach((AbstractParameter<?> param) -> {
-            assert !configString.contains(param.getStringValue());
+            if (param.getStringValue() != null && !param.getStringValue().isEmpty())
+                assert !configString.contains(param.getStringValue());
         });
     }
 
@@ -784,20 +800,17 @@ public class ConfigurationTest extends AbstractFileSystemUnitTest<Configuration>
      */
     private Configuration createConfigWithAllParameterTypes() throws MalformedURLException
     {
-        final StringParameter stringParam = new StringParameter(PARAM_KEY + 1, TEST_CATEGORY, STRING_VALUE + 1);
-        final IntegerParameter integerParam = new IntegerParameter(PARAM_KEY + 2, TEST_CATEGORY, INT_VALUE_1);
-        final BooleanParameter booleanParam = new BooleanParameter(PARAM_KEY + 3, TEST_CATEGORY, BOOL_VALUE_1);
-        final UrlParameter urlParam = new UrlParameter(PARAM_KEY + 4, TEST_CATEGORY, new URL(URL_VALUE_1));
-        final PasswordParameter passwordParam = new PasswordParameter(PARAM_KEY + 5, TEST_CATEGORY, PASSWORD_VALUE_1);
-        final SubmitterParameter submitterParam = new SubmitterParameter(PARAM_KEY + 6, TEST_CATEGORY, STRING_VALUE);
-
         return createConfigWithCustomParameters(
-                   stringParam,
-                   integerParam,
-                   booleanParam,
-                   urlParam,
-                   passwordParam,
-                   submitterParam);
+                   new StringParameter(PARAM_KEY + 1, TEST_CATEGORY, ""),
+                   new StringParameter(PARAM_KEY + 2, TEST_CATEGORY, STRING_VALUE + 1),
+                   new IntegerParameter(PARAM_KEY + 3, TEST_CATEGORY, 0),
+                   new IntegerParameter(PARAM_KEY + 4, TEST_CATEGORY, INT_VALUE_1),
+                   new BooleanParameter(PARAM_KEY + 5, TEST_CATEGORY, BOOL_VALUE_1),
+                   new BooleanParameter(PARAM_KEY + 6, TEST_CATEGORY, BOOL_VALUE_2),
+                   new UrlParameter(PARAM_KEY + 7, TEST_CATEGORY, new URL(URL_VALUE_1)),
+                   new PasswordParameter(PARAM_KEY + 8, TEST_CATEGORY, PASSWORD_VALUE_1),
+                   new SubmitterParameter(PARAM_KEY + 9, TEST_CATEGORY, STRING_VALUE)
+               );
     }
 
     /**

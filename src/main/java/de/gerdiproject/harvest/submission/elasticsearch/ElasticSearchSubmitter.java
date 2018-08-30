@@ -177,7 +177,7 @@ public class ElasticSearchSubmitter extends AbstractSubmitter
         if (url.getValue() != null) {
             String rawPath = url.getValue().getPath() + '/';
             String[] path = rawPath.substring(1).split("/");
-            String bulkSubmitUrl = url.toString();
+            String bulkSubmitUrl = url.getValue().getPath();
 
             // check if the URL already is a bulk submission URL
             if (path.length == 0 || !path[path.length - 1].equals(ElasticSearchConstants.BULK_SUBMISSION_URL_SUFFIX)) {

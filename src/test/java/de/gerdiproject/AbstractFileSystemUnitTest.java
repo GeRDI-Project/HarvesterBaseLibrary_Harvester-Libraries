@@ -53,17 +53,4 @@ public abstract class AbstractFileSystemUnitTest<T> extends AbstractUnitTest<T>
 
         super.before();
     }
-
-
-    /**
-     * Removes event listeners of the tested object if applicable.
-     * Deletes the test folder to free up some space.
-     */
-    @Override
-    public void after()
-    {
-        super.after();
-
-        FileUtils.deleteFile(TEST_FOLDER);
-    }
 }

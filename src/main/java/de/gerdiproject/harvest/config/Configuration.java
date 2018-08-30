@@ -194,12 +194,18 @@ public class Configuration implements ICachedObject, IEventListener
         final Configuration loadedConfig = diskIo.getObject(cacheFilePath, Configuration.class);
 
         if (loadedConfig == null) {
-            LOGGER.error(String.format(ConfigurationConstants.LOAD_FAILED, cacheFilePath, ConfigurationConstants.NO_EXISTS));
+            LOGGER.info(String.format(ConfigurationConstants.NO_CONFIG_FILE_EXISTS, cacheFilePath));
             return;
         }
 
         this.parameterMap.clear();
         this.parameterMap.putAll(loadedConfig.parameterMap);
+
+        for (AbstractParameter<?> param : getParameters())
+            LOGGER.debug(String.format(ConfigurationConstants.LOADED_PARAM,
+                                       param.getClass().getSimpleName(),
+                                       param.getCompositeKey(),
+                                       param.getStringValue()));
 
         LOGGER.info(String.format(ConfigurationConstants.LOAD_OK, cacheFilePath));
     }
@@ -226,6 +232,13 @@ public class Configuration implements ICachedObject, IEventListener
 
             parameterMap.put(compositeKey, registeredParameter);
             registeredParameter.loadFromEnvironmentVariables();
+
+            LOGGER.debug(String.format(ConfigurationConstants.REGISTERED_PARAM,
+                                       registeredParameter.getClass().getSimpleName(),
+                                       registeredParameter.getCompositeKey(),
+                                       registeredParameter.getStringValue()));
+
+            saveToDisk();
         } else
             registeredParameter = retrievedParameter;
 

@@ -290,6 +290,7 @@ public class MainContext implements IEventListener
         LOGGER.info(String.format(ApplicationConstants.INIT_FIELD, SubmitterManager.class.getSimpleName()));
 
         final SubmitterManager manager = new SubmitterManager();
+        manager.addEventListeners();
 
         for (Class<? extends AbstractSubmitter> submitterClass : submitterClasses) {
             try {
@@ -304,8 +305,6 @@ public class MainContext implements IEventListener
                 LOGGER.error(String.format(SubmissionConstants.REGISTER_ERROR, submitterClass.getName()), ex);
             }
         }
-
-        manager.addEventListeners();
 
         LOGGER.info(String.format(ApplicationConstants.INIT_FIELD_SUCCESS, SubmitterManager.class.getSimpleName()));
 

@@ -20,6 +20,7 @@ import java.util.Arrays;
 import de.gerdiproject.harvest.config.parameters.BooleanParameter;
 import de.gerdiproject.harvest.config.parameters.IntegerParameter;
 import de.gerdiproject.harvest.config.parameters.ParameterCategory;
+import de.gerdiproject.harvest.config.parameters.PasswordParameter;
 import de.gerdiproject.harvest.config.parameters.StringParameter;
 import de.gerdiproject.harvest.config.parameters.SubmitterParameter;
 import de.gerdiproject.harvest.config.parameters.UrlParameter;
@@ -61,8 +62,8 @@ public class SubmissionConstants
         "userName",
         PARAMETER_CATEGORY);
 
-    public static final StringParameter PASSWORD_PARAM =
-        new StringParameter(
+    public static final PasswordParameter PASSWORD_PARAM =
+        new PasswordParameter(
         "password",
         PARAMETER_CATEGORY);
 
@@ -92,7 +93,7 @@ public class SubmissionConstants
 
     public static final SubmitterParameter SUBMITTER_TYPE_PARAM =
         new SubmitterParameter(
-        "type",
+        "submitter",
         PARAMETER_CATEGORY);
 
 

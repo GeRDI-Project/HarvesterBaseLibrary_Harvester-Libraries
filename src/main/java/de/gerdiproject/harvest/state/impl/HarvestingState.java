@@ -38,6 +38,13 @@ import de.gerdiproject.harvest.utils.time.HarvestTimeKeeper;
 public class HarvestingState extends AbstractProgressingState
 {
     /**
+     * Event callback: If a document is harvested, add 1 to the progress.
+     */
+    private final Consumer<DocumentsHarvestedEvent> onDocumentHarvested =
+        (DocumentsHarvestedEvent e) -> addProgress(e.getDocumentCount());
+
+
+    /**
      * Constructor that requires the maximum amount of harvestable documents.
      *
      * @param maxNumberOfHarvestedDocuments the maximum amount of harvestable
@@ -47,12 +54,6 @@ public class HarvestingState extends AbstractProgressingState
     {
         super(maxNumberOfHarvestedDocuments);
     }
-
-    /**
-     * Event callback: If a document is harvested, add 1 to the progress.
-     */
-    private final Consumer<DocumentsHarvestedEvent> onDocumentHarvested =
-        (DocumentsHarvestedEvent e) -> addProgress(e.getDocumentCount());
 
 
     @Override

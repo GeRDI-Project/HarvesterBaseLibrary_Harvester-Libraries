@@ -46,7 +46,7 @@ public class SubmitterManager implements IEventListener
     public SubmitterManager()
     {
         this.submitterMap = new HashMap<>();
-        this.activeSubmitter = Configuration.registerParameter(SubmissionConstants.SUBMITTER_TYPE_PARAM);
+        this.activeSubmitter = SubmissionConstants.SUBMITTER_TYPE_PARAM.copy();
     }
 
 
@@ -57,6 +57,12 @@ public class SubmitterManager implements IEventListener
     public void registerSubmitter(AbstractSubmitter submitter)
     {
         submitterMap.put(submitter.getId(), submitter);
+
+        // register submitter in configuration if none was set before
+        if (!activeSubmitter.isRegistered() && activeSubmitter.getValue() == null) {
+            activeSubmitter.setValue(submitter.getId(), null);
+            this.activeSubmitter = Configuration.registerParameter(activeSubmitter);
+        }
     }
 
 

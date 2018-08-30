@@ -87,7 +87,7 @@ class ParameterCategoryJson
             final AbstractParameter<?> deserializedParam = jsonParam.toAbstractParameter(category);
 
             if (deserializedParam != null)
-                deserializedParameters.add(jsonParam.toAbstractParameter(category));
+                deserializedParameters.add(deserializedParam);
         }
 
         return deserializedParameters;

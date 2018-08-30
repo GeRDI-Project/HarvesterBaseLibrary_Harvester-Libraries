@@ -35,6 +35,8 @@ import de.gerdiproject.harvest.utils.cache.constants.CacheConstants;
 public class ConfigurationConstants
 {
     public static final String CHANGED_PARAM = "Set parameter '%s' to '%s'.";
+    public static final String REGISTERED_PARAM = "Added new %s '%s' with value '%s' to the config.";
+    public static final String LOADED_PARAM = "Loaded %s '%s' with value '%s'.";
 
     public static final String CANNOT_CHANGE_PARAM_INVALID_STATE =
         "Cannot change parameter '%s' during the %s-process.";
@@ -65,7 +67,7 @@ public class ConfigurationConstants
     public static final String CONFIG_PATH = CacheConstants.CACHE_FOLDER_PATH + "config.json";
     public static final String LOAD_OK = "Loaded configuration from '%s'.";
     public static final String LOAD_FAILED = "Could not load configuration from '%s': %s";
-    public static final String NO_EXISTS = "No configuration exists!";
+    public static final String NO_CONFIG_FILE_EXISTS = "Did not load configuration, because it is not cached at '%s'!";
     public static final String NO_PATH = "You must set a path first!";
     public static final String REST_INFO = "- %s Configuration -%n%s%n"
                                            + "GET   Returns either the entire configuration in pretty text, or%n"
