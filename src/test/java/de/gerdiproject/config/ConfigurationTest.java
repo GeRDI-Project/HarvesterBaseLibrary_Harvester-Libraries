@@ -139,6 +139,11 @@ public class ConfigurationTest extends AbstractFileSystemUnitTest<Configuration>
         assertEquals(randomValue, testedObject.getParameterValue(upperCaseKey));
     }
 
+
+    /**
+     * Tests if registering the exact same instance of an a parameter that is already defined
+     * in the {@linkplain Configuration} will return the same instance.
+     */
     @Test
     public void testRegisteringKnownParam()
     {
@@ -148,8 +153,29 @@ public class ConfigurationTest extends AbstractFileSystemUnitTest<Configuration>
         assertEquals(registeredParam, testedParam);
     }
 
+
+    /**
+     * Tests if registering multiple instances of the same parameter will always return the same reference
+     * from the {@linkplain Configuration}.
+     */
     @Test
-    public void testRegisteringUnknownParam()
+    public void testRegisteringParamWithTheSameCompositeKey()
+    {
+        testedObject.addEventListeners();
+        final AbstractParameter<?> registeredParam1 = Configuration.registerParameter(testedParam.copy());
+        final AbstractParameter<?> registeredParam2 = Configuration.registerParameter(testedParam.copy());
+
+        assertEquals(registeredParam1, registeredParam2);
+    }
+
+
+    /**
+     * Tests if registering a new parameter causes a copy of the parameter to be registered
+     * instead of the parameter reference itself. This is done in order to preserve original values of
+     * possible parameter constants.
+     */
+    @Test
+    public void testRegisteringCopyParameter()
     {
         testedObject.addEventListeners();
         final AbstractParameter<?> unknownParam = new IntegerParameter(PARAM_KEY + 2, TEST_CATEGORY);
@@ -158,10 +184,24 @@ public class ConfigurationTest extends AbstractFileSystemUnitTest<Configuration>
         assertNotEquals(registeredParam, unknownParam);
     }
 
-    @Test
-    public void testRegisteringTwice()
-    {
 
+    /**
+     * Tests if the value of a registered parameter is not changed, if the parameter is registered
+     * again with a different value.
+     */
+    @Test
+    public void testRegisteringTwiceDoNotOverride()
+    {
+        testedObject.addEventListeners();
+        final int oldValue = random.nextInt(1000);
+        final int newValueValue = oldValue + 1;
+
+        final AbstractParameter<?> param1 = new IntegerParameter(PARAM_KEY + 1, TEST_CATEGORY, oldValue);
+        final AbstractParameter<?> param2 = new IntegerParameter(PARAM_KEY + 1, TEST_CATEGORY, newValueValue);
+
+        Configuration.registerParameter(param1);
+
+        assertEquals(oldValue, Configuration.registerParameter(param2).getValue());
     }
 
 
@@ -563,7 +603,6 @@ public class ConfigurationTest extends AbstractFileSystemUnitTest<Configuration>
     @Test
     public void testParameterCopyClass() throws MalformedURLException
     {
-        // save config with all parameters to disk
         testedObject = createConfigWithAllParameterTypes();
 
         for (AbstractParameter<?> param : testedObject.getParameters())
@@ -579,7 +618,6 @@ public class ConfigurationTest extends AbstractFileSystemUnitTest<Configuration>
     @Test
     public void testParameterCopyCategory() throws MalformedURLException
     {
-        // save config with all parameters to disk
         testedObject = createConfigWithAllParameterTypes();
 
         for (AbstractParameter<?> param : testedObject.getParameters()) {
@@ -597,7 +635,6 @@ public class ConfigurationTest extends AbstractFileSystemUnitTest<Configuration>
     @Test
     public void testParameterCopyValues() throws MalformedURLException
     {
-        // save config with all parameters to disk
         testedObject = createConfigWithAllParameterTypes();
 
         for (AbstractParameter<?> param : testedObject.getParameters()) {
@@ -615,13 +652,27 @@ public class ConfigurationTest extends AbstractFileSystemUnitTest<Configuration>
     @Test
     public void testParameterCopyKey() throws MalformedURLException
     {
-        // save config with all parameters to disk
         testedObject = createConfigWithAllParameterTypes();
 
         for (AbstractParameter<?> param : testedObject.getParameters()) {
             final AbstractParameter<?> clonedParam = param.copy();
             assertEquals(param.getKey(), clonedParam.getKey());
         }
+    }
+
+
+    /**
+     * Tests if a cloned parameter is not the same as instance as the source parameter.
+     *
+     * @throws MalformedURLException thrown if the URL parameter could not be created
+     */
+    @Test
+    public void testParameterCopyNotTheSame() throws MalformedURLException
+    {
+        testedObject = createConfigWithAllParameterTypes();
+
+        for (AbstractParameter<?> param : testedObject.getParameters())
+            assertNotEquals(param, param.copy());
     }
 
 
@@ -637,7 +688,7 @@ public class ConfigurationTest extends AbstractFileSystemUnitTest<Configuration>
         final String configString = testedObject.toString();
 
         testedObject.getParameters().forEach((AbstractParameter<?> param) -> {
-            assert configString.contains(param.getCompositeKey());
+            assert configString.contains(param.getKey());
         });
     }
 

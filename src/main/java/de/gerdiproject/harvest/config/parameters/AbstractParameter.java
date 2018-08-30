@@ -48,9 +48,14 @@ public abstract class AbstractParameter<T>
      *
      * @param key the unique key of the parameter, which is used to change it via REST
      * @param category the category of the parameter
+     *
+     * @throws IllegalArgumentException thrown if the key contains invalid characters
      */
-    public AbstractParameter(String key, ParameterCategory category)
+    public AbstractParameter(String key, ParameterCategory category) throws IllegalArgumentException
     {
+        if (!key.matches(ConfigurationConstants.VALID_PARAM_NAME_REGEX))
+            throw new IllegalArgumentException(String.format(ConfigurationConstants.INVALID_PARAMETER_KEY, key));
+
         this.key = key;
         this.category = category;
     }

@@ -18,6 +18,7 @@ package de.gerdiproject.harvest.config.parameters;
 
 import java.util.List;
 
+import de.gerdiproject.harvest.config.constants.ConfigurationConstants;
 import de.gerdiproject.harvest.state.IState;
 
 
@@ -37,10 +38,14 @@ public class ParameterCategory
      *
      * @param name the unique name of the category
      * @param allowedStates the list of states during which parameters of that category may be changed
+     *
+     * @throws IllegalArgumentException thrown if the name contains invalid characters
      */
-    public ParameterCategory(String name, List<Class<? extends IState>> allowedStates)
+    public ParameterCategory(String name, List<Class<? extends IState>> allowedStates) throws IllegalArgumentException
     {
-        super();
+        if (!name.matches(ConfigurationConstants.VALID_PARAM_NAME_REGEX))
+            throw new IllegalArgumentException(String.format(ConfigurationConstants.INVALID_CATEGORY_NAME, name));
+
         this.name = name;
         this.allowedStates = allowedStates;
     }

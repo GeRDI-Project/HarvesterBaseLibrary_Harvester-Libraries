@@ -87,11 +87,6 @@ public class ConfigurationConstants
     public static final String ENVIRONMENT_VARIABLE = "GERDI_HARVESTER_%S_%S";
     public static final String COMPOSITE_KEY = "%s.%s";
 
-    public static final String KEY_JSON = "key";
-    public static final String VALUE_JSON = "value";
-    public static final String TYPE_JSON = "type";
-    public static final String CATEGORY_JSON = "category";
-
     public static final ParameterCategory DEBUG_CATEGORY = new ParameterCategory(
         "Debug",
         Arrays.asList(
@@ -100,6 +95,10 @@ public class ConfigurationConstants
             SubmittingState.class));
 
     public static final String KEY_FORMAT = "%s.%s";
+    public static final String VALID_PARAM_NAME_REGEX = "[a-zA-Z0-9]+";
+    public static final String INVALID_PARAMETER_KEY = "Invalid Parameter-Key: %s%nKeys must only consist of letters!";
+    public static final String INVALID_CATEGORY_NAME = "Invalid Category-Name: %s%nNames must only consist of letters!";
+
 
 
     /**
