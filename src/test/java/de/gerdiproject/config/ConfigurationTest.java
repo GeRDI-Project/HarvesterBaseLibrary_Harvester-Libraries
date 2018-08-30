@@ -685,6 +685,8 @@ public class ConfigurationTest extends AbstractFileSystemUnitTest<Configuration>
     public void testToStringKeys() throws MalformedURLException
     {
         testedObject = createConfigWithAllParameterTypes();
+        testedObject.getParameters().forEach((AbstractParameter<?> param) -> param.setRegistered(true));
+
         final String configString = testedObject.toString();
 
         testedObject.getParameters().forEach((AbstractParameter<?> param) -> {
@@ -702,10 +704,30 @@ public class ConfigurationTest extends AbstractFileSystemUnitTest<Configuration>
     public void testToStringValues() throws MalformedURLException
     {
         testedObject = createConfigWithAllParameterTypes();
+        testedObject.getParameters().forEach((AbstractParameter<?> param) -> param.setRegistered(true));
+
         final String configString = testedObject.toString();
 
         testedObject.getParameters().forEach((AbstractParameter<?> param) -> {
             assert configString.contains(param.getStringValue());
+        });
+    }
+
+
+    /**
+     * Tests if the {@linkplain Configuration}'s toString() function does not display unregistered
+     * parameters.
+     *
+     * @throws MalformedURLException thrown if the URL parameter could not be created
+     */
+    @Test
+    public void testToStringUnregisteredParameters() throws MalformedURLException
+    {
+        testedObject = createConfigWithAllParameterTypes();
+        final String configString = testedObject.toString();
+
+        testedObject.getParameters().forEach((AbstractParameter<?> param) -> {
+            assert !configString.contains(param.getStringValue());
         });
     }
 
