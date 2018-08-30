@@ -16,7 +16,6 @@
  */
 package de.gerdiproject.submission.examples;
 
-import java.net.URL;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -57,29 +56,29 @@ public class MockedSubmitter extends AbstractSubmitter
 
 
     @Override
-    protected void submitBatch(Map<String, IDocument> documents) throws Exception
+    protected void submitBatch(Map<String, IDocument> documents) throws Exception // NOPMD any exception can be thrown. this is fiiiine
     {
         documents.forEach((String docId, IDocument doc) ->
                           submittedIndices.add(Integer.valueOf(((DataCiteJson)doc).getPublicationYear())));
-
     }
 
 
-    public URL getSubmissionUrl()
+    public String getSubmissionUrl()
     {
-        return super.url;
+        return super.getUrl();
     }
 
 
     public int getMaxBatchSize()
     {
-        return super.maxBatchSize;
+        return super.maxBatchSize.getValue();
     }
 
 
-    public String getCredentials()
+    @Override
+    public String getCredentials() // NOPMD overriding makes sense, because we change 'protected' to 'public'
     {
-        return super.credentials;
+        return super.getCredentials();
     }
 
 

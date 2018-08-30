@@ -91,8 +91,8 @@ public class HarvesterFacade
 
         if (config != null) {
             // get the range specified in the config
-            from = config.getParameterStringValue(ConfigurationConstants.HARVEST_START_INDEX);
-            to = config.getParameterStringValue(ConfigurationConstants.HARVEST_END_INDEX);
+            from = config.getParameterStringValue(HarvesterConstants.START_INDEX_PARAM.getCompositeKey());
+            to = config.getParameterStringValue(HarvesterConstants.END_INDEX_PARAM.getCompositeKey());
 
             // add the real expected number of max documents from the main harvester
             if (to.equals(ConfigurationConstants.INTEGER_VALUE_MAX)) {

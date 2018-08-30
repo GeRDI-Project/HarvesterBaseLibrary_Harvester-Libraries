@@ -81,7 +81,9 @@ public class StateEventHandlerConstants
 
             final Configuration config = MainContext.getConfiguration();
 
-            if (config.getParameterValue(ConfigurationConstants.AUTO_SUBMIT, Boolean.class)) {
+            boolean isAutoSubmitEnabled = config.getParameterValue(ConfigurationConstants.AUTO_SUBMIT);
+
+            if (isAutoSubmitEnabled) {
                 String response = EventSystem.sendSynchronousEvent(new StartSubmissionEvent());
                 LOGGER.info(response);
                 return;

@@ -26,16 +26,11 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
-import java.util.HashMap;
+import java.util.Collection;
 import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
-import org.junit.runners.Parameterized.Parameters;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -43,11 +38,10 @@ import com.google.gson.GsonBuilder;
 import de.gerdiproject.AbstractFileSystemUnitTest;
 import de.gerdiproject.harvest.config.Configuration;
 import de.gerdiproject.harvest.config.adapter.ConfigurationAdapter;
-import de.gerdiproject.harvest.config.events.GlobalParameterChangedEvent;
-import de.gerdiproject.harvest.config.events.HarvesterParameterChangedEvent;
 import de.gerdiproject.harvest.config.parameters.AbstractParameter;
 import de.gerdiproject.harvest.config.parameters.BooleanParameter;
 import de.gerdiproject.harvest.config.parameters.IntegerParameter;
+import de.gerdiproject.harvest.config.parameters.ParameterCategory;
 import de.gerdiproject.harvest.config.parameters.PasswordParameter;
 import de.gerdiproject.harvest.config.parameters.StringParameter;
 import de.gerdiproject.harvest.config.parameters.SubmitterParameter;
@@ -57,6 +51,7 @@ import de.gerdiproject.harvest.state.IState;
 import de.gerdiproject.harvest.state.StateMachine;
 import de.gerdiproject.harvest.state.impl.HarvestingState;
 import de.gerdiproject.harvest.state.impl.InitializationState;
+import de.gerdiproject.harvest.submission.SubmitterManager;
 import de.gerdiproject.harvest.submission.events.GetSubmitterIdsEvent;
 import de.gerdiproject.harvest.utils.data.DiskIO;
 
@@ -68,11 +63,10 @@ import de.gerdiproject.harvest.utils.data.DiskIO;
  *
  * @author Robin Weiss
  */
-@RunWith(Parameterized.class)
 public class ConfigurationTest extends AbstractFileSystemUnitTest<Configuration>
 {
-    private static final String CUSTOM_PARAM_KEY = "customParam";
-    private static final String CUSTOM_PARAM_VALUE = "customValue";
+    private static final String PARAM_KEY = "customParam";
+    private static final String STRING_VALUE = "customValue";
     private static final String URL_VALUE_1 = "http://www.gerdi-project.de";
     private static final String URL_VALUE_2 = "http://www.google.com";
     private static final String PASSWORD_VALUE_1 = "top secret";
@@ -81,112 +75,93 @@ public class ConfigurationTest extends AbstractFileSystemUnitTest<Configuration>
     private static final int INT_VALUE_2 = 1337;
     private static final boolean BOOL_VALUE_1 = false;
     private static final boolean BOOL_VALUE_2 = true;
-    private static final String ERROR_ARGUMENTS_MUST_DIFFER = "The old and new value of Parameter Change tests must differ!";
-
-    private static final String TEST_PARAM_HARVESTER = "harvester parameters";
-    private static final String TEST_PARAM_GLOBAL = "global parameters";
-    @Parameters(name = "{0}")
-    public static Object[] getParameters()
-    {
-        return new Object[] {TEST_PARAM_HARVESTER, TEST_PARAM_GLOBAL};
-    }
+    private static final ParameterCategory TEST_CATEGORY = new ParameterCategory("TestCategory", Arrays.asList());
+    private static final String ERROR_ARGUMENTS_MUST_DIFFER = "The old and new value of parameter change tests must differ!";
 
     private final File configFile = new File(testFolder, "config.json");
-    private final boolean isTestingHarvesterParameters;
-
     private StringParameter testedParam;
-    private GlobalParameterChangedEvent lastGlobalParamChange;
-    private HarvesterParameterChangedEvent lastHarvesterParamChange;
-
-
-    /**
-     * Creates a configuration test, focussing on either testing harvester parameters
-     * or global parameters.
-     *
-     * @param testingType a string defining which set of parameters is to be tested
-     */
-    public ConfigurationTest(String testingType)
-    {
-        this.isTestingHarvesterParameters = testingType.equals(TEST_PARAM_HARVESTER);
-    }
 
 
     @Override
     protected Configuration setUpTestObjects()
     {
-        this.lastGlobalParamChange = null;
-        this.lastHarvesterParamChange = null;
-        this.testedParam = new StringParameter(CUSTOM_PARAM_KEY + 1, CUSTOM_PARAM_VALUE + 1);
-
+        testedParam = new StringParameter(PARAM_KEY, TEST_CATEGORY, STRING_VALUE);
         return createConfigWithCustomParameters(testedParam);
     }
 
 
-    @Override
-    public void before() throws InstantiationException
-    {
-        super.before();
-        EventSystem.addListener(GlobalParameterChangedEvent.class, this::onGlobalParameterChanged);
-        EventSystem.addListener(HarvesterParameterChangedEvent.class, this::onHarvesterParameterChanged);
-    }
-
-
     /**
-     * Tests the constructor that requires both types of parameters by passing null
-     * for each argument, and verifies that empty parameter maps are created.
+     * Tests the constructor that expects no arguments and verifies that
+     * it contains no parameters.
      */
     @Test
     public void testNullConstructor()
     {
-        testedObject = new Configuration(null, null);
-        assertEquals(0, getTestedParameters(testedObject).size());
+        testedObject = new Configuration();
+        assertEquals(0, testedObject.getParameters().size());
     }
 
 
     /**
-     * Tests the constructor that only requires harvester parameters by passing null
-     * as argument, and verifies that default parameters are created.
-     */
-    @Test
-    public void testNullHarvesterConstructor()
-    {
-        testedObject = new Configuration(null);
-
-        assertNotEquals(0, getTestedParameters(testedObject).size());
-    }
-
-
-    /**
-     * Tests the constructor that requires both types of parameters by custom parameter objects.
-     * The test is successful if both parameters can be retrieved from the {@linkplain Configuration}.
-     */
-    @Test
-    public void testCustomParamsConstructor()
-    {
-        assertEquals(testedParam.getValue(), testedObject.getParameterValue(testedParam.getKey(), testedParam.getValue().getClass()));
-    }
-
-
-    /**
-     * Tests the constructor that only requires harvester parameters by passing
-     * three custom parameters.
+     * Tests the constructor that requires parameters by passing three parameters.
      * The test is successful if all parameters can be retrieved from the {@linkplain Configuration}.
      */
     @Test
     public void testCustomHarvesterParamsConstructor()
     {
-        final List<AbstractParameter<?>> customHarvesterParams =
-            Arrays.asList(
-                new StringParameter(CUSTOM_PARAM_KEY + 1, CUSTOM_PARAM_VALUE + 1),
-                new StringParameter(CUSTOM_PARAM_KEY + 2, CUSTOM_PARAM_VALUE + 2),
-                new StringParameter(CUSTOM_PARAM_KEY + 3, CUSTOM_PARAM_VALUE + 3)
-            );
+        final AbstractParameter<?>[] customHarvesterParams = {
+            new StringParameter(PARAM_KEY + 1, TEST_CATEGORY, STRING_VALUE + 1),
+            new StringParameter(PARAM_KEY + 2, TEST_CATEGORY, STRING_VALUE + 2),
+            new StringParameter(PARAM_KEY + 3, TEST_CATEGORY, STRING_VALUE + 3)
+        };
 
         testedObject = new Configuration(customHarvesterParams);
 
         // check if all parameters can be retrieved
         for (AbstractParameter<?> param : customHarvesterParams)
-            assertEquals(param.getValue(), testedObject.getParameterValue(param.getKey(), param.getValue().getClass()));
+            assertEquals(param.getValue(), testedObject.getParameterValue(param.getCompositeKey()));
+    }
+
+
+    /**
+     * Tests if the case of parameter keys is ignored when trying to retrieve a parameter
+     * from the {@linkplain Configuration}.
+     */
+    @Test
+    public void testGettingParameterIgnoreCase()
+    {
+        final String randomValue = STRING_VALUE + random.nextInt(10000);
+        final AbstractParameter<?> paramWithCase = new StringParameter(PARAM_KEY, TEST_CATEGORY, randomValue);
+
+        testedObject = new Configuration(paramWithCase);
+
+        final String upperCaseKey = paramWithCase.getCompositeKey().toUpperCase();
+        assertEquals(randomValue, testedObject.getParameterValue(upperCaseKey));
+    }
+
+    @Test
+    public void testRegisteringKnownParam()
+    {
+        testedObject.addEventListeners();
+        final AbstractParameter<?> registeredParam = Configuration.registerParameter(testedParam);
+
+        assertEquals(registeredParam, testedParam);
+    }
+
+    @Test
+    public void testRegisteringUnknownParam()
+    {
+        testedObject.addEventListeners();
+        final AbstractParameter<?> unknownParam = new IntegerParameter(PARAM_KEY + 2, TEST_CATEGORY);
+        final AbstractParameter<?> registeredParam = Configuration.registerParameter(unknownParam);
+
+        assertNotEquals(registeredParam, unknownParam);
+    }
+
+    @Test
+    public void testRegisteringTwice()
+    {
+
     }
 
 
@@ -197,8 +172,8 @@ public class ConfigurationTest extends AbstractFileSystemUnitTest<Configuration>
     @Test
     public void testStringParameterChange()
     {
-        final StringParameter param = new StringParameter(CUSTOM_PARAM_KEY, CUSTOM_PARAM_VALUE + 1);
-        testParameterChange(param, CUSTOM_PARAM_VALUE + 2);
+        final StringParameter param = new StringParameter(PARAM_KEY, TEST_CATEGORY, STRING_VALUE + 1);
+        testParameterChange(param, STRING_VALUE + 2);
     }
 
 
@@ -209,7 +184,7 @@ public class ConfigurationTest extends AbstractFileSystemUnitTest<Configuration>
     @Test
     public void testIntegerParameterChange()
     {
-        final IntegerParameter param = new IntegerParameter(CUSTOM_PARAM_KEY, INT_VALUE_1);
+        final IntegerParameter param = new IntegerParameter(PARAM_KEY, TEST_CATEGORY, INT_VALUE_1);
         testParameterChange(param, INT_VALUE_2);
     }
 
@@ -221,7 +196,7 @@ public class ConfigurationTest extends AbstractFileSystemUnitTest<Configuration>
     @Test
     public void testBooleanParameterChange()
     {
-        final BooleanParameter param = new BooleanParameter(CUSTOM_PARAM_KEY, BOOL_VALUE_1);
+        final BooleanParameter param = new BooleanParameter(PARAM_KEY, TEST_CATEGORY, BOOL_VALUE_1);
         testParameterChange(param, BOOL_VALUE_2);
     }
 
@@ -238,20 +213,21 @@ public class ConfigurationTest extends AbstractFileSystemUnitTest<Configuration>
         final URL valueBefore = new URL(URL_VALUE_1);
         final URL valueAfter = new URL(URL_VALUE_2);
 
-        final UrlParameter param = new UrlParameter(CUSTOM_PARAM_KEY, valueBefore.toString());
+        final UrlParameter param = new UrlParameter(PARAM_KEY, TEST_CATEGORY, valueBefore);
         testParameterChange(param, valueAfter);
     }
 
 
     /**
      * Tests if the value of a {@linkplain SubmitterParameter} can be changed via
-     * the setter function of the {@linkplain Configuration} if the ID is registered.
+     * the setter function of the {@linkplain Configuration} if the SubmitterID
+     * is registered at the {@linkplain SubmitterManager}.
      */
     @Test
     public void testSubmitterParameterChange()
     {
-        final String valueBefore = CUSTOM_PARAM_VALUE + 1;
-        final String valueAfter = CUSTOM_PARAM_VALUE + 2;
+        final String valueBefore = STRING_VALUE + 1;
+        final String valueAfter = STRING_VALUE + 2;
 
         // mock the registration of the submitter IDs
         EventSystem.addSynchronousListener(GetSubmitterIdsEvent.class, (event) -> {
@@ -261,27 +237,28 @@ public class ConfigurationTest extends AbstractFileSystemUnitTest<Configuration>
             return validValues;
         });
 
-        final SubmitterParameter param = new SubmitterParameter(CUSTOM_PARAM_KEY, valueBefore);
+        final SubmitterParameter param = new SubmitterParameter(PARAM_KEY, TEST_CATEGORY, valueBefore);
         testParameterChange(param, valueAfter);
     }
 
 
     /**
-     * Tests if the value of a {@linkplain SubmitterParameter} can be changed via
-     * the setter function of the {@linkplain Configuration} if the ID is registered.
+     * Tests if the value of a {@linkplain SubmitterParameter} cannot be changed via
+     * the setter function of the {@linkplain Configuration} if the the SubmitterID
+     * is NOT registered at the {@linkplain SubmitterManager}.
      */
     @Test
     public void testSubmitterParameterChangeUnregistered()
     {
-        final String valueBefore = CUSTOM_PARAM_VALUE + 1;
-        final String valueAfter = CUSTOM_PARAM_VALUE + 2;
+        final String valueBefore = STRING_VALUE + 1;
+        final String valueAfter = STRING_VALUE + 2;
 
-        final SubmitterParameter param = new SubmitterParameter(CUSTOM_PARAM_KEY, valueBefore);
+        final SubmitterParameter param = new SubmitterParameter(PARAM_KEY, TEST_CATEGORY, valueBefore);
 
         testedObject = createConfigWithCustomParameters(param);
-        testedObject.setParameter(CUSTOM_PARAM_KEY, valueAfter);
+        testedObject.setParameter(param.getCompositeKey(), valueAfter);
 
-        assertNotEquals(valueAfter, testedObject.getParameterValue(CUSTOM_PARAM_KEY, String.class));
+        assertNotEquals(valueAfter, testedObject.getParameterValue(param.getCompositeKey()));
     }
 
 
@@ -292,7 +269,7 @@ public class ConfigurationTest extends AbstractFileSystemUnitTest<Configuration>
     @Test
     public void testPasswordParameterChange()
     {
-        final PasswordParameter param = new PasswordParameter(CUSTOM_PARAM_KEY, PASSWORD_VALUE_1);
+        final PasswordParameter param = new PasswordParameter(PARAM_KEY, TEST_CATEGORY, PASSWORD_VALUE_1);
         testParameterChange(param, PASSWORD_VALUE_2);
     }
 
@@ -303,7 +280,7 @@ public class ConfigurationTest extends AbstractFileSystemUnitTest<Configuration>
     @Test
     public void testPasswordParameterMasking()
     {
-        final PasswordParameter param = new PasswordParameter(CUSTOM_PARAM_KEY, PASSWORD_VALUE_1);
+        final PasswordParameter param = new PasswordParameter(PARAM_KEY, TEST_CATEGORY, PASSWORD_VALUE_1);
         assert !param.getStringValue().contains(param.getValue().toString());
     }
 
@@ -346,53 +323,6 @@ public class ConfigurationTest extends AbstractFileSystemUnitTest<Configuration>
 
 
     /**
-     * Tests if parameter changes cause no events to be sent when the new parameter value
-     * is the same as the old one.
-     */
-    @Test
-    public void testParameterChangedEventOnSameValue()
-    {
-        // check that no events are fired when the value does not change
-        testedObject.setParameter(testedParam.getKey(), testedParam.getStringValue());
-
-        assertNull(getTestedEvent());
-    }
-
-
-    /**
-     * Tests if parameter changes cause events to be sent when the value differs after the change,
-     * and that the event payload contains the parameter that was changed.
-     */
-    @Test
-    public void testParameterChangedEventPayloadParameter()
-    {
-        final String newValue = testedParam.getStringValue() + 1;
-
-        // check GlobalParameterChanged event
-        testedObject.setParameter(testedParam.getKey(), newValue);
-
-        assertEquals(testedParam, getTestedEvent().getParameter());
-    }
-
-
-    /**
-     * Tests if parameter changes cause events to be sent when the value differs after the change,
-     * and that the event payload contains the previous value of the parameter.
-     */
-    @Test
-    public void testParameterChangedEventPayloadOldValue()
-    {
-        final String oldValue = testedParam.getStringValue();
-        final String newValue = testedParam.getStringValue() + 1;
-
-        // check GlobalParameterChanged event
-        testedObject.setParameter(testedParam.getKey(), newValue);
-
-        assertEquals(oldValue, getTestedEvent().getOldValue());
-    }
-
-
-    /**
      * Tests if the saveToDisk function creates a file on disk.
      */
     @Test
@@ -428,6 +358,7 @@ public class ConfigurationTest extends AbstractFileSystemUnitTest<Configuration>
     public void testLoadingPresentValues()
     {
         final Object savedParamValue = testedParam.getValue();
+        testedParam.setRegistered(true);
 
         // save a config with two custom parameters
         final Configuration savedConfig = createConfigWithCustomParameters(testedParam);
@@ -439,7 +370,7 @@ public class ConfigurationTest extends AbstractFileSystemUnitTest<Configuration>
 
         // change the value of the shared custom parameter
         final String valueToBeRestored = "override me";
-        testedObject.setParameter(testedParam.getKey(), valueToBeRestored);
+        testedObject.setParameter(testedParam.getCompositeKey(), valueToBeRestored);
 
         // load previously set up config
         setLoggerEnabled(false);
@@ -447,7 +378,7 @@ public class ConfigurationTest extends AbstractFileSystemUnitTest<Configuration>
         setLoggerEnabled(true);
 
         // make sure the value of custom parameter was changed due to the loading
-        assertEquals(savedParamValue, testedObject.getParameterValue(testedParam.getKey(), testedParam.getValue().getClass()));
+        assertEquals(savedParamValue, testedObject.getParameterValue(testedParam.getCompositeKey()));
     }
 
 
@@ -464,7 +395,7 @@ public class ConfigurationTest extends AbstractFileSystemUnitTest<Configuration>
         savedConfig.saveToDisk();
 
         // create a config with only the first custom parameter
-        testedObject = new Configuration(null);
+        testedObject = new Configuration();
         testedObject.setCacheFilePath(configFile.getAbsolutePath());
 
         // load previously set up config
@@ -492,7 +423,7 @@ public class ConfigurationTest extends AbstractFileSystemUnitTest<Configuration>
         setLoggerEnabled(true);
 
         // make sure the old custom parameter still exists
-        assertEquals(testedParam.getStringValue(), testedObject.getParameterStringValue(testedParam.getKey()));
+        assertEquals(testedParam.getStringValue(), testedObject.getParameterStringValue(testedParam.getCompositeKey()));
     }
 
 
@@ -518,24 +449,63 @@ public class ConfigurationTest extends AbstractFileSystemUnitTest<Configuration>
         setLoggerEnabled(true);
 
         // make sure the old custom parameter value was not overridden
-        assertEquals(valueToBeOverridden, testedObject.getParameterStringValue(testedParam.getKey()));
+        assertEquals(valueToBeOverridden, testedObject.getParameterStringValue(testedParam.getCompositeKey()));
     }
 
 
     /**
      * Tests if a Configuration can be serialized and deserialized without losing data.
+     *
+     * @throws MalformedURLException thrown if the URL parameter could not be created
      */
     @Test
-    public void testJsonSerializationParameterTypes()
+    public void testJsonSerializationParameterTypes() throws MalformedURLException
     {
         // save config with all parameters to disk
         final Configuration savedConfig = createConfigWithAllParameterTypes();
         testedObject = saveAndLoadConfig(savedConfig);
 
         // check if deserialized global parameters are correct
-        final Map<String, AbstractParameter<?>> loadedGlobalParams = getTestedParameters(testedObject);
-        getTestedParameters(savedConfig).forEach((String key, AbstractParameter<?> param) -> {
-            assertEquals(param.getClass(), loadedGlobalParams.get(key).getClass());
+        final Collection<AbstractParameter<?>> loadedParams = testedObject.getParameters();
+
+        savedConfig.getParameters().forEach((AbstractParameter<?> param) -> {
+            for (AbstractParameter<?> loadedParam : loadedParams)
+            {
+                if (loadedParam.getCompositeKey().equals(param.getCompositeKey())) {
+                    assertEquals(param.getClass(), loadedParam.getClass());
+                    break;
+                }
+            }
+        });
+    }
+
+
+    /**
+     * Tests if a Configuration can be serialized and deserialized with null value parameters.
+     *
+     * @throws MalformedURLException thrown if the URL parameter could not be created
+     */
+    @Test
+    public void testJsonSerializationOfNullValues() throws MalformedURLException
+    {
+        final Configuration savedConfig = createConfigWithCustomParameters(
+                                              new StringParameter(PARAM_KEY + 1, TEST_CATEGORY),
+                                              new IntegerParameter(PARAM_KEY + 2, TEST_CATEGORY),
+                                              new BooleanParameter(PARAM_KEY + 3, TEST_CATEGORY),
+                                              new UrlParameter(PARAM_KEY + 4, TEST_CATEGORY),
+                                              new PasswordParameter(PARAM_KEY + 5, TEST_CATEGORY),
+                                              new SubmitterParameter(PARAM_KEY + 6, TEST_CATEGORY));
+
+        // register parameters to mark them for serialization
+        savedConfig.getParameters().forEach((AbstractParameter<?> param) -> param.setRegistered(true));
+
+        // save and load
+        testedObject = saveAndLoadConfig(savedConfig);
+
+
+        // check if deserialized global parameters are correct
+        savedConfig.getParameters().forEach((AbstractParameter<?> param) -> {
+            assertEquals(param.getValue(), testedObject.getParameterValue(param.getCompositeKey()));
         });
     }
 
@@ -543,60 +513,147 @@ public class ConfigurationTest extends AbstractFileSystemUnitTest<Configuration>
     /**
      * Tests if a Configuration can be serialized and deserialized
      * while preserving the parameter types.
+     *
+     * @throws MalformedURLException thrown if the URL parameter could not be created
      */
     @Test
-    public void testJsonSerializationParameterValues()
+    public void testJsonSerializationParameterValues() throws MalformedURLException
+    {
+        // save config with all parameters to disk
+        final Configuration savedConfig = createConfigWithAllParameterTypes();
+
+        // register parameter to mark it for serialization
+        savedConfig.getParameters().forEach((AbstractParameter<?> param) -> param.setRegistered(true));
+
+        // save and load
+        testedObject = saveAndLoadConfig(savedConfig);
+
+        // check if deserialized global parameters are correct
+        savedConfig.getParameters().forEach((AbstractParameter<?> param) -> {
+            assertEquals(param.getValue(), testedObject.getParameterValue(param.getCompositeKey()));
+        });
+    }
+
+
+    /**
+     * Tests if a unregistered {@linkplain AbstractParameter}s are ignored during
+     * the serialization of the {@linkplain Configuration}.
+
+     * @throws MalformedURLException thrown if the URL parameter could not be created
+     */
+    @Test
+    public void testJsonSerializationOfUnregisteredParameters() throws MalformedURLException
     {
         // save config with all parameters to disk
         final Configuration savedConfig = createConfigWithAllParameterTypes();
         testedObject = saveAndLoadConfig(savedConfig);
 
         // check if deserialized global parameters are correct
-        final Map<String, AbstractParameter<?>> loadedGlobalParams = getTestedParameters(testedObject);
-        getTestedParameters(savedConfig).forEach((String key, AbstractParameter<?> param) -> {
-            assertEquals(param.getValue(), loadedGlobalParams.get(key).getValue());
+        savedConfig.getParameters().forEach((AbstractParameter<?> param) -> {
+            assertNull(testedObject.getParameterValue(param.getCompositeKey()));
         });
     }
 
 
     /**
-     * Tests if the {@linkplain Configuration}'s updateAllParameters() function sends events for
-     * all parameters.
+     * Tests if the class of a cloned parameter is the same as the source parameter.
+     *
+     * @throws MalformedURLException thrown if the URL parameter could not be created
      */
     @Test
-    public void testAllParametersUpdate()
+    public void testParameterCopyClass() throws MalformedURLException
     {
-        // check GlobalParameterChanged event
-        testedObject.updateAllParameters();
-        assertEquals(testedParam, getTestedEvent().getParameter());
+        // save config with all parameters to disk
+        testedObject = createConfigWithAllParameterTypes();
+
+        for (AbstractParameter<?> param : testedObject.getParameters())
+            assertEquals(param.getClass(), param.copy().getClass());
+    }
+
+
+    /**
+     * Tests if the category of a cloned parameter is the same as that of the source parameter.
+     *
+     * @throws MalformedURLException thrown if the URL parameter could not be created
+     */
+    @Test
+    public void testParameterCopyCategory() throws MalformedURLException
+    {
+        // save config with all parameters to disk
+        testedObject = createConfigWithAllParameterTypes();
+
+        for (AbstractParameter<?> param : testedObject.getParameters()) {
+            final AbstractParameter<?> clonedParam = param.copy();
+            assertEquals(param.getCategory(), clonedParam.getCategory());
+        }
+    }
+
+
+    /**
+     * Tests if the value of a cloned parameter is the same as that of the source parameter.
+     *
+     * @throws MalformedURLException thrown if the URL parameter could not be created
+     */
+    @Test
+    public void testParameterCopyValues() throws MalformedURLException
+    {
+        // save config with all parameters to disk
+        testedObject = createConfigWithAllParameterTypes();
+
+        for (AbstractParameter<?> param : testedObject.getParameters()) {
+            final AbstractParameter<?> clonedParam = param.copy();
+            assertEquals(param.getValue(), clonedParam.getValue());
+        }
+    }
+
+
+    /**
+     * Tests if the key of a cloned parameter is the same as that of the source parameter.
+     *
+     * @throws MalformedURLException thrown if the URL parameter could not be created
+     */
+    @Test
+    public void testParameterCopyKey() throws MalformedURLException
+    {
+        // save config with all parameters to disk
+        testedObject = createConfigWithAllParameterTypes();
+
+        for (AbstractParameter<?> param : testedObject.getParameters()) {
+            final AbstractParameter<?> clonedParam = param.copy();
+            assertEquals(param.getKey(), clonedParam.getKey());
+        }
     }
 
 
     /**
      * Tests if the {@linkplain Configuration}'s toString() function displays all parameter keys.
+     *
+     * @throws MalformedURLException thrown if the URL parameter could not be created
      */
     @Test
-    public void testToStringKeys()
+    public void testToStringKeys() throws MalformedURLException
     {
         testedObject = createConfigWithAllParameterTypes();
         final String configString = testedObject.toString();
 
-        getTestedParameters(testedObject).forEach((String key, AbstractParameter<?> param) -> {
-            assert configString.contains(key);
+        testedObject.getParameters().forEach((AbstractParameter<?> param) -> {
+            assert configString.contains(param.getCompositeKey());
         });
     }
 
 
     /**
      * Tests if the {@linkplain Configuration}'s toString() function displays all parameter values.
+     *
+     * @throws MalformedURLException thrown if the URL parameter could not be created
      */
     @Test
-    public void testToStringValues()
+    public void testToStringValues() throws MalformedURLException
     {
         testedObject = createConfigWithAllParameterTypes();
         final String configString = testedObject.toString();
 
-        getTestedParameters(testedObject).forEach((String key, AbstractParameter<?> param) -> {
+        testedObject.getParameters().forEach((AbstractParameter<?> param) -> {
             assert configString.contains(param.getStringValue());
         });
     }
@@ -605,25 +662,6 @@ public class ConfigurationTest extends AbstractFileSystemUnitTest<Configuration>
     //////////////////////
     // Non-test Methods //
     //////////////////////
-
-    /**
-     * Event callback function that stores the event that was dispatched.
-     * @param e the event that triggered this callback function
-     */
-    private void onGlobalParameterChanged(GlobalParameterChangedEvent e)
-    {
-        lastGlobalParamChange = e;
-    }
-
-
-    /**
-     * Event callback function that stores the event that was dispatched.
-     * @param e the event that triggered this callback function
-     */
-    private void onHarvesterParameterChanged(HarvesterParameterChangedEvent e)
-    {
-        lastHarvesterParamChange = e;
-    }
 
 
     /**
@@ -638,15 +676,15 @@ public class ConfigurationTest extends AbstractFileSystemUnitTest<Configuration>
      */
     private <T> void testParameterChange(AbstractParameter<T> param, T newValue)
     {
-        final String key = param.getKey();
+        final String compositeKey = param.getCompositeKey();
         final T oldValue = param.getValue();
 
         if (oldValue.equals(newValue))
             throw new IllegalArgumentException(ERROR_ARGUMENTS_MUST_DIFFER);
 
         testedObject = createConfigWithCustomParameters(param);
-        testedObject.setParameter(key, newValue.toString());
-        assertNotEquals(oldValue, testedObject.getParameterValue(key, newValue.getClass()));
+        testedObject.setParameter(compositeKey, newValue.toString());
+        assertNotEquals(oldValue, testedObject.getParameterValue(compositeKey));
     }
 
 
@@ -660,14 +698,7 @@ public class ConfigurationTest extends AbstractFileSystemUnitTest<Configuration>
      */
     private Configuration createConfigWithCustomParameters(AbstractParameter<?>... params)
     {
-        final Map<String, AbstractParameter<?>> parameterMap = new HashMap<>();
-
-        for (AbstractParameter<?> p : params)
-            parameterMap.put(p.getKey(), p);
-
-        return isTestingHarvesterParameters
-               ? new Configuration(null, parameterMap)
-               : new Configuration(parameterMap, null);
+        return new Configuration(params);
     }
 
 
@@ -676,40 +707,24 @@ public class ConfigurationTest extends AbstractFileSystemUnitTest<Configuration>
      * parameters.
      *
      * @return a {@linkplain Configuration} with all {@linkplain AbstractParameter} subclasses
+     * @throws MalformedURLException  thrown when the URL cannot be parsed
      */
-    private Configuration createConfigWithAllParameterTypes()
+    private Configuration createConfigWithAllParameterTypes() throws MalformedURLException
     {
-        final StringParameter globalStringParam = new StringParameter(CUSTOM_PARAM_KEY + 1, CUSTOM_PARAM_VALUE + 1);
-        final IntegerParameter globalIntegerParam = new IntegerParameter(CUSTOM_PARAM_KEY + 2, INT_VALUE_1);
-        final BooleanParameter globalBooleanParam = new BooleanParameter(CUSTOM_PARAM_KEY + 3, BOOL_VALUE_1);
-        final UrlParameter globalUrlParam = new UrlParameter(CUSTOM_PARAM_KEY + 4, URL_VALUE_1);
-        final PasswordParameter globalPasswordParam = new PasswordParameter(CUSTOM_PARAM_KEY + 5, PASSWORD_VALUE_1);
-        final SubmitterParameter globalSubmitterParam = new SubmitterParameter(CUSTOM_PARAM_KEY + 11, CUSTOM_PARAM_VALUE);
+        final StringParameter stringParam = new StringParameter(PARAM_KEY + 1, TEST_CATEGORY, STRING_VALUE + 1);
+        final IntegerParameter integerParam = new IntegerParameter(PARAM_KEY + 2, TEST_CATEGORY, INT_VALUE_1);
+        final BooleanParameter booleanParam = new BooleanParameter(PARAM_KEY + 3, TEST_CATEGORY, BOOL_VALUE_1);
+        final UrlParameter urlParam = new UrlParameter(PARAM_KEY + 4, TEST_CATEGORY, new URL(URL_VALUE_1));
+        final PasswordParameter passwordParam = new PasswordParameter(PARAM_KEY + 5, TEST_CATEGORY, PASSWORD_VALUE_1);
+        final SubmitterParameter submitterParam = new SubmitterParameter(PARAM_KEY + 6, TEST_CATEGORY, STRING_VALUE);
 
-        final Map<String, AbstractParameter<?>> globalParams = new HashMap<>();
-        globalParams.put(globalStringParam.getKey(), globalStringParam);
-        globalParams.put(globalIntegerParam.getKey(), globalIntegerParam);
-        globalParams.put(globalBooleanParam.getKey(), globalBooleanParam);
-        globalParams.put(globalUrlParam.getKey(), globalUrlParam);
-        globalParams.put(globalPasswordParam.getKey(), globalPasswordParam);
-        globalParams.put(globalSubmitterParam.getKey(), globalSubmitterParam);
-
-        final StringParameter harvesterStringParam = new StringParameter(CUSTOM_PARAM_KEY + 6, CUSTOM_PARAM_VALUE + 2);
-        final IntegerParameter harvesterIntegerParam = new IntegerParameter(CUSTOM_PARAM_KEY + 7, INT_VALUE_2);
-        final BooleanParameter harvesterBooleanParam = new BooleanParameter(CUSTOM_PARAM_KEY + 8, BOOL_VALUE_2);
-        final UrlParameter harvesterUrlParam = new UrlParameter(CUSTOM_PARAM_KEY + 9, URL_VALUE_2);
-        final PasswordParameter harvesterPasswordParam = new PasswordParameter(CUSTOM_PARAM_KEY + 10, PASSWORD_VALUE_2);
-        final SubmitterParameter harvesterSubmitterParam = new SubmitterParameter(CUSTOM_PARAM_KEY + 12, CUSTOM_PARAM_VALUE);
-
-        final Map<String, AbstractParameter<?>> harvesterParams = new HashMap<>();
-        harvesterParams.put(harvesterStringParam.getKey(), harvesterStringParam);
-        harvesterParams.put(harvesterIntegerParam.getKey(), harvesterIntegerParam);
-        harvesterParams.put(harvesterBooleanParam.getKey(), harvesterBooleanParam);
-        harvesterParams.put(harvesterUrlParam.getKey(), harvesterUrlParam);
-        harvesterParams.put(harvesterPasswordParam.getKey(), harvesterPasswordParam);
-        harvesterParams.put(harvesterSubmitterParam.getKey(), harvesterSubmitterParam);
-
-        return new Configuration(globalParams, harvesterParams);
+        return createConfigWithCustomParameters(
+                   stringParam,
+                   integerParam,
+                   booleanParam,
+                   urlParam,
+                   passwordParam,
+                   submitterParam);
     }
 
     /**
@@ -735,33 +750,6 @@ public class ConfigurationTest extends AbstractFileSystemUnitTest<Configuration>
     }
 
 
-    /**
-     * Retrieves either the map of harvester- or global parameters, depending on what is being tested.
-     * @param config the {@linkplain Configuration} from which the parameter map is retrieved
-     *
-     * @return the map of harvester- or global parameters from the specified config
-     */
-    private Map<String, AbstractParameter<?>> getTestedParameters(final Configuration config)
-    {
-        return isTestingHarvesterParameters
-               ? config.getHarvesterParameters()
-               : config.getGlobalParameters();
-    }
-
-
-    /**
-     * Retrieves the cached parameter change event that corresponds to either harvester- or global parameter changes,
-     * depending on what is being tested.
-     *
-     * @return the map of harvester- or global parameters from the specified config
-     */
-    private GlobalParameterChangedEvent getTestedEvent()
-    {
-        return isTestingHarvesterParameters
-               ? lastHarvesterParamChange
-               : lastGlobalParamChange;
-    }
-
 
     /**
      * Tests if parameter values can change when being set in a specified state.
@@ -773,16 +761,17 @@ public class ConfigurationTest extends AbstractFileSystemUnitTest<Configuration>
      */
     private boolean canParameterBeSetInState(IState testedState, Class<? extends IState> allowedState)
     {
-        final String valueBefore = CUSTOM_PARAM_VALUE + 1;
-        final String valueAfter = CUSTOM_PARAM_VALUE + 2;
-        final String key = CUSTOM_PARAM_KEY;
+        final String valueBefore = STRING_VALUE + 1;
+        final String valueAfter = STRING_VALUE + 2;
+        final String key = PARAM_KEY;
+        ParameterCategory category = new ParameterCategory("customCategory", Arrays.asList(allowedState));
 
-        testedParam = new StringParameter(key, Arrays.asList(allowedState), valueBefore);
+        testedParam = new StringParameter(key, category, valueBefore);
         testedObject = createConfigWithCustomParameters(testedParam);
 
         // explicitly test a state that is not among the valid states of the parameter
         StateMachine.setState(testedState);
-        testedObject.setParameter(key, valueAfter);
+        testedObject.setParameter(testedParam.getCompositeKey(), valueAfter);
         StateMachine.setState(null);
 
         return testedParam.getValue().equals(valueAfter);

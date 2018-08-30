@@ -16,7 +16,10 @@
 package de.gerdiproject.harvest.config.parameters;
 
 import java.text.ParseException;
-import java.util.List;
+import java.util.Map;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import de.gerdiproject.harvest.config.Configuration;
 import de.gerdiproject.harvest.config.constants.ConfigurationConstants;
@@ -31,26 +34,47 @@ import de.gerdiproject.harvest.state.IState;
  */
 public abstract class AbstractParameter<T>
 {
-    protected T value;
-    protected final transient String key;
+    protected static final Logger LOGGER = LoggerFactory.getLogger(AbstractParameter.class);
 
-    private final transient List<Class<? extends IState>> allowedStates;
-    private final transient String allowedValues;
+    protected T value;
+    protected final String key;
+    protected final ParameterCategory category;
+
+    private boolean isRegistered;
 
 
     /**
-     * Constructor that requires all fields.
+     * Constructor that assigns a category and a key that must be unique within the category.
      *
      * @param key the unique key of the parameter, which is used to change it via REST
-     * @param allowedStates a list of state-machine states during which the parameter may be changed
-     * @param allowedValues a human readable String that describes which values can be set
+     * @param category the category of the parameter
      */
-    public AbstractParameter(String key, List<Class<? extends IState>> allowedStates, String allowedValues)
+    public AbstractParameter(String key, ParameterCategory category)
     {
         this.key = key;
-        this.allowedStates = allowedStates;
-        this.allowedValues = allowedValues;
+        this.category = category;
     }
+
+
+    /**
+     * Constructor that assigns all fields.
+     *
+     * @param key the unique key of the parameter, which is used to change it via REST
+     * @param category the category of the parameter
+     * @param defaultValue the default value
+     */
+    public AbstractParameter(String key, ParameterCategory category, T defaultValue)
+    {
+        this(key, category);
+        this.value = defaultValue;
+    }
+
+    /**
+     * Creates an unregistered copy of this parameter.
+     *
+     * @return a copy of this parameter
+     */
+    public abstract AbstractParameter<T> copy();
 
 
     /**
@@ -58,10 +82,7 @@ public abstract class AbstractParameter<T>
      *
      * @return a String explaining which values are allowed to be set
      */
-    protected String getAllowedValues()
-    {
-        return allowedValues;
-    }
+    protected abstract String getAllowedValues();
 
 
     /**
@@ -84,6 +105,31 @@ public abstract class AbstractParameter<T>
     public String getKey()
     {
         return key;
+    }
+
+
+    /**
+     * Returns a unique key consisting of the category and the parameter key.
+     *
+     * @return a unique key consisting of the category and the parameter key
+     */
+    public String getCompositeKey()
+    {
+        return String.format(
+                   ConfigurationConstants.COMPOSITE_KEY,
+                   category.getName().toLowerCase(),
+                   key.toLowerCase());
+    }
+
+
+    /**
+     * Returns the {@linkplain ParameterCategory} to which the parameter belongs.
+     *
+     * @return the {@linkplain ParameterCategory} to which the parameter belongs
+     */
+    public ParameterCategory getCategory()
+    {
+        return category;
     }
 
 
@@ -122,7 +168,7 @@ public abstract class AbstractParameter<T>
     {
         String returnMessage;
 
-        if (currentState != null && !allowedStates.contains(currentState.getClass()))
+        if (currentState != null && !category.getAllowedStates().contains(currentState.getClass()))
             returnMessage = String.format(ConfigurationConstants.CANNOT_CHANGE_PARAM_INVALID_STATE, key, currentState.getName());
         else {
             try {
@@ -137,6 +183,44 @@ public abstract class AbstractParameter<T>
 
         return returnMessage;
     }
+
+
+    /**
+     * Looks for an environment variable that contains the category and key of this parameter
+     * and sets the value to that of the environment variable.
+     */
+    public void loadFromEnvironmentVariables()
+    {
+        String envVarName = String.format(ConfigurationConstants.ENVIRONMENT_VARIABLE, category.getName(), key);
+
+        final Map<String, String> environmentVariables = System.getenv();
+
+        if (environmentVariables.containsKey(envVarName))
+            LOGGER.info(setValue(environmentVariables.get(envVarName), null));
+    }
+
+
+    /**
+     * Returns true if this parameter is registered at the {@linkplain Configuration}.
+     *
+     * @return true if this parameter is registered at the {@linkplain Configuration}
+     */
+    public boolean isRegistered()
+    {
+        return isRegistered;
+    }
+
+
+    /**
+     * Sets a flag that signifies if this parameter is registered at the {@linkplain Configuration}.
+     *
+     * @param isRegistered if true, this parameter is considered to be registered
+     */
+    public void setRegistered(boolean isRegistered)
+    {
+        this.isRegistered = isRegistered;
+    }
+
 
     @Override
     public String toString()

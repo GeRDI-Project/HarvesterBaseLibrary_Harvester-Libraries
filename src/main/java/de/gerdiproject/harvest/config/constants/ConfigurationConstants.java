@@ -20,10 +20,9 @@ import java.util.Collections;
 import java.util.List;
 
 import de.gerdiproject.harvest.config.Configuration;
-import de.gerdiproject.harvest.state.IState;
+import de.gerdiproject.harvest.config.parameters.ParameterCategory;
 import de.gerdiproject.harvest.state.impl.ErrorState;
 import de.gerdiproject.harvest.state.impl.IdleState;
-import de.gerdiproject.harvest.state.impl.InitializationState;
 import de.gerdiproject.harvest.state.impl.SubmittingState;
 import de.gerdiproject.harvest.utils.cache.constants.CacheConstants;
 
@@ -36,18 +35,6 @@ import de.gerdiproject.harvest.utils.cache.constants.CacheConstants;
 public class ConfigurationConstants
 {
     public static final String AUTO_SUBMIT = "autoSubmit";
-    public static final String WRITE_HTTP_TO_DISK = "writeToDisk";
-    public static final String READ_HTTP_FROM_DISK = "readFromDisk";
-    public static final String HARVEST_START_INDEX = "harvestFrom";
-    public static final String HARVEST_END_INDEX = "harvestTo";
-    public static final String SUBMISSION_URL = "submissionUrl";
-    public static final String SUBMISSION_USER_NAME = "submissionUserName";
-    public static final String SUBMISSION_PASSWORD = "submissionPassword";
-    public static final String SUBMISSION_SIZE = "submissionSize";
-    public static final String SUBMIT_INCOMPLETE = "submitIncomplete";
-    public static final String SUBMIT_OUTDATED = "submitOutdated";
-    public static final String SUBMITTER_TYPE = "submissionType";
-    public static final String FORCE_HARVEST = "forceHarvest";
 
     public static final String CHANGED_PARAM = "Set parameter '%s' to '%s'.";
 
@@ -77,13 +64,12 @@ public class ConfigurationConstants
     public static final String STRING_VALID_VALUES_TEXT = "<anything>";
     public static final String URL_VALID_VALUES_TEXT = "<a valid URL>";
 
-    public static final String CONFIG_PARAMETERS = "Harvester Parameters:%n%s%nGlobal Parameters:%n%s";
     public static final String CONFIG_PATH = CacheConstants.CACHE_FOLDER_PATH + "config.json";
     public static final String LOAD_OK = "Loaded configuration from '%s'.";
     public static final String LOAD_FAILED = "Could not load configuration from '%s': %s";
     public static final String NO_EXISTS = "No configuration exists!";
     public static final String NO_PATH = "You must set a path first!";
-    public static final String REST_INFO = "- %s Configuration -%n%n%s%n"
+    public static final String REST_INFO = "- %s Configuration -%n%s%n"
                                            + "GET   Returns either the entire configuration in pretty text, or%n"
                                            + "      if '?key=xxx' is added, returns the value of parameter 'xxx'.%n"
                                            + "PUT   Sets x-www-form-urlencoded parameters for the harvester.%n"
@@ -92,24 +78,28 @@ public class ConfigurationConstants
     public static final String SAVE_FAILED_NO_PATH = "Could not save configuration: " + NO_PATH;
     public static final String PARSE_ERROR = "Could not read configuration parameter value '%s' from key '%s'!";
 
-    public static final List<Class<? extends IState>> HARVESTER_PARAM_ALLOWED_STATES =
-        Collections.unmodifiableList(
-            Arrays.asList(
-                InitializationState.class,
-                ErrorState.class,
-                IdleState.class,
-                SubmittingState.class));
-
-    public static final String URL_PREFIX = "%URL_PARAMETER%";
-    public static final String PASSWORD_PREFIX = "%PASSWORD_PARAMETER%";
-    public static final String SUBMITTER_PREFIX = "%SUBMITTER_PARAMETER%";
     public static final String GLOBAL_PARAMETERS_JSON = "globalParameters";
     public static final String HARVESTER_PARAMETERS_JSON = "harvesterParameters";
     public static final String BASIC_PARAMETER_FORMAT = "%%1$-%ds :  %%2$s%%n";
+    public static final String CATEGORY_FORMAT = "%n- %s -%n";
 
     public static final String ENVIRONMENT_VARIABLE_SET_START = "Searching for configuration from environment variables...";
-    public static final String ENVIRONMENT_VARIABLE_SET_END = "Set %d parameter(s) from environment variables.";
-    public static final String ENVIRONMENT_VARIABLE = "GERDI_%S_%S";
+    public static final String ENVIRONMENT_VARIABLE = "GERDI_HARVESTER_%S_%S";
+    public static final String COMPOSITE_KEY = "%s.%s";
+
+    public static final String KEY_JSON = "key";
+    public static final String VALUE_JSON = "value";
+    public static final String TYPE_JSON = "type";
+    public static final String CATEGORY_JSON = "category";
+
+    public static final ParameterCategory DEBUG_CATEGORY = new ParameterCategory(
+        "Debug",
+        Arrays.asList(
+            ErrorState.class,
+            IdleState.class,
+            SubmittingState.class));
+
+    public static final String KEY_FORMAT = "%s.%s";
 
 
     /**

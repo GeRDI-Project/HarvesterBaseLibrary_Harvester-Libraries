@@ -15,10 +15,7 @@
  */
 package de.gerdiproject.harvest.config.parameters;
 
-import java.util.List;
-
 import de.gerdiproject.harvest.config.constants.ConfigurationConstants;
-import de.gerdiproject.harvest.state.IState;
 
 /**
  * This parameter holds a String value used for passwords.
@@ -29,28 +26,38 @@ import de.gerdiproject.harvest.state.IState;
 public class PasswordParameter extends StringParameter
 {
     /**
-     * Constructor that requires a key and valid states.
+     * Constructor that assigns a category and a key that must be unique within the category.
      *
      * @param key the unique key of the parameter, which is used to change it via REST
-     * @param allowedStates a list of state-machine states during which the parameter may be changed
+     * @param category the category of the parameter
+     *
+     * @see AbstractParameter#AbstractParameter(String, ParameterCategory)
      */
-    public PasswordParameter(String key, List<Class<? extends IState>> allowedStates)
+    public PasswordParameter(String key, ParameterCategory category)
     {
-        super(key, allowedStates, ConfigurationConstants.STRING_VALID_VALUES_TEXT);
-        value = null;
+        super(key, category);
     }
 
 
     /**
-     * Constructor for harvester parameters, that only forbid changes during harvesting.
+     * Constructor that assigns all fields.
      *
      * @param key the unique key of the parameter, which is used to change it via REST
-     * @param defaultValue the default value of the parameter
+     * @param category the category of the parameter
+     * @param defaultValue the default value
+     *
+     * @see AbstractParameter#AbstractParameter(String, ParameterCategory, Object)
      */
-    public PasswordParameter(String key, String defaultValue)
+    public PasswordParameter(String key, ParameterCategory category, String defaultValue)
     {
-        super(key, ConfigurationConstants.HARVESTER_PARAM_ALLOWED_STATES, ConfigurationConstants.STRING_VALID_VALUES_TEXT);
-        value = defaultValue;
+        super(key, category, defaultValue);
+    }
+
+
+    @Override
+    public PasswordParameter copy()
+    {
+        return new PasswordParameter(key, category, value);
     }
 
 
@@ -60,6 +67,4 @@ public class PasswordParameter extends StringParameter
         // always return ***** as a string value
         return ConfigurationConstants.PASSWORD_STRING_TEXT;
     }
-
-
 }

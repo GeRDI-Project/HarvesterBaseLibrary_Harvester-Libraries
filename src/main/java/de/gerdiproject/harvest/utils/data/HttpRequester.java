@@ -16,34 +16,21 @@
 package de.gerdiproject.harvest.utils.data;
 
 
-import java.io.BufferedReader;
-import java.io.DataOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.lang.reflect.Type;
-import java.net.HttpURLConnection;
-import java.net.URL;
 import java.nio.charset.Charset;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Consumer;
 
-import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.xml.ws.http.HTTPException;
 
 import org.jsoup.nodes.Document;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.google.gson.Gson;
 
-import de.gerdiproject.harvest.config.constants.ConfigurationConstants;
-import de.gerdiproject.harvest.config.events.GlobalParameterChangedEvent;
-import de.gerdiproject.harvest.config.parameters.AbstractParameter;
-import de.gerdiproject.harvest.event.EventSystem;
-import de.gerdiproject.harvest.event.IEventListener;
+import de.gerdiproject.harvest.config.Configuration;
+import de.gerdiproject.harvest.config.parameters.BooleanParameter;
 import de.gerdiproject.harvest.utils.data.constants.DataOperationConstants;
 import de.gerdiproject.harvest.utils.data.enums.RestRequestType;
 
@@ -53,59 +40,28 @@ import de.gerdiproject.harvest.utils.data.enums.RestRequestType;
  *
  * @author Robin Weiss
  */
-public class HttpRequester implements IEventListener
+public class HttpRequester
 {
-    private static final Logger LOGGER = LoggerFactory.getLogger(HttpRequester.class);
-
-    public boolean suppressWarnings;
-
     private final DiskIO diskIO;
     private final WebDataRetriever webDataRetriever;
     private String cacheFolder;
-    private Charset httpCharset;
-    private boolean readFromDisk;
-    private boolean writeToDisk;
-
-
-    /**
-     * Event callback for global parameter changes. Changes the readFromDisk and writeToDisk fields.
-     */
-    private Consumer<GlobalParameterChangedEvent> onGlobalParameterChanged =
-    (GlobalParameterChangedEvent event) -> {
-        AbstractParameter<?> param = event.getParameter();
-
-        if (param.getKey().equals(ConfigurationConstants.READ_HTTP_FROM_DISK))
-            readFromDisk = (Boolean) param.getValue();
-
-        if (param.getKey().equals(ConfigurationConstants.WRITE_HTTP_TO_DISK))
-            writeToDisk = (Boolean) param.getValue();
-    };
+    private BooleanParameter readFromDisk;
+    private BooleanParameter writeToDisk;
 
 
     /**
      * Constructor that allows to customize the behavior.
      *
-     * @param httpCharset the encoding charset
      * @param gson the GSON (de-)serializer for reading and writing JSON objects
-     * @param readFromDisk if true, instead of sending HTTP requests,
-     *         cached responses are read from the file system, if they exist
-     * @param writeToDisk if true, all HTTP responses are cached and can henceforth be
-     *         retrieved when readFromDisk is set to true
-     * @param cacheFolder a folder where cached http responses can be cached
+     * @param httpCharset the encoding charset
      */
-    public HttpRequester(Charset httpCharset, Gson gson, boolean readFromDisk, boolean writeToDisk, String cacheFolder)
+    public HttpRequester(Gson gson, Charset httpCharset)
     {
-        if (cacheFolder != null && !cacheFolder.endsWith("/"))
-            cacheFolder += '/';
-
-        this.cacheFolder = cacheFolder;
-
-        this.readFromDisk = readFromDisk;
-        this.writeToDisk = writeToDisk;
-        this.httpCharset = httpCharset;
-
+        this.readFromDisk = Configuration.registerParameter(DataOperationConstants.READ_FROM_DISK_PARAM);
+        this.writeToDisk = Configuration.registerParameter(DataOperationConstants.WRITE_TO_DISK_PARAM);
         this.diskIO = new DiskIO(gson, httpCharset);
         this.webDataRetriever = new WebDataRetriever(gson, httpCharset);
+        this.cacheFolder = null;
     }
 
 
@@ -123,43 +79,9 @@ public class HttpRequester implements IEventListener
 
         this.readFromDisk = other.readFromDisk;
         this.writeToDisk = other.writeToDisk;
-        this.httpCharset = other.httpCharset;
 
         this.diskIO = new DiskIO(other.diskIO);
         this.webDataRetriever = new WebDataRetriever(other.webDataRetriever);
-    }
-
-
-    /**
-     * Constructor that disallows caching http responses on disk
-     *
-     * @param httpCharset the encoding charset
-     * @param gson the GSON (de-)serializer for reading and writing JSON objects
-     */
-    public HttpRequester(Charset httpCharset, Gson gson)
-    {
-        this.cacheFolder = null;
-        this.readFromDisk = false;
-        this.writeToDisk = false;
-        this.httpCharset = httpCharset;
-
-        this.diskIO = new DiskIO(gson, httpCharset);
-        this.webDataRetriever = new WebDataRetriever(gson, httpCharset);
-    }
-
-
-    @Override
-    public void addEventListeners()
-    {
-        EventSystem.addListener(GlobalParameterChangedEvent.class, onGlobalParameterChanged);
-
-    }
-
-
-    @Override
-    public void removeEventListeners()
-    {
-        EventSystem.removeListener(GlobalParameterChangedEvent.class, onGlobalParameterChanged);
     }
 
 
@@ -178,7 +100,7 @@ public class HttpRequester implements IEventListener
         boolean isResponseReadFromWeb = false;
 
         // read json file from disk, if the option is enabled
-        if (readFromDisk)
+        if (isReadingFromDisk())
             htmlResponse = diskIO.getHtml(urlToFilePath(url, DataOperationConstants.FILE_ENDING_HTML));
 
         // request json from web, if it has not been read from disk already
@@ -188,7 +110,7 @@ public class HttpRequester implements IEventListener
         }
 
         // write whole response to disk, if the option is enabled
-        if (isResponseReadFromWeb && writeToDisk && cacheFolder != null) {
+        if (isResponseReadFromWeb && isWritingToDisk()) {
             // deliberately write an empty object to disk, if the response could
             // not be retrieved
             String responseText = (htmlResponse == null) ? "" : htmlResponse.toString();
@@ -216,7 +138,7 @@ public class HttpRequester implements IEventListener
         boolean isResponseReadFromWeb = false;
 
         // read json file from disk, if the option is enabled
-        if (readFromDisk)
+        if (isReadingFromDisk())
             targetObject = diskIO.getObject(urlToFilePath(url, DataOperationConstants.FILE_ENDING_JSON), targetClass);
 
         // request json from web, if it has not been read from disk already
@@ -226,7 +148,7 @@ public class HttpRequester implements IEventListener
         }
 
         // write whole response to disk, if the option is enabled
-        if (isResponseReadFromWeb && writeToDisk && cacheFolder != null) {
+        if (isResponseReadFromWeb && isWritingToDisk()) {
             // deliberately write an empty object to disk, if the response could
             // not be retrieved
             diskIO.writeObjectToFile(urlToFilePath(url, DataOperationConstants.FILE_ENDING_JSON), targetObject);
@@ -253,7 +175,7 @@ public class HttpRequester implements IEventListener
         boolean isResponseReadFromWeb = false;
 
         // read json file from disk, if the option is enabled
-        if (readFromDisk)
+        if (isReadingFromDisk())
             targetObject = diskIO.getObject(urlToFilePath(url, DataOperationConstants.FILE_ENDING_JSON), targetType);
 
         // request json from web, if it has not been read from disk already
@@ -263,7 +185,7 @@ public class HttpRequester implements IEventListener
         }
 
         // write whole response to disk, if the option is enabled
-        if (isResponseReadFromWeb && writeToDisk && cacheFolder != null) {
+        if (isResponseReadFromWeb && isWritingToDisk()) {
             // deliberately write an empty object to disk, if the response could
             // not be retrieved
             diskIO.writeObjectToFile(urlToFilePath(url, DataOperationConstants.FILE_ENDING_JSON), targetObject);
@@ -322,7 +244,7 @@ public class HttpRequester implements IEventListener
      */
     public String getRestResponse(RestRequestType method, String url, String body) throws HTTPException, IOException
     {
-        return getRestResponse(method, url, body, null, MediaType.TEXT_PLAIN);
+        return webDataRetriever.getRestResponse(method, url, body, null, MediaType.TEXT_PLAIN);
     }
 
 
@@ -344,43 +266,7 @@ public class HttpRequester implements IEventListener
      */
     public String getRestResponse(RestRequestType method, String url, String body, String authorization, String contentType) throws HTTPException, IOException
     {
-        try {
-            HttpURLConnection connection = sendRestRequest(method, url, body, authorization, contentType);
-
-            // create a reader for the HTTP response
-            InputStream response = connection.getInputStream();
-            BufferedReader reader = new BufferedReader(new InputStreamReader(response, httpCharset));
-
-            // read the first line of the response
-            String line = reader.readLine();
-            String responseText = null;
-
-            // make sure we got a response
-            if (line != null) {
-                StringBuilder responseBuilder = new StringBuilder(line);
-
-                // read subsequent lines of the response
-                line = reader.readLine();
-
-                while (line != null) {
-                    // add linebreak before appending the next line
-                    responseBuilder.append('\n').append(line);
-                    line = reader.readLine();
-                }
-
-                responseText = responseBuilder.toString();
-            }
-
-            // close the response reader
-            reader.close();
-
-            // combine the read lines to a single string
-            return responseText;
-        } catch (IOException e) {
-
-
-            throw e;
-        }
+        return webDataRetriever.getRestResponse(method, url, body, authorization, contentType);
     }
 
 
@@ -399,7 +285,7 @@ public class HttpRequester implements IEventListener
      */
     public Map<String, List<String>> getRestHeader(RestRequestType method, String url, String body) throws HTTPException, IOException
     {
-        return getRestHeader(method, url, body, null, MediaType.TEXT_PLAIN);
+        return webDataRetriever.getRestHeader(method, url, body, null, MediaType.TEXT_PLAIN);
     }
 
 
@@ -422,77 +308,7 @@ public class HttpRequester implements IEventListener
     public Map<String, List<String>> getRestHeader(RestRequestType method, String url, String body,
                                                    String authorization, String contentType) throws HTTPException, IOException
     {
-        Map<String, List<String>> headerFields = null;
-
-        HttpURLConnection connection = sendRestRequest(method, url, body, authorization, contentType);
-        headerFields = connection.getHeaderFields();
-
-        return headerFields;
-    }
-
-
-    /**
-     * Sends a REST request with a specified body and returns the connection.
-     *
-     * @param method the request method that is being sent
-     * @param url the URL to which the request is being sent
-     * @param body the body of the request
-     * @param authorization the base-64-encoded username and password, or null if no
-     *                           authorization is required
-     * @param contentType the contentType of the body
-     *
-     * @throws HTTPException thrown if the response code is not 2xx
-     * @throws IOException thrown if the response output stream could not be created
-     *
-     * @return the connection to the host
-     */
-    private HttpURLConnection sendRestRequest(RestRequestType method, String url, String body, String authorization, String contentType)
-    throws IOException, HTTPException
-    {
-        // generate a URL and open a connection
-        HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
-
-        // set request properties
-        connection.setDoOutput(true);
-        connection.setInstanceFollowRedirects(false);
-        connection.setUseCaches(false);
-        connection.setRequestMethod(method.toString());
-        connection.setRequestProperty(HttpHeaders.CONTENT_TYPE, contentType);
-        connection.setRequestProperty(DataOperationConstants.REQUEST_PROPERTY_CHARSET, httpCharset.displayName());
-
-        // set authentication
-        if (authorization != null)
-            connection.setRequestProperty(HttpHeaders.AUTHORIZATION, authorization);
-
-        // only send date if it is specified
-        if (body != null) {
-            // convert body string to bytes
-            byte[] bodyBytes = body.getBytes(httpCharset);
-            connection.setRequestProperty(HttpHeaders.CONTENT_LENGTH, Integer.toString(bodyBytes.length));
-
-            // try to send body
-            DataOutputStream wr = new DataOutputStream(connection.getOutputStream());
-            wr.write(bodyBytes);
-            wr.close();
-        }
-
-        // check if we got an erroneous response
-        int responseCode = connection.getResponseCode();
-
-        if (responseCode < 200 || responseCode >= 300) {
-            if (!suppressWarnings)
-                LOGGER.warn(String.format(
-                                DataOperationConstants.WEB_ERROR_REST_HTTP,
-                                method.toString(),
-                                url,
-                                body,
-                                responseCode
-                            ));
-
-            throw new HTTPException(connection.getResponseCode());
-        }
-
-        return connection;
+        return webDataRetriever.getRestHeader(method, url, body, authorization, contentType);
     }
 
 
@@ -513,6 +329,9 @@ public class HttpRequester implements IEventListener
      */
     public void setCacheFolder(String cacheFolder)
     {
+        if (cacheFolder != null && !cacheFolder.endsWith("/"))
+            cacheFolder += '/';
+
         this.cacheFolder = cacheFolder;
     }
 
@@ -524,7 +343,7 @@ public class HttpRequester implements IEventListener
      */
     public boolean isReadingFromDisk()
     {
-        return readFromDisk;
+        return readFromDisk.getValue() && cacheFolder != null;
     }
 
 
@@ -535,7 +354,7 @@ public class HttpRequester implements IEventListener
      */
     public boolean isWritingToDisk()
     {
-        return writeToDisk;
+        return writeToDisk.getValue() && cacheFolder != null;
     }
 
 
@@ -546,6 +365,7 @@ public class HttpRequester implements IEventListener
      */
     public void setCharset(Charset httpCharset)
     {
-        this.httpCharset = httpCharset;
+        this.webDataRetriever.setCharset(httpCharset);
+        this.diskIO.setCharset(httpCharset);
     }
 }

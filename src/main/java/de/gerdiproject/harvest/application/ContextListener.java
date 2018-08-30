@@ -30,7 +30,6 @@ import de.gerdiproject.harvest.application.constants.ApplicationConstants;
 import de.gerdiproject.harvest.application.events.ContextDestroyedEvent;
 import de.gerdiproject.harvest.application.events.ContextInitializedEvent;
 import de.gerdiproject.harvest.application.events.ContextResetEvent;
-import de.gerdiproject.harvest.config.parameters.AbstractParameter;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.harvester.AbstractHarvester;
 import de.gerdiproject.harvest.submission.AbstractSubmitter;
@@ -81,19 +80,6 @@ public class ContextListener<T extends AbstractHarvester> implements ServletCont
 
 
     /**
-     * Returns additional parameters that are specific to the harvester
-     * implementation.
-     *
-     * @return a list of parameters, or null, if no additional parameters are
-     *         needed
-     */
-    protected List<AbstractParameter<?>> getHarvesterSpecificParameters()
-    {
-        return null;
-    }
-
-
-    /**
      * Creates a list of submitter classes that can be chosen to transfer data to the search index.
      *
      * @return a harvested documents submitter
@@ -126,7 +112,6 @@ public class ContextListener<T extends AbstractHarvester> implements ServletCont
         MainContext.init(
             getServiceName(),
             harvesterClass,
-            getHarvesterSpecificParameters(),
             getSubmitterClasses());
 
         EventSystem.sendEvent(new ContextInitializedEvent());

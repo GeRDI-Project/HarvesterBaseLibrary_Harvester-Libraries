@@ -38,12 +38,9 @@ import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 
 import de.gerdiproject.AbstractFileSystemUnitTest;
-import de.gerdiproject.harvest.config.constants.ConfigurationConstants;
-import de.gerdiproject.harvest.config.events.GlobalParameterChangedEvent;
-import de.gerdiproject.harvest.config.parameters.BooleanParameter;
-import de.gerdiproject.harvest.event.EventSystem;
-import de.gerdiproject.harvest.event.IEvent;
+import de.gerdiproject.harvest.config.Configuration;
 import de.gerdiproject.harvest.utils.data.HttpRequester;
+import de.gerdiproject.harvest.utils.data.constants.DataOperationConstants;
 import de.gerdiproject.harvest.utils.data.enums.RestRequestType;
 
 /**
@@ -71,10 +68,7 @@ public class HttpRequesterTest extends AbstractFileSystemUnitTest<HttpRequester>
         return new Object[] {Boolean.FALSE, Boolean.TRUE};
     }
 
-    public boolean isCachingEnabled;
-
-    private final IEvent changeReadFromDiskEvent;
-    private final IEvent changeWriteToDiskEvent;
+    private boolean isCachingEnabled;
 
 
     /**
@@ -87,25 +81,22 @@ public class HttpRequesterTest extends AbstractFileSystemUnitTest<HttpRequester>
     public HttpRequesterTest(boolean isCachingEnabled)
     {
         this.isCachingEnabled = isCachingEnabled;
-        this.changeReadFromDiskEvent = new GlobalParameterChangedEvent(
-            new BooleanParameter(ConfigurationConstants.READ_HTTP_FROM_DISK, !isCachingEnabled),
-            null);
-
-        this.changeWriteToDiskEvent = new GlobalParameterChangedEvent(
-            new BooleanParameter(ConfigurationConstants.WRITE_HTTP_TO_DISK, !isCachingEnabled),
-            null);
     }
 
 
     @Override
     protected HttpRequester setUpTestObjects()
     {
-        return new HttpRequester(
-                   StandardCharsets.UTF_8,
-                   new Gson(),
-                   isCachingEnabled,
-                   isCachingEnabled,
-                   testFolder.getPath());
+        config = new Configuration();
+        config.addEventListeners();
+
+        final HttpRequester requester = new HttpRequester(new Gson(), StandardCharsets.UTF_8);
+        requester.setCacheFolder(testFolder.getPath());
+
+        config.setParameter(DataOperationConstants.READ_FROM_DISK_PARAM.getCompositeKey(), String.valueOf(isCachingEnabled));
+        config.setParameter(DataOperationConstants.WRITE_TO_DISK_PARAM.getCompositeKey(), String.valueOf(isCachingEnabled));
+
+        return requester;
     }
 
 
@@ -137,84 +128,6 @@ public class HttpRequesterTest extends AbstractFileSystemUnitTest<HttpRequester>
     public void testCacheFolder()
     {
         assertNotNull(testedObject.getCacheFolder());
-    }
-
-
-    /**
-     * Tests if a {@linkplain HttpRequester} if the readFromDisk flag changes
-     * its value when a GlobalParameterChangedEvent is fired after event listeners
-     * were added.
-     */
-    @Test
-    public void testChangingReadFromDiskFlagAfterAddingEventListeners()
-    {
-        testedObject.addEventListeners();
-        assertReadFromDiskFlagCanChange(true);
-    }
-
-
-    /**
-     * Tests if a {@linkplain HttpRequester} if the readFromDisk flag does not change
-     * its value when a GlobalParameterChangedEvent is fired before event listeners
-     * were added.
-     */
-    @Test
-    public void testChangingReadFromDiskFlagBeforeAddingEventListeners()
-    {
-        assertReadFromDiskFlagCanChange(false);
-    }
-
-
-    /**
-     * Tests if a {@linkplain HttpRequester} if the readFromDisk flag does not change
-     * its value when a GlobalParameterChangedEvent is fired after event listeners
-     * were removed.
-     */
-    @Test
-    public void testChangingReadFromDiskFlagAfterRemovingEventListeners()
-    {
-        testedObject.addEventListeners();
-        testedObject.removeEventListeners();
-        assertReadFromDiskFlagCanChange(false);
-    }
-
-
-    /**
-     * Tests if a {@linkplain HttpRequester} if the writeToDisk flag changes
-     * its value when a GlobalParameterChangedEvent is fired after event listeners
-     * were added.
-     */
-    @Test
-    public void testChangingWriteToDiskFlagAfterAddingEventListeners()
-    {
-        testedObject.addEventListeners();
-        assertWriteToDiskFlagCanChange(true);
-    }
-
-
-    /**
-     * Tests if a {@linkplain HttpRequester} if the writeToDisk flag does not change
-     * its value when a GlobalParameterChangedEvent is fired before event listeners
-     * were added.
-     */
-    @Test
-    public void testChangingWriteToDiskFlagBeforeAddingEventListeners()
-    {
-        assertWriteToDiskFlagCanChange(false);
-    }
-
-
-    /**
-     * Tests if a {@linkplain HttpRequester} if the writeToDisk flag does not change
-     * its value when a GlobalParameterChangedEvent is fired after event listeners
-     * were removed.
-     */
-    @Test
-    public void testChangingWriteToDiskFlagAfterRemovingEventListeners()
-    {
-        testedObject.addEventListeners();
-        testedObject.removeEventListeners();
-        assertWriteToDiskFlagCanChange(false);
     }
 
 
@@ -350,8 +263,8 @@ public class HttpRequesterTest extends AbstractFileSystemUnitTest<HttpRequester>
     public void testCachingObject() throws IOException
     {
         final File cachedResponse = new File(
-            testedObject.getCacheFolder()
-            + JSON_OBJECT_URL.substring(7)
+            testFolder,
+            JSON_OBJECT_URL.substring(7)
             + CACHED_JSON);
 
         // no need to check if the file already exists, as this is done in before()
@@ -406,44 +319,12 @@ public class HttpRequesterTest extends AbstractFileSystemUnitTest<HttpRequester>
      */
     private HttpRequester createReadOnlyExampleHttpRequester()
     {
-        return new HttpRequester(
-                   StandardCharsets.UTF_8,
-                   new Gson(),
-                   isCachingEnabled,
-                   false,
-                   MOCKED_RESPONSE_CACHE_FOLDER + "/");
-    }
+        config.setParameter(DataOperationConstants.READ_FROM_DISK_PARAM.getCompositeKey(), String.valueOf(isCachingEnabled));
+        config.setParameter(DataOperationConstants.WRITE_TO_DISK_PARAM.getCompositeKey(), String.valueOf(false));
 
+        final HttpRequester requester = new HttpRequester(new Gson(), StandardCharsets.UTF_8);
+        requester.setCacheFolder(MOCKED_RESPONSE_CACHE_FOLDER);
 
-    /**
-     * Checks if the readFromDisk flag can be changed via a
-     * GlobalParameterChangedEvent, and asserts that the behavior is expected.
-     *
-     * @param expectedResult if true, the test passes if the flag changes,
-     * if false, the test passes if the value does not change.
-     */
-    private void assertReadFromDiskFlagCanChange(boolean expectedResult)
-    {
-        final boolean oldValue = testedObject.isReadingFromDisk();
-
-        EventSystem.sendEvent(changeReadFromDiskEvent);
-
-        assertEquals(expectedResult, oldValue != testedObject.isReadingFromDisk());
-    }
-
-    /**
-     * Checks if the writeToDisk flag can be changed via a
-     * GlobalParameterChangedEvent, and asserts that the behavior is expected.
-     *
-     * @param expectedResult if true, the test passes if the flag changes,
-     * if false, the test passes if the value does not change.
-     */
-    private void assertWriteToDiskFlagCanChange(boolean expectedResult)
-    {
-        final boolean oldValue = testedObject.isWritingToDisk();
-
-        EventSystem.sendEvent(changeWriteToDiskEvent);
-
-        assertEquals(expectedResult, oldValue != testedObject.isWritingToDisk());
+        return requester;
     }
 }

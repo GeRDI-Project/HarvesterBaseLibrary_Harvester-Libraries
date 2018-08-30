@@ -50,7 +50,7 @@ public class DiskIO implements IDataRetriever
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(DiskIO.class);
     private final Gson gson;
-    private final Charset charset;
+    private Charset charset;
 
 
     /**
@@ -285,6 +285,13 @@ public class DiskIO implements IDataRetriever
             htmlResponse = Jsoup.parse(fileContent);
 
         return htmlResponse;
+    }
+
+
+    @Override
+    public void setCharset(Charset charset)
+    {
+        this.charset = charset;
     }
 
 

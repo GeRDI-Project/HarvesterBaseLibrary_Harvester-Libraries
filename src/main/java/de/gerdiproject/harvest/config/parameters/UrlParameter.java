@@ -18,10 +18,8 @@ package de.gerdiproject.harvest.config.parameters;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.text.ParseException;
-import java.util.List;
 
 import de.gerdiproject.harvest.config.constants.ConfigurationConstants;
-import de.gerdiproject.harvest.state.IState;
 
 /**
  * This parameter holds a URL.
@@ -31,29 +29,50 @@ import de.gerdiproject.harvest.state.IState;
 public class UrlParameter extends AbstractParameter<URL>
 {
     /**
-     * Constructor that requires a key, valid states and a default value.
+     * Constructor that assigns a category and a key that must be unique within the category.
      *
      * @param key the unique key of the parameter, which is used to change it via REST
-     * @param allowedStates a list of state-machine states during which the parameter may be changed
-     * @param defaultValue the value with which the state is initialized
+     * @param category the category of the parameter
+     *
+     * @see AbstractParameter#AbstractParameter(String, ParameterCategory)
      */
-    public UrlParameter(String key, List<Class<? extends IState>> allowedStates, URL defaultValue)
+    public UrlParameter(String key, ParameterCategory category)
     {
-        super(key, allowedStates, ConfigurationConstants.URL_VALID_VALUES_TEXT);
-        value = defaultValue;
+        super(key, category);
+        value = null;
     }
 
 
     /**
-     * Constructor for harvester parameters, that only forbid changes during harvesting.
+     * Constructor that assigns all fields.
      *
      * @param key the unique key of the parameter, which is used to change it via REST
-     * @param defaultUrlString the string-value with which the state is initialized
+     * @param category the category of the parameter
+     * @param defaultValue the default value
+     *
+     * @see AbstractParameter#AbstractParameter(String, ParameterCategory, Object)
      */
-    public UrlParameter(String key, String defaultUrlString)
+    public UrlParameter(String key, ParameterCategory category, URL defaultValue)
     {
-        super(key, ConfigurationConstants.HARVESTER_PARAM_ALLOWED_STATES, ConfigurationConstants.URL_VALID_VALUES_TEXT);
-        setValue(defaultUrlString, null);
+        super(key, category, defaultValue);
+    }
+
+
+    @Override
+    public UrlParameter copy()
+    {
+        try {
+            return new UrlParameter(key, category, value == null ? null : new URL(value.toString()));
+        } catch (MalformedURLException e) {
+            return new UrlParameter(key, category, null);
+        }
+    }
+
+
+    @Override
+    protected String getAllowedValues()
+    {
+        return ConfigurationConstants.URL_VALID_VALUES_TEXT;
     }
 
 

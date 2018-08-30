@@ -15,7 +15,6 @@
  */
 package de.gerdiproject.harvest.submission;
 
-import java.net.URL;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
@@ -28,8 +27,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import de.gerdiproject.harvest.IDocument;
-import de.gerdiproject.harvest.config.constants.ConfigurationConstants;
-import de.gerdiproject.harvest.config.events.GlobalParameterChangedEvent;
+import de.gerdiproject.harvest.config.Configuration;
+import de.gerdiproject.harvest.config.parameters.BooleanParameter;
+import de.gerdiproject.harvest.config.parameters.IntegerParameter;
+import de.gerdiproject.harvest.config.parameters.StringParameter;
+import de.gerdiproject.harvest.config.parameters.UrlParameter;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.event.IEventListener;
 import de.gerdiproject.harvest.harvester.events.HarvestFinishedEvent;
@@ -38,7 +40,6 @@ import de.gerdiproject.harvest.state.events.AbortingStartedEvent;
 import de.gerdiproject.harvest.state.events.StartAbortingEvent;
 import de.gerdiproject.harvest.submission.constants.SubmissionConstants;
 import de.gerdiproject.harvest.submission.events.DocumentsSubmittedEvent;
-import de.gerdiproject.harvest.submission.events.StartSubmissionEvent;
 import de.gerdiproject.harvest.submission.events.SubmissionFinishedEvent;
 import de.gerdiproject.harvest.submission.events.SubmissionStartedEvent;
 import de.gerdiproject.harvest.utils.CancelableFuture;
@@ -56,17 +57,42 @@ public abstract class AbstractSubmitter implements IEventListener
 {
     private CancelableFuture<Boolean> currentSubmissionProcess;
     private int failedDocumentCount;
-    private String userName;
-    private String password;
-    private boolean canSubmitOutdatedDocs;
-    private boolean canSubmitFailedDocs;
 
+    private final StringParameter userName;
+    private final StringParameter password;
+    private final BooleanParameter canSubmitOutdatedDocs;
+    private final BooleanParameter canSubmitFailedDocs;
+
+    /**
+     * The maximum number of bytes that are allowed to be submitted in each
+     * batch.
+     */
+    protected final IntegerParameter maxBatchSize;
+
+    /**
+     * The URL to which is submitted
+     */
+    protected final UrlParameter url;
+
+    /**
+     * If true, the harvest was aborted, or it failed
+     */
     protected boolean isHarvestIncomplete;
+
+    /**
+     * If true, the submission has completed successfully.
+     */
     protected boolean hasSubmittedAll;
+
+    /**
+     * The charset used to serialize the submitted documents.
+     */
     protected Charset charset;
 
+    /**
+     * The logger for possible errors.
+     */
     protected final Logger logger; // NOPMD - we want to retrieve the type of the inheriting class
-
 
     /**
      * A mapping between document IDs and documents that are to be submitted as
@@ -84,27 +110,11 @@ public abstract class AbstractSubmitter implements IEventListener
      */
     protected boolean isAborting;
 
-
     /**
      * The size of the current batch request in bytes.
      */
     private int currentBatchSize = 0;
 
-    /**
-     * The maximum number of bytes that are allowed to be submitted in each
-     * batch.
-     */
-    protected int maxBatchSize;
-
-    /**
-     * The optional authentication credentials for accessing the submission URL.
-     */
-    protected String credentials;
-
-    /**
-     * The URL to which is submitted
-     */
-    protected URL url;
 
     private HarvesterCacheManager cacheManager;
 
@@ -117,14 +127,19 @@ public abstract class AbstractSubmitter implements IEventListener
         logger = LoggerFactory.getLogger(getClass());
         batchMap = new HashMap<>();
         failedDocumentCount = 0;
+
+        url = Configuration.registerParameter(SubmissionConstants.URL_PARAM);
+        userName = Configuration.registerParameter(SubmissionConstants.USER_NAME_PARAM);
+        password = Configuration.registerParameter(SubmissionConstants.PASSWORD_PARAM);
+        canSubmitOutdatedDocs = Configuration.registerParameter(SubmissionConstants.SUBMIT_OUTDATED_PARAM);
+        canSubmitFailedDocs = Configuration.registerParameter(SubmissionConstants.SUBMIT_INCOMPLETE_PARAM);
+        maxBatchSize = Configuration.registerParameter(SubmissionConstants.MAX_BATCH_SIZE_PARAM);
     }
 
 
     @Override
     public void addEventListeners()
     {
-        EventSystem.addSynchronousListener(StartSubmissionEvent.class, this::onStartSubmission);
-        EventSystem.addListener(GlobalParameterChangedEvent.class, onGlobalParameterChanged);
         EventSystem.addListener(HarvestFinishedEvent.class, onHarvestFinished);
     }
 
@@ -132,8 +147,6 @@ public abstract class AbstractSubmitter implements IEventListener
     @Override
     public void removeEventListeners()
     {
-        EventSystem.removeSynchronousListener(StartSubmissionEvent.class);
-        EventSystem.removeListener(GlobalParameterChangedEvent.class, onGlobalParameterChanged);
         EventSystem.removeListener(HarvestFinishedEvent.class, onHarvestFinished);
     }
 
@@ -190,7 +203,7 @@ public abstract class AbstractSubmitter implements IEventListener
      * @throws IllegalStateException thrown when the submission cannot start due to
      * unfulfilled preconditions
      */
-    protected String submitAll() throws IllegalStateException
+    public String submitAll() throws IllegalStateException
     {
         final int numberOfDocuments = getNumberOfSubmittableChanges();
         failedDocumentCount = numberOfDocuments;
@@ -300,13 +313,13 @@ public abstract class AbstractSubmitter implements IEventListener
             int documentSize = getSizeOfDocument(documentId, document);
 
             // check if the document alone is bigger than the maximum allowed submission size
-            if (currentBatchSize == 0 && documentSize > maxBatchSize) {
+            if (currentBatchSize == 0 && documentSize > maxBatchSize.getValue()) {
                 logger.error(
                     String.format(
                         SubmissionConstants.DOCUMENT_TOO_LARGE,
                         documentId,
                         documentSize,
-                        maxBatchSize));
+                        maxBatchSize.getValue()));
 
                 // abort here, because we must skip this document
                 processedDocumentCount++;
@@ -315,7 +328,7 @@ public abstract class AbstractSubmitter implements IEventListener
             }
 
             // check if the batch size is reached and submit
-            if (currentBatchSize + documentSize > maxBatchSize) {
+            if (currentBatchSize + documentSize > maxBatchSize.getValue()) {
                 trySubmitBatch();
                 batchMap.clear();
                 currentBatchSize = 0;
@@ -369,18 +382,20 @@ public abstract class AbstractSubmitter implements IEventListener
      */
     protected String checkPreconditionErrors()
     {
-        if (url == null)
+        final String url = getUrl();
+
+        if (url == null || url.isEmpty())
             return SubmissionConstants.NO_URL_ERROR;
 
         if (getNumberOfSubmittableChanges() == 0)
             return SubmissionConstants.NO_DOCS_ERROR;
 
         // check if the cache was submitted already
-        if (!canSubmitOutdatedDocs && hasSubmittedAll)
+        if (!canSubmitOutdatedDocs.getValue() && hasSubmittedAll)
             return SubmissionConstants.OUTDATED_ERROR;
 
         // check if the harvest is incomplete
-        if (!canSubmitFailedDocs && isHarvestIncomplete)
+        if (!canSubmitFailedDocs.getValue() && isHarvestIncomplete)
             return SubmissionConstants.FAILED_HARVEST_ERROR;
 
 
@@ -484,68 +499,30 @@ public abstract class AbstractSubmitter implements IEventListener
 
 
     /**
-     * Changes the credentials that may be necessary to authenticate the submitter
+     * Retrieves the credentials that may be necessary to authenticate the submitter
      * with the URL.
      *
-     * @param userName the new user name used for authenticating the submitter
-     * @param password the new user password used for authenticating the submitter
+     * @return the credentials that may be necessary to authenticate the submitter
+     * with the URL
      */
-    protected void setCredentials(String userName, String password)
+    protected String getCredentials()
     {
-        this.userName = userName;
-        this.password = password;
 
-        if (userName == null || password == null || userName.isEmpty())
-            this.credentials = null;
+        if (userName.getValue() == null || password.getValue() == null || userName.getValue().isEmpty())
+            return null;
         else
-            this.credentials = Base64.getEncoder().encodeToString((userName + ":" + password).getBytes(StandardCharsets.UTF_8));
+            return Base64.getEncoder().encodeToString((userName.getValue() + ":" + password.getValue()).getBytes(StandardCharsets.UTF_8));
     }
 
 
     /**
-     * Changes the maximum allowed submission request size, used
-     * for dividing the submission into multiple submission requests.
+     * Returns the submission URL as a string.
      *
-     * @param maxBatchSize the new submission request size in bytes
+     * @return the submission URL as a string
      */
-    protected void setMaxBatchSize(int maxBatchSize)
+    protected String getUrl()
     {
-        this.maxBatchSize = maxBatchSize;
-    }
-
-
-    /**
-     * Changes the URL to which the documents are submitted.
-     *
-     * @param url the new URL to which documents are submitted
-     */
-    protected void setUrl(URL url)
-    {
-        this.url = url;
-    }
-
-
-    /**
-     * Changes the flag that determines if documents that have been submitted already
-     * can be submitted again.
-     *
-     * @param state the new value of the flag
-     */
-    protected void setSubmitOutdatedDocs(boolean state)
-    {
-        this.canSubmitOutdatedDocs = state;
-    }
-
-
-    /**
-     * Changes the flag that determines if documents that have been harvested incompletely
-     * due to a failed harvest can be submitted.
-     *
-     * @param state the new value of the flag
-     */
-    protected void setSubmitFailedDocs(boolean state)
-    {
-        this.canSubmitFailedDocs = state;
+        return url.getStringValue();
     }
 
 
@@ -556,11 +533,6 @@ public abstract class AbstractSubmitter implements IEventListener
      */
     public void setValues(AbstractSubmitter other)
     {
-        setMaxBatchSize(other.maxBatchSize);
-        setUrl(other.url);
-        setCredentials(other.userName, other.password);
-        setSubmitOutdatedDocs(other.canSubmitOutdatedDocs);
-        setSubmitFailedDocs(other.canSubmitFailedDocs);
         setCharset(other.charset);
         setHasSubmittedAll(other.hasSubmittedAll);
         setHarvestIncomplete(other.isHarvestIncomplete);
@@ -570,15 +542,6 @@ public abstract class AbstractSubmitter implements IEventListener
     //////////////////////////////
     // Event Callback Functions //
     //////////////////////////////
-
-    /**
-     * Event callback: When a submission starts, submit the cache file via the
-     * {@linkplain AbstractSubmitter}.
-     */
-    private String onStartSubmission(StartSubmissionEvent e)
-    {
-        return submitAll();
-    }
 
 
     /**
@@ -598,45 +561,5 @@ public abstract class AbstractSubmitter implements IEventListener
     private final Consumer<HarvestFinishedEvent> onHarvestFinished = (HarvestFinishedEvent e) -> {
         setHarvestIncomplete(!e.isSuccessful());
         setHasSubmittedAll(false);
-    };
-
-
-    /**
-     * Event listener for changing submission parameters.
-     *
-     * @param e the event that triggered the parameter change
-     */
-    private Consumer<GlobalParameterChangedEvent> onGlobalParameterChanged = (GlobalParameterChangedEvent e) -> {
-        final String parameterName = e.getParameter().getKey();
-        final Object newValue = e.getParameter().getValue();
-
-        switch (parameterName)
-        {
-            case ConfigurationConstants.SUBMISSION_SIZE:
-                setMaxBatchSize((Integer) newValue);
-                break;
-
-            case ConfigurationConstants.SUBMISSION_URL:
-                setUrl((URL) newValue);
-                break;
-
-            case ConfigurationConstants.SUBMISSION_USER_NAME:
-                setCredentials((String) newValue, password);
-                break;
-
-            case ConfigurationConstants.SUBMISSION_PASSWORD:
-                setCredentials(userName, (String) newValue);
-                break;
-
-            case ConfigurationConstants.SUBMIT_OUTDATED:
-                setSubmitOutdatedDocs((Boolean) newValue);
-                break;
-
-            case ConfigurationConstants.SUBMIT_INCOMPLETE:
-                setSubmitFailedDocs((Boolean) newValue);
-                break;
-
-            default: // ignore parameter
-        }
     };
 }

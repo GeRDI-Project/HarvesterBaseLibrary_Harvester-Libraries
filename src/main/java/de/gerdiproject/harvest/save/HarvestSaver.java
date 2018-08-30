@@ -91,12 +91,10 @@ public class HarvestSaver implements IEventListener
     /**
      * Event callback and main method for saving harvested documents to disk.
      *
-     * @param event the event that triggered the callback
-     *
      * @return a File that contains all documents and harvest metadata
      * @throws IOException thrown when there was an error saving the file
      */
-    private File saveHarvest(SaveHarvestEvent event) // NOPMD event listeners must have the event as paramete
+    private File saveHarvest()
     {
         int documentCount = cacheManager.getNumberOfHarvestedDocuments();
 

@@ -16,8 +16,6 @@
 package de.gerdiproject.harvest.submission.elasticsearch;
 
 
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.nio.charset.Charset;
 import java.rmi.ServerException;
 import java.util.List;
@@ -33,7 +31,7 @@ import de.gerdiproject.harvest.submission.elasticsearch.constants.ElasticSearchC
 import de.gerdiproject.harvest.submission.elasticsearch.json.ElasticSearchIndex;
 import de.gerdiproject.harvest.submission.elasticsearch.json.ElasticSearchIndexWrapper;
 import de.gerdiproject.harvest.submission.elasticsearch.json.ElasticSearchResponse;
-import de.gerdiproject.harvest.utils.data.HttpRequester;
+import de.gerdiproject.harvest.utils.data.WebDataRetriever;
 import de.gerdiproject.harvest.utils.data.enums.RestRequestType;
 
 
@@ -45,7 +43,7 @@ import de.gerdiproject.harvest.utils.data.enums.RestRequestType;
  */
 public class ElasticSearchSubmitter extends AbstractSubmitter
 {
-    private final HttpRequester httpRequester;
+    private final WebDataRetriever httpRequester;
     private final Gson gson;
 
 
@@ -56,7 +54,7 @@ public class ElasticSearchSubmitter extends AbstractSubmitter
     {
         super();
         this.gson = new Gson();
-        this.httpRequester = new HttpRequester(charset, gson);
+        this.httpRequester = new WebDataRetriever(gson, charset);
     }
 
 
@@ -83,9 +81,9 @@ public class ElasticSearchSubmitter extends AbstractSubmitter
         // send POST request to Elastic search
         String response = httpRequester.getRestResponse(
                               RestRequestType.POST,
-                              url.toString(),
+                              getUrl(),
                               batchRequestBuilder.toString(),
-                              credentials,
+                              getCredentials(),
                               MediaType.APPLICATION_JSON);
 
         // parse JSON response
@@ -174,10 +172,10 @@ public class ElasticSearchSubmitter extends AbstractSubmitter
 
 
     @Override
-    protected void setUrl(URL url)
+    protected String getUrl()
     {
-        if (url != null) {
-            String rawPath = url.getPath() + '/';
+        if (url.getValue() != null) {
+            String rawPath = url.getValue().getPath() + '/';
             String[] path = rawPath.substring(1).split("/");
             String bulkSubmitUrl = url.toString();
 
@@ -196,14 +194,10 @@ public class ElasticSearchSubmitter extends AbstractSubmitter
                 bulkSubmitUrl += ElasticSearchConstants.BULK_SUBMISSION_URL_SUFFIX;
             }
 
-            try {
-                // check if the URL is valid
-                this.url = new URL(bulkSubmitUrl);
-            } catch (MalformedURLException e) {
-                this.url = null;
-            }
-        } else
-            this.url = null;
+            return bulkSubmitUrl;
+        }
+
+        return null;
     }
 
 
@@ -215,13 +209,15 @@ public class ElasticSearchSubmitter extends AbstractSubmitter
 
 
     @Override
-    protected void setCredentials(String userName, String password)
+    protected String getCredentials()
     {
-        super.setCredentials(userName, password);
+        String credentials = super.getCredentials();
 
         // prepend Basic-Authorization keyword
-        if (this.credentials != null)
-            this.credentials = ElasticSearchConstants.BASIC_AUTH_PREFIX + credentials;
+        if (credentials != null)
+            return ElasticSearchConstants.BASIC_AUTH_PREFIX + credentials;
+
+        return null;
     }
 
 

@@ -24,14 +24,7 @@ import static org.junit.Assert.fail;
 import org.junit.Test;
 
 import de.gerdiproject.AbstractFileSystemUnitTest;
-import de.gerdiproject.harvest.config.constants.ConfigurationConstants;
-import de.gerdiproject.harvest.config.events.GlobalParameterChangedEvent;
-import de.gerdiproject.harvest.config.parameters.AbstractParameter;
-import de.gerdiproject.harvest.config.parameters.BooleanParameter;
-import de.gerdiproject.harvest.config.parameters.IntegerParameter;
-import de.gerdiproject.harvest.config.parameters.PasswordParameter;
-import de.gerdiproject.harvest.config.parameters.StringParameter;
-import de.gerdiproject.harvest.config.parameters.UrlParameter;
+import de.gerdiproject.harvest.config.Configuration;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.harvester.events.HarvestFinishedEvent;
 import de.gerdiproject.harvest.state.events.AbortingFinishedEvent;
@@ -74,6 +67,9 @@ public class AbstractSubmitterTest extends AbstractFileSystemUnitTest<AbstractSu
 
         ProcessTimeMeasure measure = new ProcessTimeMeasure();
         measure.set(startTimestamp, endTimestamp, ProcessStatus.Finished);
+
+        config = new Configuration();
+        config.addEventListeners();
 
         AbstractSubmitter mockedSubmitter = new MockedSubmitter();
 
@@ -191,7 +187,7 @@ public class AbstractSubmitterTest extends AbstractFileSystemUnitTest<AbstractSu
         SubmissionFinishedEvent finishedEvent = waitForEvent(
                                                     SubmissionFinishedEvent.class,
                                                     2000,
-                                                    () -> EventSystem.sendSynchronousEvent(new StartSubmissionEvent()));
+                                                    () -> testedObject.submitAll());
 
         assertNotNull(finishedEvent);
     }
@@ -212,8 +208,7 @@ public class AbstractSubmitterTest extends AbstractFileSystemUnitTest<AbstractSu
         waitForEvent(
             SubmissionFinishedEvent.class,
             2000,
-            () -> EventSystem.sendSynchronousEvent(new StartSubmissionEvent()));
-
+            () -> testedObject.submitAll());
 
         for (int i = 0; i < numberOfAddedDocs; i++)
             assert((MockedSubmitter) testedObject).getSubmittedIndices().contains(i);
@@ -237,7 +232,7 @@ public class AbstractSubmitterTest extends AbstractFileSystemUnitTest<AbstractSu
         waitForEvent(
             SubmissionFinishedEvent.class,
             2000,
-            () -> EventSystem.sendSynchronousEvent(new StartSubmissionEvent()));
+            () -> testedObject.submitAll());
 
         for (int i = 0; i < numberOfAddedDocs; i++)
             assert((MockedSubmitter) testedObject).getSubmittedIndices().contains(i);
@@ -255,7 +250,7 @@ public class AbstractSubmitterTest extends AbstractFileSystemUnitTest<AbstractSu
         addSubmittableDocuments(1);
 
         try {
-            EventSystem.sendSynchronousEvent(new StartSubmissionEvent());
+            testedObject.submitAll();
             fail(ERROR_ILLEGAL_STATE_EXPECTED);
         } catch (IllegalStateException e) {
             assertEquals(SubmissionConstants.NO_URL_ERROR, e.getMessage());
@@ -275,7 +270,7 @@ public class AbstractSubmitterTest extends AbstractFileSystemUnitTest<AbstractSu
         setBatchSize(1);
 
         try {
-            EventSystem.sendSynchronousEvent(new StartSubmissionEvent());
+            testedObject.submitAll();
             fail(ERROR_ILLEGAL_STATE_EXPECTED);
         } catch (IllegalStateException e) {
             assertEquals(SubmissionConstants.NO_DOCS_ERROR, e.getMessage());
@@ -298,7 +293,7 @@ public class AbstractSubmitterTest extends AbstractFileSystemUnitTest<AbstractSu
         EventSystem.sendEvent(new HarvestFinishedEvent(false, SOURCE_ID));
 
         try {
-            EventSystem.sendSynchronousEvent(new StartSubmissionEvent());
+            testedObject.submitAll();
             fail(ERROR_ILLEGAL_STATE_EXPECTED);
         } catch (IllegalStateException e) {
             assertEquals(SubmissionConstants.FAILED_HARVEST_ERROR, e.getMessage());
@@ -319,10 +314,7 @@ public class AbstractSubmitterTest extends AbstractFileSystemUnitTest<AbstractSu
         setBatchSize(1);
 
         // enable flag
-        AbstractParameter<?> param = new BooleanParameter(
-            ConfigurationConstants.SUBMIT_INCOMPLETE,
-            true);
-        EventSystem.sendEvent(new GlobalParameterChangedEvent(param, null));
+        config.setParameter(SubmissionConstants.SUBMIT_INCOMPLETE_PARAM.getCompositeKey(), Boolean.TRUE.toString());
 
         // mark the harvest as incomplete
         EventSystem.sendEvent(new HarvestFinishedEvent(false, SOURCE_ID));
@@ -330,7 +322,7 @@ public class AbstractSubmitterTest extends AbstractFileSystemUnitTest<AbstractSu
         SubmissionFinishedEvent finishedEvent = waitForEvent(
                                                     SubmissionFinishedEvent.class,
                                                     2000,
-                                                    () -> EventSystem.sendSynchronousEvent(new StartSubmissionEvent()));
+                                                    () -> testedObject.submitAll());
 
         assertNotNull(finishedEvent);
     }
@@ -352,11 +344,11 @@ public class AbstractSubmitterTest extends AbstractFileSystemUnitTest<AbstractSu
         waitForEvent(
             SubmissionFinishedEvent.class,
             2000,
-            () -> EventSystem.sendSynchronousEvent(new StartSubmissionEvent()));
+            () -> testedObject.submitAll());
 
         // try to submit again, expect mayhem (BOOOOOM!)
         try {
-            EventSystem.sendSynchronousEvent(new StartSubmissionEvent());
+            testedObject.submitAll();
             fail(ERROR_ILLEGAL_STATE_EXPECTED);
         } catch (IllegalStateException e) {
             assertEquals(SubmissionConstants.OUTDATED_ERROR, e.getMessage());
@@ -378,21 +370,18 @@ public class AbstractSubmitterTest extends AbstractFileSystemUnitTest<AbstractSu
         setBatchSize(1);
 
         // enable flag
-        AbstractParameter<?> param = new BooleanParameter(
-            ConfigurationConstants.SUBMIT_OUTDATED,
-            true);
-        EventSystem.sendEvent(new GlobalParameterChangedEvent(param, null));
+        config.setParameter(SubmissionConstants.SUBMIT_OUTDATED_PARAM.getCompositeKey(), Boolean.TRUE.toString());
 
         // finish submitting successfully
         waitForEvent(
             SubmissionFinishedEvent.class,
             2000,
-            () -> EventSystem.sendSynchronousEvent(new StartSubmissionEvent()));
+            () -> testedObject.submitAll());
 
         SubmissionFinishedEvent secondEvent = waitForEvent(
                                                   SubmissionFinishedEvent.class,
                                                   2000,
-                                                  () -> EventSystem.sendSynchronousEvent(new StartSubmissionEvent()));
+                                                  () -> testedObject.submitAll());
 
         assertNotNull(secondEvent);
     }
@@ -415,7 +404,7 @@ public class AbstractSubmitterTest extends AbstractFileSystemUnitTest<AbstractSu
         waitForEvent(
             SubmissionStartedEvent.class,
             2000,
-            () -> EventSystem.sendSynchronousEvent(new StartSubmissionEvent()));
+            () -> testedObject.submitAll());
 
 
         AbortingFinishedEvent abortingEvent = waitForEvent(
@@ -481,46 +470,34 @@ public class AbstractSubmitterTest extends AbstractFileSystemUnitTest<AbstractSu
      */
     private void setBatchSize(int size)
     {
-        AbstractParameter<?> param = new IntegerParameter(
-            ConfigurationConstants.SUBMISSION_SIZE,
-            size);
-        EventSystem.sendEvent(new GlobalParameterChangedEvent(param, null));
+        final String key = SubmissionConstants.MAX_BATCH_SIZE_PARAM.getCompositeKey();
+        config.setParameter(key, String.valueOf(size));
     }
 
 
     private String setRandomUserName()
     {
+        final String key = SubmissionConstants.USER_NAME_PARAM.getCompositeKey();
         final String userName = TEST_USER_NAME + random.nextInt(1000);
-        AbstractParameter<?> param = new StringParameter(
-            ConfigurationConstants.SUBMISSION_USER_NAME,
-            userName);
-
-        EventSystem.sendEvent(new GlobalParameterChangedEvent(param, null));
-
+        config.setParameter(key, userName);
         return userName;
     }
 
+
     private String setRandomPassword()
     {
+        final String key = SubmissionConstants.PASSWORD_PARAM.getCompositeKey();
         final String password = TEST_PASSWORD + random.nextInt(1000);
-        AbstractParameter<?> param = new PasswordParameter(
-            ConfigurationConstants.SUBMISSION_PASSWORD,
-            password);
-
-        EventSystem.sendEvent(new GlobalParameterChangedEvent(param, null));
-
+        config.setParameter(key, password);
         return password;
     }
 
+
     private String setRandomUrl()
     {
+        final String key = SubmissionConstants.URL_PARAM.getCompositeKey();
         final String url = TEST_URL + random.nextInt(1000);
-        AbstractParameter<?> param = new UrlParameter(
-            ConfigurationConstants.SUBMISSION_URL,
-            url);
-
-        EventSystem.sendEvent(new GlobalParameterChangedEvent(param, null));
-
+        config.setParameter(key, url);
         return url;
     }
 }

@@ -16,13 +16,20 @@
 package de.gerdiproject.harvest.utils.data;
 
 import java.io.BufferedReader;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.lang.reflect.Type;
+import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.Charset;
+import java.util.List;
+import java.util.Map;
+
+import javax.ws.rs.core.HttpHeaders;
+import javax.xml.ws.http.HTTPException;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -34,6 +41,7 @@ import com.google.gson.JsonIOException;
 import com.google.gson.JsonSyntaxException;
 
 import de.gerdiproject.harvest.utils.data.constants.DataOperationConstants;
+import de.gerdiproject.harvest.utils.data.enums.RestRequestType;
 
 /**
  * This class provides methods for reading files from the web.
@@ -44,7 +52,7 @@ public class WebDataRetriever implements IDataRetriever
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(WebDataRetriever.class);
     private final Gson gson;
-    private final Charset charset;
+    private Charset charset;
 
 
     /**
@@ -157,6 +165,164 @@ public class WebDataRetriever implements IDataRetriever
 
         return htmlResponse;
     }
+
+
+    @Override
+    public void setCharset(Charset charset)
+    {
+        this.charset = charset;
+    }
+
+
+    /**
+     * Sends an authorized REST request with a specified body and returns the
+     * response as a string.
+     *
+     * @param method the request method that is being sent
+     * @param url the URL to which the request is being sent
+     * @param body the body of the request
+     * @param authorization the base-64-encoded username and password, or null if no
+     *                       authorization is required
+     * @param contentType the contentType of the body
+     *
+     * @throws HTTPException thrown if the response code is not 2xx
+     * @throws IOException thrown if the response output stream could not be created
+     *
+     * @return the HTTP response as plain text
+     */
+    public String getRestResponse(RestRequestType method, String url, String body, String authorization, String contentType) throws HTTPException, IOException
+    {
+        try {
+            HttpURLConnection connection = sendRestRequest(method, url, body, authorization, contentType);
+
+            // create a reader for the HTTP response
+            InputStream response = connection.getInputStream();
+            BufferedReader reader = new BufferedReader(new InputStreamReader(response, charset));
+
+            // read the first line of the response
+            String line = reader.readLine();
+            String responseText = null;
+
+            // make sure we got a response
+            if (line != null) {
+                StringBuilder responseBuilder = new StringBuilder(line);
+
+                // read subsequent lines of the response
+                line = reader.readLine();
+
+                while (line != null) {
+                    // add linebreak before appending the next line
+                    responseBuilder.append('\n').append(line);
+                    line = reader.readLine();
+                }
+
+                responseText = responseBuilder.toString();
+            }
+
+            // close the response reader
+            reader.close();
+
+            // combine the read lines to a single string
+            return responseText;
+        } catch (IOException e) {
+
+
+            throw e;
+        }
+    }
+
+
+    /**
+     * Sends an authorized REST request with a specified body and returns the
+     * header fields.
+     *
+     * @param method the request method that is being sent
+     * @param url the URL to which the request is being sent
+     * @param body the body of the request
+     * @param authorization the base-64-encoded username and password, or null if no
+     *                       authorization is required
+     * @param contentType the contentType of the body
+     *
+     * @throws HTTPException thrown if the response code is not 2xx
+     * @throws IOException thrown if the response output stream could not be created
+     *
+     * @return the response header fields, or null if the response could not be parsed
+     */
+    public Map<String, List<String>> getRestHeader(RestRequestType method, String url, String body,
+                                                   String authorization, String contentType) throws HTTPException, IOException
+    {
+        Map<String, List<String>> headerFields = null;
+
+        HttpURLConnection connection = sendRestRequest(method, url, body, authorization, contentType);
+        headerFields = connection.getHeaderFields();
+
+        return headerFields;
+    }
+
+
+    /**
+     * Sends a REST request with a specified body and returns the connection.
+     *
+     * @param method the request method that is being sent
+     * @param url the URL to which the request is being sent
+     * @param body the body of the request
+     * @param authorization the base-64-encoded username and password, or null if no
+     *                           authorization is required
+     * @param contentType the contentType of the body
+     *
+     * @throws HTTPException thrown if the response code is not 2xx
+     * @throws IOException thrown if the response output stream could not be created
+     *
+     * @return the connection to the host
+     */
+    private HttpURLConnection sendRestRequest(RestRequestType method, String url, String body, String authorization, String contentType)
+    throws IOException, HTTPException
+    {
+        // generate a URL and open a connection
+        HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
+
+        // set request properties
+        connection.setDoOutput(true);
+        connection.setInstanceFollowRedirects(false);
+        connection.setUseCaches(false);
+        connection.setRequestMethod(method.toString());
+        connection.setRequestProperty(HttpHeaders.CONTENT_TYPE, contentType);
+        connection.setRequestProperty(DataOperationConstants.REQUEST_PROPERTY_CHARSET, charset.displayName());
+
+        // set authentication
+        if (authorization != null)
+            connection.setRequestProperty(HttpHeaders.AUTHORIZATION, authorization);
+
+        // only send date if it is specified
+        if (body != null) {
+            // convert body string to bytes
+            byte[] bodyBytes = body.getBytes(charset);
+            connection.setRequestProperty(HttpHeaders.CONTENT_LENGTH, Integer.toString(bodyBytes.length));
+
+            // try to send body
+            DataOutputStream wr = new DataOutputStream(connection.getOutputStream());
+            wr.write(bodyBytes);
+            wr.close();
+        }
+
+        // check if we got an erroneous response
+        int responseCode = connection.getResponseCode();
+
+        if (responseCode < 200 || responseCode >= 300) {
+            LOGGER.info(String.format(
+                            DataOperationConstants.WEB_ERROR_REST_HTTP,
+                            method.toString(),
+                            url,
+                            body,
+                            responseCode
+                        ));
+
+            throw new HTTPException(connection.getResponseCode());
+        }
+
+        return connection;
+    }
+
 
     /**
      * Creates an input stream reader of a specified URL.

@@ -15,7 +15,18 @@
  */
 package de.gerdiproject.harvest.submission.constants;
 
-import de.gerdiproject.harvest.config.constants.ConfigurationConstants;
+import java.util.Arrays;
+
+import de.gerdiproject.harvest.config.parameters.BooleanParameter;
+import de.gerdiproject.harvest.config.parameters.IntegerParameter;
+import de.gerdiproject.harvest.config.parameters.ParameterCategory;
+import de.gerdiproject.harvest.config.parameters.StringParameter;
+import de.gerdiproject.harvest.config.parameters.SubmitterParameter;
+import de.gerdiproject.harvest.config.parameters.UrlParameter;
+import de.gerdiproject.harvest.state.impl.ErrorState;
+import de.gerdiproject.harvest.state.impl.HarvestingState;
+import de.gerdiproject.harvest.state.impl.IdleState;
+import de.gerdiproject.harvest.state.impl.InitializationState;
 
 /**
  * This static class is a collection of constants that relate to the submission
@@ -32,6 +43,53 @@ public class SubmissionConstants
     public static final String SUBMISSION_INTERRUPTED = "Submission interrupted unexpectedly!";
 
 
+    public static final ParameterCategory PARAMETER_CATEGORY = new ParameterCategory(
+        "Submission",
+        Arrays.asList(
+            InitializationState.class,
+            ErrorState.class,
+            IdleState.class,
+            HarvestingState.class));
+
+    public static final UrlParameter URL_PARAM =
+        new UrlParameter(
+        "url",
+        PARAMETER_CATEGORY);
+
+    public static final StringParameter USER_NAME_PARAM =
+        new StringParameter(
+        "userName",
+        PARAMETER_CATEGORY);
+
+    public static final StringParameter PASSWORD_PARAM =
+        new StringParameter(
+        "password",
+        PARAMETER_CATEGORY);
+
+    public static final BooleanParameter SUBMIT_OUTDATED_PARAM =
+        new BooleanParameter(
+        "submitOutdated",
+        PARAMETER_CATEGORY,
+        false);
+
+    public static final BooleanParameter SUBMIT_INCOMPLETE_PARAM =
+        new BooleanParameter(
+        "submitIncomplete",
+        PARAMETER_CATEGORY,
+        false);
+
+    public static final IntegerParameter MAX_BATCH_SIZE_PARAM =
+        new IntegerParameter(
+        "size",
+        PARAMETER_CATEGORY,
+        1048576);
+
+    public static final SubmitterParameter SUBMITTER_TYPE_PARAM =
+        new SubmitterParameter(
+        "type",
+        PARAMETER_CATEGORY);
+
+
     public static final String SUBMIT_PARTIAL_OK = " Submitted documents %d to %d.";
     public static final String SUBMIT_PARTIAL_FAILED = "Error submitting documents %s to %s.";
     public static final String UNKNOWN_DOCUMENT_COUNT = "???";
@@ -45,12 +103,12 @@ public class SubmissionConstants
     public static final String OUTDATED_ERROR =
         "Cannot submit documents: There are no changes since the last submission!\n"
         + "If you want to submit anyway, set the '"
-        + ConfigurationConstants.SUBMIT_OUTDATED
+        + SUBMIT_OUTDATED_PARAM.getCompositeKey()
         + "'-flag in the configuration.";
     public static final String FAILED_HARVEST_ERROR =
         "Cannot submit documents: The harvest was not completed successfully!\n"
         + "If you want to submit anyway, set the '"
-        + ConfigurationConstants.SUBMIT_INCOMPLETE
+        + SUBMIT_INCOMPLETE_PARAM.getCompositeKey()
         + "'-flag in the configuration.";
 
 

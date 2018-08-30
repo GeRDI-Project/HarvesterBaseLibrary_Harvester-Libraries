@@ -149,7 +149,7 @@ public class IdleState implements IState
         } catch (IllegalStateException iex) {
             return ServerResponseFactory.createBadRequestResponse(iex.getMessage());
         } catch (UncheckedIOException uex) {
-            return ServerResponseFactory.createKnownErrorResponse((uex.getMessage()));
+            return ServerResponseFactory.createKnownErrorResponse(uex.getMessage());
         }
 
         return ServerResponseFactory.createServerErrorResponse();

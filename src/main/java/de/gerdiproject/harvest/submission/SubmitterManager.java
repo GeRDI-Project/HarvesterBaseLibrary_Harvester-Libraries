@@ -19,13 +19,14 @@ package de.gerdiproject.harvest.submission;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Consumer;
 
-import de.gerdiproject.harvest.config.constants.ConfigurationConstants;
-import de.gerdiproject.harvest.config.events.GlobalParameterChangedEvent;
+import de.gerdiproject.harvest.config.Configuration;
+import de.gerdiproject.harvest.config.parameters.SubmitterParameter;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.event.IEventListener;
+import de.gerdiproject.harvest.submission.constants.SubmissionConstants;
 import de.gerdiproject.harvest.submission.events.GetSubmitterIdsEvent;
+import de.gerdiproject.harvest.submission.events.StartSubmissionEvent;
 
 /**
  * This class maps submitter names to {@linkplain AbstractSubmitter}s at runtime.
@@ -36,7 +37,7 @@ import de.gerdiproject.harvest.submission.events.GetSubmitterIdsEvent;
 public class SubmitterManager implements IEventListener
 {
     private Map<String, AbstractSubmitter> submitterMap;
-    private AbstractSubmitter activeSubmitter;
+    private SubmitterParameter activeSubmitter;
 
 
     /**
@@ -45,7 +46,7 @@ public class SubmitterManager implements IEventListener
     public SubmitterManager()
     {
         this.submitterMap = new HashMap<>();
-        this.activeSubmitter = null;
+        this.activeSubmitter = Configuration.registerParameter(SubmissionConstants.SUBMITTER_TYPE_PARAM);
     }
 
 
@@ -62,16 +63,15 @@ public class SubmitterManager implements IEventListener
     @Override
     public void addEventListeners()
     {
-        EventSystem.addListener(GlobalParameterChangedEvent.class, onGlobalParameterChanged);
+        EventSystem.addSynchronousListener(StartSubmissionEvent.class, this::onStartSubmission);
         EventSystem.addSynchronousListener(GetSubmitterIdsEvent.class, this::getSubmitterIDs);
-
     }
 
 
     @Override
     public void removeEventListeners()
     {
-        EventSystem.removeListener(GlobalParameterChangedEvent.class, onGlobalParameterChanged);
+        EventSystem.removeSynchronousListener(StartSubmissionEvent.class);
         EventSystem.removeSynchronousListener(GetSubmitterIdsEvent.class);
     }
 
@@ -81,30 +81,9 @@ public class SubmitterManager implements IEventListener
      *
      * @return a set of registered submitter identifiers
      */
-    private Set<String> getSubmitterIDs(GetSubmitterIdsEvent event) // NOPMD event callbacks always need their argument
+    private Set<String> getSubmitterIDs()
     {
         return submitterMap.keySet();
-    }
-
-
-    /**
-     * Changes the currently active submitter.
-     *
-     * @param submitterId the identifier of the new active submitter
-     */
-    private void setActiveSubmitter(String submitterId)
-    {
-        if (submitterMap.containsKey(submitterId) && (activeSubmitter == null || !submitterId.equals(activeSubmitter.getId()))) {
-            final AbstractSubmitter oldSubmitter = activeSubmitter;
-            activeSubmitter = submitterMap.get(submitterId);
-
-            if (oldSubmitter != null) {
-                oldSubmitter.removeEventListeners();
-                activeSubmitter.setValues(oldSubmitter);
-            }
-
-            activeSubmitter.addEventListeners();
-        }
     }
 
 
@@ -113,14 +92,11 @@ public class SubmitterManager implements IEventListener
     //////////////////////////////
 
     /**
-     * Event callback for changing global parameter names.
+     * Event callback: When a submission starts, submit the cache file via the
+     * {@linkplain AbstractSubmitter}.
      */
-    private Consumer<GlobalParameterChangedEvent> onGlobalParameterChanged = (GlobalParameterChangedEvent event) -> {
-        final String key = event.getParameter().getKey();
-
-        // check if the correct parameter was set
-        if (key.equals(ConfigurationConstants.SUBMITTER_TYPE))
-            setActiveSubmitter(event.getParameter().getStringValue());
-    };
-
+    private String onStartSubmission()
+    {
+        return submitterMap.get(activeSubmitter.getValue()).submitAll();
+    }
 }

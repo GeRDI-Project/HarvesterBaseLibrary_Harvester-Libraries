@@ -16,6 +16,7 @@
 package de.gerdiproject.harvest.utils.data;
 
 import java.lang.reflect.Type;
+import java.nio.charset.Charset;
 
 import org.jsoup.nodes.Document;
 
@@ -70,4 +71,11 @@ public interface IDataRetriever
      * @return a HTML document, or null if the file could not be parsed
      */
     Document getHtml(String path);
+
+    /**
+     * Changes the charset used for (de-)serializing requests.
+     *
+     * @param charset the new charset
+     */
+    void setCharset(Charset charset);
 }

@@ -18,7 +18,6 @@ package de.gerdiproject.harvest.application;
 
 import java.nio.charset.Charset;
 import java.util.List;
-import java.util.function.Function;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,7 +25,6 @@ import org.slf4j.LoggerFactory;
 import de.gerdiproject.harvest.application.constants.ApplicationConstants;
 import de.gerdiproject.harvest.config.Configuration;
 import de.gerdiproject.harvest.config.constants.ConfigurationConstants;
-import de.gerdiproject.harvest.config.parameters.AbstractParameter;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.event.IEventListener;
 import de.gerdiproject.harvest.harvester.AbstractHarvester;
@@ -76,9 +74,6 @@ public class MainContext implements IEventListener
     private final SubmitterManager submitterManager;
     private final Scheduler scheduler;
     private final MavenUtils mavenUtils;
-    private final Function<GetMainLogEvent, HarvesterLog> onGetMainLog;
-    private final Function<GetMavenUtilsEvent, MavenUtils> onGetMavenUtils;
-    private final Function<GetNumberOfHarvestedDocumentsEvent, Integer> onGetNumberOfHarvestedDocuments;
 
 
     /**
@@ -87,8 +82,6 @@ public class MainContext implements IEventListener
      * @param <T> an AbstractHarvester subclass
      * @param moduleName name of this application
      * @param harvesterClass an AbstractHarvester subclass
-     * @param harvesterParams additional parameters, specific to the harvester,
-     *            or null
      * @param submitterClasses a list of classes responsible for submitting documents to a
      *            search index
      * @throws IllegalAccessException can be thrown when the harvester class cannot be instantiated
@@ -98,14 +91,18 @@ public class MainContext implements IEventListener
      */
     private <T extends AbstractHarvester> MainContext(String moduleName,
                                                       Class<T> harvesterClass,
-                                                      List<AbstractParameter<?>> harvesterParams,
                                                       List<Class<? extends AbstractSubmitter>> submitterClasses) throws InstantiationException, IllegalAccessException
     {
         this.moduleName = moduleName;
 
         this.log = new HarvesterLog(String.format(LoggerConstants.LOG_FILE_PATH, moduleName));
         log.registerLogger();
-        this.onGetMainLog = (GetMainLogEvent event) -> {return log;};
+
+        // initialize the configuration
+        this.configuration = new Configuration();
+        configuration.setCacheFilePath(String.format(ConfigurationConstants.CONFIG_PATH, moduleName));
+        configuration.loadFromDisk();
+        configuration.addEventListeners();
 
         final String timeKeeperCachePath =
             String.format(
@@ -116,21 +113,13 @@ public class MainContext implements IEventListener
         timeKeeper.loadFromDisk();
 
         this.mavenUtils = new MavenUtils(harvesterClass);
-        this.onGetMavenUtils = (GetMavenUtilsEvent event) -> mavenUtils;
 
         this.cacheManager = new HarvesterCacheManager();
         this.cacheManager.addEventListeners();
-        this.onGetNumberOfHarvestedDocuments = (GetNumberOfHarvestedDocumentsEvent event) -> cacheManager.getNumberOfHarvestedDocuments();
-
-        // initialize the configuration
-        this.configuration = new Configuration(harvesterParams);
-        configuration.setCacheFilePath(String.format(ConfigurationConstants.CONFIG_PATH, moduleName));
-        configuration.loadFromEnvironmentVariables(moduleName);
-        configuration.loadFromDisk();
 
         // initialize the harvester
         this.harvester = harvesterClass.newInstance();
-        harvester.init(true, moduleName, configuration.getHarvesterParameters());
+        harvester.init(true, moduleName);
         harvester.update();
         harvester.addEventListeners();
 
@@ -144,8 +133,6 @@ public class MainContext implements IEventListener
         final String schedulerCachePath = String.format(SchedulerConstants.CACHE_PATH, moduleName);
         this.scheduler = new Scheduler(schedulerCachePath);
         scheduler.loadFromDisk();
-
-        configuration.updateAllParameters();
     }
 
 
@@ -155,15 +142,12 @@ public class MainContext implements IEventListener
      * @param <T> an AbstractHarvester subclass
      * @param moduleName name of this application
      * @param harvesterClass an AbstractHarvester subclass
-     * @param harvesterParams additional parameters, specific to the harvester,
-     *            or null
      * @param submitterClasses a list of viable classes responsible for submitting documents to a
      *            search index
      *
      * @see de.gerdiproject.harvest.harvester.AbstractHarvester
      */
     public static <T extends AbstractHarvester> void init(String moduleName, Class<T> harvesterClass,
-                                                          List<AbstractParameter<?>> harvesterParams,
                                                           List<Class<? extends AbstractSubmitter>> submitterClasses)
     {
         LOGGER.info(ApplicationConstants.INIT_HARVESTER_START);
@@ -174,7 +158,7 @@ public class MainContext implements IEventListener
             if (instance != null)
                 instance.clear();
 
-            instance = new MainContext(moduleName, harvesterClass, harvesterParams, submitterClasses);
+            instance = new MainContext(moduleName, harvesterClass, submitterClasses);
             return true;
         });
 
@@ -197,9 +181,9 @@ public class MainContext implements IEventListener
     @Override
     public void addEventListeners()
     {
-        EventSystem.addSynchronousListener(GetMainLogEvent.class, onGetMainLog);
-        EventSystem.addSynchronousListener(GetMavenUtilsEvent.class, onGetMavenUtils);
-        EventSystem.addSynchronousListener(GetNumberOfHarvestedDocumentsEvent.class, onGetNumberOfHarvestedDocuments);
+        EventSystem.addSynchronousListener(GetMainLogEvent.class, this::getMainLog);
+        EventSystem.addSynchronousListener(GetMavenUtilsEvent.class, this::getMavenUtils);
+        EventSystem.addSynchronousListener(GetNumberOfHarvestedDocumentsEvent.class, this::getNumberOfHarvestedDocuments);
         saver.addEventListeners();
         timeKeeper.addEventListeners();
         scheduler.addEventListeners();
@@ -211,9 +195,46 @@ public class MainContext implements IEventListener
     {
         EventSystem.removeSynchronousListener(GetMainLogEvent.class);
         EventSystem.removeSynchronousListener(GetMavenUtilsEvent.class);
+        EventSystem.removeSynchronousListener(GetNumberOfHarvestedDocumentsEvent.class);
         saver.removeEventListeners();
         timeKeeper.removeEventListeners();
         scheduler.removeEventListeners();
+    }
+
+
+    /**
+     * Synchronous Callback function:<br>
+     * Returns the number of harvested, cached documents.
+     *
+     * @return the number of harvested, cached documents
+     */
+    private int getNumberOfHarvestedDocuments()
+    {
+        return cacheManager.getNumberOfHarvestedDocuments();
+    }
+
+
+    /**
+     * Synchronous Callback function:<br>
+     * Returns the main log of the service.
+     *
+     * @return the main log of the service
+     */
+    private HarvesterLog getMainLog()
+    {
+        return log;
+    }
+
+
+    /**
+     * Synchronous Callback function:<br>
+     * Returns Maven utilities.
+     *
+     * @return Maven utilities
+     */
+    private MavenUtils getMavenUtils()
+    {
+        return mavenUtils;
     }
 
 
@@ -295,6 +316,7 @@ public class MainContext implements IEventListener
                 newSubmitter.setCacheManager(harvesterCacheManager);
                 newSubmitter.setHarvestIncomplete(keeper.isHarvestIncomplete());
                 newSubmitter.setHasSubmittedAll(keeper.getSubmissionMeasure().getStatus() == ProcessStatus.Finished);
+                newSubmitter.addEventListeners();
                 manager.registerSubmitter(newSubmitter);
             } catch (InstantiationException | IllegalAccessException ex) {
                 LOGGER.error(String.format(SubmissionConstants.REGISTER_ERROR, submitterClass.getName()), ex);

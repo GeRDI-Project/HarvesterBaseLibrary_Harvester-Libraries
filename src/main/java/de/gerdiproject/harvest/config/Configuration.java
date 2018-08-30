@@ -17,27 +17,23 @@ package de.gerdiproject.harvest.config;
 
 
 import java.nio.charset.StandardCharsets;
-import java.util.Collections;
+import java.util.Collection;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.TreeMap;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.google.gson.JsonParseException;
 
-import de.gerdiproject.harvest.application.constants.ApplicationConstants;
 import de.gerdiproject.harvest.config.adapter.ConfigurationAdapter;
 import de.gerdiproject.harvest.config.constants.ConfigurationConstants;
-import de.gerdiproject.harvest.config.events.GlobalParameterChangedEvent;
-import de.gerdiproject.harvest.config.events.HarvesterParameterChangedEvent;
+import de.gerdiproject.harvest.config.events.RegisterParameterEvent;
 import de.gerdiproject.harvest.config.parameters.AbstractParameter;
-import de.gerdiproject.harvest.config.parameters.ParameterFactory;
 import de.gerdiproject.harvest.event.EventSystem;
+import de.gerdiproject.harvest.event.IEventListener;
 import de.gerdiproject.harvest.state.StateMachine;
 import de.gerdiproject.harvest.utils.cache.ICachedObject;
 import de.gerdiproject.harvest.utils.data.DiskIO;
@@ -46,37 +42,32 @@ import de.gerdiproject.harvest.utils.data.DiskIO;
 
 /**
  * This class manages all application {@linkplain AbstractParameter}s.
+ * It can be (de-) serialized to JSON format, saving all parameters that were registered.
  *
  * @author Robin Weiss
  */
-public class Configuration implements ICachedObject
+public class Configuration implements ICachedObject, IEventListener
 {
     private static final Gson GSON = new GsonBuilder().registerTypeAdapter(Configuration.class, new ConfigurationAdapter()).create();
     private static final Logger LOGGER = LoggerFactory.getLogger(Configuration.class);
 
-    private final transient String globalParameterFormat;
-    private final transient String harvesterParameterFormat;
     private final transient DiskIO diskIo;
     private transient String cacheFilePath;
 
-    private final Map<String, AbstractParameter<?>> globalParameters;
-    private final Map<String, AbstractParameter<?>> harvesterParameters;
+    private final Map<String, AbstractParameter<?>> parameterMap;
 
 
     /**
-     * This constructor is used by the JSON deserialization (see {@linkplain ConfigurationAdapter}.
-     * It does not call parameter update events.
+     * Constructor that requires a list of parameters.
      *
-     * @param globalParameters a map of global parameters
-     * @param harvesterParameters a map of harvester specific parameters
+     * @param parameters a list parameters
      */
-    public Configuration(Map<String, AbstractParameter<?>> globalParameters, Map<String, AbstractParameter<?>> harvesterParameters)
+    public Configuration(AbstractParameter<?>... parameters)
     {
-        this.globalParameters = globalParameters != null ? globalParameters : new HashMap<>();
-        this.harvesterParameters = harvesterParameters != null ? harvesterParameters : new HashMap<>();
+        this.parameterMap = new TreeMap<>();
 
-        this.globalParameterFormat = getPaddedKeyFormat(this.globalParameters);
-        this.harvesterParameterFormat = getPaddedKeyFormat(this.harvesterParameters);
+        for (AbstractParameter<?> param : parameters)
+            parameterMap.put(param.getCompositeKey(), param);
 
         this.diskIo = new DiskIO(GSON, StandardCharsets.UTF_8);
         this.cacheFilePath = null;
@@ -84,39 +75,53 @@ public class Configuration implements ICachedObject
 
 
     /**
-     * Constructor that requires a map of harvester specific parameters.
+     * Convenience function for registering a parameter at the configuration.
      *
-     * @param harvesterParams a list of harvester specific parameters
+     * @param parameter the parameter to be registered
+     * @param <T> the class of the parameter that is to be registered
+     *
+     * @return the registered parameter as it appears in the configuration
      */
-    public Configuration(List<AbstractParameter<?>> harvesterParams)
+    @SuppressWarnings("unchecked")  // the cast will succeed, because the value type is the one that is registered
+    public static <T extends AbstractParameter<?>> T registerParameter(T parameter)
     {
-        this(
-            ParameterFactory.createDefaultParameters(),
-            ParameterFactory.createHarvesterParameters(harvesterParams)
-        );
+        return (T) EventSystem.sendSynchronousEvent(new RegisterParameterEvent(parameter));
+    }
+
+
+    @Override
+    public void addEventListeners()
+    {
+        EventSystem.addSynchronousListener(RegisterParameterEvent.class, this::onRegisterParameter);
+    }
+
+
+    @Override
+    public void removeEventListeners()
+    {
+        EventSystem.removeSynchronousListener(RegisterParameterEvent.class);
     }
 
 
     /**
-     * Finds the length of the longest string key of a map and returns
+     * Finds the length of the longest string key of parameters and returns
      * a formatting String that can be used to display key value pairs
      * of the map in a pretty format.
      *
-     * @param map the map of which the key lengths are compared
-     *
      * @return the length of the longest string key in the map
      */
-    private String getPaddedKeyFormat(Map<String, ?> map)
+    private String getPaddedKeyFormat()
     {
-        final AtomicInteger maxLength = new AtomicInteger(0);
+        int maxLength = 0;
 
-        map.forEach((String key, Object value) -> {
-            int keyLength = key.length();
+        for (AbstractParameter<?> param : parameterMap.values()) {
+            int keyLength = param.getKey().length();
 
-            if (keyLength > maxLength.get())
-                maxLength.set(keyLength);
-        });
-        return String.format(ConfigurationConstants.BASIC_PARAMETER_FORMAT, maxLength.get());
+            if (keyLength > maxLength)
+                maxLength = keyLength;
+        }
+
+        return String.format(ConfigurationConstants.BASIC_PARAMETER_FORMAT, maxLength);
     }
 
 
@@ -129,21 +134,17 @@ public class Configuration implements ICachedObject
      */
     public String getInfoString(String moduleName)
     {
-        String parameters = this.toString();
-        String globalParamKeys = globalParameters.keySet().toString();
+        final StringBuilder validValues = new StringBuilder();
 
-        // remove brackets of the string representation
-        globalParamKeys = globalParamKeys.substring(1, globalParamKeys.length() - 1);
+        for (String compositeKey : parameterMap.keySet()) {
+            if (validValues.length() != 0)
+                validValues.append(", ");
 
-        String harvesterParamKeys = harvesterParameters.keySet().toString();
-
-        // remove brackets of the string representation
-        harvesterParamKeys = harvesterParamKeys.substring(1, harvesterParamKeys.length() - 1);
-
-        String validValues = harvesterParamKeys + ", " + globalParamKeys;
+            validValues.append(compositeKey);
+        }
 
         // return assembled string
-        return String.format(ConfigurationConstants.REST_INFO, moduleName, parameters, validValues);
+        return String.format(ConfigurationConstants.REST_INFO, moduleName, this.toString(), validValues.toString());
     }
 
 
@@ -186,112 +187,64 @@ public class Configuration implements ICachedObject
         }
 
         // read JSON from disk
-        final Configuration configJson = diskIo.getObject(cacheFilePath, Configuration.class);
+        final Configuration loadedConfig = diskIo.getObject(cacheFilePath, Configuration.class);
 
-        if (configJson == null) {
+        if (loadedConfig == null) {
             LOGGER.error(String.format(ConfigurationConstants.LOAD_FAILED, cacheFilePath, ConfigurationConstants.NO_EXISTS));
             return;
         }
 
-        try {
-            // copy harvester parameters
-            harvesterParameters.forEach((String key, AbstractParameter<?> param) -> {
-                AbstractParameter<?> externalParam = configJson.harvesterParameters.get(key);
+        this.parameterMap.clear();
+        this.parameterMap.putAll(loadedConfig.parameterMap);
 
-                if (externalParam != null)
-                {
-                    String value = externalParam.getValue()
-                    == null ? null : externalParam.getValue().toString();
-                    param.setValue(value, null);
-                }
-            });
-
-            // copy global parameters
-            globalParameters.forEach((String key, AbstractParameter<?> param) -> {
-                AbstractParameter<?> externalParam = configJson.globalParameters.get(key);
-
-                if (externalParam != null)
-                {
-                    String value = externalParam.getValue()
-                    == null ? null : externalParam.getValue().toString();
-                    param.setValue(value, null);
-                }
-            });
-
-            LOGGER.info(String.format(ConfigurationConstants.LOAD_OK, cacheFilePath));
-
-        } catch (JsonParseException e) {
-            LOGGER.error(String.format(ConfigurationConstants.LOAD_FAILED, cacheFilePath, e.toString()));
-        }
+        LOGGER.info(String.format(ConfigurationConstants.LOAD_OK, cacheFilePath));
     }
 
 
     /**
-     * Attempts to load configuration parameters from environment variables.
+     * Synchronous Event callback:<br>
+     * Registers a parameter in the configuration. If a parameter with the same key already exists
+     * in the configuration, the value will not be overwritten. A newly registered parameter
+     * checks if it is defined via environment variables, and will retrieve a value from there.
      *
-     * @param moduleName the name of this harvester service
+     * @param event the event that triggered the callback
+     * @return the registered parameter as it appears in the configuration
      */
-    public void loadFromEnvironmentVariables(String moduleName)
+    private AbstractParameter<?> onRegisterParameter(RegisterParameterEvent event)
     {
-        LOGGER.info(ConfigurationConstants.ENVIRONMENT_VARIABLE_SET_START);
+        AbstractParameter<?> registeredParameter = event.getParamToBeRegistered();
+        final String compositeKey = registeredParameter.getCompositeKey();
+        final AbstractParameter<?> retrievedParameter = parameterMap.get(compositeKey);
 
-        int suffixIndex = moduleName.indexOf(ApplicationConstants.HARVESTER_SERVICE_NAME_SUFFIX);
-        final String servicePrefix = (suffixIndex != -1)
-                                     ? moduleName.substring(0, suffixIndex)
-                                     : moduleName;
+        if (retrievedParameter == null) {
+            // clone parameter in order to not override constant parameters
+            registeredParameter = registeredParameter.copy();
 
-        final AtomicInteger changeCount = new AtomicInteger(0);
-        final Map<String, String> environmentVariables = System.getenv();
+            parameterMap.put(compositeKey, registeredParameter);
+            registeredParameter.loadFromEnvironmentVariables();
+        } else
+            registeredParameter = retrievedParameter;
 
-        // copy harvester parameters
-        harvesterParameters.forEach((String key, AbstractParameter<?> param) -> {
-            final String envVal = environmentVariables.get(
-                String.format(ConfigurationConstants.ENVIRONMENT_VARIABLE, servicePrefix, key));
-
-            if (envVal != null)
-            {
-                param.setValue(envVal, null);
-                changeCount.incrementAndGet();
-            }
-        });
-
-        // copy global parameters
-        globalParameters.forEach((String key, AbstractParameter<?> param) -> {
-            final String envVal = environmentVariables.get(
-                String.format(ConfigurationConstants.ENVIRONMENT_VARIABLE, servicePrefix, key));
-
-            if (envVal != null)
-            {
-                param.setValue(envVal, null);
-                changeCount.incrementAndGet();
-            }
-        });
-
-        LOGGER.info(String.format(ConfigurationConstants.ENVIRONMENT_VARIABLE_SET_END, changeCount.get()));
+        registeredParameter.setRegistered(true);
+        return registeredParameter;
     }
 
 
     /**
      * Returns the value of the parameter with a specified key.
      *
-     * @param key the key of the parameter
-     * @param parameterType the class of the parameter value
-     *
+     * @param compositeKey the parameter category and name, separated by a dot
      * @param <T> the value type of the parameter
      *
      * @return the value of the parameter with the specified key
      */
     @SuppressWarnings("unchecked")  // the cast will succeed, because the value type is compared to the parameterType
-    public <T> T getParameterValue(String key, Class<T> parameterType)
+    public <T> T getParameterValue(String compositeKey)
     {
-        AbstractParameter<?> param = globalParameters.get(key);
-
-        // if no global parameter with the specific name exists, look in the harvester parameters
-        if (param == null)
-            param = harvesterParameters.get(key);
+        final AbstractParameter<?> param = parameterMap.get(compositeKey.toLowerCase());
 
         // check if the parameter exists and if the value matches the parameterType
-        if (param != null && param.getValue() != null && param.getValue().getClass().equals(parameterType))
+        if (param != null && param.getValue() != null)
             return (T) param.getValue();
         else
             return null;
@@ -301,122 +254,72 @@ public class Configuration implements ICachedObject
     /**
      * Returns the human readable value of the parameter with a specified key.
      *
-     * @param key the key of the parameter
+     * @param compositeKey the parameter category and name, separated by a dot
      *
      * @return the human readable value of the parameter with a specified key
      */
-    public String getParameterStringValue(String key)
+    public String getParameterStringValue(String compositeKey)
     {
-        AbstractParameter<?> param = globalParameters.get(key);
-
-        // if no global parameter with the specific name exists, look in the harvester parameters
-        if (param == null)
-            param = harvesterParameters.get(key);
+        final AbstractParameter<?> param = parameterMap.get(compositeKey.toLowerCase());
 
         // check if the parameter exists
-        if (param != null)
-            return param.getStringValue();
-        else
-            return null;
+        return (param != null) ? param.getStringValue() : null;
     }
 
 
     /**
      * Changes a configuration parameter, returning a status message about the change.
      *
-     * @param key the parameter name
+     * @param compositeKey the parameter category and name, separated by a dot
      * @param value the new value of the parameter
      *
      * @return a message describing if the operation was successful, or if not, why it failed
      */
-    public String setParameter(String key, String value)
+    public String setParameter(String compositeKey, String value)
     {
-        // look up the key in the global parameters
-        AbstractParameter<?> param = globalParameters.get(key);
-        boolean isHarvesterParam = false;
-
-        // if no global parameter with the specific name exists, look in the harvester parameters
-        if (param == null) {
-            param = harvesterParameters.get(key);
-            isHarvesterParam = true;
-        }
+        final AbstractParameter<?> param = parameterMap.get(compositeKey.toLowerCase());
 
         // change the parameter value or return an error, if it does not exist
         if (param == null)
-            return String.format(ConfigurationConstants.UNKNOWN_PARAM, key);
-        else {
-            Object oldValue = param.getValue();
-            String message = param.setValue(value, StateMachine.getCurrentState());
-            Object newValue = param.getValue();
-
-            // send events only if the value changed
-            if (oldValue == null && newValue != null || oldValue != null && !oldValue.equals(newValue)) {
-                if (isHarvesterParam)
-                    EventSystem.sendEvent(new HarvesterParameterChangedEvent(param, oldValue));
-                else
-                    EventSystem.sendEvent(new GlobalParameterChangedEvent(param, oldValue));
-            }
-
-            return message;
-        }
+            return String.format(ConfigurationConstants.UNKNOWN_PARAM, compositeKey);
+        else
+            return param.setValue(value, StateMachine.getCurrentState());
     }
 
 
     /**
-     * Sends out a parameter changed events for all parameters.
+     * Retrieves a collection of all parameters.
+     *
+     * @return a collection of all parameters
      */
-    public void updateAllParameters()
+    public Collection<AbstractParameter<?>> getParameters()
     {
-        globalParameters.forEach((String key, AbstractParameter<?> param) ->
-                                 EventSystem.sendEvent(new GlobalParameterChangedEvent(param, null))
-                                );
-
-        harvesterParameters.forEach((String key, AbstractParameter<?> param) ->
-                                    EventSystem.sendEvent(new HarvesterParameterChangedEvent(param, null))
-                                   );
+        return parameterMap.values();
     }
 
 
     @Override
     public String toString()
     {
-        final StringBuilder harvesterBuilder = new StringBuilder();
-        harvesterParameters.forEach(
-            (String key, AbstractParameter<?> param) ->
-            harvesterBuilder.append(String.format(harvesterParameterFormat, key, param.getStringValue()))
-        );
+        final String format = getPaddedKeyFormat();
+        final Map<String, StringBuilder> categoryStringBuilders = new HashMap<>();
 
-        final StringBuilder globalBuilder = new StringBuilder();
-        globalParameters.forEach(
-            (String key, AbstractParameter<?> param) ->
-            globalBuilder.append(String.format(globalParameterFormat, key, param.getStringValue()))
-        );
+        for (AbstractParameter<?> param : getParameters()) {
+            final String categoryName = param.getCategory().getName();
 
-        return String.format(
-                   ConfigurationConstants.CONFIG_PARAMETERS,
-                   harvesterBuilder.toString(),
-                   globalBuilder.toString());
-    }
+            if (!categoryStringBuilders.containsKey(categoryName)) {
+                final StringBuilder catBuilder = new StringBuilder();
+                catBuilder.append(String.format(ConfigurationConstants.CATEGORY_FORMAT, categoryName));
+                categoryStringBuilders.put(categoryName, catBuilder);
+            }
 
+            categoryStringBuilders.get(categoryName).append(String.format(format, param.getKey(), param.getStringValue()));
+        }
 
-    /**
-     * Returns read-only access of all global parameters.
-     *
-     * @return a read-only map of all global parameters
-     */
-    public Map<String, AbstractParameter<?>> getGlobalParameters()
-    {
-        return Collections.unmodifiableMap(globalParameters);
-    }
-
-
-    /**
-     * Returns read-only access of all harvester specific parameters.
-     *
-     * @return a read-only map of all harvester specific parameters
-     */
-    public Map<String, AbstractParameter<?>> getHarvesterParameters()
-    {
-        return Collections.unmodifiableMap(harvesterParameters);
+        StringBuilder combinedBuilder = new StringBuilder();
+        categoryStringBuilders.forEach((String categoryName, StringBuilder categoryString) ->
+                                       combinedBuilder.append(categoryString.toString())
+                                      );
+        return combinedBuilder.toString();
     }
 }

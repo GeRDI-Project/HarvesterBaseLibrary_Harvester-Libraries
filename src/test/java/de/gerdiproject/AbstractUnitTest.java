@@ -28,6 +28,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import ch.qos.logback.classic.Level;
+import de.gerdiproject.harvest.config.Configuration;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.event.IEvent;
 import de.gerdiproject.harvest.event.IEventListener;
@@ -48,6 +49,8 @@ public abstract class AbstractUnitTest<T>
 
     private final Level initialLogLevel = LoggerConstants.ROOT_LOGGER.getLevel();
     protected final Random random = new Random();
+
+    protected Configuration config;
     protected T testedObject;
 
 
@@ -88,6 +91,10 @@ public abstract class AbstractUnitTest<T>
     @Test
     public void testAddingEventListeners()
     {
+        // if there is a config, remove its listeners to not falsify the result
+        if (config != null)
+            config.removeEventListeners();
+
         if (testedObject instanceof IEventListener) {
             ((IEventListener) testedObject).addEventListeners();
 
@@ -104,6 +111,10 @@ public abstract class AbstractUnitTest<T>
     @Test
     public void testForNoInitialEventListeners()
     {
+        // if there is a config, remove its listeners to not falsify the result
+        if (config != null)
+            config.removeEventListeners();
+
         if (testedObject instanceof IEventListener) {
             assert !EventSystem.hasSynchronousEventListeners()
             && !EventSystem.hasAsynchronousEventListeners();
@@ -118,6 +129,10 @@ public abstract class AbstractUnitTest<T>
     @Test
     public void testRemovingEventListeners()
     {
+        // if there is a config, remove its listeners to not falsify the result
+        if (config != null)
+            config.removeEventListeners();
+
         if (testedObject instanceof IEventListener) {
             ((IEventListener) testedObject).addEventListeners();
             ((IEventListener) testedObject).removeEventListeners();

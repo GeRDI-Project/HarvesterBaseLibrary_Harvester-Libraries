@@ -76,7 +76,7 @@ public class Scheduler implements IEventListener, ICachedObject
     {
         EventSystem.addSynchronousListener(AddSchedulerTaskEvent.class, this::onAddTask);
         EventSystem.addSynchronousListener(DeleteSchedulerTaskEvent.class, this::onDeleteTask);
-        EventSystem.addSynchronousListener(GetScheduleEvent.class, this::onGetSchedule);
+        EventSystem.addSynchronousListener(GetScheduleEvent.class, this::getSchedule);
         EventSystem.addListener(ScheduledTaskExecutedEvent.class, onTaskExecuted);
         EventSystem.addListener(ContextDestroyedEvent.class, onContextDestroyed);
     }
@@ -280,11 +280,9 @@ public class Scheduler implements IEventListener, ICachedObject
     /**
      * Event callback for retrieving one or all cron tabs.
      *
-     * @param event the event that triggered the callback
-     *
      * @return one cron tab or all, separated by linebreaks
      */
-    private String onGetSchedule(GetScheduleEvent event) // NOPMD event payloads must always exist
+    private String getSchedule()
     {
         final StringBuilder sb = new StringBuilder();
 

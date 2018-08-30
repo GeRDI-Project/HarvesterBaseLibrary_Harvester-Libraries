@@ -25,7 +25,6 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.lang.reflect.ParameterizedType;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
@@ -36,7 +35,6 @@ import com.google.gson.stream.JsonWriter;
 import de.gerdiproject.harvest.IDocument;
 import de.gerdiproject.harvest.application.MainContext;
 import de.gerdiproject.harvest.application.events.ContextDestroyedEvent;
-import de.gerdiproject.harvest.config.parameters.AbstractParameter;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.harvester.constants.HarvesterConstants;
 import de.gerdiproject.harvest.utils.FileUtils;
@@ -104,9 +102,9 @@ public abstract class AbstractStreamHarvester<T> extends AbstractHarvester
 
 
     @Override
-    public void init(boolean isMainHarvester, String moduleName, Map<String, AbstractParameter<?>> harvesterParameters)
+    public void init(boolean isMainHarvester, String moduleName)
     {
-        super.init(isMainHarvester, moduleName, harvesterParameters);
+        super.init(isMainHarvester, moduleName);
         streamFile = initStreamFile(moduleName);
     }
 

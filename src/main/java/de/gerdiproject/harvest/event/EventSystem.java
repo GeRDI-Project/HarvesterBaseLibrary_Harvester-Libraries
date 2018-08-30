@@ -25,6 +25,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 /**
  * This singleton class provides a means to dispatch and listen to
@@ -214,8 +215,8 @@ public class EventSystem
      * only one callback function may be registered per event class.
      *
      * @param eventClass the class of the synchronous event
-     * @param callback the callback function that is executed and returns when
-     *            the event is dispatched
+     * @param callback a callback function that requires the event as a parameter
+     *         and returns a specified value when the event is dispatched
      * @param <T> the type of the synchronous event
      * @param <R> the type of the return value of the callback function
      */
@@ -223,6 +224,24 @@ public class EventSystem
     {
         synchronized (instance.synchronousCallbackMap) {
             instance.synchronousCallbackMap.put(eventClass, callback);
+        }
+    }
+
+    /**
+     * Adds a callback function that executes and returns a value when a
+     * specified synchronous event is dispatched. Due to the synchronous nature,
+     * only one callback function may be registered per event class.
+     *
+     * @param eventClass the class of the synchronous event
+     * @param callback a callback function that expects no parameters and returns when
+     *            the event is dispatched
+     * @param <T> the type of the synchronous event
+     * @param <R> the type of the return value of the callback function
+     */
+    public static <R, T extends ISynchronousEvent<R>> void addSynchronousListener(Class<T> eventClass, Supplier<R> callback)
+    {
+        synchronized (instance.synchronousCallbackMap) {
+            instance.synchronousCallbackMap.put(eventClass, (T event) -> callback.get());
         }
     }
 

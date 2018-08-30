@@ -19,11 +19,8 @@ package de.gerdiproject.harvest.harvester;
 import java.security.NoSuchAlgorithmException;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-import java.util.function.BiConsumer;
 
-import de.gerdiproject.harvest.config.parameters.AbstractParameter;
 import de.gerdiproject.harvest.utils.HashGenerator;
 import de.gerdiproject.harvest.utils.cache.HarvesterCache;
 
@@ -69,22 +66,6 @@ public abstract class AbstractCompositeHarvester extends AbstractHarvester
 
 
     @Override
-    public void init(final boolean isMainHarvester, final String moduleName, Map<String, AbstractParameter<?>> harvesterParameters)
-    {
-        subHarvesters.forEach((AbstractHarvester subHarvester) -> subHarvester.init(false, moduleName, harvesterParameters));
-        super.init(isMainHarvester, moduleName, harvesterParameters);
-    }
-
-
-    @Override
-    public void update()
-    {
-        subHarvesters.forEach((AbstractHarvester subHarvester) -> subHarvester.update());
-        super.update();
-    }
-
-
-    @Override
     public void addEventListeners()
     {
         super.addEventListeners();
@@ -101,61 +82,52 @@ public abstract class AbstractCompositeHarvester extends AbstractHarvester
 
 
     @Override
-    protected void setStartIndex(int startIndex)
+    public void init(final boolean isMainHarvester, final String moduleName)
     {
-        updateRangeIndex(startIndex, (AbstractHarvester h, Integer index) -> {
-            h.setStartIndex(index);
-        });
+        subHarvesters.forEach((AbstractHarvester subHarvester) -> subHarvester.init(false, moduleName));
+        super.init(isMainHarvester, moduleName);
     }
 
 
     @Override
-    protected void setEndIndex(int endIndex)
+    public void update()
     {
-        updateRangeIndex(endIndex, (AbstractHarvester h, Integer index) -> {
-            h.setEndIndex(index);
-        });
-    }
+        super.update();
 
-
-    @Override
-    protected void setForceHarvest(boolean state)
-    {
-        super.setForceHarvest(state);
-        subHarvesters.forEach((AbstractHarvester subHarvester) -> subHarvester.setForceHarvest(state));
-    }
-
-
-    /**
-     * Takes an index of all documents combined and adapts the harvesting ranges
-     * of all sub-harvesters accordingly.
-     *
-     * @param index the new index, either start- or end index
-     * @param indexSetter a function that sets the sub-harvesters index range
-     */
-    private void updateRangeIndex(int index, BiConsumer<AbstractHarvester, Integer> indexSetter)
-    {
+        // recalculate sub-harvester range
+        final int compositeStartIndex = getStartIndex();
+        final int compositeEndIndex = getEndIndex();
         int numberOfProcessedDocs = 0;
 
         for (AbstractHarvester subHarvester : subHarvesters) {
-            int numberOfSubDocs = subHarvester.getMaxNumberOfDocuments();
+            int numberOfSubHarvesterDocs = subHarvester.getMaxNumberOfDocuments();
             int previouslyProcessedDocs = numberOfProcessedDocs;
-            numberOfProcessedDocs += numberOfSubDocs;
-            int subValue;
+            numberOfProcessedDocs += numberOfSubHarvesterDocs;
+            int subHarvesterStartIndex = 0;
+            int subHarvesterEndIndex = 0;
 
-            // index comes after this sub-harvester
-            if (index >= numberOfProcessedDocs)
-                subValue = Integer.MAX_VALUE;
+            // harvesting range begins after this sub-harvester
+            if (compositeStartIndex >= numberOfProcessedDocs)
+                subHarvesterStartIndex = Integer.MAX_VALUE;
 
-            // index is within this sub-harvester
-            else if (index >= previouslyProcessedDocs)
-                subValue = index - previouslyProcessedDocs;
+            // harvesting range begins in the middle of this sub-harvester
+            else if (compositeStartIndex >= previouslyProcessedDocs)
+                subHarvesterStartIndex = compositeStartIndex - previouslyProcessedDocs;
 
-            // index comes before this sub-harvester
-            else
-                subValue = Integer.MIN_VALUE;
+            // harvesting range ends after this sub-harvester
+            if (compositeEndIndex >= numberOfProcessedDocs)
+                subHarvesterEndIndex = Integer.MAX_VALUE;
 
-            indexSetter.accept(subHarvester, subValue);
+            // harvesting range ends in the middle of this sub-harvester
+            else if (compositeEndIndex >= previouslyProcessedDocs)
+                subHarvesterEndIndex = compositeEndIndex - previouslyProcessedDocs;
+
+            // update sub-harvester range
+            subHarvester.startIndexParameter.setValue(String.valueOf(subHarvesterStartIndex), null);
+            subHarvester.endIndexParameter.setValue(String.valueOf(subHarvesterEndIndex), null);
+
+            // update sub-harvester
+            subHarvester.update();
         }
     }
 

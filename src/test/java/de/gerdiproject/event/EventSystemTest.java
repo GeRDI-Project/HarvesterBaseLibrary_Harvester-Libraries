@@ -224,6 +224,20 @@ public class EventSystemTest
 
 
     /**
+     * Tests if results are properly returned after a synchronous event listener was added that does
+     * not require the event as an argument for the callback function.
+     */
+    @Test
+    public void testSendingSynchronousEventWithoutEventArgument()
+    {
+        EventSystem.addSynchronousListener(TestSynchronousEvent.class, () -> STATIC_SYNC_PAYLOAD);
+
+        final Object result = EventSystem.sendSynchronousEvent(SINGLE_SYNC_TEST_EVENT);
+        assertEquals(STATIC_SYNC_PAYLOAD, result);
+    }
+
+
+    /**
      * Tests if synchronous events that are sent after their listener was removed
      * return null.
      */
