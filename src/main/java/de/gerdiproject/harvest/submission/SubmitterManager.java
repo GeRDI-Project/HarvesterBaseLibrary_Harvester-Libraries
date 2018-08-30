@@ -37,7 +37,7 @@ import de.gerdiproject.harvest.submission.events.StartSubmissionEvent;
 public class SubmitterManager implements IEventListener
 {
     private Map<String, AbstractSubmitter> submitterMap;
-    private SubmitterParameter activeSubmitter;
+    private SubmitterParameter submitterParam;
 
 
     /**
@@ -46,7 +46,7 @@ public class SubmitterManager implements IEventListener
     public SubmitterManager()
     {
         this.submitterMap = new HashMap<>();
-        this.activeSubmitter = SubmissionConstants.SUBMITTER_TYPE_PARAM.copy();
+        this.submitterParam = SubmissionConstants.SUBMITTER_TYPE_PARAM.copy();
     }
 
 
@@ -59,9 +59,9 @@ public class SubmitterManager implements IEventListener
         submitterMap.put(submitter.getId(), submitter);
 
         // register submitter in configuration if none was set before
-        if (!activeSubmitter.isRegistered() && activeSubmitter.getValue() == null) {
-            activeSubmitter.setValue(submitter.getId(), null);
-            this.activeSubmitter = Configuration.registerParameter(activeSubmitter);
+        if (!submitterParam.isRegistered() && submitterParam.getValue() == null) {
+            submitterParam.setValue(submitter.getId(), null);
+            this.submitterParam = Configuration.registerParameter(submitterParam);
         }
     }
 
@@ -103,6 +103,15 @@ public class SubmitterManager implements IEventListener
      */
     private String onStartSubmission()
     {
-        return submitterMap.get(activeSubmitter.getValue()).submitAll();
+        AbstractSubmitter submitter = submitterMap.get(submitterParam.getValue());
+
+        if (submitter == null)
+            return SubmissionConstants.NO_SUBMITTER_CONFIGURED;
+
+        try {
+            return submitter.submitAll();
+        } catch (IllegalStateException e) {
+            return e.getMessage();
+        }
     }
 }

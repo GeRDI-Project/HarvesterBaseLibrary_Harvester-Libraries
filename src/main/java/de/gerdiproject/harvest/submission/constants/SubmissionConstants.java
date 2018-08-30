@@ -118,6 +118,8 @@ public class SubmissionConstants
         + SUBMIT_INCOMPLETE_PARAM.getCompositeKey()
         + "'-flag in the configuration.";
 
+    public static final String NO_SUBMITTER_CONFIGURED = "No Submitter was configured! You can change it by sending a PUT request to .../config";
+
 
     /**
      * Private constructor, because this class just serves as a place to define

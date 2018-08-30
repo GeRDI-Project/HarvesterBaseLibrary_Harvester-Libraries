@@ -17,7 +17,6 @@
 package de.gerdiproject.config;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
@@ -337,7 +336,7 @@ public class ConfigurationTest extends AbstractFileSystemUnitTest<Configuration>
         final Class<? extends IState> stateThatAllowsChanges = HarvestingState.class;
         final IState stateThatForbidsChanges = new InitializationState();
 
-        assertFalse(canParameterBeSetInState(stateThatForbidsChanges, stateThatAllowsChanges));
+        assert !canParameterBeSetInState(stateThatForbidsChanges, stateThatAllowsChanges);
     }
 
 

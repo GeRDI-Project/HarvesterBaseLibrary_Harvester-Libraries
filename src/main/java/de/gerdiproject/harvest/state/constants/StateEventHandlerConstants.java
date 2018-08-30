@@ -73,12 +73,14 @@ public class StateEventHandlerConstants
      * {@linkplain IdleState} or {@linkplain SubmittingState}, depending on the configuration.
      */
     public static final Consumer<HarvestFinishedEvent> ON_HARVEST_FINISHED = (HarvestFinishedEvent e) -> {
-        // was the harvest successful? then choose the next automatic
-        // post-processing state
+
+        LOGGER.info(e.isSuccessful() ? StateConstants.HARVEST_DONE : StateConstants.HARVEST_FAILED);
+
+        StateMachine.setState(new IdleState());
+
+        // was the harvest successful? then choose the next automatic post-processing state
         if (e.isSuccessful())
         {
-            LOGGER.info(StateConstants.HARVEST_DONE);
-
             final Configuration config = MainContext.getConfiguration();
 
             boolean isAutoSubmitEnabled = config.getParameterValue(SubmissionConstants.AUTO_SUBMIT_PARAM.getCompositeKey());
@@ -88,10 +90,7 @@ public class StateEventHandlerConstants
                 LOGGER.info(response);
                 return;
             }
-        } else
-            LOGGER.info(StateConstants.HARVEST_FAILED);
-
-        StateMachine.setState(new IdleState());
+        }
     };
 
 
