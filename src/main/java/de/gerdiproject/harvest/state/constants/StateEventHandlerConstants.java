@@ -49,7 +49,7 @@ public class StateEventHandlerConstants
 
     /**
      * Private constructor, because this class just serves as a place to define
-     * constants.
+     * static callback functions.
      */
     private StateEventHandlerConstants()
     {
@@ -73,24 +73,7 @@ public class StateEventHandlerConstants
      * {@linkplain IdleState} or {@linkplain SubmittingState}, depending on the configuration.
      */
     public static final Consumer<HarvestFinishedEvent> ON_HARVEST_FINISHED = (HarvestFinishedEvent e) -> {
-
-        LOGGER.info(e.isSuccessful() ? StateConstants.HARVEST_DONE : StateConstants.HARVEST_FAILED);
-
-        StateMachine.setState(new IdleState());
-
-        // was the harvest successful? then choose the next automatic post-processing state
-        if (e.isSuccessful())
-        {
-            final Configuration config = MainContext.getConfiguration();
-
-            boolean isAutoSubmitEnabled = config.getParameterValue(SubmissionConstants.AUTO_SUBMIT_PARAM.getCompositeKey());
-
-            if (isAutoSubmitEnabled) {
-                String response = EventSystem.sendSynchronousEvent(new StartSubmissionEvent());
-                LOGGER.info(response);
-                return;
-            }
-        }
+        finishHarvest(e.isSuccessful());
     };
 
 
@@ -136,4 +119,32 @@ public class StateEventHandlerConstants
      */
     public static final Consumer<SubmissionFinishedEvent> ON_SUBMISSION_FINISHED =
         (SubmissionFinishedEvent e) -> StateMachine.setState(new IdleState());
+
+
+
+    /**
+     * The content of ON_HARVEST_FINISHED had to be put into this method to prevent a PMD bug.
+     * Goes to the IDLE state and if the submission.autoSubmit parameter is true, starts a submission.
+     *
+     * @param isSuccessful true if the harvest finished successfully
+     */
+    private static void finishHarvest(boolean isSuccessful)
+    {
+        LOGGER.info(isSuccessful ? StateConstants.HARVEST_DONE : StateConstants.HARVEST_FAILED);
+
+        StateMachine.setState(new IdleState());
+
+        // was the harvest successful? then choose the next automatic post-processing state
+        if (isSuccessful) {
+            final Configuration config = MainContext.getConfiguration();
+
+            boolean isAutoSubmitEnabled = config.getParameterValue(SubmissionConstants.AUTO_SUBMIT_PARAM.getCompositeKey());
+
+            if (isAutoSubmitEnabled) {
+                String response = EventSystem.sendSynchronousEvent(new StartSubmissionEvent());
+                LOGGER.info(response);
+                return;
+            }
+        }
+    }
 }

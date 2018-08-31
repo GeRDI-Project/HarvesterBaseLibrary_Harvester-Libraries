@@ -62,12 +62,11 @@ public abstract class AbstractUnitTest<T>
     @Before
     public void before() throws InstantiationException
     {
+        setLoggerEnabled(isLoggingEnabledDuringTests());
         testedObject = setUpTestObjects();
 
         if (testedObject == null)
             throw new InstantiationException(CLEANUP_ERROR + getTestedClass().getName());
-
-        setLoggerEnabled(isLoggingEnabledDuringTests());
     }
 
 
