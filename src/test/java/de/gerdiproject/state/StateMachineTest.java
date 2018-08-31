@@ -17,7 +17,9 @@
 package de.gerdiproject.state;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 import org.junit.After;
 import org.junit.Test;
@@ -50,7 +52,8 @@ public class StateMachineTest
     @Test
     public void testDefaultState()
     {
-        assertNull(StateMachine.getCurrentState());
+        assertNull("The method getCurrentState() should return null after initialization!",
+                   StateMachine.getCurrentState());
     }
 
 
@@ -63,7 +66,10 @@ public class StateMachineTest
         final TestState testState = new TestState();
         StateMachine.setState(testState);
 
-        assertEquals(testState, StateMachine.getCurrentState());
+        assertEquals(
+            "The method getCurrentState() should return the last state that was passed to setState()!",
+            testState,
+            StateMachine.getCurrentState());
     }
 
 
@@ -75,7 +81,8 @@ public class StateMachineTest
     public void testConstructor()
     {
         final TestState testState = new TestState();
-        assert !testState.isActive();
+        assertFalse("The testing-method isActive() of a state that was NOT passed to setState() should return false!",
+                    testState.isActive());
     }
 
 
@@ -88,7 +95,8 @@ public class StateMachineTest
     {
         final TestState testState = new TestState();
         StateMachine.setState(testState);
-        assert testState.isActive();
+        assertTrue("The testing-method isActive() of a state that was passed to setState() should return true!",
+                   testState.isActive());
     }
 
 
@@ -102,6 +110,7 @@ public class StateMachineTest
         final TestState testState = new TestState();
         StateMachine.setState(testState);
         StateMachine.setState(null);
-        assert !testState.isActive();
+        assertFalse("The testing-method isActive() of a state that was replaced by another state should return false!",
+                    testState.isActive());
     }
 }

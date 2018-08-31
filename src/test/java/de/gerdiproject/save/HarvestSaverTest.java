@@ -17,6 +17,7 @@
 package de.gerdiproject.save;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.io.BufferedWriter;
@@ -62,6 +63,7 @@ public class HarvestSaverTest extends AbstractFileSystemUnitTest<HarvestSaver>
     private static final String SOURCE_ID = "source";
     private static final String HARVESTER_HASH = "ABC";
     private static final String JSON_PUBLICATION_YEAR = "publicationYear";
+    private static final String ASSERT_JSON_MESSAGE = "The JSON field '%s' was not properly saved or loaded!";
 
     private HarvesterCacheManager cacheManager = new HarvesterCacheManager();
 
@@ -109,7 +111,8 @@ public class HarvestSaverTest extends AbstractFileSystemUnitTest<HarvestSaver>
 
         // publication year is the index of the document, but JsonArrays are unsorted
         for (int i = 0; i < loadedDocuments.size(); i++)
-            assert loadedDocuments.get(i).getAsJsonObject().get(JSON_PUBLICATION_YEAR).getAsInt() < numberOfSavedDocs;
+            assertTrue("The publication year of every saved object must be lower than " + numberOfSavedDocs + ", because it equals the index of the document!",
+                       loadedDocuments.get(i).getAsJsonObject().get(JSON_PUBLICATION_YEAR).getAsInt() < numberOfSavedDocs);
     }
 
 
@@ -136,7 +139,9 @@ public class HarvestSaverTest extends AbstractFileSystemUnitTest<HarvestSaver>
         final DiskIO diskReader = new DiskIO(new Gson(), StandardCharsets.UTF_8);
         final JsonObject fileContent = diskReader.getObject(savedFile, JsonObject.class);
 
-        assertEquals((endTimeStamp - startTimeStamp) / 1000L, fileContent.get(SaveConstants.DURATION_JSON).getAsInt());
+        assertEquals(String.format(ASSERT_JSON_MESSAGE, SaveConstants.DURATION_JSON),
+                     (endTimeStamp - startTimeStamp) / 1000L,
+                     fileContent.get(SaveConstants.DURATION_JSON).getAsInt());
     }
 
 
@@ -161,7 +166,9 @@ public class HarvestSaverTest extends AbstractFileSystemUnitTest<HarvestSaver>
         final DiskIO diskReader = new DiskIO(new Gson(), StandardCharsets.UTF_8);
         final JsonObject fileContent = diskReader.getObject(savedFile, JsonObject.class);
 
-        assertEquals(harvestFrom, fileContent.get(SaveConstants.HARVEST_FROM_JSON).getAsInt());
+        assertEquals(String.format(ASSERT_JSON_MESSAGE, SaveConstants.HARVEST_FROM_JSON),
+                     harvestFrom,
+                     fileContent.get(SaveConstants.HARVEST_FROM_JSON).getAsInt());
     }
 
 
@@ -186,7 +193,9 @@ public class HarvestSaverTest extends AbstractFileSystemUnitTest<HarvestSaver>
         final DiskIO diskReader = new DiskIO(new Gson(), StandardCharsets.UTF_8);
         final JsonObject fileContent = diskReader.getObject(savedFile, JsonObject.class);
 
-        assertEquals(harvestTo, fileContent.get(SaveConstants.HARVEST_TO_JSON).getAsInt());
+        assertEquals(String.format(ASSERT_JSON_MESSAGE, SaveConstants.HARVEST_TO_JSON),
+                     harvestTo,
+                     fileContent.get(SaveConstants.HARVEST_TO_JSON).getAsInt());
     }
 
 
@@ -211,7 +220,9 @@ public class HarvestSaverTest extends AbstractFileSystemUnitTest<HarvestSaver>
         final DiskIO diskReader = new DiskIO(new Gson(), StandardCharsets.UTF_8);
         final JsonObject fileContent = diskReader.getObject(savedFile, JsonObject.class);
 
-        assertEquals(sourceHash, fileContent.get(SaveConstants.SOURCE_HASH_JSON).getAsString());
+        assertEquals(String.format(ASSERT_JSON_MESSAGE, SaveConstants.SOURCE_HASH_JSON),
+                     sourceHash,
+                     fileContent.get(SaveConstants.SOURCE_HASH_JSON).getAsString());
     }
 
 

@@ -18,6 +18,7 @@ package de.gerdiproject.scheduler;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.io.File;
@@ -42,6 +43,7 @@ public class SchedulerTest extends AbstractFileSystemUnitTest<Scheduler>
     private static final String INVALID_CRON = "abc";
     private static final String RANDOM_CRON_TAB = "%d 0 1 1 *";
     private static final String SOME_CRON_TAB = "0 0 1 1 *";
+    private static final String ASSERT_EXCEPTION_MESSAGE = "Expected an " + IllegalArgumentException.class.getSimpleName() + " to be thrown when the same task is added twice!";
 
     private final File scheduleFile = new File(testFolder, "schedule.json");
 
@@ -60,7 +62,10 @@ public class SchedulerTest extends AbstractFileSystemUnitTest<Scheduler>
     @Test
     public void testConstructor()
     {
-        assertEquals(0, testedObject.size());
+        assertEquals(
+            "The method size() should return 0 after the constructor was called",
+            0,
+            testedObject.size());
     }
 
 
@@ -72,7 +77,10 @@ public class SchedulerTest extends AbstractFileSystemUnitTest<Scheduler>
     {
         testedObject.addEventListeners();
         addTasks(1);
-        assertNotEquals(0, scheduleFile.length());
+        assertNotEquals(
+            "After sending an " + AddSchedulerTaskEvent.class.getSimpleName() + ", the cache file should not be empty!",
+            0,
+            scheduleFile.length());
     }
 
 
@@ -91,7 +99,10 @@ public class SchedulerTest extends AbstractFileSystemUnitTest<Scheduler>
         anotherScheduler.loadFromDisk();
         anotherScheduler.removeEventListeners();
 
-        assertEquals(testedObject.size(), anotherScheduler.size());
+        assertEquals(
+            "The method size() of a Scheduler that is saved to disk should return the same value as a Scheduler that was loaded from the cache file!",
+            testedObject.size(),
+            anotherScheduler.size());
     }
 
 
@@ -108,7 +119,9 @@ public class SchedulerTest extends AbstractFileSystemUnitTest<Scheduler>
 
         testedObject.loadFromDisk();
 
-        assertEquals(oldSize, testedObject.size());
+        assertEquals("The scheduled tasks should not change if a non-existing cache file is attempted to be loaded!",
+                     oldSize,
+                     testedObject.size());
     }
 
 
@@ -123,7 +136,9 @@ public class SchedulerTest extends AbstractFileSystemUnitTest<Scheduler>
         final int numberOfTasks = random.nextInt(10);
         addTasks(numberOfTasks);
 
-        assertEquals(numberOfTasks, testedObject.size());
+        assertEquals("The method size() should return the same number of tasks that were added via the " + AddSchedulerTaskEvent.class.getSimpleName() + "!",
+                     numberOfTasks,
+                     testedObject.size());
     }
 
 
@@ -141,7 +156,9 @@ public class SchedulerTest extends AbstractFileSystemUnitTest<Scheduler>
 
             fail("Adding the same cron tab twice should throw an exception!");
         } catch (Exception ex) {
-            assertEquals(IllegalArgumentException.class, ex.getClass());
+            assertEquals(ASSERT_EXCEPTION_MESSAGE,
+                         IllegalArgumentException.class,
+                         ex.getClass());
         }
     }
 
@@ -159,7 +176,9 @@ public class SchedulerTest extends AbstractFileSystemUnitTest<Scheduler>
 
             fail("Adding a cron tab with invalid syntax should throw an exception!");
         } catch (Exception ex) {
-            assertEquals(IllegalArgumentException.class, ex.getClass());
+            assertEquals(ASSERT_EXCEPTION_MESSAGE,
+                         IllegalArgumentException.class,
+                         ex.getClass());
         }
     }
 
@@ -180,7 +199,9 @@ public class SchedulerTest extends AbstractFileSystemUnitTest<Scheduler>
             EventSystem.sendSynchronousEvent(new DeleteSchedulerTaskEvent(randomCron));
         }
 
-        assertEquals(10 - numberOfDeletions, testedObject.size());
+        assertEquals("The method size() should return a lower number after " + DeleteSchedulerTaskEvent.class.getSimpleName() + " were sent!",
+                     10 - numberOfDeletions,
+                     testedObject.size());
     }
 
 
@@ -196,7 +217,9 @@ public class SchedulerTest extends AbstractFileSystemUnitTest<Scheduler>
             EventSystem.sendSynchronousEvent(new DeleteSchedulerTaskEvent(SOME_CRON_TAB));
             fail("Deleting a non-existing cron tab should throw an exception!");
         } catch (Exception ex) {
-            assertEquals(IllegalArgumentException.class, ex.getClass());
+            assertEquals(ASSERT_EXCEPTION_MESSAGE,
+                         IllegalArgumentException.class,
+                         ex.getClass());
         }
     }
 
@@ -210,7 +233,10 @@ public class SchedulerTest extends AbstractFileSystemUnitTest<Scheduler>
         testedObject.addEventListeners();
         addTasks(10);
         EventSystem.sendSynchronousEvent(new DeleteSchedulerTaskEvent(null));
-        assertEquals(0, testedObject.size());
+        assertEquals(
+            "All tasks should be removed when a " + DeleteSchedulerTaskEvent.class.getSimpleName() + " is sent with a null payload!",
+            0,
+            testedObject.size());
     }
 
 
@@ -244,7 +270,8 @@ public class SchedulerTest extends AbstractFileSystemUnitTest<Scheduler>
         final String scheduleText = EventSystem.sendSynchronousEvent(new GetScheduleEvent());
 
         for (int i = 0; i < testedObject.size(); i++)
-            assert scheduleText.contains(String.format(RANDOM_CRON_TAB, i) + "\n");
+            assertTrue("Sending a " + GetScheduleEvent.class.getSimpleName() + " should return all tasks!",
+                       scheduleText.contains(String.format(RANDOM_CRON_TAB, i) + "\n"));
     }
 
 
@@ -256,7 +283,8 @@ public class SchedulerTest extends AbstractFileSystemUnitTest<Scheduler>
     {
         testedObject.addEventListeners();
         final String scheduleText = EventSystem.sendSynchronousEvent(new GetScheduleEvent());
-        assert scheduleText.isEmpty();
+        assertTrue("Sending a " + GetScheduleEvent.class.getSimpleName() + " should no tasks, if none were added!",
+                   scheduleText.isEmpty());
     }
 
 
@@ -270,7 +298,9 @@ public class SchedulerTest extends AbstractFileSystemUnitTest<Scheduler>
         addRandomNumberOfTasks();
         EventSystem.sendEvent(new ContextDestroyedEvent());
 
-        assertEquals(0, testedObject.size());
+        assertEquals("The " + ContextDestroyedEvent.class.getSimpleName() + " should cause all tasks to be deleted!",
+                     0,
+                     testedObject.size());
     }
 
 
@@ -285,7 +315,9 @@ public class SchedulerTest extends AbstractFileSystemUnitTest<Scheduler>
         EventSystem.sendEvent(new ContextDestroyedEvent());
 
         addTasks(1);
-        assertEquals(0, testedObject.size());
+        assertEquals("Tasks must not be added after the " + ContextDestroyedEvent.class.getSimpleName() + " was sent!",
+                     0,
+                     testedObject.size());
     }
 
 

@@ -17,7 +17,6 @@
 package de.gerdiproject;
 
 import java.io.File;
-import java.io.IOException;
 
 import de.gerdiproject.harvest.utils.FileUtils;
 
@@ -41,7 +40,7 @@ public abstract class AbstractFileSystemUnitTest<T> extends AbstractUnitTest<T>
      * has been deleted.
      * Also creates an instance of the tested object.
      *
-     * @throws IOException thrown when the test folder could not be deleted
+     * @throws InstantiationException thrown when the test folder could not be deleted
      */
     @Override
     public void before() throws InstantiationException

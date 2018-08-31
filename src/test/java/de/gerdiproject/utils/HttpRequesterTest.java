@@ -17,6 +17,7 @@
 package de.gerdiproject.utils;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
@@ -29,6 +30,7 @@ import java.util.Map;
 import javax.xml.ws.http.HTTPException;
 
 import org.jsoup.nodes.Document;
+import org.junit.Assume;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -61,6 +63,8 @@ public class HttpRequesterTest extends AbstractFileSystemUnitTest<HttpRequester>
     private static final String CACHED_JSON = "response.json";
     private static final String CACHED_HTML = "response.html";
     private static final String MOCKED_RESPONSE_FOLDER = "/mocked";
+    private static final String READ_FROM_DISK_KEY = DataOperationConstants.READ_FROM_DISK_PARAM.getCompositeKey();
+    private static final String WRITE_TO_DISK_KEY = DataOperationConstants.WRITE_TO_DISK_PARAM.getCompositeKey();
 
     @Parameters(name = "caching enabled: {0}")
     public static Object[] getParameters()
@@ -69,6 +73,7 @@ public class HttpRequesterTest extends AbstractFileSystemUnitTest<HttpRequester>
     }
 
     private boolean isCachingEnabled;
+    private String messageNotCached;
 
 
     /**
@@ -81,6 +86,7 @@ public class HttpRequesterTest extends AbstractFileSystemUnitTest<HttpRequester>
     public HttpRequesterTest(boolean isCachingEnabled)
     {
         this.isCachingEnabled = isCachingEnabled;
+        this.messageNotCached = isCachingEnabled ? "" : "NOT";
     }
 
 
@@ -93,8 +99,8 @@ public class HttpRequesterTest extends AbstractFileSystemUnitTest<HttpRequester>
         final HttpRequester requester = new HttpRequester(new Gson(), StandardCharsets.UTF_8);
         requester.setCacheFolder(testFolder.getPath());
 
-        config.setParameter(DataOperationConstants.READ_FROM_DISK_PARAM.getCompositeKey(), String.valueOf(isCachingEnabled));
-        config.setParameter(DataOperationConstants.WRITE_TO_DISK_PARAM.getCompositeKey(), String.valueOf(isCachingEnabled));
+        config.setParameter(READ_FROM_DISK_KEY, String.valueOf(isCachingEnabled));
+        config.setParameter(WRITE_TO_DISK_KEY, String.valueOf(isCachingEnabled));
 
         return requester;
     }
@@ -107,7 +113,9 @@ public class HttpRequesterTest extends AbstractFileSystemUnitTest<HttpRequester>
     @Test
     public void testReadFromDiskFlag()
     {
-        assertEquals(isCachingEnabled, testedObject.isReadingFromDisk());
+        assertEquals("The method isReadingFromDisk() should return " + isCachingEnabled + " when the " + READ_FROM_DISK_KEY + "-parameter is set to " + isCachingEnabled,
+                     isCachingEnabled,
+                     testedObject.isReadingFromDisk());
     }
 
     /**
@@ -117,7 +125,9 @@ public class HttpRequesterTest extends AbstractFileSystemUnitTest<HttpRequester>
     @Test
     public void testWriteToDiskFlag()
     {
-        assertEquals(isCachingEnabled, testedObject.isWritingToDisk());
+        assertEquals("The method isWritingToDisk() should return " + isCachingEnabled + " when the " + WRITE_TO_DISK_KEY + "-parameter is set to " + isCachingEnabled,
+                     isCachingEnabled,
+                     testedObject.isWritingToDisk());
     }
 
 
@@ -127,7 +137,8 @@ public class HttpRequesterTest extends AbstractFileSystemUnitTest<HttpRequester>
     @Test
     public void testCacheFolder()
     {
-        assertNotNull(testedObject.getCacheFolder());
+        assertNotNull("The method getCacheFolder() should not return null!",
+                      testedObject.getCacheFolder());
     }
 
 
@@ -145,7 +156,8 @@ public class HttpRequesterTest extends AbstractFileSystemUnitTest<HttpRequester>
                                   : DEFAULT_URL;
         Document htmlObject = testedObject.getHtmlFromUrl(requestUrl);
 
-        assertNotNull(htmlObject);
+        assertNotNull("The method getHtmlFromUrl(\"" + requestUrl + "\") should not return null!",
+                      htmlObject);
     }
 
 
@@ -159,22 +171,26 @@ public class HttpRequesterTest extends AbstractFileSystemUnitTest<HttpRequester>
         testedObject = createReadOnlyExampleHttpRequester();
 
         setLoggerEnabled(false);
-        Document htmlObject = testedObject.getHtmlFromUrl(DEFAULT_URL + "/thisDoesNotExist");
+        final String requestUrl = DEFAULT_URL + "/thisDoesNotExist";
+        Document htmlObject = testedObject.getHtmlFromUrl(requestUrl);
         setLoggerEnabled(true);
 
-        assertNull(htmlObject);
+        assertNull("The method getHtmlFromUrl() called with the non-existing URL \"" + requestUrl + "\" should return null!",
+                   htmlObject);
     }
 
 
     /**
-     * Tests if a valid HTML response that is not cached
-     * can always be retrieved from web.
+     * Tests if a valid HTML response that attempted to be retrieved from cache
+     * can be retrieved from web as a fallback.
      *
      * @throws IOException thrown when the expected response is cached on disk
      */
     @Test
     public void testGettingUncachedHtml() throws IOException
     {
+        skipTestIfCachingDisabled();
+
         testedObject = createReadOnlyExampleHttpRequester();
 
         final File cachedResponse =
@@ -187,7 +203,8 @@ public class HttpRequesterTest extends AbstractFileSystemUnitTest<HttpRequester>
             throw new IOException(UNEXPECTED_FILE_ERROR + cachedResponse.getAbsolutePath());
 
         final Document htmlObject = testedObject.getHtmlFromUrl(DEFAULT_URL);
-        assertNotNull(htmlObject);
+        assertNotNull("The method getHtmlFromUrl(\"" + DEFAULT_URL + "\") should retrieve a response from the web, if the response was not cached!",
+                      htmlObject);
     }
 
 
@@ -208,7 +225,9 @@ public class HttpRequesterTest extends AbstractFileSystemUnitTest<HttpRequester>
         testedObject.getHtmlFromUrl(DEFAULT_URL);
 
         // verify the cache file was created (or not)
-        assertEquals(isCachingEnabled, cachedResponse.exists());
+        assertEquals("The method getHtmlFromUrl() should " + messageNotCached + " cache the response on disk if the " + WRITE_TO_DISK_KEY + "-parameter is " + isCachingEnabled,
+                     isCachingEnabled,
+                     cachedResponse.exists());
     }
 
 
@@ -225,7 +244,8 @@ public class HttpRequesterTest extends AbstractFileSystemUnitTest<HttpRequester>
                                   : JSON_OBJECT_URL;
         final JsonObject obj = testedObject.getObjectFromUrl(requestUrl, JsonObject.class);
 
-        assertNotNull(obj);
+        assertNotNull("The method getObjectFromUrl(\"" + requestUrl + "\") should not return null!",
+                      obj);
     }
 
 
@@ -238,6 +258,8 @@ public class HttpRequesterTest extends AbstractFileSystemUnitTest<HttpRequester>
     @Test
     public void testGettingUncachedObject() throws IOException
     {
+        skipTestIfCachingDisabled();
+
         testedObject = createReadOnlyExampleHttpRequester();
 
         final File cachedResponse =
@@ -252,8 +274,10 @@ public class HttpRequesterTest extends AbstractFileSystemUnitTest<HttpRequester>
                              JSON_OBJECT_URL,
                              JsonObject.class);
 
-        assertNotNull(obj);
+        assertNotNull("The method getObjectFromUrl(\"" + DEFAULT_URL + "\") should retrieve a response from the web, if the response was not cached!",
+                      obj);
     }
+
 
 
     /**
@@ -273,7 +297,9 @@ public class HttpRequesterTest extends AbstractFileSystemUnitTest<HttpRequester>
         testedObject.getObjectFromUrl(JSON_OBJECT_URL, JsonObject.class);
 
         // verify the cache file was created (or not)
-        assertEquals(isCachingEnabled, cachedResponse.exists());
+        assertEquals("The method getObjectFromUrl() should " + messageNotCached + " cache the response on disk if the " + WRITE_TO_DISK_KEY + "-parameter is " + isCachingEnabled,
+                     isCachingEnabled,
+                     cachedResponse.exists());
     }
 
 
@@ -288,7 +314,8 @@ public class HttpRequesterTest extends AbstractFileSystemUnitTest<HttpRequester>
     {
         testedObject = createReadOnlyExampleHttpRequester();
         String response = testedObject.getRestResponse(RestRequestType.GET, DEFAULT_URL, null, null, "text/html");
-        assertNotNull(response);
+        assertNotNull("Sending a GET request to \"" + DEFAULT_URL + "\" should return a response!",
+                      response);
     }
 
 
@@ -304,7 +331,8 @@ public class HttpRequesterTest extends AbstractFileSystemUnitTest<HttpRequester>
         testedObject = createReadOnlyExampleHttpRequester();
 
         Map<String, List<String>> header = testedObject.getRestHeader(RestRequestType.GET, DEFAULT_URL, null);
-        assert header.size() > 0;
+        assertFalse("The map returned by getRestHeader(\"" + DEFAULT_URL + "\", null) should not be empty!",
+                    header.isEmpty());
     }
 
 
@@ -326,5 +354,14 @@ public class HttpRequesterTest extends AbstractFileSystemUnitTest<HttpRequester>
         requester.setCacheFolder(MOCKED_RESPONSE_CACHE_FOLDER);
 
         return requester;
+    }
+
+
+    /**
+     * Skips the test that calls this method, if isCachingEnabled is false.
+     */
+    private void skipTestIfCachingDisabled()
+    {
+        Assume.assumeTrue("Skipping test, because it only makes sense when caching is enabled.", isCachingEnabled);
     }
 }

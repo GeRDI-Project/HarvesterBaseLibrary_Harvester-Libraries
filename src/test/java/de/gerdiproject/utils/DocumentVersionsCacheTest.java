@@ -17,7 +17,10 @@
 package de.gerdiproject.utils;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 import java.nio.charset.StandardCharsets;
@@ -74,7 +77,9 @@ public class DocumentVersionsCacheTest extends AbstractFileSystemUnitTest<Docume
                           wipFolder + CacheConstants.VERSIONS_FOLDER_NAME));
 
         final DiskIO diskReader = new DiskIO(new Gson(), StandardCharsets.UTF_8);
-        assertEquals(sourceHash, diskReader.getString(sourceHashFile));
+        assertEquals("The method init() should create the source hash file: " + sourceHashFile,
+                     sourceHash,
+                     diskReader.getString(sourceHashFile));
     }
 
 
@@ -91,7 +96,8 @@ public class DocumentVersionsCacheTest extends AbstractFileSystemUnitTest<Docume
             String.format(CacheConstants.SOURCE_HASH_FILE_PATH,
                           wipFolder + CacheConstants.VERSIONS_FOLDER_NAME));
 
-        assert !sourceHashFile.exists();
+        assertFalse("The method init() should not create the source hash file when null is passed as an argument!",
+                    sourceHashFile.exists());
     }
 
 
@@ -106,7 +112,7 @@ public class DocumentVersionsCacheTest extends AbstractFileSystemUnitTest<Docume
         // test if as many non-empty files were created as there were version files
         for (int i = 0; i < numberOfPutFiles; i++) {
             final File addedFile = getCachedDocument(DOCUMENT_ID + i, true);
-            assert addedFile.length() != 0;
+            assertNotEquals("The method putFile() should create a non-empty file!", 0, addedFile.length());
         }
     }
 
@@ -122,7 +128,8 @@ public class DocumentVersionsCacheTest extends AbstractFileSystemUnitTest<Docume
         testedObject.removeFile(DOCUMENT_ID);
 
         File deletedDocument = getCachedDocument(DOCUMENT_ID, true);
-        assert !deletedDocument.exists();
+        assertFalse("The method removeFile() should cause the corresponding file to be deleted!",
+                    deletedDocument.exists());
     }
 
 
@@ -137,7 +144,8 @@ public class DocumentVersionsCacheTest extends AbstractFileSystemUnitTest<Docume
         List<String> documentIDs = testedObject.getDocumentIDs();
 
         for (int i = 0; i < numberOfPutFiles; i++)
-            assert documentIDs.contains(DOCUMENT_ID + i);
+            assertTrue("The method getDocumentIDs() should return all IDs that were added via putFile()!",
+                       documentIDs.contains(DOCUMENT_ID + i));
     }
 
 
@@ -152,7 +160,8 @@ public class DocumentVersionsCacheTest extends AbstractFileSystemUnitTest<Docume
         // test if as many non-empty files were created as there were version files
         for (int i = 0; i < numberOfPutFiles; i++) {
             final File addedFile = getCachedDocument(DOCUMENT_ID + i, false);
-            assert addedFile.length() != 0;
+            assertNotEquals("The method applyChanges() should cause every file that was created via putFile() to now be retrievable via getCachedDocument()!",
+                            0, addedFile.length());
         }
     }
 
@@ -166,7 +175,8 @@ public class DocumentVersionsCacheTest extends AbstractFileSystemUnitTest<Docume
         putRandomNumberOfFiles(false);
 
         final File oldFile = getCachedDocument(DOCUMENT_ID + 10, false);
-        assert oldFile.length() != 0;
+        assertNotEquals("The method applyChanges() should no cause existing files to be removed from the stable folder!",
+                        0, oldFile.length());
     }
 
 
@@ -180,7 +190,8 @@ public class DocumentVersionsCacheTest extends AbstractFileSystemUnitTest<Docume
         final int numberOfPutFiles = putRandomNumberOfFiles(true);
 
         for (int i = 0; i < numberOfPutFiles; i++)
-            assertNull(testedObject.getFileContent(DOCUMENT_ID + i));
+            assertNull("The method getFileContent() should return null if applyChanges() was not called on the document that is requested! ",
+                       testedObject.getFileContent(DOCUMENT_ID + i));
     }
 
 
@@ -195,7 +206,9 @@ public class DocumentVersionsCacheTest extends AbstractFileSystemUnitTest<Docume
 
         for (int i = 0; i < numberOfPutFiles; i++) {
             final String retrievedValue = testedObject.getFileContent(DOCUMENT_ID + i);
-            assertEquals(DOCUMENT_ID + i, retrievedValue);
+            assertEquals("The document identifier does not match the file content!",
+                         DOCUMENT_ID + i,
+                         retrievedValue);
         }
     }
 
@@ -214,7 +227,8 @@ public class DocumentVersionsCacheTest extends AbstractFileSystemUnitTest<Docume
         (String documentId, String documentHash) -> {
             return documentId.equals(documentHash);
         });
-        assert successfulIteration;
+        assertTrue("The document identifier does not match the document in the forEach() function!",
+                   successfulIteration);
     }
 
 
@@ -230,7 +244,8 @@ public class DocumentVersionsCacheTest extends AbstractFileSystemUnitTest<Docume
         (String documentId, String documentHash) -> {
             return false;
         });
-        assert successfulIteration;
+        assertTrue("The method forEach() should return true if there are no documents to process!",
+                   successfulIteration);
     }
 
 
@@ -249,7 +264,9 @@ public class DocumentVersionsCacheTest extends AbstractFileSystemUnitTest<Docume
             return true;
         });
 
-        assertEquals(numberOfPutFiles, numberOfProcessedFiles.get());
+        assertEquals("The method forEach() must process the same number of documents that were putFile() and applied!",
+                     numberOfPutFiles,
+                     numberOfProcessedFiles.get());
     }
 
 
@@ -267,7 +284,8 @@ public class DocumentVersionsCacheTest extends AbstractFileSystemUnitTest<Docume
             return false;
         });
 
-        assert !successfulIteration;
+        assertFalse("The method forEach() must return false if its lambda expression evaluates to false!",
+                    successfulIteration);
     }
 
 
@@ -296,7 +314,9 @@ public class DocumentVersionsCacheTest extends AbstractFileSystemUnitTest<Docume
             return true;
         });
 
-        assertEquals(1, numberOfProcessedFiles.get());
+        assertEquals("The method forEach() must interrupt when its lambda expression returns false!",
+                     1,
+                     numberOfProcessedFiles.get());
     }
 
 
@@ -313,7 +333,8 @@ public class DocumentVersionsCacheTest extends AbstractFileSystemUnitTest<Docume
         testedObject.removeFile(DOCUMENT_ID + 0);
         testedObject.deleteEmptyFiles();
 
-        assert !getCachedDocument(DOCUMENT_ID + 0, false).exists();
+        assertFalse("The method deleteEmptyFiles() must delete a stable file if an empty file with the same name exists in the temporary folder!",
+                    getCachedDocument(DOCUMENT_ID + 0, false).exists());
     }
 
 
@@ -330,7 +351,8 @@ public class DocumentVersionsCacheTest extends AbstractFileSystemUnitTest<Docume
         testedObject.removeFile(DOCUMENT_ID + 0);
         testedObject.deleteEmptyFiles();
 
-        assert !getCachedDocument(DOCUMENT_ID + 0, true).exists();
+        assertFalse("The method deleteEmptyFiles() must delete empty files in the temporary folder!",
+                    getCachedDocument(DOCUMENT_ID + 0, true).exists());
     }
 
 
@@ -344,7 +366,9 @@ public class DocumentVersionsCacheTest extends AbstractFileSystemUnitTest<Docume
         testedObject.init(HARVESTER_HASH);
         testedObject.applyChanges();
         testedObject.init(HARVESTER_HASH + 2);
-        assert testedObject.isOutdated();
+
+        assertTrue("The method isOutdated() must return true if the stable source hash does not equal the temporary sourceHash!",
+                   testedObject.isOutdated());
     }
 
 
@@ -358,7 +382,9 @@ public class DocumentVersionsCacheTest extends AbstractFileSystemUnitTest<Docume
         testedObject.init(HARVESTER_HASH);
         testedObject.applyChanges();
         testedObject.init(HARVESTER_HASH);
-        assert !testedObject.isOutdated();
+
+        assertFalse("The method isOutdated() must return false if the stable source hash equals the temporary sourceHash!",
+                    testedObject.isOutdated());
     }
 
 

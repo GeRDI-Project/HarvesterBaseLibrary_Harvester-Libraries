@@ -17,7 +17,10 @@
 package de.gerdiproject.utils;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 import java.nio.charset.StandardCharsets;
@@ -77,7 +80,8 @@ public class DocumentChangesCacheTest extends AbstractFileSystemUnitTest<Documen
         // test if as many empty files were created as there were version files
         for (int i = 0; i < size; i++) {
             final File initializedFile = getCachedDocument(DOCUMENT_ID + i, true);
-            assert initializedFile.exists() && initializedFile.length() == 0;
+            assertTrue("The method init() should create an empty file!",
+                       initializedFile.exists() && initializedFile.length() == 0);
         }
     }
 
@@ -93,7 +97,8 @@ public class DocumentChangesCacheTest extends AbstractFileSystemUnitTest<Documen
         // test if as many non-empty files were created as there were version files
         for (int i = 0; i < numberOfPutFiles; i++) {
             final File addedFile = getCachedDocument(DOCUMENT_ID + i, true);
-            assert addedFile.length() != 0;
+            assertNotEquals("The method putFile() should create a non-empty file!",
+                            0, addedFile.length());
         }
     }
 
@@ -105,7 +110,8 @@ public class DocumentChangesCacheTest extends AbstractFileSystemUnitTest<Documen
     public void testSizeWhenPuttingFiles()
     {
         final int numberOfPutFiles = putRandomNumberOfFiles(true);
-        assertEquals(numberOfPutFiles, testedObject.size());
+        assertEquals("The method size() should reflect the number of files generated via putFile()!",
+                     numberOfPutFiles, testedObject.size());
     }
 
 
@@ -119,7 +125,8 @@ public class DocumentChangesCacheTest extends AbstractFileSystemUnitTest<Documen
         testedObject.removeFile(DOCUMENT_ID);
 
         File deletedDocument = getCachedDocument(DOCUMENT_ID, true);
-        assert !deletedDocument.exists();
+        assertFalse("The method removeFile() should cause the corresponding file to be deleted!",
+                    deletedDocument.exists());
     }
 
 
@@ -135,7 +142,8 @@ public class DocumentChangesCacheTest extends AbstractFileSystemUnitTest<Documen
         for (int i = 0; i < numberOfRemovedFiles; i++)
             testedObject.removeFile(DOCUMENT_ID + i);
 
-        assertEquals(numberOfPutFiles - numberOfRemovedFiles, testedObject.size());
+        assertEquals("The method removeFile() should cause the size() method to reflect the changes!",
+                     numberOfPutFiles - numberOfRemovedFiles, testedObject.size());
     }
 
 
@@ -150,7 +158,8 @@ public class DocumentChangesCacheTest extends AbstractFileSystemUnitTest<Documen
         List<String> documentIDs = testedObject.getDocumentIDs();
 
         for (int i = 0; i < numberOfPutFiles; i++)
-            assert documentIDs.contains(DOCUMENT_ID + i);
+            assertTrue("The method getDocumentIDs() should return all IDs that were added via putFile()!",
+                       documentIDs.contains(DOCUMENT_ID + i));
     }
 
 
@@ -166,7 +175,8 @@ public class DocumentChangesCacheTest extends AbstractFileSystemUnitTest<Documen
         // test if as many non-empty files were created as there were version files
         for (int i = 0; i < numberOfPutFiles; i++) {
             final File addedFile = getCachedDocument(DOCUMENT_ID + i, false);
-            assert addedFile.length() != 0;
+            assertNotEquals("The method applyChanges() should cause every file that was created via putFile() to now be retrievable via getCachedDocument()!",
+                            0, addedFile.length());
         }
     }
 
@@ -181,7 +191,8 @@ public class DocumentChangesCacheTest extends AbstractFileSystemUnitTest<Documen
         final int numberOfPutFiles = putRandomNumberOfFiles(true);
 
         for (int i = 0; i < numberOfPutFiles; i++)
-            assertNull(testedObject.getFileContent(DOCUMENT_ID + i));
+            assertNull("The method getFileContent() should return null if applyChanges() was not called on the document that is requested! ",
+                       testedObject.getFileContent(DOCUMENT_ID + i));
     }
 
 
@@ -196,7 +207,9 @@ public class DocumentChangesCacheTest extends AbstractFileSystemUnitTest<Documen
 
         for (int i = 0; i < numberOfPutFiles; i++) {
             final DataCiteJson retrievedDocument = testedObject.getFileContent(DOCUMENT_ID + i);
-            assertEquals(i, retrievedDocument.getPublicationYear());
+            assertEquals("The document identifier does not match the file content!",
+                         i,
+                         retrievedDocument.getPublicationYear());
         }
     }
 
@@ -217,7 +230,8 @@ public class DocumentChangesCacheTest extends AbstractFileSystemUnitTest<Documen
             short year = document.getPublicationYear();
             return documentId.endsWith(String.valueOf(year));
         });
-        assert successfulIteration;
+        assertTrue("The document identifier does not match the document in the forEach() function!",
+                   successfulIteration);
     }
 
 
@@ -233,7 +247,8 @@ public class DocumentChangesCacheTest extends AbstractFileSystemUnitTest<Documen
         (String documentId, DataCiteJson document) -> {
             return false;
         });
-        assert successfulIteration;
+        assertTrue("The method forEach() should return true if there are no documents to process!",
+                   successfulIteration);
     }
 
 
@@ -252,7 +267,9 @@ public class DocumentChangesCacheTest extends AbstractFileSystemUnitTest<Documen
             return true;
         });
 
-        assertEquals(numberOfPutFiles, numberOfProcessedFiles.get());
+        assertEquals("The method forEach() must process the same number of documents that were putFile() and applied!",
+                     numberOfPutFiles,
+                     numberOfProcessedFiles.get());
     }
 
 
@@ -270,7 +287,8 @@ public class DocumentChangesCacheTest extends AbstractFileSystemUnitTest<Documen
             return false;
         });
 
-        assert !successfulIteration;
+        assertFalse("The method forEach() must return false if its lambda expression evaluates to false!",
+                    successfulIteration);
     }
 
 
@@ -299,7 +317,9 @@ public class DocumentChangesCacheTest extends AbstractFileSystemUnitTest<Documen
             return true;
         });
 
-        assertEquals(1, numberOfProcessedFiles.get());
+        assertEquals("The method forEach() must interrupt when its lambda expression returns false!",
+                     1,
+                     numberOfProcessedFiles.get());
     }
 
 

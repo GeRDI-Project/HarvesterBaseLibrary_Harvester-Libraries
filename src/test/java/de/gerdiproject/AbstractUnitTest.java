@@ -16,7 +16,10 @@
  */
 package de.gerdiproject;
 
-import java.io.IOException;
+
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
 import java.lang.reflect.ParameterizedType;
 import java.util.Random;
 import java.util.concurrent.CompletableFuture;
@@ -24,6 +27,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
 
 import org.junit.After;
+import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -45,6 +49,7 @@ import de.gerdiproject.harvest.utils.logger.constants.LoggerConstants;
 public abstract class AbstractUnitTest<T>
 {
     private static final String CLEANUP_ERROR = "Could not instantiate object: ";
+    private static final String SKIP_EVENT_TESTS_MESSAGE = "Skipping event listener tests, because %s does not implement " + IEventListener.class.getSimpleName() + ".";
     protected static final int DEFAULT_EVENT_TIMEOUT = 2000;
 
     private final Level initialLogLevel = LoggerConstants.ROOT_LOGGER.getLevel();
@@ -57,7 +62,7 @@ public abstract class AbstractUnitTest<T>
     /**
      * Creates an instance of the tested object.
      *
-     * @throws IOException thrown when the test folder could not be deleted
+     * @throws InstantiationException thrown when the test folder could not be deleted
      */
     @Before
     public void before() throws InstantiationException
@@ -90,16 +95,17 @@ public abstract class AbstractUnitTest<T>
     @Test
     public void testAddingEventListeners()
     {
+        Assume.assumeTrue(String.format(SKIP_EVENT_TESTS_MESSAGE, testedObject.getClass().getSimpleName()),
+                          testedObject instanceof IEventListener);
+
         // if there is a config, remove its listeners to not falsify the result
         if (config != null)
             config.removeEventListeners();
 
-        if (testedObject instanceof IEventListener) {
-            ((IEventListener) testedObject).addEventListeners();
+        ((IEventListener) testedObject).addEventListeners();
 
-            assert EventSystem.hasSynchronousEventListeners()
-            || EventSystem.hasAsynchronousEventListeners();
-        }
+        assertTrue("The method addEventListeners() is not adding any event listeners!", EventSystem.hasSynchronousEventListeners()
+                   || EventSystem.hasAsynchronousEventListeners());
     }
 
 
@@ -110,14 +116,15 @@ public abstract class AbstractUnitTest<T>
     @Test
     public void testForNoInitialEventListeners()
     {
+        Assume.assumeTrue(String.format(SKIP_EVENT_TESTS_MESSAGE, testedObject.getClass().getSimpleName()),
+                          testedObject instanceof IEventListener);
+
         // if there is a config, remove its listeners to not falsify the result
         if (config != null)
             config.removeEventListeners();
 
-        if (testedObject instanceof IEventListener) {
-            assert !EventSystem.hasSynchronousEventListeners()
-            && !EventSystem.hasAsynchronousEventListeners();
-        }
+        assertFalse("Event listeners should not be added in the constructor!", EventSystem.hasSynchronousEventListeners()
+                    || EventSystem.hasAsynchronousEventListeners());
     }
 
 
@@ -128,17 +135,18 @@ public abstract class AbstractUnitTest<T>
     @Test
     public void testRemovingEventListeners()
     {
+        Assume.assumeTrue(String.format(SKIP_EVENT_TESTS_MESSAGE, testedObject.getClass().getSimpleName()),
+                          testedObject instanceof IEventListener);
+
         // if there is a config, remove its listeners to not falsify the result
         if (config != null)
             config.removeEventListeners();
 
-        if (testedObject instanceof IEventListener) {
-            ((IEventListener) testedObject).addEventListeners();
-            ((IEventListener) testedObject).removeEventListeners();
+        ((IEventListener) testedObject).addEventListeners();
+        ((IEventListener) testedObject).removeEventListeners();
 
-            assert !EventSystem.hasSynchronousEventListeners()
-            && !EventSystem.hasAsynchronousEventListeners();
-        }
+        assertFalse("The method removeEventListeners() should remove all listeners!", EventSystem.hasSynchronousEventListeners()
+                    || EventSystem.hasAsynchronousEventListeners());
     }
 
 

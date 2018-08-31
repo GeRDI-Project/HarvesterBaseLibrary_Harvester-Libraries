@@ -458,21 +458,27 @@ public abstract class AbstractSubmitter implements IEventListener
             submitBatch(batchMap);
 
             // log success and send an event
-            logger.info(
-                String.format(
-                    SubmissionConstants.SUBMIT_PARTIAL_OK,
-                    processedDocumentCount,
-                    processedDocumentCount + numberOfDocs));
+            if (logger.isInfoEnabled()) {
+                logger.info(
+                    String.format(
+                        SubmissionConstants.SUBMIT_PARTIAL_OK,
+                        processedDocumentCount,
+                        processedDocumentCount + numberOfDocs));
+            }
+
             failedDocumentCount -= numberOfDocs;
             isSuccessful = true;
         } catch (Exception e) {
             // log the failure
-            logger.error(
-                String.format(
-                    SubmissionConstants.SUBMIT_PARTIAL_FAILED,
-                    String.valueOf(processedDocumentCount),
-                    String.valueOf(processedDocumentCount + numberOfDocs)),
-                e);
+            if (logger.isErrorEnabled()) {
+                logger.error(
+                    String.format(
+                        SubmissionConstants.SUBMIT_PARTIAL_FAILED,
+                        String.valueOf(processedDocumentCount),
+                        String.valueOf(processedDocumentCount + numberOfDocs)),
+                    e);
+            }
+
             isSuccessful = false;
         }
 

@@ -17,6 +17,8 @@
 package de.gerdiproject.utils;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -39,13 +41,14 @@ import de.gerdiproject.harvest.utils.time.ProcessTimeMeasure.ProcessStatus;
  * This class provides test cases for the {@linkplain HarvestTimeKeeper}.
  *
  * @author Robin Weiss
- *
  */
 @RunWith(Parameterized.class)
 public class HarvestTimeKeeperTest extends AbstractFileSystemUnitTest<HarvestTimeKeeper>
 {
     private static final String HARVEST_MEASURE = "harvest";
     private static final String SUBMISSION_MEASURE = "submission";
+    private static final String ASSERT_LOAD_STATE_MESSAGE = "A measure that was saved in the %s-state should be in the %s-state when loaded!";
+    private static final String ASSERT_CHANGE_STATE_MESSAGE = "Sending a %s should switch the measure from the %s- to the %s-state!";
 
     @Parameters(name = "tested measure: {0}")
     public static Object[] getParameters()
@@ -109,7 +112,8 @@ public class HarvestTimeKeeperTest extends AbstractFileSystemUnitTest<HarvestTim
     @Test
     public void testHarvestIncompleteDuringNotStartedProcess()
     {
-        assert !testedObject.isHarvestIncomplete();
+        assertFalse("The method isHarvestIncomplete() should return false if a harvest was not started!",
+                    testedObject.isHarvestIncomplete());
     }
 
 
@@ -122,7 +126,8 @@ public class HarvestTimeKeeperTest extends AbstractFileSystemUnitTest<HarvestTim
     {
         testedObject.addEventListeners();
         EventSystem.sendEvent(new HarvestStartedEvent(0, 1, null));
-        assert !testedObject.isHarvestIncomplete();
+        assertFalse("The method isHarvestIncomplete() should return false if a harvest is in progress!",
+                    testedObject.isHarvestIncomplete());
     }
 
 
@@ -136,7 +141,8 @@ public class HarvestTimeKeeperTest extends AbstractFileSystemUnitTest<HarvestTim
         testedObject.addEventListeners();
         EventSystem.sendEvent(new HarvestStartedEvent(0, 1, null));
         EventSystem.sendEvent(new HarvestFinishedEvent(true, null));
-        assert !testedObject.isHarvestIncomplete();
+        assertFalse("The method isHarvestIncomplete() should return false if a harvest finished successfully!",
+                    testedObject.isHarvestIncomplete());
     }
 
 
@@ -150,7 +156,8 @@ public class HarvestTimeKeeperTest extends AbstractFileSystemUnitTest<HarvestTim
         testedObject.addEventListeners();
         EventSystem.sendEvent(new HarvestStartedEvent(0, 1, null));
         EventSystem.sendEvent(new HarvestFinishedEvent(false, null));
-        assert testedObject.isHarvestIncomplete();
+        assertTrue("The method isHarvestIncomplete() should return true if a harvest failed!",
+                   testedObject.isHarvestIncomplete());
     }
 
 
@@ -164,7 +171,8 @@ public class HarvestTimeKeeperTest extends AbstractFileSystemUnitTest<HarvestTim
         testedObject.addEventListeners();
         EventSystem.sendEvent(new HarvestStartedEvent(0, 1, null));
         EventSystem.sendEvent(new AbortingStartedEvent());
-        assert testedObject.isHarvestIncomplete();
+        assertTrue("The method isHarvestIncomplete() should return true if a harvest was aborted!",
+                   testedObject.isHarvestIncomplete());
     }
 
 
@@ -175,7 +183,8 @@ public class HarvestTimeKeeperTest extends AbstractFileSystemUnitTest<HarvestTim
     @Test
     public void testInitialUnsubmittedChangesGetter()
     {
-        assert !testedObject.hasUnsubmittedChanges();
+        assertFalse("The method hasUnsubmittedChanges() should return false if nothing was harvested, yet!",
+                    testedObject.hasUnsubmittedChanges());
     }
 
 
@@ -189,7 +198,9 @@ public class HarvestTimeKeeperTest extends AbstractFileSystemUnitTest<HarvestTim
         final ProcessTimeMeasure loadedMeasure = loadMeasureFromCache();
 
         // assert that the 'started' status resets to 'not_started'
-        assertEquals(ProcessStatus.NotStarted, loadedMeasure.getStatus());
+        assertEquals(String.format(ASSERT_LOAD_STATE_MESSAGE, ProcessStatus.NotStarted, ProcessStatus.NotStarted),
+                     ProcessStatus.NotStarted,
+                     loadedMeasure.getStatus());
     }
 
 
@@ -206,8 +217,10 @@ public class HarvestTimeKeeperTest extends AbstractFileSystemUnitTest<HarvestTim
 
         final ProcessTimeMeasure loadedMeasure = loadMeasureFromCache();
 
-        // assert that the 'started' status resets to 'not_started'
-        assertEquals(ProcessStatus.NotStarted, loadedMeasure.getStatus());
+        // assertTrue("",that the 'started' status resets to 'not_started'
+        assertEquals(String.format(ASSERT_LOAD_STATE_MESSAGE, ProcessStatus.Started, ProcessStatus.NotStarted),
+                     ProcessStatus.NotStarted,
+                     loadedMeasure.getStatus());
     }
 
 
@@ -225,8 +238,10 @@ public class HarvestTimeKeeperTest extends AbstractFileSystemUnitTest<HarvestTim
 
         final ProcessTimeMeasure loadedMeasure = loadMeasureFromCache();
 
-        // assert that the loaded status is the one that was saved
-        assertEquals(ProcessStatus.Finished, loadedMeasure.getStatus());
+        // assertTrue("",that the loaded status is the one that was saved
+        assertEquals(String.format(ASSERT_LOAD_STATE_MESSAGE, ProcessStatus.Finished, ProcessStatus.Finished),
+                     ProcessStatus.Finished,
+                     loadedMeasure.getStatus());
     }
 
 
@@ -244,8 +259,10 @@ public class HarvestTimeKeeperTest extends AbstractFileSystemUnitTest<HarvestTim
 
         final ProcessTimeMeasure loadedMeasure = loadMeasureFromCache();
 
-        // assert that the loaded status is the one that was saved
-        assertEquals(ProcessStatus.Failed, loadedMeasure.getStatus());
+        // assertTrue("",that the loaded status is the one that was saved
+        assertEquals(String.format(ASSERT_LOAD_STATE_MESSAGE, ProcessStatus.Failed, ProcessStatus.Failed),
+                     ProcessStatus.Failed,
+                     loadedMeasure.getStatus());
     }
 
 
@@ -263,8 +280,10 @@ public class HarvestTimeKeeperTest extends AbstractFileSystemUnitTest<HarvestTim
 
         final ProcessTimeMeasure loadedMeasure = loadMeasureFromCache();
 
-        // assert that the loaded status is the one that was saved
-        assertEquals(ProcessStatus.Aborted, loadedMeasure.getStatus());
+        // assertTrue that the loaded status is the one that was saved
+        assertEquals(String.format(ASSERT_LOAD_STATE_MESSAGE, ProcessStatus.Aborted, ProcessStatus.Aborted),
+                     ProcessStatus.Aborted,
+                     loadedMeasure.getStatus());
     }
 
 
@@ -274,7 +293,9 @@ public class HarvestTimeKeeperTest extends AbstractFileSystemUnitTest<HarvestTim
     @Test
     public void testProcessNotStarted()
     {
-        assertEquals(ProcessStatus.NotStarted, testedMeasure.getStatus());
+        assertEquals("The initial status of a measure should be : " + ProcessStatus.NotStarted,
+                     ProcessStatus.NotStarted,
+                     testedMeasure.getStatus());
     }
 
 
@@ -285,9 +306,7 @@ public class HarvestTimeKeeperTest extends AbstractFileSystemUnitTest<HarvestTim
     public void testProcessStart()
     {
         testedObject.addEventListeners();
-
-        EventSystem.sendEvent(startEvent);
-        assertEquals(ProcessStatus.Started, testedMeasure.getStatus());
+        assertStateChangeOnEvent(startEvent, ProcessStatus.Started);
     }
 
 
@@ -301,8 +320,7 @@ public class HarvestTimeKeeperTest extends AbstractFileSystemUnitTest<HarvestTim
         testedObject.addEventListeners();
 
         EventSystem.sendEvent(startEvent);
-        EventSystem.sendEvent(finishedEvent);
-        assertEquals(ProcessStatus.Finished, testedMeasure.getStatus());
+        assertStateChangeOnEvent(finishedEvent, ProcessStatus.Finished);
     }
 
 
@@ -317,7 +335,7 @@ public class HarvestTimeKeeperTest extends AbstractFileSystemUnitTest<HarvestTim
 
         EventSystem.sendEvent(startEvent);
         EventSystem.sendEvent(failedEvent);
-        assertEquals(ProcessStatus.Failed, testedMeasure.getStatus());
+        assertStateChangeOnEvent(failedEvent, ProcessStatus.Failed);
     }
 
 
@@ -331,8 +349,7 @@ public class HarvestTimeKeeperTest extends AbstractFileSystemUnitTest<HarvestTim
         testedObject.addEventListeners();
 
         EventSystem.sendEvent(startEvent);
-        EventSystem.sendEvent(new AbortingStartedEvent());
-        assertEquals(ProcessStatus.Aborted, testedMeasure.getStatus());
+        assertStateChangeOnEvent(new AbortingStartedEvent(), ProcessStatus.Aborted);
     }
 
 
@@ -347,8 +364,7 @@ public class HarvestTimeKeeperTest extends AbstractFileSystemUnitTest<HarvestTim
 
         EventSystem.sendEvent(startEvent);
         EventSystem.sendEvent(finishedEvent);
-        EventSystem.sendEvent(startEvent);
-        assertEquals(ProcessStatus.Started, testedMeasure.getStatus());
+        assertStateChangeOnEvent(startEvent, ProcessStatus.Started);
     }
 
 
@@ -363,8 +379,7 @@ public class HarvestTimeKeeperTest extends AbstractFileSystemUnitTest<HarvestTim
 
         EventSystem.sendEvent(startEvent);
         EventSystem.sendEvent(failedEvent);
-        EventSystem.sendEvent(startEvent);
-        assertEquals(ProcessStatus.Started, testedMeasure.getStatus());
+        assertStateChangeOnEvent(startEvent, ProcessStatus.Started);
     }
 
 
@@ -379,8 +394,7 @@ public class HarvestTimeKeeperTest extends AbstractFileSystemUnitTest<HarvestTim
 
         EventSystem.sendEvent(startEvent);
         EventSystem.sendEvent(new AbortingStartedEvent());
-        EventSystem.sendEvent(startEvent);
-        assertEquals(ProcessStatus.Started, testedMeasure.getStatus());
+        assertStateChangeOnEvent(startEvent, ProcessStatus.Started);
     }
 
 
@@ -411,5 +425,22 @@ public class HarvestTimeKeeperTest extends AbstractFileSystemUnitTest<HarvestTim
             default:
                 throw new IllegalArgumentException();
         }
+    }
+
+    /**
+     * Sends a specified event and asserts if the status of the tested measure changes as expected.
+     *
+     * @param event the event that is fired to trigger the status change
+     * @param statusAfterEvent the expected status after the event was dispatched
+     */
+    private void assertStateChangeOnEvent(IEvent event, ProcessStatus statusAfterEvent)
+    {
+        final ProcessStatus currentStatus = testedMeasure.getStatus();
+
+        EventSystem.sendEvent(event);
+
+        assertEquals(String.format(ASSERT_CHANGE_STATE_MESSAGE, event.getClass().getSimpleName(), currentStatus, statusAfterEvent),
+                     statusAfterEvent,
+                     testedMeasure.getStatus());
     }
 }

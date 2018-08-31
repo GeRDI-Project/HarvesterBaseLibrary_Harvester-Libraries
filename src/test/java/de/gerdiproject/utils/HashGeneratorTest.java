@@ -22,6 +22,7 @@ import java.nio.charset.StandardCharsets;
 
 import org.junit.Test;
 
+import de.gerdiproject.AbstractUnitTest;
 import de.gerdiproject.harvest.utils.HashGenerator;
 
 /**
@@ -30,12 +31,28 @@ import de.gerdiproject.harvest.utils.HashGenerator;
  * @author Robin Weiss
  *
  */
-public class HashGeneratorTest
+public class HashGeneratorTest extends AbstractUnitTest<HashGenerator>
 {
+    private static final String INPUT_VALUE = "test";
+    private static final String HASHED_INPUT_VALUE = "a94a8fe5ccb19ba61c4c0873d391e987982fbbd3";
+    private static final String ASSERT_MESSAGE = "The method getShaHash(\"" + INPUT_VALUE + "\") should return:" + HASHED_INPUT_VALUE;
+
+
+    @Override
+    protected HashGenerator setUpTestObjects()
+    {
+        return new HashGenerator(StandardCharsets.UTF_8);
+    }
+
+
+    /**
+     * Tests if the getShaHash() method returns the expected SHA hash of an input value.
+     */
     @Test
     public void testHashValue()
     {
-        final HashGenerator generator = new HashGenerator(StandardCharsets.UTF_8);
-        assertEquals(generator.getShaHash("test"), "a94a8fe5ccb19ba61c4c0873d391e987982fbbd3");
+        assertEquals(ASSERT_MESSAGE,
+                     HASHED_INPUT_VALUE,
+                     testedObject.getShaHash(INPUT_VALUE));
     }
 }

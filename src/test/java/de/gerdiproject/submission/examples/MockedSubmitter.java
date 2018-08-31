@@ -63,7 +63,7 @@ public class MockedSubmitter extends AbstractSubmitter
     }
 
 
-    public String getSubmissionUrl()
+    public String getUrl()
     {
         return super.getUrl();
     }

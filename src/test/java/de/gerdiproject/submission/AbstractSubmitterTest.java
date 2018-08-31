@@ -17,8 +17,10 @@
 package de.gerdiproject.submission;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import org.junit.Test;
@@ -55,6 +57,9 @@ public class AbstractSubmitterTest extends AbstractFileSystemUnitTest<AbstractSu
     private static final String TEST_PASSWORD = "Top Sekret";
     private static final String SOURCE_ID = "source";
     private static final String ERROR_ILLEGAL_STATE_EXPECTED = "Expected IllegalStateException to be thrown!";
+    private static final String ASSERT_PARAM_UPDATE_MESSAGE = "Changing the %s-parameter should update the field of the AbstractSubmitter!";
+    private static final String ASSERT_SUBMIT_ALL_MESSAGE = "Not all documents were properly submitted!";
+    private static final String ASSERT_ERROR_MESSAGE = "Expected the error message: \"" + SubmissionConstants.NO_URL_ERROR + "\"!";
 
     private HarvesterCacheManager cacheManager = new HarvesterCacheManager();
 
@@ -87,7 +92,9 @@ public class AbstractSubmitterTest extends AbstractFileSystemUnitTest<AbstractSu
         testedObject.addEventListeners();
         final String url = setRandomUrl();
 
-        assertEquals(url, ((MockedSubmitter) testedObject).getSubmissionUrl().toString());
+        assertEquals(String.format(ASSERT_PARAM_UPDATE_MESSAGE, SubmissionConstants.URL_PARAM.getCompositeKey()),
+                     url,
+                     ((MockedSubmitter) testedObject).getUrl().toString());
     }
 
 
@@ -103,7 +110,9 @@ public class AbstractSubmitterTest extends AbstractFileSystemUnitTest<AbstractSu
         final int size = 1 + random.nextInt(1000);
         setBatchSize(size);
 
-        assertEquals(size, ((MockedSubmitter) testedObject).getMaxBatchSize());
+        assertEquals(String.format(ASSERT_PARAM_UPDATE_MESSAGE, SubmissionConstants.MAX_BATCH_SIZE_PARAM.getCompositeKey()),
+                     size,
+                     ((MockedSubmitter) testedObject).getMaxBatchSize());
     }
 
 
@@ -113,7 +122,8 @@ public class AbstractSubmitterTest extends AbstractFileSystemUnitTest<AbstractSu
     @Test
     public void testInitialCredentials()
     {
-        assertNull(((MockedSubmitter) testedObject).getCredentials());
+        assertNull("The method getCredentials() should return null if neither the password nor the username were set!",
+                   ((MockedSubmitter) testedObject).getCredentials());
     }
 
 
@@ -126,7 +136,8 @@ public class AbstractSubmitterTest extends AbstractFileSystemUnitTest<AbstractSu
     {
         testedObject.addEventListeners();
         setRandomUserName();
-        assertNull(((MockedSubmitter) testedObject).getCredentials());
+        assertNull("The method getCredentials() should return null if the password was not set!",
+                   ((MockedSubmitter) testedObject).getCredentials());
     }
 
 
@@ -139,7 +150,8 @@ public class AbstractSubmitterTest extends AbstractFileSystemUnitTest<AbstractSu
     {
         testedObject.addEventListeners();
         setRandomPassword();
-        assertNull(((MockedSubmitter) testedObject).getCredentials());
+        assertNull("The method getCredentials() should return null if the username was not set!",
+                   ((MockedSubmitter) testedObject).getCredentials());
     }
 
 
@@ -153,7 +165,8 @@ public class AbstractSubmitterTest extends AbstractFileSystemUnitTest<AbstractSu
         testedObject.addEventListeners();
         setRandomUserName();
         setRandomPassword();
-        assertNotNull(((MockedSubmitter) testedObject).getCredentials());
+        assertNotNull("The method getCredentials() should NOT return null if the password and username were both set!",
+                      ((MockedSubmitter) testedObject).getCredentials());
     }
 
 
@@ -169,7 +182,8 @@ public class AbstractSubmitterTest extends AbstractFileSystemUnitTest<AbstractSu
         final String password = setRandomPassword();
 
         final String credentials = ((MockedSubmitter) testedObject).getCredentials();
-        assert !credentials.contains(userName) && !credentials.contains(password);
+        assertFalse("Neither the password, nor the user name should be retrievable from the method getCredentials()!",
+                    credentials.contains(userName) && !credentials.contains(password));
     }
 
 
@@ -189,7 +203,8 @@ public class AbstractSubmitterTest extends AbstractFileSystemUnitTest<AbstractSu
                                                     2000,
                                                     () -> testedObject.submitAll());
 
-        assertNotNull(finishedEvent);
+        assertNotNull("The submitAll() function should eventually cause a " + SubmissionFinishedEvent.class.getSimpleName() + " to be sent!",
+                      finishedEvent);
     }
 
 
@@ -211,7 +226,8 @@ public class AbstractSubmitterTest extends AbstractFileSystemUnitTest<AbstractSu
             () -> testedObject.submitAll());
 
         for (int i = 0; i < numberOfAddedDocs; i++)
-            assert((MockedSubmitter) testedObject).getSubmittedIndices().contains(i);
+            assertTrue(ASSERT_SUBMIT_ALL_MESSAGE,
+                       ((MockedSubmitter) testedObject).getSubmittedIndices().contains(i));
     }
 
 
@@ -235,7 +251,8 @@ public class AbstractSubmitterTest extends AbstractFileSystemUnitTest<AbstractSu
             () -> testedObject.submitAll());
 
         for (int i = 0; i < numberOfAddedDocs; i++)
-            assert((MockedSubmitter) testedObject).getSubmittedIndices().contains(i);
+            assertTrue(ASSERT_SUBMIT_ALL_MESSAGE,
+                       ((MockedSubmitter) testedObject).getSubmittedIndices().contains(i));
     }
 
 
@@ -253,7 +270,9 @@ public class AbstractSubmitterTest extends AbstractFileSystemUnitTest<AbstractSu
             testedObject.submitAll();
             fail(ERROR_ILLEGAL_STATE_EXPECTED);
         } catch (IllegalStateException e) {
-            assertEquals(SubmissionConstants.NO_URL_ERROR, e.getMessage());
+            assertEquals(String.format(ASSERT_ERROR_MESSAGE, SubmissionConstants.NO_URL_ERROR),
+                         SubmissionConstants.NO_URL_ERROR,
+                         e.getMessage());
         }
     }
 
@@ -273,7 +292,9 @@ public class AbstractSubmitterTest extends AbstractFileSystemUnitTest<AbstractSu
             testedObject.submitAll();
             fail(ERROR_ILLEGAL_STATE_EXPECTED);
         } catch (IllegalStateException e) {
-            assertEquals(SubmissionConstants.NO_DOCS_ERROR, e.getMessage());
+            assertEquals(String.format(ASSERT_ERROR_MESSAGE, SubmissionConstants.NO_DOCS_ERROR),
+                         SubmissionConstants.NO_DOCS_ERROR,
+                         e.getMessage());
         }
     }
 
@@ -296,36 +317,13 @@ public class AbstractSubmitterTest extends AbstractFileSystemUnitTest<AbstractSu
             testedObject.submitAll();
             fail(ERROR_ILLEGAL_STATE_EXPECTED);
         } catch (IllegalStateException e) {
-            assertEquals(SubmissionConstants.FAILED_HARVEST_ERROR, e.getMessage());
+            assertEquals(String.format(ASSERT_ERROR_MESSAGE, SubmissionConstants.FAILED_HARVEST_ERROR),
+                         SubmissionConstants.FAILED_HARVEST_ERROR,
+                         e.getMessage());
         }
     }
 
 
-    /**
-     * Tests if the submission succeeds if the preceding harvest failed, but the 'submitIncomplete'
-     * is enabled.
-     */
-    @Test
-    public void testSubmittingFailedHarvestWithFlag()
-    {
-        testedObject.addEventListeners();
-        setRandomUrl();
-        addRandomNumberOfSubmittableDocuments();
-        setBatchSize(1);
-
-        // enable flag
-        config.setParameter(SubmissionConstants.SUBMIT_INCOMPLETE_PARAM.getCompositeKey(), Boolean.TRUE.toString());
-
-        // mark the harvest as incomplete
-        EventSystem.sendEvent(new HarvestFinishedEvent(false, SOURCE_ID));
-
-        SubmissionFinishedEvent finishedEvent = waitForEvent(
-                                                    SubmissionFinishedEvent.class,
-                                                    2000,
-                                                    () -> testedObject.submitAll());
-
-        assertNotNull(finishedEvent);
-    }
 
 
     /**
@@ -351,8 +349,39 @@ public class AbstractSubmitterTest extends AbstractFileSystemUnitTest<AbstractSu
             testedObject.submitAll();
             fail(ERROR_ILLEGAL_STATE_EXPECTED);
         } catch (IllegalStateException e) {
-            assertEquals(SubmissionConstants.OUTDATED_ERROR, e.getMessage());
+            assertEquals(String.format(ASSERT_ERROR_MESSAGE, SubmissionConstants.OUTDATED_ERROR),
+                         SubmissionConstants.OUTDATED_ERROR,
+                         e.getMessage());
         }
+    }
+
+
+    /**
+     * Tests if the submission succeeds if the preceding harvest failed, but the 'submitIncomplete'
+     * is enabled.
+     */
+    @Test
+    public void testSubmittingFailedHarvestWithFlag()
+    {
+        testedObject.addEventListeners();
+        setRandomUrl();
+        addRandomNumberOfSubmittableDocuments();
+        setBatchSize(1);
+
+        // enable flag
+        final String submitIncompleteKey = SubmissionConstants.SUBMIT_INCOMPLETE_PARAM.getCompositeKey();
+        config.setParameter(submitIncompleteKey, Boolean.TRUE.toString());
+
+        // mark the harvest as incomplete
+        EventSystem.sendEvent(new HarvestFinishedEvent(false, SOURCE_ID));
+
+        SubmissionFinishedEvent finishedEvent = waitForEvent(
+                                                    SubmissionFinishedEvent.class,
+                                                    2000,
+                                                    () -> testedObject.submitAll());
+
+        assertNotNull("The method submitAll() should cause a " + finishedEvent.getClass().getSimpleName() + " to be sent, when the " + submitIncompleteKey + "-parameter is true, even if the harvest failed!",
+                      finishedEvent);
     }
 
 
@@ -370,7 +399,8 @@ public class AbstractSubmitterTest extends AbstractFileSystemUnitTest<AbstractSu
         setBatchSize(1);
 
         // enable flag
-        config.setParameter(SubmissionConstants.SUBMIT_OUTDATED_PARAM.getCompositeKey(), Boolean.TRUE.toString());
+        final String submitOutdatedKey = SubmissionConstants.SUBMIT_OUTDATED_PARAM.getCompositeKey();
+        config.setParameter(submitOutdatedKey, Boolean.TRUE.toString());
 
         // finish submitting successfully
         waitForEvent(
@@ -383,7 +413,8 @@ public class AbstractSubmitterTest extends AbstractFileSystemUnitTest<AbstractSu
                                                   2000,
                                                   () -> testedObject.submitAll());
 
-        assertNotNull(secondEvent);
+        assertNotNull("The method submitAll() should cause a " + secondEvent.getClass().getSimpleName() + " to be sent, when the " + submitOutdatedKey + "-parameter is true and a submission succeeded in the past!",
+                      secondEvent);
     }
 
 
@@ -412,7 +443,8 @@ public class AbstractSubmitterTest extends AbstractFileSystemUnitTest<AbstractSu
                                                   2000,
                                                   () -> EventSystem.sendEvent(new StartAbortingEvent()));
 
-        assertNotNull(abortingEvent);
+        assertNotNull("The method submitAll() should cause an " + abortingEvent.getClass().getSimpleName() + " to be sent, when the submission was aborted!",
+                      abortingEvent);
     }
 
 

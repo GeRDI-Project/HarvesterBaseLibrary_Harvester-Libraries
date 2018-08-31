@@ -21,6 +21,7 @@ import static org.junit.Assert.assertNotEquals;
 
 import org.junit.Test;
 
+import de.gerdiproject.AbstractUnitTest;
 import de.gerdiproject.harvest.application.MainContext;
 import de.gerdiproject.harvest.utils.maven.MavenUtils;
 import de.gerdiproject.json.datacite.DataCiteJson;
@@ -30,18 +31,27 @@ import de.gerdiproject.json.datacite.DataCiteJson;
  *
  * @author Robin Weiss
  */
-public class MavenUtilsTest
+public class MavenUtilsTest extends AbstractUnitTest<MavenUtils>
 {
+    @Override
+    protected MavenUtils setUpTestObjects()
+    {
+        return new MavenUtils(MainContext.class);
+    }
+
+
     /**
      * Tests if the jar names from classes of different jars differ as well.
      */
     @Test
     public void testJarNames()
     {
-        final String harvestLibraryJarName = new MavenUtils(MainContext.class).getHarvesterJarName();
+        final String harvestLibraryJarName = testedObject.getHarvesterJarName();
         final String jsonLibraryJarName = new MavenUtils(DataCiteJson.class).getHarvesterJarName();
 
-        assertNotEquals(harvestLibraryJarName, jsonLibraryJarName);
+        assertNotEquals("The method getHarvesterJarName() should return a JAR-name that depends on the JAR file to which a class belongs!",
+                        harvestLibraryJarName,
+                        jsonLibraryJarName);
     }
 
 
@@ -51,8 +61,7 @@ public class MavenUtilsTest
     @Test
     public void testDependencies()
     {
-        final MavenUtils utils = new MavenUtils(MainContext.class);
-
-        assertFalse(utils.getMavenVersionInfo(null).isEmpty());
+        assertFalse("The method getMavenVersionInfo() should not return an empty list!",
+                    testedObject.getMavenVersionInfo(null).isEmpty());
     }
 }

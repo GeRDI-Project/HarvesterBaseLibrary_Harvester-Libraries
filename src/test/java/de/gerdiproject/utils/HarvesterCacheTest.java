@@ -17,8 +17,10 @@
 package de.gerdiproject.utils;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 import java.nio.charset.StandardCharsets;
@@ -74,7 +76,8 @@ public class HarvesterCacheTest extends AbstractFileSystemUnitTest<HarvesterCach
     @Test
     public void testGettingChangesCache()
     {
-        assertNotNull(testedObject.getChangesCache());
+        assertNotNull("The method getChangesCache() should not return null!",
+                      testedObject.getChangesCache());
     }
 
 
@@ -84,7 +87,8 @@ public class HarvesterCacheTest extends AbstractFileSystemUnitTest<HarvesterCach
     @Test
     public void testGettingVersionsCache()
     {
-        assertNotNull(testedObject.getVersionsCache());
+        assertNotNull("The method getVersionsCache() should not return null!",
+                      testedObject.getVersionsCache());
     }
 
 
@@ -104,13 +108,14 @@ public class HarvesterCacheTest extends AbstractFileSystemUnitTest<HarvesterCach
         testedObject.init(HARVESTER_HASH, 0, 2);
         final String sourceHash02 = diskReader.getString(sourceHashFile);
 
-        assertNotEquals(sourceHash01, sourceHash02);
+        assertNotEquals("The method init() should create source hashes that depend on the defined harvesting range!",
+                        sourceHash01,
+                        sourceHash02);
     }
 
 
     /**
-     * Tests if added event listeners are working as expected.
-     * In this case, tests if temporary files are cleaned up when the server
+     * Tests if temporary files are cleaned up when the server
      * undeploys the harvester service.
      */
     @Test
@@ -123,7 +128,8 @@ public class HarvesterCacheTest extends AbstractFileSystemUnitTest<HarvesterCach
 
         // make sure temporary files are cleaned up
         final File cacheFolder = new File(tempFolder);
-        assert !cacheFolder.exists();
+        assertFalse("The ContextDestroyedEvent should cause the temporary folder to be deleted!",
+                    cacheFolder.exists());
     }
 
 
@@ -141,7 +147,8 @@ public class HarvesterCacheTest extends AbstractFileSystemUnitTest<HarvesterCach
                                         DOCUMENT_ID.substring(0, 2),
                                         DOCUMENT_ID.substring(2)));
 
-        assert versionFile.exists();
+        assertTrue("The method cacheDocument() must create a file in the temporary document version folder!",
+                   versionFile.exists());
     }
 
 
@@ -159,12 +166,13 @@ public class HarvesterCacheTest extends AbstractFileSystemUnitTest<HarvesterCach
                                         DOCUMENT_ID.substring(0, 2),
                                         DOCUMENT_ID.substring(2)));
 
-        assert changesFile.exists();
+        assertTrue("The method cacheDocument() must create a file in the temporary document changes folder!",
+                   changesFile.exists());
     }
 
 
     /**
-     * Tests if caching a document causes and applying, causes
+     * Tests if caching a document and applying, causes
      * the changes cache file to be in the stable directory.
      */
     @Test
@@ -173,12 +181,13 @@ public class HarvesterCacheTest extends AbstractFileSystemUnitTest<HarvesterCach
         testedObject.cacheDocument(new DataCiteJson(SOURCE_ID), true);
         testedObject.applyChanges(true, false);
 
-        assertNotNull(testedObject.getChangesCache().getFileContent(DOCUMENT_ID));
+        assertNotNull("The method getChangesCache().getFileContent() must not return null, when the corresponding document ID was cached and applyChanges() was called!",
+                      testedObject.getChangesCache().getFileContent(DOCUMENT_ID));
     }
 
 
     /**
-     * Tests if caching a document causes and applying, causes
+     * Tests if caching a document and applying, causes
      * the version cache file to be in the stable directory.
      */
     @Test
@@ -187,7 +196,8 @@ public class HarvesterCacheTest extends AbstractFileSystemUnitTest<HarvesterCach
         testedObject.cacheDocument(new DataCiteJson(SOURCE_ID), true);
         testedObject.applyChanges(true, false);
 
-        assertNotNull(testedObject.getVersionsCache().getFileContent(DOCUMENT_ID));
+        assertNotNull("The method getVersionsCache().getFileContent() must not return null, when the corresponding document ID was cached and applyChanges() was called!",
+                      testedObject.getVersionsCache().getFileContent(DOCUMENT_ID));
     }
 
 
@@ -206,7 +216,8 @@ public class HarvesterCacheTest extends AbstractFileSystemUnitTest<HarvesterCach
         final DataCiteJson documentNew = new DataCiteJson(SOURCE_ID);
         documentNew.setPublicationYear((short)1337);
 
-        assert addDocumentAfterApply(document, documentNew, forcedHarvest);
+        assertTrue("A new document must be added to the changes cache if cacheDocument() and then applyChanges() was called!",
+                   addDocumentAfterApply(document, documentNew, forcedHarvest));
     }
 
 
@@ -217,9 +228,9 @@ public class HarvesterCacheTest extends AbstractFileSystemUnitTest<HarvesterCach
     @Test
     public void testApplyingUnchangedDocument()
     {
-        final boolean forcedHarvest = false;
         final DataCiteJson document = new DataCiteJson(SOURCE_ID);
-        assertEquals(forcedHarvest, addDocumentAfterApply(document, document, forcedHarvest));
+        assertFalse("When calling cacheDocument() and then applyChanges() while the 'forced' flag is enabled, the document must NOT be added to the temporary changes cache!",
+                    addDocumentAfterApply(document, document, false));
     }
 
 
@@ -230,9 +241,9 @@ public class HarvesterCacheTest extends AbstractFileSystemUnitTest<HarvesterCach
     @Test
     public void testApplyingUnchangedDocumentForced()
     {
-        final boolean forcedHarvest = true;
         final DataCiteJson document = new DataCiteJson(SOURCE_ID);
-        assertEquals(forcedHarvest, addDocumentAfterApply(document, document, forcedHarvest));
+        assertTrue("When calling cacheDocument() and then applyChanges() while the 'forced' flag is enabled, the document must be added to the temporary changes cache!",
+                   addDocumentAfterApply(document, document, true));
     }
 
 
@@ -246,9 +257,10 @@ public class HarvesterCacheTest extends AbstractFileSystemUnitTest<HarvesterCach
         final boolean wasHarvestSuccessful = true;
         final boolean wasHarvestAborted = false;
 
-        assert !doesVersionFileExistAfterApplying(
-            wasHarvestSuccessful,
-            wasHarvestAborted);
+        assertFalse("Cached document versions should be deleted from the stable folder, if they are not in the temporary folder after a subsequent successful harvest!",
+                    doesVersionFileExistAfterApplying(
+                        wasHarvestSuccessful,
+                        wasHarvestAborted));
     }
 
 
@@ -262,9 +274,10 @@ public class HarvesterCacheTest extends AbstractFileSystemUnitTest<HarvesterCach
         final boolean wasHarvestSuccessful = false;
         final boolean wasHarvestAborted = true;
 
-        assert doesVersionFileExistAfterApplying(
-            wasHarvestSuccessful,
-            wasHarvestAborted);
+        assertTrue("Cached document versions should NOT be deleted from the stable folder, if a subsequent harvest was aborted!",
+                   doesVersionFileExistAfterApplying(
+                       wasHarvestSuccessful,
+                       wasHarvestAborted));
     }
 
 
@@ -278,9 +291,10 @@ public class HarvesterCacheTest extends AbstractFileSystemUnitTest<HarvesterCach
         final boolean wasHarvestSuccessful = false;
         final boolean wasHarvestAborted = false;
 
-        assert doesVersionFileExistAfterApplying(
-            wasHarvestSuccessful,
-            wasHarvestAborted);
+        assertTrue("Cached document versions should NOT be deleted from the stable folder, if a subsequent harvest failed!",
+                   doesVersionFileExistAfterApplying(
+                       wasHarvestSuccessful,
+                       wasHarvestAborted));
     }
 
 
@@ -295,9 +309,10 @@ public class HarvesterCacheTest extends AbstractFileSystemUnitTest<HarvesterCach
         final boolean wasHarvestSuccessful = true;
         final boolean wasHarvestAborted = true;
 
-        assert doesVersionFileExistAfterApplying(
-            wasHarvestSuccessful,
-            wasHarvestAborted);
+        assertTrue("Cached document versions should NOT be deleted from the stable folder, if a subsequent harvest failed and was aborted!",
+                   doesVersionFileExistAfterApplying(
+                       wasHarvestSuccessful,
+                       wasHarvestAborted));
     }
 
 
@@ -320,7 +335,9 @@ public class HarvesterCacheTest extends AbstractFileSystemUnitTest<HarvesterCach
         testedObject.skipAllDocuments();
         File tempChangesFolder = new File(tempFolder, CacheConstants.CHANGES_FOLDER_NAME);
 
-        assertEquals(0, tempChangesFolder.listFiles().length);
+        assertEquals("The method skipAllDocuments() should cause all files to be removed from the temporary changes folder, that exist in the stable folder!",
+                     0,
+                     tempChangesFolder.listFiles().length);
     }
 
 

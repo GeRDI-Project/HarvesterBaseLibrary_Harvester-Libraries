@@ -18,6 +18,7 @@ package de.gerdiproject.utils;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 
@@ -77,7 +78,8 @@ public class HarvesterLogTest extends AbstractFileSystemUnitTest<HarvesterLog>
     @Test
     public void testLogFileCreation()
     {
-        assert logFile.exists() && logFile.isFile();
+        assertTrue("The method registerLogger() should cause the log file " + logFile + " to be created!",
+                   logFile.exists() && logFile.isFile());
     }
 
 
@@ -91,7 +93,9 @@ public class HarvesterLogTest extends AbstractFileSystemUnitTest<HarvesterLog>
         LOGGER.info(EXAMPLE_LOG);
         final long logSizeAfter = logFile.length();
 
-        assertNotEquals(logSizeBefore, logSizeAfter);
+        assertNotEquals("Logging something after registerLogger() is called should cause the log file to change!",
+                        logSizeBefore,
+                        logSizeAfter);
     }
 
 
@@ -109,7 +113,9 @@ public class HarvesterLogTest extends AbstractFileSystemUnitTest<HarvesterLog>
         LOGGER.info(EXAMPLE_LOG);
         final long logSizeAfterUnregister = logFile.length();
 
-        assertEquals(logSizeBeforeUnregister, logSizeAfterUnregister);
+        assertEquals("Logging something after unregisterLogger() is called should cause no changes in the log file!",
+                     logSizeBeforeUnregister,
+                     logSizeAfterUnregister);
     }
 
     /**
@@ -123,7 +129,9 @@ public class HarvesterLogTest extends AbstractFileSystemUnitTest<HarvesterLog>
         testedObject.registerLogger();
         LOGGER.info(EXAMPLE_LOG);
 
-        assertNotEquals(0, logFile.length());
+        assertNotEquals("Logging something after an unregistered logger is registered again should cause the log file to change!",
+                        0,
+                        logFile.length());
     }
 
 
@@ -139,6 +147,8 @@ public class HarvesterLogTest extends AbstractFileSystemUnitTest<HarvesterLog>
         testedObject.unregisterLogger();
         testedObject.clearLog();
 
-        assertEquals(0L, logFile.length());
+        assertEquals("Calling clearLog() should cause the log file to become empty!",
+                     0L,
+                     logFile.length());
     }
 }

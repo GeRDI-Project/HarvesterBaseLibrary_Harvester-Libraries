@@ -99,7 +99,9 @@ public class ConfigurationTest extends AbstractFileSystemUnitTest<Configuration>
     public void testNullConstructor()
     {
         testedObject = new Configuration();
-        assertEquals(0, testedObject.getParameters().size());
+        assertEquals("The method getParameters() should return an empty list after the constructor without arguments is called!",
+                     0,
+                     testedObject.getParameters().size());
     }
 
 
@@ -120,7 +122,10 @@ public class ConfigurationTest extends AbstractFileSystemUnitTest<Configuration>
 
         // check if all parameters can be retrieved
         for (AbstractParameter<?> param : customHarvesterParams)
-            assertEquals(param.getValue(), testedObject.getParameterValue(param.getCompositeKey()));
+            assertEquals(
+                "The method getParameterValue() should return a list of all parameters that were passed to the constructor",
+                param.getValue(),
+                testedObject.getParameterValue(param.getCompositeKey()));
     }
 
 
@@ -137,7 +142,9 @@ public class ConfigurationTest extends AbstractFileSystemUnitTest<Configuration>
         testedObject = new Configuration(paramWithCase);
 
         final String upperCaseKey = paramWithCase.getCompositeKey().toUpperCase();
-        assertEquals(randomValue, testedObject.getParameterValue(upperCaseKey));
+        assertEquals("The method getParameterValue() should be case insensitive!",
+                     randomValue,
+                     testedObject.getParameterValue(upperCaseKey));
     }
 
 
@@ -151,7 +158,9 @@ public class ConfigurationTest extends AbstractFileSystemUnitTest<Configuration>
         testedObject.addEventListeners();
         final AbstractParameter<?> registeredParam = Configuration.registerParameter(testedParam);
 
-        assertEquals(registeredParam, testedParam);
+        assertEquals("The static method registerParameter() should return the same instance of a parameter if it was already added to the Configuration",
+                     registeredParam,
+                     testedParam);
     }
 
 
@@ -166,7 +175,8 @@ public class ConfigurationTest extends AbstractFileSystemUnitTest<Configuration>
         final AbstractParameter<?> registeredParam1 = Configuration.registerParameter(testedParam.copy());
         final AbstractParameter<?> registeredParam2 = Configuration.registerParameter(testedParam.copy());
 
-        assertEquals(registeredParam1, registeredParam2);
+        assertEquals("",
+                     registeredParam1, registeredParam2);
     }
 
 
@@ -322,7 +332,7 @@ public class ConfigurationTest extends AbstractFileSystemUnitTest<Configuration>
     public void testPasswordParameterMasking()
     {
         final PasswordParameter param = new PasswordParameter(PARAM_KEY, TEST_CATEGORY, PASSWORD_VALUE_1);
-        assert !param.getStringValue().contains(param.getValue().toString());
+        assertFalse("", param.getStringValue().contains(param.getValue().toString());
     }
 
 
@@ -336,7 +346,7 @@ public class ConfigurationTest extends AbstractFileSystemUnitTest<Configuration>
         final Class<? extends IState> stateThatAllowsChanges = HarvestingState.class;
         final IState stateThatForbidsChanges = new InitializationState();
 
-        assert !canParameterBeSetInState(stateThatForbidsChanges, stateThatAllowsChanges);
+        assertFalse("", canParameterBeSetInState(stateThatForbidsChanges, stateThatAllowsChanges);
     }
 
 
@@ -348,7 +358,7 @@ public class ConfigurationTest extends AbstractFileSystemUnitTest<Configuration>
     public void testSettingInAllowedState()
     {
         final IState stateThatAllowsChanges = new InitializationState();
-        assert canParameterBeSetInState(stateThatAllowsChanges, stateThatAllowsChanges.getClass());
+        assertTrue("", canParameterBeSetInState(stateThatAllowsChanges, stateThatAllowsChanges.getClass());
     }
 
 
@@ -359,7 +369,7 @@ public class ConfigurationTest extends AbstractFileSystemUnitTest<Configuration>
     public void testSettingInNullState()
     {
         final Class<? extends IState> stateThatAllowsChanges = HarvestingState.class;
-        assert canParameterBeSetInState(null, stateThatAllowsChanges);
+        assertTrue("", canParameterBeSetInState(null, stateThatAllowsChanges);
     }
 
 
@@ -372,7 +382,7 @@ public class ConfigurationTest extends AbstractFileSystemUnitTest<Configuration>
         testedObject.setCacheFilePath(configFile.getAbsolutePath());
         testedObject.saveToDisk();
 
-        assert configFile.exists() && configFile.isFile();
+        assertTrue("", configFile.exists() && configFile.isFile();
     }
 
 
@@ -387,7 +397,7 @@ public class ConfigurationTest extends AbstractFileSystemUnitTest<Configuration>
         testedObject.saveToDisk();
         setLoggerEnabled(true);
 
-        assert !configFile.exists();
+        assertFalse("", configFile.exists();
     }
 
 
@@ -704,7 +714,7 @@ public class ConfigurationTest extends AbstractFileSystemUnitTest<Configuration>
         final String configString = testedObject.toString();
 
         testedObject.getParameters().forEach((AbstractParameter<?> param) -> {
-            assert configString.contains(param.getKey());
+            assertTrue("", configString.contains(param.getKey());
         });
     }
 
@@ -723,7 +733,7 @@ public class ConfigurationTest extends AbstractFileSystemUnitTest<Configuration>
         final String configString = testedObject.toString();
 
         testedObject.getParameters().forEach((AbstractParameter<?> param) -> {
-            assert configString.contains(param.getStringValue());
+            assertTrue("", configString.contains(param.getStringValue());
         });
     }
 
@@ -742,8 +752,8 @@ public class ConfigurationTest extends AbstractFileSystemUnitTest<Configuration>
 
         testedObject.getParameters().forEach((AbstractParameter<?> param) -> {
             if (param.getStringValue() != null && !param.getStringValue().isEmpty())
-                assert !configString.contains(param.getStringValue());
-        });
+                assertFalse("", configString.contains(param.getStringValue());
+            });
     }
 
 
@@ -762,7 +772,8 @@ public class ConfigurationTest extends AbstractFileSystemUnitTest<Configuration>
      * @throws IllegalArgumentException thrown when the new and the old value are the same,
      *          rendering this test useless
      */
-    private <T> void testParameterChange(AbstractParameter<T> param, T newValue)
+    private <T>
+    void testParameterChange(AbstractParameter<T> param, T newValue)
     {
         final String compositeKey = param.getCompositeKey();
         final T oldValue = param.getValue();

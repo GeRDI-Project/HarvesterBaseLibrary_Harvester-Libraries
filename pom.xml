@@ -17,13 +17,13 @@
 	<inceptionYear>2017</inceptionYear>
   
 	<properties>
-		<compiler.plugin.version>3.6.1</compiler.plugin.version>
-		<jar.plugin.version>3.0.2</jar.plugin.version>
-		<javadoc.plugin.version>2.10.4</javadoc.plugin.version>
+		<compiler.plugin.version>3.8.0</compiler.plugin.version>
+		<jar.plugin.version>3.1.0</jar.plugin.version>
+		<javadoc.plugin.version>3.0.1</javadoc.plugin.version>
 		<source.plugin.version>3.0.1</source.plugin.version>
 		<bundle.plugin.version>3.0.1</bundle.plugin.version>
 		<gerdigson.dependency.version>5.0.0-SNAPSHOT</gerdigson.dependency.version>
-		<javaxservlet.dependency.version>3.1.0</javaxservlet.dependency.version>
+		<javaxservlet.dependency.version>4.0.1</javaxservlet.dependency.version>
 		<javaxwsrs.dependency.version>2.1</javaxwsrs.dependency.version>
 	</properties>
 	

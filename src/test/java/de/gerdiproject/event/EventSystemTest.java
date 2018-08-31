@@ -17,8 +17,10 @@
 package de.gerdiproject.event;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.util.Arrays;
@@ -87,7 +89,8 @@ public class EventSystemTest
         final TestEvent ignoredEvent = TEST_EVENTS.get(0);
 
         EventSystem.sendEvent(ignoredEvent);
-        assert !receivedEvents.contains(ignoredEvent);
+        assertFalse("A callback function of " + ignoredEvent.getClass().getSimpleName() + " was called although no listener was added!",
+                    receivedEvents.contains(ignoredEvent));
     }
 
 
@@ -101,7 +104,8 @@ public class EventSystemTest
         EventSystem.addListener(TestEvent.class, onTestEvent);
         EventSystem.sendEvent(expectedEvent);
 
-        assert receivedEvents.contains(expectedEvent);
+        assertTrue("The callback function of " + expectedEvent.getClass().getSimpleName() + " was never called although a listener was added!",
+                   receivedEvents.contains(expectedEvent));
     }
 
 
@@ -116,7 +120,9 @@ public class EventSystemTest
 
         EventSystem.sendEvent(SINGLE_TEST_EVENT);
 
-        assertEquals(2, receivedEvents.size());
+        assertEquals("The same callback function was assigned to " + TestEvent.class.getSimpleName() + " twice, so sending the event once, should cause the callback function to be called twice!",
+                     2,
+                     receivedEvents.size());
     }
 
 
@@ -132,7 +138,9 @@ public class EventSystemTest
 
         EventSystem.sendEvent(SINGLE_TEST_EVENT);
 
-        assertEquals(0, receivedEvents.size());
+        assertEquals("The method removeListener() should have caused the event listener to be removed!",
+                     0,
+                     receivedEvents.size());
     }
 
 
@@ -164,7 +172,9 @@ public class EventSystemTest
 
         EventSystem.sendEvent(SINGLE_TEST_EVENT);
 
-        assertEquals(0, receivedEvents.size());
+        assertEquals("The method removeAllListeners() should have removed all listeners of " + TestEvent.class.getSimpleName() + "!",
+                     0,
+                     receivedEvents.size());
     }
 
 
@@ -191,7 +201,9 @@ public class EventSystemTest
     public void testSendingSynchronousEventWithoutAddedListener()
     {
         final Object nullResult = EventSystem.sendSynchronousEvent(SINGLE_SYNC_TEST_EVENT);
-        assertNull(nullResult);
+
+        assertNull("The method sendSynchronousEvent() should return null if it was not assigned via addSynchronousListener()!",
+                   nullResult);
     }
 
 
@@ -203,7 +215,10 @@ public class EventSystemTest
     {
         EventSystem.addSynchronousListener(TestSynchronousEvent.class, onTestSyncEvent);
         final Object result = EventSystem.sendSynchronousEvent(SINGLE_SYNC_TEST_EVENT);
-        assertEquals(SINGLE_SYNC_TEST_EVENT.getPayload(), result);
+
+        assertEquals("The method sendSynchronousEvent() did not return the value that was defined in its callback function!",
+                     SINGLE_SYNC_TEST_EVENT.getPayload(),
+                     result);
     }
 
 
@@ -219,7 +234,9 @@ public class EventSystemTest
         EventSystem.addSynchronousListener(TestSynchronousEvent.class, onTestSyncEvent2);
         final Object overriddenResult = EventSystem.sendSynchronousEvent(SINGLE_SYNC_TEST_EVENT);
 
-        assertNotEquals(oldResult, overriddenResult);
+        assertNotEquals("The method addSynchronousListener() should overwrite an already assigned callback function!",
+                        oldResult,
+                        overriddenResult);
     }
 
 
@@ -233,7 +250,9 @@ public class EventSystemTest
         EventSystem.addSynchronousListener(TestSynchronousEvent.class, () -> STATIC_SYNC_PAYLOAD);
 
         final Object result = EventSystem.sendSynchronousEvent(SINGLE_SYNC_TEST_EVENT);
-        assertEquals(STATIC_SYNC_PAYLOAD, result);
+        assertEquals("The method sendSynchronousEvent() should return the expected payload after addSynchronousListener() was called with a Supplier as argument!",
+                     STATIC_SYNC_PAYLOAD,
+                     result);
     }
 
 
@@ -248,7 +267,8 @@ public class EventSystemTest
         EventSystem.removeSynchronousListener(TestSynchronousEvent.class);
 
         final Object nullResult = EventSystem.sendSynchronousEvent(SINGLE_SYNC_TEST_EVENT);
-        assertNull(nullResult);
+        assertNull("The method sendSynchronousEvent() should return null after removeSynchronousListener() was called!",
+                   nullResult);
     }
 
 
@@ -279,7 +299,9 @@ public class EventSystemTest
         EventSystem.reset();
 
         EventSystem.sendEvent(SINGLE_TEST_EVENT);
-        assertEquals(0, receivedEvents.size());
+        assertEquals("The method reset() should remove all asynchronous callback functions!",
+                     0,
+                     receivedEvents.size());
     }
 
 
@@ -293,7 +315,8 @@ public class EventSystemTest
         EventSystem.reset();
 
         final Object nullResult = EventSystem.sendSynchronousEvent(SINGLE_SYNC_TEST_EVENT);
-        assertNull(nullResult);
+        assertNull("The method reset() should remove all synchronous callback functions!",
+                   nullResult);
     }
 
 
@@ -324,7 +347,9 @@ public class EventSystemTest
             EventSystem.sendEvent(TEST_EVENTS.get(i));
 
         for (int i = 0; i < TEST_EVENTS.size(); i++)
-            assertEquals(TEST_EVENTS.get(i), receivedEvents.get(i));
+            assertEquals("Callback functions must be executed in the same order in which the events were dispatched!",
+                         TEST_EVENTS.get(i),
+                         receivedEvents.get(i));
     }
 
 
@@ -335,7 +360,8 @@ public class EventSystemTest
     @Test
     public void testEmptyEventListeners()
     {
-        assert !EventSystem.hasAsynchronousEventListeners();
+        assertFalse("The method hasAsynchronousEventListeners() should return false if addListener() was never called!",
+                    EventSystem.hasAsynchronousEventListeners());
     }
 
 
@@ -346,7 +372,8 @@ public class EventSystemTest
     @Test
     public void testEmptySynchronousEventListeners()
     {
-        assert !EventSystem.hasSynchronousEventListeners();
+        assertFalse("The method hasSynchronousEventListeners() should return false if addSynchronousListener() was never called!",
+                    EventSystem.hasSynchronousEventListeners());
     }
 
 
@@ -358,7 +385,8 @@ public class EventSystemTest
     public void testNonEmptyEventListeners()
     {
         EventSystem.addListener(TestEvent.class, onTestEvent);
-        assert EventSystem.hasAsynchronousEventListeners();
+        assertTrue("The method hasAsynchronousEventListeners() should return true if addListener() was called!",
+                   EventSystem.hasAsynchronousEventListeners());
     }
 
 
@@ -370,7 +398,8 @@ public class EventSystemTest
     public void testNonEmptySynchronousEventListeners()
     {
         EventSystem.addSynchronousListener(TestSynchronousEvent.class, onTestSyncEvent);
-        assert EventSystem.hasSynchronousEventListeners();
+        assertTrue("The method hasSynchronousEventListeners() should return true if addSynchronousListener() was called!",
+                   EventSystem.hasSynchronousEventListeners());
     }
 
     /**
@@ -383,7 +412,8 @@ public class EventSystemTest
         EventSystem.addListener(TestEvent.class, onTestEvent);
         EventSystem.removeListener(TestEvent.class, onTestEvent);
 
-        assert !EventSystem.hasAsynchronousEventListeners();
+        assertFalse("The method hasAsynchronousEventListeners() should return false after all asynchronous listeners were removed!",
+                    EventSystem.hasAsynchronousEventListeners());
     }
 
 
@@ -397,7 +427,8 @@ public class EventSystemTest
         EventSystem.addSynchronousListener(TestSynchronousEvent.class, onTestSyncEvent);
         EventSystem.removeSynchronousListener(TestSynchronousEvent.class);
 
-        assert !EventSystem.hasSynchronousEventListeners();
+        assertFalse("The method hasSynchronousEventListeners() should return false after all synchronous listeners were removed!",
+                    EventSystem.hasSynchronousEventListeners());
     }
 
 

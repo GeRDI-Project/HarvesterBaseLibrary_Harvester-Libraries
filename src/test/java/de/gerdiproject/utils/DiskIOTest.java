@@ -66,7 +66,9 @@ public class DiskIOTest extends AbstractFileSystemUnitTest<DiskIO>
         final DiskIO diskIoAscii = new DiskIO(new Gson(), StandardCharsets.US_ASCII);
         final String retrievedAscii = diskIoAscii.getString(testStringFile);
 
-        assertNotEquals(retrievedUtf8, retrievedAscii);
+        assertNotEquals("Reading '" + TEST_STRING + "' in different charsets should result in different strings!",
+                        retrievedUtf8,
+                        retrievedAscii);
     }
 
 
@@ -79,19 +81,22 @@ public class DiskIOTest extends AbstractFileSystemUnitTest<DiskIO>
     {
         testedObject.writeStringToFile(testStringFile, TEST_STRING);
 
-        assert testStringFile.exists();
+        assertTrue("The method writeStringToFile() should create a new file!",
+                   testStringFile.exists());
     }
 
 
     /**
-     * Tests if strings thate are written to a file, are the same when being read.
+     * Tests if strings that are written to a file, are the same when being read.
      */
     @Test
     public void testReadingStrings()
     {
         testedObject.writeStringToFile(testStringFile, TEST_STRING);
 
-        assertEquals(testedObject.getString(testStringFile), TEST_STRING);
+        assertEquals("The method getString() should return the same string that was written in writeStringToFile()!",
+                     testedObject.getString(testStringFile),
+                     TEST_STRING);
     }
 
 
@@ -107,7 +112,9 @@ public class DiskIOTest extends AbstractFileSystemUnitTest<DiskIO>
         testedObject.writeStringToFile(testStringFile, TEST_STRING);
         final String secondReadString = testedObject.getString(testStringFile);
 
-        assertEquals(firstReadString, secondReadString);
+        assertEquals("Calling writeStringToFile() multiple times should simply overwrite the file content!",
+                     firstReadString,
+                     secondReadString);
     }
 
 
@@ -120,7 +127,8 @@ public class DiskIOTest extends AbstractFileSystemUnitTest<DiskIO>
         final MockedObject testObject = new MockedObject(OBJECT_TEST_STRING, OBJECT_TEST_INT);
         testedObject.writeObjectToFile(testObjectFile, testObject);
 
-        assertTrue(testObjectFile.exists());
+        assertTrue("The method writeObjectToFile() should create a new file!",
+                   testObjectFile.exists());
     }
 
 
@@ -134,7 +142,9 @@ public class DiskIOTest extends AbstractFileSystemUnitTest<DiskIO>
         testedObject.writeObjectToFile(testObjectFile, testObject);
 
         final MockedObject readObject = testedObject.getObject(testObjectFile, testObject.getClass());
-        assertEquals(readObject, testObject);
+        assertEquals("The method getObject() should return the same string that was written in writeObjectToFile()!",
+                     readObject,
+                     testObject);
     }
 
 
@@ -154,6 +164,8 @@ public class DiskIOTest extends AbstractFileSystemUnitTest<DiskIO>
 
         // read the object
         final MockedObject secondReadObject = testedObject.getObject(testObjectFile, writtenObject.getClass());
-        assertEquals(firstReadObject, secondReadObject);
+        assertEquals("Calling writeObjectToFile() multiple times should simply overwrite the file content!",
+                     firstReadObject,
+                     secondReadObject);
     }
 }

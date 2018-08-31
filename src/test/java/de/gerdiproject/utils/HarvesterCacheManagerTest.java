@@ -17,6 +17,7 @@
 package de.gerdiproject.utils;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import java.nio.charset.StandardCharsets;
 
@@ -54,7 +55,8 @@ public class HarvesterCacheManagerTest extends AbstractFileSystemUnitTest<Harves
     @Test
     public void testGetHarvesterCachesEmpty()
     {
-        assert testedObject.getHarvesterCaches().isEmpty();
+        assertTrue("The method getHarvesterCaches() should return an empty list if registerCache() was not called before!",
+                   testedObject.getHarvesterCaches().isEmpty());
     }
 
 
@@ -67,7 +69,9 @@ public class HarvesterCacheManagerTest extends AbstractFileSystemUnitTest<Harves
     {
         int numberOfRegisteredCaches = registerRandomNumberOfCaches();
 
-        assertEquals(numberOfRegisteredCaches, testedObject.getHarvesterCaches().size());
+        assertEquals("The method getHarvesterCaches() should return the correct number of registered caches!",
+                     numberOfRegisteredCaches,
+                     testedObject.getHarvesterCaches().size());
     }
 
 
@@ -81,7 +85,9 @@ public class HarvesterCacheManagerTest extends AbstractFileSystemUnitTest<Harves
         testedObject.addEventListeners();
         final HarvesterCache registeredCache = registerCache();
 
-        assertEquals(registeredCache, testedObject.getHarvesterCaches().get(0));
+        assertEquals("The method registerCache() should cause the cache to be in the list that is retrieved via getHarvesterCaches()!",
+                     registeredCache,
+                     testedObject.getHarvesterCaches().get(0));
     }
 
 
@@ -105,7 +111,9 @@ public class HarvesterCacheManagerTest extends AbstractFileSystemUnitTest<Harves
             numberOfHarvestedDocs += addedDocs;
         }
 
-        assertEquals(numberOfHarvestedDocs, testedObject.getNumberOfHarvestedDocuments());
+        assertEquals("The method getNumberOfHarvestedDocuments() should return the correct number of cached document changes!",
+                     numberOfHarvestedDocs,
+                     testedObject.getNumberOfHarvestedDocuments());
     }
 
 
