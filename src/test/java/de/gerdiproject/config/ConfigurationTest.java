@@ -14,11 +14,13 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package de.gerdiproject.config;
+package de.gerdiproject.config; // NOPMD JUnit 4 requires many static imports
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.io.File;
@@ -158,7 +160,7 @@ public class ConfigurationTest extends AbstractFileSystemUnitTest<Configuration>
         testedObject.addEventListeners();
         final AbstractParameter<?> registeredParam = Configuration.registerParameter(testedParam);
 
-        assertEquals("The static method registerParameter() should return the same instance of a parameter if it was already added to the Configuration",
+        assertEquals("The static method registerParameter() should return the same instance of a parameter if it was already added to the Configuration!",
                      registeredParam,
                      testedParam);
     }
@@ -175,8 +177,9 @@ public class ConfigurationTest extends AbstractFileSystemUnitTest<Configuration>
         final AbstractParameter<?> registeredParam1 = Configuration.registerParameter(testedParam.copy());
         final AbstractParameter<?> registeredParam2 = Configuration.registerParameter(testedParam.copy());
 
-        assertEquals("",
-                     registeredParam1, registeredParam2);
+        assertEquals("Registering the same parmeter multiple times should return a reference to the same object!",
+                     registeredParam1,
+                     registeredParam2);
     }
 
 
@@ -192,7 +195,9 @@ public class ConfigurationTest extends AbstractFileSystemUnitTest<Configuration>
         final AbstractParameter<?> unknownParam = new IntegerParameter(PARAM_KEY + 2, TEST_CATEGORY);
         final AbstractParameter<?> registeredParam = Configuration.registerParameter(unknownParam);
 
-        assertNotEquals(registeredParam, unknownParam);
+        assertNotEquals("Registering a parameter object for the first time should register a copy instead of the original reference!",
+                        registeredParam,
+                        unknownParam);
     }
 
 
@@ -212,7 +217,9 @@ public class ConfigurationTest extends AbstractFileSystemUnitTest<Configuration>
 
         Configuration.registerParameter(param1);
 
-        assertEquals(oldValue, Configuration.registerParameter(param2).getValue());
+        assertEquals("Registering a parameter should not override the value if the parameter is known by the Configuration!",
+                     oldValue,
+                     Configuration.registerParameter(param2).getValue());
     }
 
 
@@ -224,7 +231,7 @@ public class ConfigurationTest extends AbstractFileSystemUnitTest<Configuration>
     public void testStringParameterChange()
     {
         final StringParameter param = new StringParameter(PARAM_KEY, TEST_CATEGORY, STRING_VALUE + 1);
-        testParameterChange(param, STRING_VALUE + 2);
+        assertThatParmeterValueCanChange(param, STRING_VALUE + 2);
     }
 
 
@@ -236,7 +243,7 @@ public class ConfigurationTest extends AbstractFileSystemUnitTest<Configuration>
     public void testIntegerParameterChange()
     {
         final IntegerParameter param = new IntegerParameter(PARAM_KEY, TEST_CATEGORY, INT_VALUE_1);
-        testParameterChange(param, INT_VALUE_2);
+        assertThatParmeterValueCanChange(param, INT_VALUE_2);
     }
 
 
@@ -248,7 +255,7 @@ public class ConfigurationTest extends AbstractFileSystemUnitTest<Configuration>
     public void testBooleanParameterChange()
     {
         final BooleanParameter param = new BooleanParameter(PARAM_KEY, TEST_CATEGORY, BOOL_VALUE_1);
-        testParameterChange(param, BOOL_VALUE_2);
+        assertThatParmeterValueCanChange(param, BOOL_VALUE_2);
     }
 
 
@@ -265,7 +272,7 @@ public class ConfigurationTest extends AbstractFileSystemUnitTest<Configuration>
         final URL valueAfter = new URL(URL_VALUE_2);
 
         final UrlParameter param = new UrlParameter(PARAM_KEY, TEST_CATEGORY, valueBefore);
-        testParameterChange(param, valueAfter);
+        assertThatParmeterValueCanChange(param, valueAfter);
     }
 
 
@@ -289,7 +296,7 @@ public class ConfigurationTest extends AbstractFileSystemUnitTest<Configuration>
         });
 
         final SubmitterParameter param = new SubmitterParameter(PARAM_KEY, TEST_CATEGORY, valueBefore);
-        testParameterChange(param, valueAfter);
+        assertThatParmeterValueCanChange(param, valueAfter);
     }
 
 
@@ -309,7 +316,9 @@ public class ConfigurationTest extends AbstractFileSystemUnitTest<Configuration>
         testedObject = createConfigWithCustomParameters(param);
         testedObject.setParameter(param.getCompositeKey(), valueAfter);
 
-        assertNotEquals(valueAfter, testedObject.getParameterValue(param.getCompositeKey()));
+        assertNotEquals("SubmitterParmeter values can only be assigned to balues that were registered in the SubmitterManager!",
+                        valueAfter,
+                        testedObject.getParameterValue(param.getCompositeKey()));
     }
 
 
@@ -321,7 +330,7 @@ public class ConfigurationTest extends AbstractFileSystemUnitTest<Configuration>
     public void testPasswordParameterChange()
     {
         final PasswordParameter param = new PasswordParameter(PARAM_KEY, TEST_CATEGORY, PASSWORD_VALUE_1);
-        testParameterChange(param, PASSWORD_VALUE_2);
+        assertThatParmeterValueCanChange(param, PASSWORD_VALUE_2);
     }
 
 
@@ -332,7 +341,8 @@ public class ConfigurationTest extends AbstractFileSystemUnitTest<Configuration>
     public void testPasswordParameterMasking()
     {
         final PasswordParameter param = new PasswordParameter(PARAM_KEY, TEST_CATEGORY, PASSWORD_VALUE_1);
-        assertFalse("", param.getStringValue().contains(param.getValue().toString());
+        assertFalse("The value of a PasswordParameter must not be readable via getStringValue()!",
+                    param.getStringValue().contains(param.getValue().toString()));
     }
 
 
@@ -346,19 +356,21 @@ public class ConfigurationTest extends AbstractFileSystemUnitTest<Configuration>
         final Class<? extends IState> stateThatAllowsChanges = HarvestingState.class;
         final IState stateThatForbidsChanges = new InitializationState();
 
-        assertFalse("", canParameterBeSetInState(stateThatForbidsChanges, stateThatAllowsChanges);
+        assertFalse("Parameters must only be changeable while the StateMachine is in an allowed state!",
+                    canParameterBeSetInState(stateThatForbidsChanges, stateThatAllowsChanges));
     }
 
 
     /**
-     * Tests if parameter values change when being set in a state that is allows
+     * Tests if parameter values change when being set in a state that allows
      * parameter changes.
      */
     @Test
     public void testSettingInAllowedState()
     {
         final IState stateThatAllowsChanges = new InitializationState();
-        assertTrue("", canParameterBeSetInState(stateThatAllowsChanges, stateThatAllowsChanges.getClass());
+        assertTrue("Parameter values must be changeable while the StateMachine is in an allowed state!",
+                   canParameterBeSetInState(stateThatAllowsChanges, stateThatAllowsChanges.getClass()));
     }
 
 
@@ -369,7 +381,8 @@ public class ConfigurationTest extends AbstractFileSystemUnitTest<Configuration>
     public void testSettingInNullState()
     {
         final Class<? extends IState> stateThatAllowsChanges = HarvestingState.class;
-        assertTrue("", canParameterBeSetInState(null, stateThatAllowsChanges);
+        assertTrue("Parameter values must be changeable while the StateMachine is not intialized!",
+                   canParameterBeSetInState(null, stateThatAllowsChanges));
     }
 
 
@@ -382,7 +395,8 @@ public class ConfigurationTest extends AbstractFileSystemUnitTest<Configuration>
         testedObject.setCacheFilePath(configFile.getAbsolutePath());
         testedObject.saveToDisk();
 
-        assertTrue("", configFile.exists() && configFile.isFile();
+        assertTrue("The method saveToDisk() should create a file on disk!",
+                   configFile.exists() && configFile.isFile());
     }
 
 
@@ -397,13 +411,14 @@ public class ConfigurationTest extends AbstractFileSystemUnitTest<Configuration>
         testedObject.saveToDisk();
         setLoggerEnabled(true);
 
-        assertFalse("", configFile.exists();
+        assertFalse("If  the method setCacheFilePath() is not called prior to calling saveToDisk(), a file should not be created!",
+                    configFile.exists());
     }
 
 
     /**
      * Tests if loading a configuration will successfully apply previously
-     * saved values while disregarding those whose keys are non-existing.
+     * saved values.
      */
     @Test
     public void testLoadingPresentValues()
@@ -430,19 +445,24 @@ public class ConfigurationTest extends AbstractFileSystemUnitTest<Configuration>
         setLoggerEnabled(true);
 
         // make sure the value of custom parameter was changed due to the loading
-        assertEquals(savedParamValue, testedObject.getParameterValue(testedParam.getCompositeKey()));
+        assertEquals(
+            "The method loadFromDisk() should overwrite existing Parmeter values!",
+            savedParamValue,
+            testedObject.getParameterValue(testedParam.getCompositeKey()));
     }
 
 
     /**
-     * Tests if loading a configuration will not add values that do not already
-     * exist.
+     * Tests if loading a configuration will add new Parameters.
      */
     @Test
     public void testLoadingNonPresentValues()
     {
         // save a config with one parameter
+
+        final Object savedParamValue = testedParam.getValue();
         testedParam.setRegistered(true);
+
         final Configuration savedConfig = createConfigWithCustomParameters(testedParam);
         savedConfig.setCacheFilePath(configFile.getAbsolutePath());
         savedConfig.saveToDisk();
@@ -456,8 +476,11 @@ public class ConfigurationTest extends AbstractFileSystemUnitTest<Configuration>
         testedObject.loadFromDisk();
         setLoggerEnabled(true);
 
-        // make sure custom parameter 2 was not created
-        assertNull(testedObject.getParameterStringValue(testedParam.getKey()));
+        // make sure the value of custom parameter was created due to the loading
+        assertEquals(
+            "The method loadFromDisk() should create parameters that did not exist!",
+            savedParamValue,
+            testedObject.getParameterValue(testedParam.getCompositeKey()));
     }
 
 
@@ -467,8 +490,7 @@ public class ConfigurationTest extends AbstractFileSystemUnitTest<Configuration>
     @Test
     public void testLoadWithNonExistingPath()
     {
-        // save the config
-        testedParam.setRegistered(true);
+        testedObject = new Configuration();
         testedObject.setCacheFilePath(configFile.getAbsolutePath());
 
         // attempt to load a non-existing path
@@ -476,8 +498,10 @@ public class ConfigurationTest extends AbstractFileSystemUnitTest<Configuration>
         testedObject.loadFromDisk();
         setLoggerEnabled(true);
 
-        // make sure the old custom parameter still exists
-        assertEquals(testedParam.getStringValue(), testedObject.getParameterStringValue(testedParam.getCompositeKey()));
+        // make sure that no parmeters wer created
+        assertTrue(
+            "Loading a non-existing Configuration should not cause any changes!",
+            testedObject.getParameters().isEmpty());
     }
 
 
@@ -504,7 +528,10 @@ public class ConfigurationTest extends AbstractFileSystemUnitTest<Configuration>
         setLoggerEnabled(true);
 
         // make sure the old custom parameter value was not overridden
-        assertEquals(valueToBeOverridden, testedObject.getParameterStringValue(testedParam.getCompositeKey()));
+        assertEquals(
+            "The method loadFromDisk() should not cause changes if setCacheFilePath() was not called in advance!",
+            valueToBeOverridden,
+            testedObject.getParameterStringValue(testedParam.getCompositeKey()));
     }
 
 
@@ -527,20 +554,23 @@ public class ConfigurationTest extends AbstractFileSystemUnitTest<Configuration>
         // check if deserialized global parameters are correct
         final Collection<AbstractParameter<?>> loadedParams = testedObject.getParameters();
 
-        savedConfig.getParameters().forEach((AbstractParameter<?> param) -> {
+        for (AbstractParameter<?> param : savedConfig.getParameters()) {
             boolean hasLoadedParameter = false;
 
-            for (AbstractParameter<?> loadedParam : loadedParams)
-            {
+            // TODO
+            for (AbstractParameter<?> loadedParam : loadedParams) {
                 if (loadedParam.getCompositeKey().equals(param.getCompositeKey())) {
-                    assertEquals(param.getClass(), loadedParam.getClass());
+                    assertEquals("The class of a saved parmeter must not change when the parmeter is loaded!",
+                                 param.getClass(),
+                                 loadedParam.getClass());
                     hasLoadedParameter = true;
                     break;
                 }
             }
+
             if (!hasLoadedParameter)
                 fail(String.format(ERROR_MISSING_LOADED_PARAM, param));
-        });
+        }
     }
 
 
@@ -566,11 +596,13 @@ public class ConfigurationTest extends AbstractFileSystemUnitTest<Configuration>
         // save and load
         testedObject = saveAndLoadConfig(savedConfig);
 
-
         // check if deserialized global parameters are correct
-        savedConfig.getParameters().forEach((AbstractParameter<?> param) -> {
-            assertEquals(param.getValue(), testedObject.getParameterValue(param.getCompositeKey()));
-        });
+        for (AbstractParameter<?> param : savedConfig.getParameters()) {
+            assertEquals(
+                "Saved parameters with null values must not change when loaded!",
+                param.getValue(),
+                testedObject.getParameterValue(param.getCompositeKey()));
+        }
     }
 
 
@@ -593,9 +625,11 @@ public class ConfigurationTest extends AbstractFileSystemUnitTest<Configuration>
         testedObject = saveAndLoadConfig(savedConfig);
 
         // check if deserialized global parameters are correct
-        savedConfig.getParameters().forEach((AbstractParameter<?> param) -> {
-            assertEquals(param.getValue(), testedObject.getParameterValue(param.getCompositeKey()));
-        });
+        for (AbstractParameter<?> param : savedConfig.getParameters()) {
+            assertEquals("The original values of saved Parmeters must match the values of the loaded Parameters!",
+                         param.getValue(),
+                         testedObject.getParameterValue(param.getCompositeKey()));
+        }
     }
 
 
@@ -613,9 +647,10 @@ public class ConfigurationTest extends AbstractFileSystemUnitTest<Configuration>
         testedObject = saveAndLoadConfig(savedConfig);
 
         // check if deserialized global parameters are correct
-        savedConfig.getParameters().forEach((AbstractParameter<?> param) -> {
-            assertNull(testedObject.getParameterValue(param.getCompositeKey()));
-        });
+        for (AbstractParameter<?> param : savedConfig.getParameters()) {
+            assertNull("Unregistered parmeters must not be saved!",
+                       testedObject.getParameterValue(param.getCompositeKey()));
+        }
     }
 
 
@@ -629,8 +664,12 @@ public class ConfigurationTest extends AbstractFileSystemUnitTest<Configuration>
     {
         testedObject = createConfigWithAllParameterTypes();
 
-        for (AbstractParameter<?> param : testedObject.getParameters())
-            assertEquals(param.getClass(), param.copy().getClass());
+        for (AbstractParameter<?> param : testedObject.getParameters()) {
+            assertEquals(
+                "The method copy() must preserve the class of the source object!",
+                param.getClass(),
+                param.copy().getClass());
+        }
     }
 
 
@@ -646,7 +685,10 @@ public class ConfigurationTest extends AbstractFileSystemUnitTest<Configuration>
 
         for (AbstractParameter<?> param : testedObject.getParameters()) {
             final AbstractParameter<?> clonedParam = param.copy();
-            assertEquals(param.getCategory(), clonedParam.getCategory());
+            assertEquals(
+                "The method copy() must preserve the 'category' field of the source object!",
+                param.getCategory(),
+                clonedParam.getCategory());
         }
     }
 
@@ -663,7 +705,10 @@ public class ConfigurationTest extends AbstractFileSystemUnitTest<Configuration>
 
         for (AbstractParameter<?> param : testedObject.getParameters()) {
             final AbstractParameter<?> clonedParam = param.copy();
-            assertEquals(param.getValue(), clonedParam.getValue());
+            assertEquals(
+                "The method copy() must preserve the 'value' field of the source object!",
+                param.getValue(),
+                clonedParam.getValue());
         }
     }
 
@@ -680,7 +725,10 @@ public class ConfigurationTest extends AbstractFileSystemUnitTest<Configuration>
 
         for (AbstractParameter<?> param : testedObject.getParameters()) {
             final AbstractParameter<?> clonedParam = param.copy();
-            assertEquals(param.getKey(), clonedParam.getKey());
+            assertEquals(
+                "The method copy() must preserve the 'key' field of the source object!",
+                param.getKey(),
+                clonedParam.getKey());
         }
     }
 
@@ -695,13 +743,17 @@ public class ConfigurationTest extends AbstractFileSystemUnitTest<Configuration>
     {
         testedObject = createConfigWithAllParameterTypes();
 
-        for (AbstractParameter<?> param : testedObject.getParameters())
-            assertNotEquals(param, param.copy());
+        for (AbstractParameter<?> param : testedObject.getParameters()) {
+            assertNotEquals("The method copy() must not return a reference to the source object!",
+                            param,
+                            param.copy());
+        }
     }
 
 
     /**
-     * Tests if the {@linkplain Configuration}'s toString() function displays all parameter keys.
+     * Tests if the {@linkplain Configuration}'s toString() function displays all parameter keys
+     * of registered parmeters.
      *
      * @throws MalformedURLException thrown if the URL parameter could not be created
      */
@@ -713,9 +765,10 @@ public class ConfigurationTest extends AbstractFileSystemUnitTest<Configuration>
 
         final String configString = testedObject.toString();
 
-        testedObject.getParameters().forEach((AbstractParameter<?> param) -> {
-            assertTrue("", configString.contains(param.getKey());
-        });
+        for (AbstractParameter<?> param : testedObject.getParameters()) {
+            assertTrue("The method toString() must return a string containing all registered parameter keys!",
+                       configString.contains(param.getKey()));
+        }
     }
 
 
@@ -732,9 +785,10 @@ public class ConfigurationTest extends AbstractFileSystemUnitTest<Configuration>
 
         final String configString = testedObject.toString();
 
-        testedObject.getParameters().forEach((AbstractParameter<?> param) -> {
-            assertTrue("", configString.contains(param.getStringValue());
-        });
+        for (AbstractParameter<?> param : testedObject.getParameters()) {
+            assertTrue("The method toString() must return a string containing all parameter value string representations!",
+                       configString.contains(param.getStringValue()));
+        }
     }
 
 
@@ -750,10 +804,10 @@ public class ConfigurationTest extends AbstractFileSystemUnitTest<Configuration>
         testedObject = createConfigWithAllParameterTypes();
         final String configString = testedObject.toString();
 
-        testedObject.getParameters().forEach((AbstractParameter<?> param) -> {
-            if (param.getStringValue() != null && !param.getStringValue().isEmpty())
-                assertFalse("", configString.contains(param.getStringValue());
-            });
+        for (AbstractParameter<?> param : testedObject.getParameters()) {
+            assertFalse("The method toString() must not display unregistered parmeters!",
+                        configString.contains(param.getKey()));
+        }
     }
 
 
@@ -773,7 +827,7 @@ public class ConfigurationTest extends AbstractFileSystemUnitTest<Configuration>
      *          rendering this test useless
      */
     private <T>
-    void testParameterChange(AbstractParameter<T> param, T newValue)
+    void assertThatParmeterValueCanChange(AbstractParameter<T> param, T newValue)
     {
         final String compositeKey = param.getCompositeKey();
         final T oldValue = param.getValue();
@@ -783,7 +837,10 @@ public class ConfigurationTest extends AbstractFileSystemUnitTest<Configuration>
 
         testedObject = createConfigWithCustomParameters(param);
         testedObject.setParameter(compositeKey, newValue.toString());
-        assertNotEquals(oldValue, testedObject.getParameterValue(compositeKey));
+        assertNotEquals(
+            "The parameter value is supposed to change!",
+            oldValue,
+            testedObject.getParameterValue(compositeKey));
     }
 
 

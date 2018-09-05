@@ -14,9 +14,8 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package de.gerdiproject.utils;
+package de.gerdiproject.utils; // NOPMD JUnit 4 requires many static imports
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
@@ -334,10 +333,9 @@ public class HarvesterCacheTest extends AbstractFileSystemUnitTest<HarvesterCach
 
         testedObject.skipAllDocuments();
         File tempChangesFolder = new File(tempFolder, CacheConstants.CHANGES_FOLDER_NAME);
-
-        assertEquals("The method skipAllDocuments() should cause all files to be removed from the temporary changes folder, that exist in the stable folder!",
-                     0,
-                     tempChangesFolder.listFiles().length);
+        File[] temporaryFiles = tempChangesFolder.listFiles();
+        assertTrue("The method skipAllDocuments() should cause all files to be removed from the temporary changes folder, that exist in the stable folder!",
+                   temporaryFiles == null || temporaryFiles.length == 0);
     }
 
 

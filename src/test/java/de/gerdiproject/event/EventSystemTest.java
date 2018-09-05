@@ -14,7 +14,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package de.gerdiproject.event;
+package de.gerdiproject.event; // NOPMD JUnit 4 requires many static imports
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -343,8 +343,8 @@ public class EventSystemTest
     {
         EventSystem.addListener(TestEvent.class, onTestEvent);
 
-        for (int i = 0; i < TEST_EVENTS.size(); i++)
-            EventSystem.sendEvent(TEST_EVENTS.get(i));
+        for (TestEvent event : TEST_EVENTS)
+            EventSystem.sendEvent(event);
 
         for (int i = 0; i < TEST_EVENTS.size(); i++)
             assertEquals("Callback functions must be executed in the same order in which the events were dispatched!",

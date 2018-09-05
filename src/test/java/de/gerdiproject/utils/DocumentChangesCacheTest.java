@@ -14,7 +14,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package de.gerdiproject.utils;
+package de.gerdiproject.utils; // NOPMD JUnit 4 requires many static imports
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;

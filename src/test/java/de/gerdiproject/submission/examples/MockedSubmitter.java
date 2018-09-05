@@ -63,7 +63,8 @@ public class MockedSubmitter extends AbstractSubmitter
     }
 
 
-    public String getUrl()
+    @Override
+    public String getUrl() // NOPMD the override makes sense, because the accessor changes
     {
         return super.getUrl();
     }

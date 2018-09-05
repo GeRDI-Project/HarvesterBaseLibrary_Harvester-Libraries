@@ -664,7 +664,7 @@ public abstract class AbstractHarvester implements IEventListener
      *
      * @return the max number of harvestable documents
      */
-    private final Integer getMaxDocumentCount()
+    private Integer getMaxDocumentCount()
     {
         return getEndIndex() - getStartIndex();
     }

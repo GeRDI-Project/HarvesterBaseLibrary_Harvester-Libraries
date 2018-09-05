@@ -14,7 +14,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package de.gerdiproject.submission;
+package de.gerdiproject.submission; // NOPMD JUnit 4 requires many static imports
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -59,7 +59,7 @@ public class AbstractSubmitterTest extends AbstractFileSystemUnitTest<AbstractSu
     private static final String ERROR_ILLEGAL_STATE_EXPECTED = "Expected IllegalStateException to be thrown!";
     private static final String ASSERT_PARAM_UPDATE_MESSAGE = "Changing the %s-parameter should update the field of the AbstractSubmitter!";
     private static final String ASSERT_SUBMIT_ALL_MESSAGE = "Not all documents were properly submitted!";
-    private static final String ASSERT_ERROR_MESSAGE = "Expected the error message: \"" + SubmissionConstants.NO_URL_ERROR + "\"!";
+    private static final String ASSERT_ERROR_MESSAGE = "Expected the error message: \"%s\"!";
 
     private HarvesterCacheManager cacheManager = new HarvesterCacheManager();
 
