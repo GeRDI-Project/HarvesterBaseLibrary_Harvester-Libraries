@@ -19,6 +19,7 @@ package de.gerdiproject;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.lang.reflect.ParameterizedType;
 import java.util.Random;
@@ -50,6 +51,7 @@ public abstract class AbstractUnitTest<T>
 {
     private static final String CLEANUP_ERROR = "Could not instantiate object: ";
     private static final String SKIP_EVENT_TESTS_MESSAGE = "Skipping event listener tests, because %s does not implement " + IEventListener.class.getSimpleName() + ".";
+    private static final String EXPECTED_EVENT_FAIL_MESSAGE = "Expected the %s to be sent before %d ms have passed!";
     protected static final int DEFAULT_EVENT_TIMEOUT = 2000;
 
     private final Level initialLogLevel = LoggerConstants.ROOT_LOGGER.getLevel();
@@ -223,24 +225,30 @@ public abstract class AbstractUnitTest<T>
                 // wait for the event to be dispatched or the timeout to be reached
                 int passedTime = 0;
 
-                while (receivedEvent[0] == null && passedTime < timeout)
+                while (passedTime < timeout)
                 {
+                    if (receivedEvent[0] != null)
+                        return true;
+
                     Thread.sleep(100);
                     passedTime += 100;
                 }
-                return true;
+                return false;
             });
 
             // wait for the asynchronous process to finish
             CompletableFuture.allOf(asyncProcess).get();
         } catch (InterruptedException | ExecutionException e) {
-            return null;
+            receivedEvent[0] = null;
         }
 
         // clean up the temporary listener
         EventSystem.removeListener(eventClass, onEventReceived);
 
-        // cast and return the event
-        return (E) receivedEvent[0];
+        if (receivedEvent[0] == null) {
+            fail(String.format(EXPECTED_EVENT_FAIL_MESSAGE, eventClass.getSimpleName(), timeout));
+            return null;
+        } else
+            return (E) receivedEvent[0];
     }
 }
