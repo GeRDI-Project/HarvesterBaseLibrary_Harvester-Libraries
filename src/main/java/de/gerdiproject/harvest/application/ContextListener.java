@@ -29,7 +29,7 @@ import org.slf4j.LoggerFactory;
 import de.gerdiproject.harvest.application.constants.ApplicationConstants;
 import de.gerdiproject.harvest.application.events.ContextDestroyedEvent;
 import de.gerdiproject.harvest.application.events.ContextInitializedEvent;
-import de.gerdiproject.harvest.application.events.ContextResetEvent;
+import de.gerdiproject.harvest.application.events.ResetContextEvent;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.harvester.AbstractHarvester;
 import de.gerdiproject.harvest.submission.AbstractSubmitter;
@@ -100,13 +100,13 @@ public class ContextListener<T extends AbstractHarvester> implements ServletCont
      * This method is called when the server is set up. Creates a logger and
      * harvester and sets them in the MainContext.
      *
-     * @param sce the servlet context event that was initialized
+     * @param sce the servlet context event that was  initialized
      * @see de.gerdiproject.harvest.application.MainContext
      */
     @Override
     public void contextInitialized(ServletContextEvent sce)
     {
-        EventSystem.addListener(ContextResetEvent.class, this::onContextReset);
+        EventSystem.addListener(ResetContextEvent.class, this::onResetContext);
 
         // init main context
         MainContext.init(
@@ -127,6 +127,7 @@ public class ContextListener<T extends AbstractHarvester> implements ServletCont
     public void contextDestroyed(ServletContextEvent sce)
     {
         EventSystem.sendEvent(new ContextDestroyedEvent());
+        MainContext.destroy();
 
         String goodbyeMsg = String.format(ApplicationConstants.CONTEXT_DESTROYED, getServiceName());
         System.out.println(goodbyeMsg); // NOPMD The logger does not work at this point
@@ -138,7 +139,7 @@ public class ContextListener<T extends AbstractHarvester> implements ServletCont
      *
      * @param event the event that triggered the callback
      */
-    protected void onContextReset(ContextResetEvent event)
+    protected void onResetContext(ResetContextEvent event)
     {
         String resetMsg = String.format(ApplicationConstants.CONTEXT_RESET, getServiceName());
         LOGGER.info(resetMsg);

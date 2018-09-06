@@ -68,7 +68,7 @@ public final class ConfigurationFacade
         final String entity;
 
         if (key == null)
-            entity = config.getInfoString(MainContext.getModuleName());
+            entity = config.getInfoString(MainContext.getServiceName());
         else
             entity = config.getParameterStringValue(key);
 

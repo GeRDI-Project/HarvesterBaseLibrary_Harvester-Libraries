@@ -22,6 +22,6 @@ import de.gerdiproject.harvest.event.IEvent;
  *
  * @author Robin Weiss
  */
-public class ContextResetEvent implements IEvent
+public class ResetContextEvent implements IEvent
 {
 }

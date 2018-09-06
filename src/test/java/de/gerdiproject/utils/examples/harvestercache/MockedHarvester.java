@@ -21,7 +21,10 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
+import de.gerdiproject.AbstractFileSystemUnitTest;
+import de.gerdiproject.application.ContextListenerTest;
 import de.gerdiproject.harvest.IDocument;
+import de.gerdiproject.harvest.application.ContextListener;
 import de.gerdiproject.harvest.harvester.AbstractListHarvester;
 import de.gerdiproject.json.datacite.DataCiteJson;
 import de.gerdiproject.json.datacite.Title;
@@ -36,6 +39,17 @@ public class MockedHarvester extends AbstractListHarvester<String>
 {
     protected final List<String> mockedEntries;
     private final String cacheFolder;
+
+
+
+    /**
+     * This constructor is used by {@linkplain ContextListenerTest}.
+     *
+     */
+    public MockedHarvester()
+    {
+        this(new File(AbstractFileSystemUnitTest.TEST_FOLDER, ContextListener.class.getSimpleName()));
+    }
 
 
     /**

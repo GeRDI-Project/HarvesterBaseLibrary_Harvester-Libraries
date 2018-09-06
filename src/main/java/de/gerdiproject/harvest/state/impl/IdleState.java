@@ -43,7 +43,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import de.gerdiproject.harvest.application.MainContext;
-import de.gerdiproject.harvest.application.events.ContextResetEvent;
+import de.gerdiproject.harvest.application.events.ResetContextEvent;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.harvester.events.GetHarvesterOutdatedEvent;
 import de.gerdiproject.harvest.harvester.events.HarvestStartedEvent;
@@ -75,7 +75,7 @@ public class IdleState implements IState
         EventSystem.addListener(HarvestStartedEvent.class, StateEventHandlerConstants.ON_HARVEST_STARTED);
         EventSystem.addListener(SubmissionStartedEvent.class, StateEventHandlerConstants.ON_SUBMISSION_STARTED);
 
-        LOGGER.info(String.format(StateConstants.READY, MainContext.getModuleName()));
+        LOGGER.info(String.format(StateConstants.READY, MainContext.getServiceName()));
     }
 
 
@@ -159,7 +159,7 @@ public class IdleState implements IState
     @Override
     public Response reset()
     {
-        EventSystem.sendEvent(new ContextResetEvent());
+        EventSystem.sendEvent(new ResetContextEvent());
         return ServerResponseFactory.createAcceptedResponse(
                    StateConstants.RESET_STARTED);
     }

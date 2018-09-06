@@ -118,7 +118,7 @@ public abstract class AbstractStreamHarvester<T> extends AbstractHarvester
      */
     protected File initStreamFile(String moduleName)
     {
-        String filePath = String.format(CacheConstants.CACHE_ENTRY_STREAM_PATH, MainContext.getModuleName(), getName());
+        String filePath = String.format(CacheConstants.CACHE_ENTRY_STREAM_PATH, MainContext.getServiceName(), getName());
 
         File cacheFile = new File(filePath);
         FileUtils.createEmptyFile(cacheFile);

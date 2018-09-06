@@ -110,7 +110,7 @@ public class HarvesterFacade
         }
 
         // get harvester name
-        final String name = MainContext.getModuleName();
+        final String name = MainContext.getServiceName();
 
         return String.format(HarvesterConstants.REST_INFO, name, status, from, to);
     }

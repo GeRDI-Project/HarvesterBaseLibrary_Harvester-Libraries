@@ -17,7 +17,7 @@ package de.gerdiproject.harvest.state.impl;
 
 import javax.ws.rs.core.Response;
 
-import de.gerdiproject.harvest.application.events.ContextResetEvent;
+import de.gerdiproject.harvest.application.events.ResetContextEvent;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.harvester.events.HarvesterInitializedEvent;
 import de.gerdiproject.harvest.state.IState;
@@ -87,7 +87,7 @@ public class ErrorState implements IState
     @Override
     public Response reset()
     {
-        EventSystem.sendEvent(new ContextResetEvent());
+        EventSystem.sendEvent(new ResetContextEvent());
         return ServerResponseFactory.createAcceptedResponse(
                    StateConstants.RESET_STARTED);
     }

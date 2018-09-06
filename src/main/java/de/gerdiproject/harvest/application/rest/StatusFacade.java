@@ -61,7 +61,7 @@ public final class StatusFacade
     })
     public String getInfo()
     {
-        return String.format(StatusConstants.REST_INFO, MainContext.getModuleName());
+        return String.format(StatusConstants.REST_INFO, MainContext.getServiceName());
     }
 
 

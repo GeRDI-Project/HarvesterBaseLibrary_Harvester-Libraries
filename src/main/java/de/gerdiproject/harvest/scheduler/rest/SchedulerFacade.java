@@ -62,7 +62,7 @@ public class SchedulerFacade
         else if (schedule.isEmpty())
             schedule = "-";
 
-        return String.format(SchedulerConstants.REST_INFO, MainContext.getModuleName(), schedule);
+        return String.format(SchedulerConstants.REST_INFO, MainContext.getServiceName(), schedule);
     }
 
 

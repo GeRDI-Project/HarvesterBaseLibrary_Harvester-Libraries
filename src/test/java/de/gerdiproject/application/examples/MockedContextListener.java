@@ -16,15 +16,29 @@
  */
 package de.gerdiproject.application.examples;
 
+import java.util.List;
+
 import de.gerdiproject.harvest.application.ContextListener;
+import de.gerdiproject.harvest.submission.AbstractSubmitter;
 import de.gerdiproject.utils.examples.harvestercache.MockedHarvester;
 
 /**
- * This class is a mocked ContextListener, duh!
+ * This class is a mocked ContextListener.
  *
  * @author Robin Weiss
  */
 public class MockedContextListener extends ContextListener<MockedHarvester>
 {
-    public static ContextListener<?> CONTEXT_LISTENER = null;
+    @Override
+    public List<Class<? extends AbstractSubmitter>> getSubmitterClasses() // NOPMD not a useless override because the accessor changed
+    {
+        return super.getSubmitterClasses();
+    }
+
+
+    @Override
+    public String getServiceName() // NOPMD not a useless override because the accessor changed
+    {
+        return super.getServiceName();
+    }
 }

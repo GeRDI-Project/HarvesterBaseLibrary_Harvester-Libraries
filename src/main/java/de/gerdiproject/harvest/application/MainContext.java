@@ -60,7 +60,7 @@ import de.gerdiproject.harvest.utils.time.ProcessTimeMeasure.ProcessStatus;
 public class MainContext implements IEventListener
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(MainContext.class);
-    private static MainContext instance = null;
+    private static volatile MainContext instance = null;
 
     private final HarvestSaver saver;
     private final HarvesterLog log;
@@ -126,8 +126,7 @@ public class MainContext implements IEventListener
 
         CancelableFuture<Boolean> initProcess = new CancelableFuture<>(() -> {
             // clear old instance if necessary
-            if (instance != null)
-                instance.clear();
+            destroy();
 
             instance = new MainContext(moduleName, harvesterClass, submitterClasses);
             return true;
@@ -136,16 +135,6 @@ public class MainContext implements IEventListener
         initProcess
         .thenApply(MainContext::onHarvesterInitializedSuccess)
         .exceptionally(MainContext::onHarvesterInitializedFailed);
-    }
-
-
-    /**
-     * Removes event listeners and clears all connections to the context.
-     */
-    private void clear()
-    {
-        removeEventListeners();
-        log.unregisterLogger();
     }
 
 
@@ -174,6 +163,19 @@ public class MainContext implements IEventListener
         configuration.removeEventListeners();
         cacheManager.removeEventListeners();
         harvester.removeEventListeners();
+    }
+
+
+    /**
+     * Clears the current Singleton instance if it exists and nullifies it.
+     */
+    public static void destroy()
+    {
+        if (instance != null) {
+            instance.removeEventListeners();
+            instance.log.unregisterLogger();
+            instance = null;
+        }
     }
 
 
@@ -218,7 +220,7 @@ public class MainContext implements IEventListener
      *
      * @return the module name
      */
-    public static String getModuleName()
+    public static String getServiceName()
     {
         return instance != null ? instance.moduleName : null;
     }

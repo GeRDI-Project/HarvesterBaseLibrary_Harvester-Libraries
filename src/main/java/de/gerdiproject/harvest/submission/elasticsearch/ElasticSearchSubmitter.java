@@ -43,7 +43,7 @@ import de.gerdiproject.harvest.utils.data.enums.RestRequestType;
  */
 public class ElasticSearchSubmitter extends AbstractSubmitter
 {
-    private final WebDataRetriever httpRequester;
+    private final WebDataRetriever webRequester;
     private final Gson gson;
 
 
@@ -54,7 +54,7 @@ public class ElasticSearchSubmitter extends AbstractSubmitter
     {
         super();
         this.gson = new Gson();
-        this.httpRequester = new WebDataRetriever(gson, charset);
+        this.webRequester = new WebDataRetriever(gson, charset);
     }
 
 
@@ -62,7 +62,7 @@ public class ElasticSearchSubmitter extends AbstractSubmitter
     public void setCharset(Charset charset)
     {
         super.setCharset(charset);
-        httpRequester.setCharset(charset);
+        webRequester.setCharset(charset);
     }
 
 
@@ -79,7 +79,7 @@ public class ElasticSearchSubmitter extends AbstractSubmitter
 
 
         // send POST request to Elastic search
-        String response = httpRequester.getRestResponse(
+        String response = webRequester.getRestResponse(
                               RestRequestType.POST,
                               getUrl(),
                               batchRequestBuilder.toString(),
