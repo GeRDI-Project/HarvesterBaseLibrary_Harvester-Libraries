@@ -20,10 +20,10 @@ import javax.ws.rs.core.Response;
 import de.gerdiproject.harvest.application.events.ResetContextEvent;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.harvester.events.HarvesterInitializedEvent;
+import de.gerdiproject.harvest.rest.HttpResponseFactory;
 import de.gerdiproject.harvest.state.IState;
 import de.gerdiproject.harvest.state.constants.StateConstants;
 import de.gerdiproject.harvest.state.constants.StateEventHandlerConstants;
-import de.gerdiproject.harvest.utils.ServerResponseFactory;
 
 /**
  * This state is a dead-end that occurs when the harvester cannot be
@@ -59,28 +59,28 @@ public class ErrorState implements IState
     @Override
     public Response startHarvest()
     {
-        return ServerResponseFactory.createFubarResponse();
+        return HttpResponseFactory.createFubarResponse();
     }
 
 
     @Override
     public Response abort()
     {
-        return ServerResponseFactory.createFubarResponse();
+        return HttpResponseFactory.createFubarResponse();
     }
 
 
     @Override
     public Response submit()
     {
-        return ServerResponseFactory.createFubarResponse();
+        return HttpResponseFactory.createFubarResponse();
     }
 
 
     @Override
     public Response save()
     {
-        return ServerResponseFactory.createFubarResponse();
+        return HttpResponseFactory.createFubarResponse();
     }
 
 
@@ -88,7 +88,7 @@ public class ErrorState implements IState
     public Response reset()
     {
         EventSystem.sendEvent(new ResetContextEvent());
-        return ServerResponseFactory.createAcceptedResponse(
+        return HttpResponseFactory.createAcceptedResponse(
                    StateConstants.RESET_STARTED);
     }
 
@@ -96,7 +96,7 @@ public class ErrorState implements IState
     @Override
     public Response getProgress()
     {
-        return ServerResponseFactory.createFubarResponse();
+        return HttpResponseFactory.createFubarResponse();
     }
 
 
@@ -110,6 +110,6 @@ public class ErrorState implements IState
     @Override
     public Response isOutdated()
     {
-        return ServerResponseFactory.createFubarResponse();
+        return HttpResponseFactory.createFubarResponse();
     }
 }

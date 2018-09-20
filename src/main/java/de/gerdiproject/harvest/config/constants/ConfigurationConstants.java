@@ -69,17 +69,24 @@ public class ConfigurationConstants
     public static final String LOAD_FAILED = "Could not load configuration from '%s': %s";
     public static final String NO_CONFIG_FILE_EXISTS = "Did not load configuration, because it is not cached at '%s'!";
     public static final String NO_PATH = "You must set a path first!";
-    public static final String REST_INFO = "- %s Configuration -%n%s%n"
-                                           + "GET   Returns either the entire configuration in pretty text, or%n"
-                                           + "      if '?key=xxx' is added, returns the value of parameter 'xxx'.%n"
-                                           + "PUT   Sets x-www-form-urlencoded parameters for the harvester.%n"
-                                           + "      Valid values: %s.%n";
+
+    public static final String QUERY_KEY = "key";
+    public static final String ALLOWED_REQUESTS =
+        "GET\n"
+        + "Returns the entire configuration in pretty text.\n\n"
+        + "GET ?" + QUERY_KEY + "=xxx\n"
+        + "Returns the value of parameter 'xxx'.\n\n"
+        + "POST _set {\"XXX.YYY\" : \"ZZZ\"}\n"
+        + "Changes the value of parameter YYY of category XXX to ZZZ."
+        + "PUT\n"
+        + "Sets x-www-form-urlencoded parameters for the harvester.\n"
+        + "Valid keys: ";
 
     public static final String SAVE_FAILED_NO_PATH = "Could not save configuration: " + NO_PATH;
     public static final String PARSE_ERROR = "Could not read configuration parameter value '%s' from key '%s'!";
 
-    public static final String BASIC_PARAMETER_FORMAT = "%%1$-%ds :  %%2$s%%n";
-    public static final String CATEGORY_FORMAT = "%n- %s -%n";
+    public static final String BASIC_PARAMETER_FORMAT = "%%n%%1$-%ds :  %%2$s";
+    public static final String CATEGORY_FORMAT = "- %s -";
 
     public static final String ENVIRONMENT_VARIABLE_SET_START = "Searching for configuration from environment variables...";
     public static final String ENVIRONMENT_VARIABLE = "GERDI_HARVESTER_%S_%S";

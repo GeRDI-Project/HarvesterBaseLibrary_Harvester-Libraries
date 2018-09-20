@@ -22,7 +22,7 @@ import java.nio.charset.StandardCharsets;
 
 import org.junit.Test;
 
-import de.gerdiproject.AbstractUnitTest;
+import de.gerdiproject.AbstractObjectUnitTest;
 import de.gerdiproject.harvest.utils.HashGenerator;
 
 /**
@@ -31,7 +31,7 @@ import de.gerdiproject.harvest.utils.HashGenerator;
  * @author Robin Weiss
  *
  */
-public class HashGeneratorTest extends AbstractUnitTest<HashGenerator>
+public class HashGeneratorTest extends AbstractObjectUnitTest<HashGenerator>
 {
     private static final String INPUT_VALUE = "test";
     private static final String HASHED_INPUT_VALUE = "a94a8fe5ccb19ba61c4c0873d391e987982fbbd3";

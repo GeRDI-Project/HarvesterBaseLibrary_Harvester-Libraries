@@ -14,40 +14,24 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package de.gerdiproject.harvest.scheduler.events;
+package de.gerdiproject.harvest.rest.events;
 
 import de.gerdiproject.harvest.event.ISynchronousEvent;
-import de.gerdiproject.harvest.scheduler.Scheduler;
+import de.gerdiproject.harvest.rest.AbstractRestObject;
 
 /**
- * Synchronous event for removing a task from the {@linkplain Scheduler} and
- * returning a feedback message.
+ * This class is a stricted version of {@linkplain ISynchronousEvent}s that only allow
+ * {@linkplain AbstractRestObject}s to be returned.
  *
  * @author Robin Weiss
  */
-public class DeleteSchedulerTaskEvent implements ISynchronousEvent<String>
+public abstract class GetRestObjectEvent <T extends AbstractRestObject<T, ?>> implements ISynchronousEvent<T>
 {
-    private final String cronTab;
-
-
     /**
-     * Constructor that sets a cron string as payload.
-     *
-     * @param cronTab the cron tab of the task that is to be removed
+     * Sub-classes must implement a no-args constructor.
      */
-    public DeleteSchedulerTaskEvent(String cronTab)
+    public GetRestObjectEvent()
     {
-        this.cronTab = cronTab;
-    }
 
-
-    /**
-     * Returns the cron tab that is to be removed.
-     *
-     * @return a cron tab string
-     */
-    public String getCronTab()
-    {
-        return cronTab;
     }
 }

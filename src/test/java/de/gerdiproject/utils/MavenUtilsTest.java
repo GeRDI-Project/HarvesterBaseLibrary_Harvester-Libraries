@@ -21,7 +21,7 @@ import static org.junit.Assert.assertNotEquals;
 
 import org.junit.Test;
 
-import de.gerdiproject.AbstractUnitTest;
+import de.gerdiproject.AbstractObjectUnitTest;
 import de.gerdiproject.harvest.application.MainContext;
 import de.gerdiproject.harvest.utils.maven.MavenUtils;
 import de.gerdiproject.json.datacite.DataCiteJson;
@@ -31,7 +31,7 @@ import de.gerdiproject.json.datacite.DataCiteJson;
  *
  * @author Robin Weiss
  */
-public class MavenUtilsTest extends AbstractUnitTest<MavenUtils>
+public class MavenUtilsTest extends AbstractObjectUnitTest<MavenUtils>
 {
     @Override
     protected MavenUtils setUpTestObjects()

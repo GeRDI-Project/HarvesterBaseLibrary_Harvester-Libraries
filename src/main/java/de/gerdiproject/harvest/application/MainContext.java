@@ -26,7 +26,6 @@ import de.gerdiproject.harvest.application.constants.ApplicationConstants;
 import de.gerdiproject.harvest.config.Configuration;
 import de.gerdiproject.harvest.config.constants.ConfigurationConstants;
 import de.gerdiproject.harvest.event.EventSystem;
-import de.gerdiproject.harvest.event.IEventListener;
 import de.gerdiproject.harvest.harvester.AbstractHarvester;
 import de.gerdiproject.harvest.harvester.events.HarvesterInitializedEvent;
 import de.gerdiproject.harvest.save.HarvestSaver;
@@ -57,7 +56,7 @@ import de.gerdiproject.harvest.utils.time.ProcessTimeMeasure.ProcessStatus;
  *
  * @author Robin Weiss
  */
-public class MainContext implements IEventListener
+public class MainContext
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(MainContext.class);
     private static volatile MainContext instance = null;
@@ -96,10 +95,17 @@ public class MainContext implements IEventListener
         this.moduleName = moduleName;
 
         this.log = createLog(moduleName);
+        EventSystem.addSynchronousListener(GetMainLogEvent.class, this::getMainLog);
+
         this.configuration = createConfiguration(moduleName);
         this.timeKeeper = createTimeKeeper(moduleName);
+
         this.mavenUtils = createMavenUtils(harvesterClass);
+        EventSystem.addSynchronousListener(GetMavenUtilsEvent.class, this::getMavenUtils);
+
         this.cacheManager = createCacheManager();
+        EventSystem.addSynchronousListener(GetNumberOfHarvestedDocumentsEvent.class, this::getNumberOfHarvestedDocuments);
+
         this.harvester = createHarvester(moduleName, harvesterClass);
         this.saver = createHarvestSaver(moduleName, harvester.getCharset(), timeKeeper, cacheManager);
         this.submitterManager = createSubmitterManager(submitterClasses, harvester.getCharset(), timeKeeper, cacheManager);
@@ -138,34 +144,6 @@ public class MainContext implements IEventListener
     }
 
 
-    @Override
-    public void addEventListeners()
-    {
-        EventSystem.addSynchronousListener(GetMainLogEvent.class, this::getMainLog);
-        EventSystem.addSynchronousListener(GetMavenUtilsEvent.class, this::getMavenUtils);
-        EventSystem.addSynchronousListener(GetNumberOfHarvestedDocumentsEvent.class, this::getNumberOfHarvestedDocuments);
-        saver.addEventListeners();
-        timeKeeper.addEventListeners();
-        scheduler.addEventListeners();
-        harvester.addEventListeners();
-    }
-
-
-    @Override
-    public void removeEventListeners()
-    {
-        EventSystem.removeSynchronousListener(GetMainLogEvent.class);
-        EventSystem.removeSynchronousListener(GetMavenUtilsEvent.class);
-        EventSystem.removeSynchronousListener(GetNumberOfHarvestedDocumentsEvent.class);
-        saver.removeEventListeners();
-        timeKeeper.removeEventListeners();
-        scheduler.removeEventListeners();
-        configuration.removeEventListeners();
-        cacheManager.removeEventListeners();
-        harvester.removeEventListeners();
-    }
-
-
     /**
      * Clears the current Singleton instance if it exists and nullifies it.
      */
@@ -176,6 +154,46 @@ public class MainContext implements IEventListener
             instance.log.unregisterLogger();
             instance = null;
         }
+    }
+
+
+    /**
+     * Returns the name of the application.
+     *
+     * @return the module name
+     */
+    public static String getServiceName()
+    {
+        return instance != null ? instance.moduleName : null;
+    }
+
+
+    /**
+     * Retrieves a timekeeper that measures certain processes.
+     *
+     * @return a timekeeper that measures certain processes
+     * or null, if the main context was not initialized
+     */
+    public static HarvestTimeKeeper getTimeKeeper()
+    {
+        return instance != null ? instance.timeKeeper : null;
+    }
+
+
+    /**
+     * Removes all event listeners.
+     */
+    private void removeEventListeners()
+    {
+        EventSystem.removeSynchronousListener(GetMainLogEvent.class);
+        EventSystem.removeSynchronousListener(GetMavenUtilsEvent.class);
+        EventSystem.removeSynchronousListener(GetNumberOfHarvestedDocumentsEvent.class);
+        saver.removeEventListeners();
+        timeKeeper.removeEventListeners();
+        scheduler.removeEventListeners();
+        configuration.removeEventListeners();
+        cacheManager.removeEventListeners();
+        harvester.removeEventListeners();
     }
 
 
@@ -216,40 +234,6 @@ public class MainContext implements IEventListener
 
 
     /**
-     * Returns the name of the application.
-     *
-     * @return the module name
-     */
-    public static String getServiceName()
-    {
-        return instance != null ? instance.moduleName : null;
-    }
-
-
-    /**
-     * Retrieves the global configuration.
-     *
-     * @return the harvester configuration
-     */
-    public static Configuration getConfiguration()
-    {
-        return instance != null ? instance.configuration : null;
-    }
-
-
-    /**
-     * Retrieves a timekeeper that measures certain processes.
-     *
-     * @return a timekeeper that measures certain processes
-     * or null, if the main context was not initialized
-     */
-    public static HarvestTimeKeeper getTimeKeeper()
-    {
-        return instance != null ? instance.timeKeeper : null;
-    }
-
-
-    /**
      * Creates an instance of the {@linkplain HarvestSaver}.
      *
      * @param modName the name of this service
@@ -269,6 +253,9 @@ public class MainContext implements IEventListener
             charset,
             keeper.getHarvestMeasure(),
             harvesterCacheManager);
+
+        saver.addEventListeners();
+
         LOGGER.info(String.format(ApplicationConstants.INIT_FIELD_SUCCESS, HarvestSaver.class.getSimpleName()));
 
         return saver;
@@ -388,6 +375,7 @@ public class MainContext implements IEventListener
         T initializedHarvester = harvesterClass.newInstance();
         initializedHarvester.init(true, moduleName);
         initializedHarvester.update();
+        initializedHarvester.addEventListeners();
 
         LOGGER.info(String.format(ApplicationConstants.INIT_FIELD_SUCCESS, harvesterClass.getSimpleName()));
 
@@ -408,8 +396,9 @@ public class MainContext implements IEventListener
         LOGGER.info(String.format(ApplicationConstants.INIT_FIELD, Scheduler.class.getSimpleName()));
 
         final String schedulerCachePath = String.format(SchedulerConstants.CACHE_PATH, moduleName);
-        Scheduler sched = new Scheduler(schedulerCachePath);
+        Scheduler sched = new Scheduler(moduleName, schedulerCachePath);
         sched.loadFromDisk();
+        sched.addEventListeners();
 
         LOGGER.info(String.format(ApplicationConstants.INIT_FIELD_SUCCESS, Scheduler.class.getSimpleName()));
         return sched;
@@ -434,6 +423,7 @@ public class MainContext implements IEventListener
 
         HarvestTimeKeeper keeper = new HarvestTimeKeeper(timeKeeperCachePath);
         keeper.loadFromDisk();
+        keeper.addEventListeners();
 
         LOGGER.info(String.format(ApplicationConstants.INIT_FIELD_SUCCESS, HarvestTimeKeeper.class.getSimpleName()));
 
@@ -452,7 +442,7 @@ public class MainContext implements IEventListener
     {
         LOGGER.info(String.format(ApplicationConstants.INIT_FIELD, Configuration.class.getSimpleName()));
 
-        Configuration config = new Configuration();
+        Configuration config = new Configuration(moduleName);
         config.setCacheFilePath(String.format(ConfigurationConstants.CONFIG_PATH, moduleName));
         config.loadFromDisk();
         config.addEventListeners();
@@ -476,13 +466,12 @@ public class MainContext implements IEventListener
      */
     private static Boolean onHarvesterInitializedSuccess(Boolean state)
     {
-        // log success
-        LOGGER.info(String.format(ApplicationConstants.INIT_SERVICE_SUCCESS, instance.moduleName));
-
         // change state
         EventSystem.sendEvent(new HarvesterInitializedEvent(state));
 
-        instance.addEventListeners();
+        // log success
+        LOGGER.info(String.format(ApplicationConstants.INIT_SERVICE_SUCCESS, instance.moduleName));
+
         return state;
     };
 
@@ -504,7 +493,6 @@ public class MainContext implements IEventListener
         // change stage
         EventSystem.sendEvent(new HarvesterInitializedEvent(false));
 
-        instance.addEventListeners();
         return false;
     };
 }

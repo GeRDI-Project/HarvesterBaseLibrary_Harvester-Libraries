@@ -23,11 +23,12 @@ import de.gerdiproject.harvest.application.MainContext;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.harvester.events.DocumentsHarvestedEvent;
 import de.gerdiproject.harvest.harvester.events.HarvestFinishedEvent;
+import de.gerdiproject.harvest.rest.HttpResponseFactory;
+import de.gerdiproject.harvest.rest.constants.RestConstants;
 import de.gerdiproject.harvest.state.AbstractProgressingState;
 import de.gerdiproject.harvest.state.constants.StateConstants;
 import de.gerdiproject.harvest.state.constants.StateEventHandlerConstants;
 import de.gerdiproject.harvest.submission.events.SubmissionStartedEvent;
-import de.gerdiproject.harvest.utils.ServerResponseFactory;
 import de.gerdiproject.harvest.utils.time.HarvestTimeKeeper;
 
 /**
@@ -92,7 +93,7 @@ public class HarvestingState extends AbstractProgressingState
     @Override
     public Response startHarvest()
     {
-        return ServerResponseFactory.createBusyResponse(
+        return HttpResponseFactory.createBusyResponse(
                    StateConstants.CANNOT_START_PREFIX + StateConstants.HARVEST_IN_PROGRESS,
                    estimateRemainingSeconds());
     }
@@ -101,7 +102,7 @@ public class HarvestingState extends AbstractProgressingState
     @Override
     public Response submit()
     {
-        return ServerResponseFactory.createBusyResponse(
+        return HttpResponseFactory.createBusyResponse(
                    StateConstants.CANNOT_SUBMIT_PREFIX + StateConstants.HARVEST_IN_PROGRESS,
                    estimateRemainingSeconds());
     }
@@ -110,7 +111,7 @@ public class HarvestingState extends AbstractProgressingState
     @Override
     public Response save()
     {
-        return ServerResponseFactory.createBusyResponse(
+        return HttpResponseFactory.createBusyResponse(
                    StateConstants.CANNOT_SAVE_PREFIX + StateConstants.HARVEST_IN_PROGRESS,
                    estimateRemainingSeconds());
     }
@@ -119,8 +120,8 @@ public class HarvestingState extends AbstractProgressingState
     @Override
     public Response isOutdated()
     {
-        return ServerResponseFactory.createBusyResponse(
-                   StateConstants.CANNOT_PROCESS_PREFIX + StateConstants.HARVEST_IN_PROGRESS,
+        return HttpResponseFactory.createBusyResponse(
+                   RestConstants.CANNOT_PROCESS_PREFIX + StateConstants.HARVEST_IN_PROGRESS,
                    estimateRemainingSeconds());
     }
 

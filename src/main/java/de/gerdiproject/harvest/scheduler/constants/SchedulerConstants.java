@@ -37,18 +37,21 @@ public class SchedulerConstants
 
     public static final String HARVESTING_TASK = "%s Harvesting";
     public static final String TASK_ENTRY = "%d. %s%n";
-    public static final String REST_INFO = "- %s Schedule -%n%n"
-                                           + "Active Harvesting Schedules:%n"
-                                           + "%s%n%n"
-                                           + "POST?cron=XXX    Adds a new harvest task with the cron tab XXX%n"
-                                           + "DELETE?cron=XXX  Deletes the harvest task with the cron tab XXX%n"
-                                           + "DELETE           Deletes all harvest tasks";
+    public static final String ALLOWED_REQUESTS =
+        "POST _add {\"cronTab\":\"XXX\"}\n"
+        + "Adds a new harvest task with the cron tab XXX\n\n"
+        + "POST _delete {\"cronTab\":\"XXX\"}\n"
+        + "Deletes the harvest task with the cronTab XXX\n\n"
+        + "POST _deleteAll\n"
+        + "Deletes all harvest tasks";
 
     public static final String CACHE_PATH = CacheConstants.CACHE_FOLDER_PATH + "schedule.json";
     public static final String ERROR_RESCHEDULE = "Cannot re-schedule task: %s";
     public static final String LOAD_OK = "Successfully loaded schedule from disk!";
     public static final String ERROR_LOAD = "Cannot load cron tab from disk: %s";
-    public static final String NEXT_DATE = "Scheduled Tak '%s' will be next executed at %s";
+    public static final String NEXT_DATE = "Scheduled Task '%s' will be next executed at %s";
+
+    public static final String SCHEDULED_HARVESTS_TITLE = "Scheduled Harvests:\n";
 
 
     /**

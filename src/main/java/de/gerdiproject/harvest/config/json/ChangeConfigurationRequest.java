@@ -14,22 +14,18 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package de.gerdiproject.harvest.scheduler.events;
+package de.gerdiproject.harvest.config.json;
 
-import de.gerdiproject.harvest.event.ISynchronousEvent;
-import de.gerdiproject.harvest.scheduler.Scheduler;
+import java.util.HashMap;
+
+import de.gerdiproject.harvest.config.Configuration;
 
 /**
- * Synchronous event for retrieving all crontabs of the {@linkplain Scheduler}.
+ * This class represents a JSON object used for changing the {@linkplain Configuration}.
  *
  * @author Robin Weiss
  */
-public class GetScheduleEvent implements ISynchronousEvent<String>
+public class ChangeConfigurationRequest extends HashMap<String, String>
 {
-    /**
-     * Constructor for retieving all cron tabs.
-     */
-    public GetScheduleEvent()
-    {
-    }
+    private static final long serialVersionUID = 1L;
 }

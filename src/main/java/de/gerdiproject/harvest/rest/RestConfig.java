@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.gerdiproject.harvest.application;
+package de.gerdiproject.harvest.rest;
 
 
 import java.util.Set;
@@ -27,7 +27,7 @@ import javax.ws.rs.core.Application;
  * @author Robin Weiss
  */
 @javax.ws.rs.ApplicationPath("harvest")
-public class ApplicationConfig extends Application
+public class RestConfig extends Application
 {
     @Override
     public Set<Class<?>> getClasses()
@@ -46,10 +46,10 @@ public class ApplicationConfig extends Application
      */
     private void addRestResourceClasses(Set<Class<?>> resources)
     {
-        resources.add(de.gerdiproject.harvest.harvester.rest.HarvesterFacade.class);
-        resources.add(de.gerdiproject.harvest.config.rest.ConfigurationFacade.class);
-        resources.add(de.gerdiproject.harvest.application.rest.StatusFacade.class);
-        resources.add(de.gerdiproject.harvest.scheduler.rest.SchedulerFacade.class);
+        resources.add(de.gerdiproject.harvest.harvester.rest.HarvesterRestResource.class);
+        resources.add(de.gerdiproject.harvest.config.rest.ConfigurationRestResource.class);
+        resources.add(de.gerdiproject.harvest.application.rest.StatusRestResource.class);
+        resources.add(de.gerdiproject.harvest.scheduler.rest.SchedulerRestResource.class);
     }
 
 }

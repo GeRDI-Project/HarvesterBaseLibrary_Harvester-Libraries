@@ -32,10 +32,10 @@ import de.gerdiproject.harvest.application.enums.HealthStatus;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.harvester.events.GetMaxDocumentCountEvent;
 import de.gerdiproject.harvest.harvester.events.GetProviderNameEvent;
+import de.gerdiproject.harvest.rest.HttpResponseFactory;
 import de.gerdiproject.harvest.state.IState;
 import de.gerdiproject.harvest.state.StateMachine;
 import de.gerdiproject.harvest.state.impl.ErrorState;
-import de.gerdiproject.harvest.utils.ServerResponseFactory;
 import de.gerdiproject.harvest.utils.cache.events.GetNumberOfHarvestedDocumentsEvent;
 import de.gerdiproject.harvest.utils.maven.MavenUtils;
 import de.gerdiproject.harvest.utils.maven.constants.MavenConstants;
@@ -48,7 +48,7 @@ import de.gerdiproject.harvest.utils.maven.events.GetMavenUtilsEvent;
  * @author Robin Weiss
  */
 @Path("status")
-public final class StatusFacade
+public final class StatusRestResource
 {
     /**
      * Displays the possible HTTP requests of this facade.
@@ -93,7 +93,7 @@ public final class StatusFacade
     })
     public Response getDataProvider()
     {
-        return ServerResponseFactory.createSynchronousEventResponse(new GetProviderNameEvent());
+        return HttpResponseFactory.createSynchronousEventResponse(new GetProviderNameEvent());
     }
 
 
@@ -111,11 +111,11 @@ public final class StatusFacade
     public Response getMaxDocumentCount()
     {
         Response resp =
-            ServerResponseFactory.createSynchronousEventResponse(
+            HttpResponseFactory.createSynchronousEventResponse(
                 new GetMaxDocumentCountEvent());
 
         if (resp.getEntity().equals("-1"))
-            return ServerResponseFactory.createBadRequestResponse();
+            return HttpResponseFactory.createBadRequestResponse();
         else
             return resp;
     }
@@ -134,7 +134,7 @@ public final class StatusFacade
     })
     public Response getHarvestedDocumentCount()
     {
-        return ServerResponseFactory.createSynchronousEventResponse(new GetNumberOfHarvestedDocumentsEvent());
+        return HttpResponseFactory.createSynchronousEventResponse(new GetNumberOfHarvestedDocumentsEvent());
     }
 
 
@@ -171,10 +171,10 @@ public final class StatusFacade
         long timestamp = MainContext.getTimeKeeper().getHarvestMeasure().getStartTimestamp();
 
         if (timestamp == -1L)
-            return ServerResponseFactory.createBadRequestResponse();
+            return HttpResponseFactory.createBadRequestResponse();
 
         else
-            return ServerResponseFactory.createOkResponse(Instant.ofEpochMilli(timestamp).toString());
+            return HttpResponseFactory.createOkResponse(Instant.ofEpochMilli(timestamp).toString());
     }
 
 
@@ -211,7 +211,7 @@ public final class StatusFacade
                                ? Status.OK
                                : Status.INTERNAL_SERVER_ERROR;
 
-        return ServerResponseFactory.createResponse(status, health);
+        return HttpResponseFactory.createResponse(status, health);
     }
 
 
@@ -230,9 +230,9 @@ public final class StatusFacade
         final String versions = getSpecifiedVersions(MavenConstants.DEFAULT_GERDI_NAMESPACE);
 
         if (versions == null)
-            return ServerResponseFactory.createUnknownErrorResponse();
+            return HttpResponseFactory.createUnknownErrorResponse();
         else
-            return ServerResponseFactory.createOkResponse(versions);
+            return HttpResponseFactory.createOkResponse(versions);
     }
 
 
@@ -251,9 +251,9 @@ public final class StatusFacade
         final String versions = getSpecifiedVersions(null);
 
         if (versions == null)
-            return ServerResponseFactory.createUnknownErrorResponse();
+            return HttpResponseFactory.createUnknownErrorResponse();
         else
-            return ServerResponseFactory.createOkResponse(versions);
+            return HttpResponseFactory.createOkResponse(versions);
     }
 
 

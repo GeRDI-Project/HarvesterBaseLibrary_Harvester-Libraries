@@ -27,7 +27,7 @@ import de.gerdiproject.harvest.utils.FileUtils;
  *
  * @author Robin Weiss
  */
-public abstract class AbstractFileSystemUnitTest<T> extends AbstractUnitTest<T>
+public abstract class AbstractFileSystemUnitTest<T> extends AbstractObjectUnitTest<T>
 {
     public static final File TEST_FOLDER = new File("mocked");
     private static final String CLEANUP_ERROR = "Could not delete temporary test diectory: " + TEST_FOLDER;

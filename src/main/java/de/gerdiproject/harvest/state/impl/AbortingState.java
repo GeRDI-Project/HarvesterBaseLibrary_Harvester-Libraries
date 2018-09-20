@@ -22,12 +22,12 @@ import org.slf4j.LoggerFactory;
 
 import de.gerdiproject.harvest.application.events.ResetContextEvent;
 import de.gerdiproject.harvest.event.EventSystem;
+import de.gerdiproject.harvest.rest.HttpResponseFactory;
 import de.gerdiproject.harvest.state.IState;
 import de.gerdiproject.harvest.state.StateMachine;
 import de.gerdiproject.harvest.state.constants.StateConstants;
 import de.gerdiproject.harvest.state.constants.StateEventHandlerConstants;
 import de.gerdiproject.harvest.state.events.AbortingFinishedEvent;
-import de.gerdiproject.harvest.utils.ServerResponseFactory;
 
 /**
  * This state indicates some process is aborting.
@@ -109,7 +109,7 @@ public class AbortingState implements IState
     public Response reset()
     {
         EventSystem.sendEvent(new ResetContextEvent());
-        return ServerResponseFactory.createAcceptedResponse(
+        return HttpResponseFactory.createAcceptedResponse(
                    StateConstants.RESET_STARTED_PROBLEMATIC);
     }
 
@@ -117,7 +117,7 @@ public class AbortingState implements IState
     @Override
     public Response getProgress()
     {
-        return ServerResponseFactory.createBadRequestResponse();
+        return HttpResponseFactory.createBadRequestResponse();
     }
 
 
@@ -141,6 +141,6 @@ public class AbortingState implements IState
      */
     private Response createServiceUnavailableResponse()
     {
-        return ServerResponseFactory.createBusyResponse(String.format(StateConstants.ABORT_DETAILED, processName), -1);
+        return HttpResponseFactory.createBusyResponse(String.format(StateConstants.ABORT_DETAILED, processName), -1);
     }
 }

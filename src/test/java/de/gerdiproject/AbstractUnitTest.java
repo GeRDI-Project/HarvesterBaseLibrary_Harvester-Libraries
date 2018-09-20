@@ -17,70 +17,55 @@
 package de.gerdiproject;
 
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-import java.lang.reflect.ParameterizedType;
 import java.util.Random;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
 
 import org.junit.After;
-import org.junit.Assume;
 import org.junit.Before;
-import org.junit.Test;
 
 import ch.qos.logback.classic.Level;
 import de.gerdiproject.harvest.application.MainContext;
-import de.gerdiproject.harvest.config.Configuration;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.event.IEvent;
-import de.gerdiproject.harvest.event.IEventListener;
 import de.gerdiproject.harvest.state.StateMachine;
 import de.gerdiproject.harvest.utils.CancelableFuture;
 import de.gerdiproject.harvest.utils.Procedure;
 import de.gerdiproject.harvest.utils.logger.constants.LoggerConstants;
 
 /**
- * This class serves as a base for all unit tests that test instantiable classes.
+ * This class serves as a base for all Harvester Library unit tests.
  * It provides common convenience functions and helper objects.
  *
  * @author Robin Weiss
  */
-public abstract class AbstractUnitTest<T>
+public abstract class AbstractUnitTest
 {
-    private static final String CLEANUP_ERROR = "Could not instantiate object: ";
-    private static final String SKIP_EVENT_TESTS_MESSAGE = "Skipping event listener tests, because %s does not implement " + IEventListener.class.getSimpleName() + ".";
     private static final String EXPECTED_EVENT_FAIL_MESSAGE = "Expected the %s to be sent before %d ms have passed!";
     protected static final int DEFAULT_EVENT_TIMEOUT = 2000;
 
     private final Level initialLogLevel = LoggerConstants.ROOT_LOGGER.getLevel();
     protected final Random random = new Random();
 
-    protected Configuration config;
-    protected T testedObject;
-
 
     /**
-     * Creates an instance of the tested object.
+     * Sets up a following test.
      *
-     * @throws InstantiationException thrown when the test folder could not be deleted
+     * @throws InstantiationException thrown when the test setup failed
      */
     @Before
     public void before() throws InstantiationException
     {
         setLoggerEnabled(isLoggingEnabledDuringTests());
-        testedObject = setUpTestObjects();
-
-        if (testedObject == null)
-            throw new InstantiationException(CLEANUP_ERROR + getTestedClass().getName());
     }
 
 
     /**
-     * Removes event listeners if there are any and nullifies the tested object.
+     * Removes event listeners if there are any and cleans
+     * up objects that were set up throughout the test.
      */
     @After
     public void after()
@@ -89,81 +74,8 @@ public abstract class AbstractUnitTest<T>
         MainContext.destroy();
         StateMachine.setState(null);
 
-        testedObject = null;
-
         setLoggerEnabled(true);
     }
-
-
-    /**
-     * Tests if event listeners are added when the
-     * addEventListeners() function is called.
-     */
-    @Test
-    public void testAddingEventListeners()
-    {
-        Assume.assumeTrue(String.format(SKIP_EVENT_TESTS_MESSAGE, testedObject.getClass().getSimpleName()),
-                          testedObject instanceof IEventListener);
-
-        // if there is a config, remove its listeners to not falsify the result
-        if (config != null)
-            config.removeEventListeners();
-
-        ((IEventListener) testedObject).addEventListeners();
-
-        assertTrue("The method addEventListeners() is not adding any event listeners!", EventSystem.hasSynchronousEventListeners()
-                   || EventSystem.hasAsynchronousEventListeners());
-    }
-
-
-    /**
-     * Tests if there are no event listeners after the tested object
-     * was constructed.
-     */
-    @Test
-    public void testForNoInitialEventListeners()
-    {
-        Assume.assumeTrue(String.format(SKIP_EVENT_TESTS_MESSAGE, testedObject.getClass().getSimpleName()),
-                          testedObject instanceof IEventListener);
-
-        // if there is a config, remove its listeners to not falsify the result
-        if (config != null)
-            config.removeEventListeners();
-
-        assertFalse("Event listeners should not be added in the constructor!", EventSystem.hasSynchronousEventListeners()
-                    || EventSystem.hasAsynchronousEventListeners());
-    }
-
-
-    /**
-     * Tests if all event listeners are removed when the
-     * removeEventListeners() function is called.
-     */
-    @Test
-    public void testRemovingEventListeners()
-    {
-        Assume.assumeTrue(String.format(SKIP_EVENT_TESTS_MESSAGE, testedObject.getClass().getSimpleName()),
-                          testedObject instanceof IEventListener);
-
-        // if there is a config, remove its listeners to not falsify the result
-        if (config != null)
-            config.removeEventListeners();
-
-        ((IEventListener) testedObject).addEventListeners();
-        ((IEventListener) testedObject).removeEventListeners();
-
-        assertFalse("The method removeEventListeners() should remove all listeners!", EventSystem.hasSynchronousEventListeners()
-                    || EventSystem.hasAsynchronousEventListeners());
-    }
-
-
-    /**
-     * Sets up all objects that are required for the following test
-     * and returns the main tested object.
-     *
-     * @return the main tested object
-     */
-    protected abstract T setUpTestObjects();
 
 
     /**
@@ -185,18 +97,6 @@ public abstract class AbstractUnitTest<T>
     protected boolean isLoggingEnabledDuringTests()
     {
         return false;
-    }
-
-
-    /**
-     * Returns the class that is being tested
-     *
-     * @return the class that is being tested
-     */
-    @SuppressWarnings("unchecked") // NOPMD the cast will always succeed
-    protected Class<T> getTestedClass()
-    {
-        return (Class<T>)((ParameterizedType) getClass().getGenericSuperclass()).getActualTypeArguments()[0];
     }
 
 

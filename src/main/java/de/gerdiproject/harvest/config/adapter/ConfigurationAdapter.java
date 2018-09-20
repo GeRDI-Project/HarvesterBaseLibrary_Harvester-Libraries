@@ -40,6 +40,20 @@ import de.gerdiproject.harvest.config.parameters.AbstractParameter;
  */
 public class ConfigurationAdapter implements JsonDeserializer<Configuration>, JsonSerializer<Configuration>
 {
+    private final String moduleName;
+
+
+    /**
+     * Constructor that requires the service name.
+     *
+     * @param moduleName the name of the service
+     */
+    public ConfigurationAdapter(String moduleName)
+    {
+        this.moduleName = moduleName;
+    }
+
+
     @Override
     public Configuration deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context) throws JsonParseException
     {
@@ -55,7 +69,7 @@ public class ConfigurationAdapter implements JsonDeserializer<Configuration>, Js
         final AbstractParameter<?>[] parameterArray = new AbstractParameter<?>[parameters.size()];
         parameters.toArray(parameterArray);
 
-        return new Configuration(parameterArray);
+        return new Configuration(moduleName, parameterArray);
     }
 
 

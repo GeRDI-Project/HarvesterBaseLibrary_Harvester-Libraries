@@ -20,8 +20,8 @@ import java.util.function.Consumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import de.gerdiproject.harvest.application.MainContext;
 import de.gerdiproject.harvest.config.Configuration;
+import de.gerdiproject.harvest.config.events.GetConfigurationEvent;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.harvester.events.HarvestFinishedEvent;
 import de.gerdiproject.harvest.harvester.events.HarvestStartedEvent;
@@ -136,7 +136,7 @@ public class StateEventHandlerConstants
 
         // was the harvest successful? then choose the next automatic post-processing state
         if (isSuccessful) {
-            final Configuration config = MainContext.getConfiguration();
+            final Configuration config = EventSystem.sendSynchronousEvent(new GetConfigurationEvent());
 
             boolean isAutoSubmitEnabled = config.getParameterValue(SubmissionConstants.AUTO_SUBMIT_PARAM.getCompositeKey());
 

@@ -14,16 +14,16 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package de.gerdiproject.harvest.utils;
+package de.gerdiproject.harvest.rest;
 
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
 import javax.ws.rs.core.Response.Status;
 
-import de.gerdiproject.harvest.application.constants.StatusConstants;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.event.ISynchronousEvent;
+import de.gerdiproject.harvest.rest.constants.RestConstants;
 import de.gerdiproject.harvest.state.IState;
 import de.gerdiproject.harvest.state.StateMachine;
 import de.gerdiproject.harvest.state.constants.StateConstants;
@@ -35,12 +35,12 @@ import de.gerdiproject.harvest.state.impl.InitializationState;
  *
  * @author Robin Weiss
  */
-public class ServerResponseFactory
+public class HttpResponseFactory
 {
     /**
      * Private constructor because this class only provides static methods.
      */
-    private ServerResponseFactory()
+    private HttpResponseFactory()
     {
     }
 
@@ -55,7 +55,7 @@ public class ServerResponseFactory
     {
         return Response
                .status(Status.SERVICE_UNAVAILABLE)
-               .entity(StateConstants.CANNOT_PROCESS_PREFIX + StateConstants.INIT_IN_PROGRESS)
+               .entity(RestConstants.CANNOT_PROCESS_PREFIX + StateConstants.INIT_IN_PROGRESS)
                .type(MediaType.TEXT_PLAIN)
                .build();
     }
@@ -79,7 +79,7 @@ public class ServerResponseFactory
                                    .type(MediaType.TEXT_PLAIN);
 
         if (retryInSeconds != -1)
-            rb.header(StateConstants.RETRY_AFTER_HEADER, retryInSeconds);
+            rb.header(RestConstants.RETRY_AFTER_HEADER, retryInSeconds);
 
         return rb.build();
     }
@@ -111,7 +111,7 @@ public class ServerResponseFactory
     {
         return Response
                .status(Status.INTERNAL_SERVER_ERROR)
-               .entity(StateConstants.ERROR_DETAILED)
+               .entity(RestConstants.INIT_ERROR_DETAILED)
                .type(MediaType.TEXT_PLAIN)
                .build();
     }
@@ -126,7 +126,7 @@ public class ServerResponseFactory
     {
         return Response
                .status(Status.INTERNAL_SERVER_ERROR)
-               .entity(StateConstants.UNKNOWN_ERROR)
+               .entity(RestConstants.UNKNOWN_ERROR)
                .type(MediaType.TEXT_PLAIN)
                .build();
     }
@@ -156,7 +156,7 @@ public class ServerResponseFactory
      */
     public static Response createBadRequestResponse()
     {
-        return createBadRequestResponse(StatusConstants.NOT_AVAILABLE);
+        return createBadRequestResponse(RestConstants.NOT_AVAILABLE);
     }
 
 
@@ -172,6 +172,20 @@ public class ServerResponseFactory
         return Response
                .status(Status.BAD_REQUEST)
                .entity(message)
+               .type(MediaType.TEXT_PLAIN)
+               .build();
+    }
+
+    /**
+     * Creates a HTTP-405 response.
+     *
+     * @return a HTTP-405 response
+     */
+    public static Response createMethodNotAllowedResponse()
+    {
+        return Response
+               .status(Status.METHOD_NOT_ALLOWED)
+               .entity(RestConstants.INVALID_REQUEST_ERROR)
                .type(MediaType.TEXT_PLAIN)
                .build();
     }

@@ -20,10 +20,10 @@ import javax.ws.rs.core.Response;
 import de.gerdiproject.harvest.application.events.ResetContextEvent;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.harvester.events.HarvesterInitializedEvent;
+import de.gerdiproject.harvest.rest.HttpResponseFactory;
 import de.gerdiproject.harvest.state.IState;
 import de.gerdiproject.harvest.state.constants.StateConstants;
 import de.gerdiproject.harvest.state.constants.StateEventHandlerConstants;
-import de.gerdiproject.harvest.utils.ServerResponseFactory;
 
 /**
  * This state represents the initialization of harvesters at the beginning of
@@ -59,35 +59,35 @@ public class InitializationState implements IState
     @Override
     public Response startHarvest()
     {
-        return ServerResponseFactory.createInitResponse();
+        return HttpResponseFactory.createInitResponse();
     }
 
 
     @Override
     public Response abort()
     {
-        return ServerResponseFactory.createInitResponse();
+        return HttpResponseFactory.createInitResponse();
     }
 
 
     @Override
     public Response submit()
     {
-        return ServerResponseFactory.createInitResponse();
+        return HttpResponseFactory.createInitResponse();
     }
 
 
     @Override
     public Response save()
     {
-        return ServerResponseFactory.createInitResponse();
+        return HttpResponseFactory.createInitResponse();
     }
 
 
     @Override
     public Response getProgress()
     {
-        return ServerResponseFactory.createBadRequestResponse();
+        return HttpResponseFactory.createBadRequestResponse();
     }
 
 
@@ -102,7 +102,7 @@ public class InitializationState implements IState
     public Response reset()
     {
         EventSystem.sendEvent(new ResetContextEvent());
-        return ServerResponseFactory.createAcceptedResponse(
+        return HttpResponseFactory.createAcceptedResponse(
                    StateConstants.RESET_STARTED_PROBLEMATIC);
     }
 
@@ -110,6 +110,6 @@ public class InitializationState implements IState
     @Override
     public Response isOutdated()
     {
-        return ServerResponseFactory.createInitResponse();
+        return HttpResponseFactory.createInitResponse();
     }
 }

@@ -29,9 +29,8 @@ import de.gerdiproject.AbstractFileSystemUnitTest;
 import de.gerdiproject.harvest.application.events.ContextDestroyedEvent;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.scheduler.Scheduler;
-import de.gerdiproject.harvest.scheduler.events.AddSchedulerTaskEvent;
-import de.gerdiproject.harvest.scheduler.events.DeleteSchedulerTaskEvent;
-import de.gerdiproject.harvest.scheduler.events.GetScheduleEvent;
+import de.gerdiproject.harvest.scheduler.json.ChangeSchedulerRequest;
+import de.gerdiproject.harvest.scheduler.json.SchedulerResponse;
 
 /**
  * This class contains unit tests for the {@linkplain Scheduler}.
@@ -51,7 +50,7 @@ public class SchedulerTest extends AbstractFileSystemUnitTest<Scheduler>
     @Override
     protected Scheduler setUpTestObjects()
     {
-        Scheduler scheduler = new Scheduler(scheduleFile.toString());
+        Scheduler scheduler = new Scheduler("", scheduleFile.toString());
         return scheduler;
     }
 
@@ -78,7 +77,7 @@ public class SchedulerTest extends AbstractFileSystemUnitTest<Scheduler>
         testedObject.addEventListeners();
         addTasks(1);
         assertNotEquals(
-            "After sending an " + AddSchedulerTaskEvent.class.getSimpleName() + ", the cache file should not be empty!",
+            "After adding a task, the cache file should not be empty!",
             0,
             scheduleFile.length());
     }
@@ -94,7 +93,7 @@ public class SchedulerTest extends AbstractFileSystemUnitTest<Scheduler>
         testedObject.addEventListeners();
         addRandomNumberOfTasks();
 
-        Scheduler anotherScheduler = new Scheduler(scheduleFile.toString());
+        Scheduler anotherScheduler = new Scheduler("", scheduleFile.toString());
         anotherScheduler.addEventListeners();
         anotherScheduler.loadFromDisk();
         anotherScheduler.removeEventListeners();
@@ -136,7 +135,7 @@ public class SchedulerTest extends AbstractFileSystemUnitTest<Scheduler>
         final int numberOfTasks = random.nextInt(10);
         addTasks(numberOfTasks);
 
-        assertEquals("The method size() should return the same number of tasks that were added via the " + AddSchedulerTaskEvent.class.getSimpleName() + "!",
+        assertEquals("The method size() should return the same number of tasks that were added!",
                      numberOfTasks,
                      testedObject.size());
     }
@@ -151,8 +150,8 @@ public class SchedulerTest extends AbstractFileSystemUnitTest<Scheduler>
         testedObject.addEventListeners();
 
         try {
-            EventSystem.sendSynchronousEvent(new AddSchedulerTaskEvent(SOME_CRON_TAB));
-            EventSystem.sendSynchronousEvent(new AddSchedulerTaskEvent(SOME_CRON_TAB));
+            testedObject.addTask(new ChangeSchedulerRequest(SOME_CRON_TAB));
+            testedObject.addTask(new ChangeSchedulerRequest(SOME_CRON_TAB));
 
             fail("Adding the same cron tab twice should throw an exception!");
         } catch (Exception ex) {
@@ -172,7 +171,7 @@ public class SchedulerTest extends AbstractFileSystemUnitTest<Scheduler>
         testedObject.addEventListeners();
 
         try {
-            EventSystem.sendSynchronousEvent(new AddSchedulerTaskEvent(INVALID_CRON));
+            testedObject.addTask(new ChangeSchedulerRequest(INVALID_CRON));
 
             fail("Adding a cron tab with invalid syntax should throw an exception!");
         } catch (Exception ex) {
@@ -196,10 +195,10 @@ public class SchedulerTest extends AbstractFileSystemUnitTest<Scheduler>
 
         for (int i = 0; i < numberOfDeletions; i++) {
             final String randomCron = String.format(RANDOM_CRON_TAB, i);
-            EventSystem.sendSynchronousEvent(new DeleteSchedulerTaskEvent(randomCron));
+            testedObject.deleteTask(new ChangeSchedulerRequest(randomCron));
         }
 
-        assertEquals("The method size() should return a lower number after " + DeleteSchedulerTaskEvent.class.getSimpleName() + " were sent!",
+        assertEquals("The method size() should return a lower number after deleting tasks!",
                      10 - numberOfDeletions,
                      testedObject.size());
     }
@@ -214,7 +213,7 @@ public class SchedulerTest extends AbstractFileSystemUnitTest<Scheduler>
         testedObject.addEventListeners();
 
         try {
-            EventSystem.sendSynchronousEvent(new DeleteSchedulerTaskEvent(SOME_CRON_TAB));
+            testedObject.deleteTask(new ChangeSchedulerRequest(SOME_CRON_TAB));
             fail("Deleting a non-existing cron tab should throw an exception!");
         } catch (Exception ex) {
             assertEquals(ASSERT_EXCEPTION_MESSAGE,
@@ -232,9 +231,10 @@ public class SchedulerTest extends AbstractFileSystemUnitTest<Scheduler>
     {
         testedObject.addEventListeners();
         addTasks(10);
-        EventSystem.sendSynchronousEvent(new DeleteSchedulerTaskEvent(null));
+
+        testedObject.deleteAllTasks();
         assertEquals(
-            "All tasks should be removed when a " + DeleteSchedulerTaskEvent.class.getSimpleName() + " is sent with a null payload!",
+            "The method deleteAllTasks() should remove all tasks!",
             0,
             testedObject.size());
     }
@@ -250,7 +250,7 @@ public class SchedulerTest extends AbstractFileSystemUnitTest<Scheduler>
         testedObject.addEventListeners();
 
         try {
-            EventSystem.sendSynchronousEvent(new DeleteSchedulerTaskEvent(null));
+            testedObject.deleteAllTasks();
         } catch (Exception ex) {
             fail("Deleting all cron tabs should not throw an exception!");
         }
@@ -267,11 +267,11 @@ public class SchedulerTest extends AbstractFileSystemUnitTest<Scheduler>
         testedObject.addEventListeners();
         addRandomNumberOfTasks();
 
-        final String scheduleText = EventSystem.sendSynchronousEvent(new GetScheduleEvent());
+        final String scheduleText = testedObject.getAsPlainText();
 
         for (int i = 0; i < testedObject.size(); i++)
-            assertTrue("Sending a " + GetScheduleEvent.class.getSimpleName() + " should return all tasks!",
-                       scheduleText.contains(String.format(RANDOM_CRON_TAB, i) + "\n"));
+            assertTrue("The method getRestText() should return all tasks!",
+                       scheduleText.contains(String.format(RANDOM_CRON_TAB, i)));
     }
 
 
@@ -282,9 +282,9 @@ public class SchedulerTest extends AbstractFileSystemUnitTest<Scheduler>
     public void testScheduleGetterEmpty()
     {
         testedObject.addEventListeners();
-        final String scheduleText = EventSystem.sendSynchronousEvent(new GetScheduleEvent());
-        assertTrue("Sending a " + GetScheduleEvent.class.getSimpleName() + " should no tasks, if none were added!",
-                   scheduleText.isEmpty());
+        final SchedulerResponse scheduleJson = testedObject.getAsJson(null);
+        assertTrue("The method getRestText() should return no tasks, if none were added!",
+                   scheduleJson.getScheduledHarvests().isEmpty());
     }
 
 
@@ -314,10 +314,13 @@ public class SchedulerTest extends AbstractFileSystemUnitTest<Scheduler>
         testedObject.addEventListeners();
         EventSystem.sendEvent(new ContextDestroyedEvent());
 
-        addTasks(1);
-        assertEquals("Tasks must not be added after the " + ContextDestroyedEvent.class.getSimpleName() + " was sent!",
-                     0,
-                     testedObject.size());
+        try {
+            addTasks(1);
+        } catch (IllegalStateException e) {
+            return;
+        }
+
+        fail("Tasks must not be added after the " + ContextDestroyedEvent.class.getSimpleName() + " was sent!");
     }
 
 
@@ -334,7 +337,7 @@ public class SchedulerTest extends AbstractFileSystemUnitTest<Scheduler>
     {
         for (int i = 0; i < count; i++) {
             final String randomCron = String.format(RANDOM_CRON_TAB, i);
-            EventSystem.sendSynchronousEvent(new AddSchedulerTaskEvent(randomCron));
+            testedObject.addTask(new ChangeSchedulerRequest(randomCron));
         }
     }
 

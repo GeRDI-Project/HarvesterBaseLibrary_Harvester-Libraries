@@ -67,6 +67,7 @@ import de.gerdiproject.harvest.utils.data.DiskIO;
  */
 public class ConfigurationTest extends AbstractFileSystemUnitTest<Configuration>
 {
+    private static final String MODULE_NAME = "mocked";
     private static final String PARAM_KEY = "customParam";
     private static final String STRING_VALUE = "customValue";
     private static final String URL_VALUE_1 = "http://www.gerdi-project.de";
@@ -100,7 +101,7 @@ public class ConfigurationTest extends AbstractFileSystemUnitTest<Configuration>
     @Test
     public void testNullConstructor()
     {
-        testedObject = new Configuration();
+        testedObject = new Configuration(MODULE_NAME);
         assertEquals("The method getParameters() should return an empty list after the constructor without arguments is called!",
                      0,
                      testedObject.getParameters().size());
@@ -120,7 +121,7 @@ public class ConfigurationTest extends AbstractFileSystemUnitTest<Configuration>
             new StringParameter(PARAM_KEY + 3, TEST_CATEGORY, STRING_VALUE + 3)
         };
 
-        testedObject = new Configuration(customHarvesterParams);
+        testedObject = new Configuration(MODULE_NAME, customHarvesterParams);
 
         // check if all parameters can be retrieved
         for (AbstractParameter<?> param : customHarvesterParams)
@@ -141,7 +142,7 @@ public class ConfigurationTest extends AbstractFileSystemUnitTest<Configuration>
         final String randomValue = STRING_VALUE + random.nextInt(10000);
         final AbstractParameter<?> paramWithCase = new StringParameter(PARAM_KEY, TEST_CATEGORY, randomValue);
 
-        testedObject = new Configuration(paramWithCase);
+        testedObject = new Configuration(MODULE_NAME, paramWithCase);
 
         final String upperCaseKey = paramWithCase.getCompositeKey().toUpperCase();
         assertEquals("The method getParameterValue() should be case insensitive!",
@@ -468,7 +469,7 @@ public class ConfigurationTest extends AbstractFileSystemUnitTest<Configuration>
         savedConfig.saveToDisk();
 
         // create a config without parameters
-        testedObject = new Configuration();
+        testedObject = new Configuration(MODULE_NAME);
         testedObject.setCacheFilePath(configFile.getAbsolutePath());
 
         // load previously set up config
@@ -490,7 +491,7 @@ public class ConfigurationTest extends AbstractFileSystemUnitTest<Configuration>
     @Test
     public void testLoadWithNonExistingPath()
     {
-        testedObject = new Configuration();
+        testedObject = new Configuration(MODULE_NAME);
         testedObject.setCacheFilePath(configFile.getAbsolutePath());
 
         // attempt to load a non-existing path
@@ -752,18 +753,18 @@ public class ConfigurationTest extends AbstractFileSystemUnitTest<Configuration>
 
 
     /**
-     * Tests if the {@linkplain Configuration}'s toString() function displays all parameter keys
+     * Tests if the {@linkplain Configuration}'s getAsPlainText() function displays all parameter keys
      * of registered parmeters.
      *
      * @throws MalformedURLException thrown if the URL parameter could not be created
      */
     @Test
-    public void testToStringKeys() throws MalformedURLException
+    public void testPlainTextKeys() throws MalformedURLException
     {
         testedObject = createConfigWithAllParameterTypes();
         testedObject.getParameters().forEach((AbstractParameter<?> param) -> param.setRegistered(true));
 
-        final String configString = testedObject.toString();
+        final String configString = testedObject.getAsPlainText();
 
         for (AbstractParameter<?> param : testedObject.getParameters()) {
             assertTrue("The method toString() must return a string containing all registered parameter keys!",
@@ -783,7 +784,7 @@ public class ConfigurationTest extends AbstractFileSystemUnitTest<Configuration>
         testedObject = createConfigWithAllParameterTypes();
         testedObject.getParameters().forEach((AbstractParameter<?> param) -> param.setRegistered(true));
 
-        final String configString = testedObject.toString();
+        final String configString = testedObject.getAsPlainText();
 
         for (AbstractParameter<?> param : testedObject.getParameters()) {
             assertTrue("The method toString() must return a string containing all parameter value string representations!",
@@ -854,7 +855,7 @@ public class ConfigurationTest extends AbstractFileSystemUnitTest<Configuration>
      */
     private Configuration createConfigWithCustomParameters(AbstractParameter<?>... params)
     {
-        return new Configuration(params);
+        return new Configuration(MODULE_NAME, params);
     }
 
 
@@ -896,7 +897,7 @@ public class ConfigurationTest extends AbstractFileSystemUnitTest<Configuration>
         // deserialize cache file
         final Gson gson =
             new GsonBuilder()
-        .registerTypeAdapter(Configuration.class, new ConfigurationAdapter())
+        .registerTypeAdapter(Configuration.class, new ConfigurationAdapter(MODULE_NAME))
         .create();
         final DiskIO diskIo = new DiskIO(gson, StandardCharsets.UTF_8);
         return diskIo.getObject(configFile, Configuration.class);

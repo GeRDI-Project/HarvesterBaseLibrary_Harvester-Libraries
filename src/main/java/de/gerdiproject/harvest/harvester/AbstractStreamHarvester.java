@@ -33,7 +33,6 @@ import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
 
 import de.gerdiproject.harvest.IDocument;
-import de.gerdiproject.harvest.application.MainContext;
 import de.gerdiproject.harvest.application.events.ContextDestroyedEvent;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.harvester.constants.HarvesterConstants;
@@ -118,7 +117,7 @@ public abstract class AbstractStreamHarvester<T> extends AbstractHarvester
      */
     protected File initStreamFile(String moduleName)
     {
-        String filePath = String.format(CacheConstants.CACHE_ENTRY_STREAM_PATH, MainContext.getServiceName(), getName());
+        String filePath = String.format(CacheConstants.CACHE_ENTRY_STREAM_PATH, moduleName, getName());
 
         File cacheFile = new File(filePath);
         FileUtils.createEmptyFile(cacheFile);

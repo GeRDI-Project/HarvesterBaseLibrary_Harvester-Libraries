@@ -16,37 +16,14 @@
  */
 package de.gerdiproject.harvest.scheduler.events;
 
-import de.gerdiproject.harvest.event.ISynchronousEvent;
+import de.gerdiproject.harvest.rest.events.GetRestObjectEvent;
 import de.gerdiproject.harvest.scheduler.Scheduler;
 
 /**
- * Synchronous event for adding a task to the {@linkplain Scheduler} and returning a feedback message.
+ * Synchronous event for retrieving the {@linkplain Scheduler}.
  *
  * @author Robin Weiss
  */
-public class AddSchedulerTaskEvent implements ISynchronousEvent<String>
+public class GetSchedulerEvent extends GetRestObjectEvent<Scheduler>
 {
-    private final String cronTab;
-
-
-    /**
-     * Constructor that sets a cron string as payload.
-     *
-     * @param cronTab a cron tab
-     */
-    public AddSchedulerTaskEvent(String cronTab)
-    {
-        this.cronTab = cronTab;
-    }
-
-
-    /**
-     * Returns a cron tab that is used for scheduling tasks.
-     *
-     * @return a cron tab string
-     */
-    public String getCronTab()
-    {
-        return cronTab;
-    }
 }

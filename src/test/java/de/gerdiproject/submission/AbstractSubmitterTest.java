@@ -52,6 +52,7 @@ import de.gerdiproject.utils.examples.harvestercache.MockedHarvester;
  */
 public class AbstractSubmitterTest extends AbstractFileSystemUnitTest<AbstractSubmitter>
 {
+    private static final String MODULE_NAME = "mocked";
     private static final String TEST_URL = "http://www.gerdi-project.de/";
     private static final String TEST_USER_NAME = "Max Power";
     private static final String TEST_PASSWORD = "Top Sekret";
@@ -73,7 +74,7 @@ public class AbstractSubmitterTest extends AbstractFileSystemUnitTest<AbstractSu
         ProcessTimeMeasure measure = new ProcessTimeMeasure();
         measure.set(startTimestamp, endTimestamp, ProcessStatus.Finished);
 
-        config = new Configuration();
+        config = new Configuration(MODULE_NAME);
         config.addEventListeners();
 
         AbstractSubmitter mockedSubmitter = new MockedSubmitter();

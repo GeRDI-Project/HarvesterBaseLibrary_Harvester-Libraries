@@ -23,11 +23,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import de.gerdiproject.harvest.event.EventSystem;
+import de.gerdiproject.harvest.rest.HttpResponseFactory;
 import de.gerdiproject.harvest.state.constants.StateConstants;
 import de.gerdiproject.harvest.state.events.AbortingStartedEvent;
 import de.gerdiproject.harvest.state.events.StartAbortingEvent;
 import de.gerdiproject.harvest.state.impl.AbortingState;
-import de.gerdiproject.harvest.utils.ServerResponseFactory;
 
 /**
  * This abstract class is a state representing a process that has a clearly
@@ -126,7 +126,7 @@ public abstract class AbstractProgressingState implements IState
         else
             entity = String.valueOf(currentProgress);
 
-        return ServerResponseFactory.createOkResponse(entity);
+        return HttpResponseFactory.createOkResponse(entity);
     }
 
 
@@ -135,7 +135,7 @@ public abstract class AbstractProgressingState implements IState
     {
         EventSystem.sendEvent(new StartAbortingEvent());
 
-        return ServerResponseFactory.createAcceptedResponse(
+        return HttpResponseFactory.createAcceptedResponse(
                    String.format(StateConstants.ABORT_STATUS, getName()));
     }
 
@@ -143,7 +143,7 @@ public abstract class AbstractProgressingState implements IState
     @Override
     public Response reset()
     {
-        return ServerResponseFactory.createBusyResponse(
+        return HttpResponseFactory.createBusyResponse(
                    String.format(StateConstants.CANNOT_RESET, getName()),
                    estimateRemainingSeconds());
     }

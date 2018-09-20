@@ -47,7 +47,7 @@ import de.gerdiproject.harvest.harvester.events.GetProviderNameEvent;
 import de.gerdiproject.harvest.harvester.events.HarvestFinishedEvent;
 import de.gerdiproject.harvest.harvester.events.HarvestStartedEvent;
 import de.gerdiproject.harvest.harvester.events.StartHarvestEvent;
-import de.gerdiproject.harvest.harvester.rest.HarvesterFacade;
+import de.gerdiproject.harvest.harvester.rest.HarvesterRestResource;
 import de.gerdiproject.harvest.state.events.AbortingFinishedEvent;
 import de.gerdiproject.harvest.state.events.AbortingStartedEvent;
 import de.gerdiproject.harvest.state.events.StartAbortingEvent;
@@ -66,7 +66,7 @@ import de.gerdiproject.json.GsonUtils;
  * retrieve all of its metadata. The metadata can subsequently be submitted to
  * ElasticSearch via the {@link ElasticSearchSubmitter}. This most basic
  * Harvester class offers functions that can be controlled via REST requests
- * from the {@link HarvesterFacade}, as well as some utility objects that are
+ * from the {@link HarvesterRestResource}, as well as some utility objects that are
  * required by all harvests. Subclasses must implement the concrete harvesting
  * process.
  *

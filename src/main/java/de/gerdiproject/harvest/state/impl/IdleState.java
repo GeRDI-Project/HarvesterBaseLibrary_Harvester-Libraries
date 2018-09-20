@@ -39,24 +39,20 @@ import java.io.UncheckedIOException;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import de.gerdiproject.harvest.application.MainContext;
 import de.gerdiproject.harvest.application.events.ResetContextEvent;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.harvester.events.GetHarvesterOutdatedEvent;
 import de.gerdiproject.harvest.harvester.events.HarvestStartedEvent;
 import de.gerdiproject.harvest.harvester.events.StartHarvestEvent;
+import de.gerdiproject.harvest.rest.HttpResponseFactory;
 import de.gerdiproject.harvest.save.constants.SaveConstants;
 import de.gerdiproject.harvest.save.events.SaveHarvestEvent;
 import de.gerdiproject.harvest.state.IState;
-import de.gerdiproject.harvest.state.StateMachine;
 import de.gerdiproject.harvest.state.constants.StateConstants;
 import de.gerdiproject.harvest.state.constants.StateEventHandlerConstants;
 import de.gerdiproject.harvest.submission.events.StartSubmissionEvent;
 import de.gerdiproject.harvest.submission.events.SubmissionStartedEvent;
-import de.gerdiproject.harvest.utils.ServerResponseFactory;
 import de.gerdiproject.harvest.utils.time.HarvestTimeKeeper;
 
 /**
@@ -66,16 +62,11 @@ import de.gerdiproject.harvest.utils.time.HarvestTimeKeeper;
  */
 public class IdleState implements IState
 {
-    private static final Logger LOGGER = LoggerFactory.getLogger(StateMachine.class);
-
-
     @Override
     public void onStateEnter()
     {
         EventSystem.addListener(HarvestStartedEvent.class, StateEventHandlerConstants.ON_HARVEST_STARTED);
         EventSystem.addListener(SubmissionStartedEvent.class, StateEventHandlerConstants.ON_SUBMISSION_STARTED);
-
-        LOGGER.info(String.format(StateConstants.READY, MainContext.getServiceName()));
     }
 
 
@@ -102,7 +93,7 @@ public class IdleState implements IState
     public Response startHarvest()
     {
         EventSystem.sendEvent(new StartHarvestEvent());
-        return ServerResponseFactory.createAcceptedResponse(
+        return HttpResponseFactory.createAcceptedResponse(
                    StateConstants.HARVEST_STARTED);
     }
 
@@ -114,7 +105,7 @@ public class IdleState implements IState
                                    StateConstants.CANNOT_ABORT_PREFIX
                                    + StateConstants.NO_HARVEST_IN_PROGRESS,
                                    StateConstants.HARVESTING_PROCESS);
-        return ServerResponseFactory.createBadRequestResponse(message);
+        return HttpResponseFactory.createBadRequestResponse(message);
     }
 
 
@@ -124,9 +115,9 @@ public class IdleState implements IState
         Response response;
 
         try {
-            response = ServerResponseFactory.createSynchronousEventResponse(new StartSubmissionEvent());
+            response = HttpResponseFactory.createSynchronousEventResponse(new StartSubmissionEvent());
         } catch (IllegalStateException e) {
-            response = ServerResponseFactory.createBadRequestResponse(e.getMessage());
+            response = HttpResponseFactory.createBadRequestResponse(e.getMessage());
         }
 
         return response;
@@ -147,12 +138,12 @@ public class IdleState implements IState
                 return response.build();
             }
         } catch (IllegalStateException iex) {
-            return ServerResponseFactory.createBadRequestResponse(iex.getMessage());
+            return HttpResponseFactory.createBadRequestResponse(iex.getMessage());
         } catch (UncheckedIOException uex) {
-            return ServerResponseFactory.createKnownErrorResponse(uex.getMessage());
+            return HttpResponseFactory.createKnownErrorResponse(uex.getMessage());
         }
 
-        return ServerResponseFactory.createServerErrorResponse();
+        return HttpResponseFactory.createServerErrorResponse();
     }
 
 
@@ -160,7 +151,7 @@ public class IdleState implements IState
     public Response reset()
     {
         EventSystem.sendEvent(new ResetContextEvent());
-        return ServerResponseFactory.createAcceptedResponse(
+        return HttpResponseFactory.createAcceptedResponse(
                    StateConstants.RESET_STARTED);
     }
 
@@ -168,7 +159,7 @@ public class IdleState implements IState
     @Override
     public Response getProgress()
     {
-        return ServerResponseFactory.createBadRequestResponse();
+        return HttpResponseFactory.createBadRequestResponse();
     }
 
 
@@ -182,6 +173,6 @@ public class IdleState implements IState
     @Override
     public Response isOutdated()
     {
-        return ServerResponseFactory.createSynchronousEventResponse(new GetHarvesterOutdatedEvent());
+        return HttpResponseFactory.createSynchronousEventResponse(new GetHarvesterOutdatedEvent());
     }
 }

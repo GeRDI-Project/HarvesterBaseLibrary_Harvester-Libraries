@@ -30,24 +30,21 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 
 import com.google.gson.Gson;
 
-import ch.qos.logback.classic.Level;
+import de.gerdiproject.AbstractUnitTest;
 import de.gerdiproject.harvest.utils.FileUtils;
 import de.gerdiproject.harvest.utils.cache.constants.CacheConstants;
 import de.gerdiproject.harvest.utils.data.DiskIO;
-import de.gerdiproject.harvest.utils.logger.constants.LoggerConstants;
 
 /**
  * This class provides test cases for the {@linkplain FileUtils}.
  *
  * @author Robin Weiss
  */
-public class FileUtilsTest
+public class FileUtilsTest extends AbstractUnitTest
 {
     private static final File TEST_FOLDER = new File("mocked");
     private static final File FILE_TEST_FOLDER = new File("mocked/fileUtilsTestDir");
@@ -104,30 +101,23 @@ public class FileUtilsTest
     private static final String DELETE_DIR_ERROR = "Deleting non-existing directories, should not cause exceptions";
     private static final String DELETE_FILE_ERROR = "Deleting non-existing files, should not cause exceptions";
 
-    private final Level initialLogLevel = LoggerConstants.ROOT_LOGGER.getLevel();
 
-
-    /**
-     * Verifies that cache files are deleted.
-     *
-     * @throws IOException thrown when the temporary cache folder could not be deleted
-     */
-    @Before
-    public void before() throws IOException
+    @Override
+    public void before() throws InstantiationException
     {
+        super.before();
+
         FileUtils.deleteFile(TEST_FOLDER);
 
         if (TEST_FOLDER.exists())
-            throw new IOException();
+            throw new InstantiationException();
     }
 
 
-    /**
-     * Cleans up the entire directory of test files after each test.
-     */
-    @After
+    @Override
     public void after()
     {
+        super.after();
         FileUtils.deleteFile(TEST_FOLDER);
     }
 
@@ -223,9 +213,7 @@ public class FileUtilsTest
     @Test
     public void testFileCopyingWithoutSource()
     {
-        setLoggerEnabled(false);
         FileUtils.copyFile(COPY_TEST_SOURCE_FILE, COPY_TEST_TARGET_FILE);
-        setLoggerEnabled(true);
 
         assertFalse("The method copyFile() should not create files if the source file does not exist!",
                     COPY_TEST_TARGET_FILE.exists());
@@ -272,9 +260,7 @@ public class FileUtilsTest
 
         try
             (InputStreamReader reader = new InputStreamReader(new FileInputStream(COPY_TEST_TARGET_FILE), StandardCharsets.UTF_8)) {
-            setLoggerEnabled(false);
             FileUtils.copyFile(COPY_TEST_SOURCE_FILE, COPY_TEST_TARGET_FILE);
-            setLoggerEnabled(true);
         }
 
         assertEquals(
@@ -365,9 +351,7 @@ public class FileUtilsTest
     @Test
     public void testFileReplacementWithoutSource()
     {
-        setLoggerEnabled(false);
         FileUtils.replaceFile(COPY_TEST_TARGET_FILE, COPY_TEST_SOURCE_FILE);
-        setLoggerEnabled(true);
 
         assertFalse("The method replaceFile() should not alter the file system if the source file is missing!",
                     COPY_TEST_TARGET_FILE.exists());
@@ -392,9 +376,7 @@ public class FileUtilsTest
 
         try
             (InputStreamReader reader = new InputStreamReader(new FileInputStream(COPY_TEST_TARGET_FILE), StandardCharsets.UTF_8)) {
-            setLoggerEnabled(false);
             FileUtils.replaceFile(COPY_TEST_TARGET_FILE, COPY_TEST_SOURCE_FILE);
-            setLoggerEnabled(true);
         }
 
         assertEquals(
@@ -498,9 +480,7 @@ public class FileUtilsTest
     @Test
     public void testDirectoryCopyingWithoutSource()
     {
-        setLoggerEnabled(false);
         FileUtils.copyFile(COPY_TEST_SOURCE_DIR, COPY_TEST_TARGET_DIR);
-        setLoggerEnabled(true);
 
         assertFalse("The method copyFile() should not create directories if there are no source directories!",
                     COPY_TEST_TARGET_DIR.exists());
@@ -614,9 +594,7 @@ public class FileUtilsTest
     @Test
     public void testDirectoryReplacementWithoutSource()
     {
-        setLoggerEnabled(false);
         FileUtils.replaceFile(COPY_TEST_TARGET_DIR, COPY_TEST_SOURCE_DIR);
-        setLoggerEnabled(true);
 
         assertFalse("The method replaceFile() should not create directories if the source directory is missing!",
                     COPY_TEST_TARGET_DIR.exists());
@@ -694,9 +672,7 @@ public class FileUtilsTest
     @Test
     public void testDirectoryMergeWithoutSource()
     {
-        setLoggerEnabled(false);
         FileUtils.integrateDirectory(MERGE_TEST_SOURCE_DIR, MERGE_TEST_TARGET_DIR, false);
-        setLoggerEnabled(true);
 
         assertFalse("The method integrateDirectory() should not create directories if the source does not exist!",
                     MERGE_TEST_TARGET_DIR.exists());
@@ -752,17 +728,5 @@ public class FileUtilsTest
         assertEquals("The method integrateDirectory() should merge all files to the target directory!",
                      expectedFileContent,
                      diskIo.getString(possiblyReplacedFile));
-    }
-
-
-    /**
-     * Enables or disables the logger.
-     *
-     * @param state if true, the logger is enabled
-     */
-    protected void setLoggerEnabled(boolean state)
-    {
-        final Level newLevel = state ? initialLogLevel : Level.OFF;
-        LoggerConstants.ROOT_LOGGER.setLevel(newLevel);
     }
 }

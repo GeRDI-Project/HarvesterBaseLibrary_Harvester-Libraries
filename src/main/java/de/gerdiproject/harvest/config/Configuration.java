@@ -22,6 +22,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
 
+import javax.ws.rs.core.MultivaluedMap;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,10 +32,11 @@ import com.google.gson.GsonBuilder;
 
 import de.gerdiproject.harvest.config.adapter.ConfigurationAdapter;
 import de.gerdiproject.harvest.config.constants.ConfigurationConstants;
+import de.gerdiproject.harvest.config.events.GetConfigurationEvent;
 import de.gerdiproject.harvest.config.events.RegisterParameterEvent;
 import de.gerdiproject.harvest.config.parameters.AbstractParameter;
 import de.gerdiproject.harvest.event.EventSystem;
-import de.gerdiproject.harvest.event.IEventListener;
+import de.gerdiproject.harvest.rest.AbstractRestObject;
 import de.gerdiproject.harvest.state.StateMachine;
 import de.gerdiproject.harvest.utils.cache.ICachedObject;
 import de.gerdiproject.harvest.utils.data.DiskIO;
@@ -46,9 +49,9 @@ import de.gerdiproject.harvest.utils.data.DiskIO;
  *
  * @author Robin Weiss
  */
-public class Configuration implements ICachedObject, IEventListener
+public class Configuration extends AbstractRestObject<Configuration, String> implements ICachedObject
 {
-    private static final Gson GSON = new GsonBuilder().registerTypeAdapter(Configuration.class, new ConfigurationAdapter()).create();
+    private final Gson gson;
     private static final Logger LOGGER = LoggerFactory.getLogger(Configuration.class);
 
     private final transient DiskIO diskIo;
@@ -60,16 +63,20 @@ public class Configuration implements ICachedObject, IEventListener
     /**
      * Constructor that requires a list of parameters.
      *
+     * @param moduleName the name of the service
      * @param parameters a list parameters
      */
-    public Configuration(AbstractParameter<?>... parameters)
+    public Configuration(final String moduleName, AbstractParameter<?>... parameters)
     {
+        super(moduleName, GetConfigurationEvent.class);
+
         this.parameterMap = new TreeMap<>();
 
         for (AbstractParameter<?> param : parameters)
             parameterMap.put(param.getCompositeKey(), param);
 
-        this.diskIo = new DiskIO(GSON, StandardCharsets.UTF_8);
+        this.gson = new GsonBuilder().registerTypeAdapter(Configuration.class, new ConfigurationAdapter(moduleName)).create();
+        this.diskIo = new DiskIO(gson, StandardCharsets.UTF_8);
         this.cacheFilePath = null;
     }
 
@@ -92,6 +99,7 @@ public class Configuration implements ICachedObject, IEventListener
     @Override
     public void addEventListeners()
     {
+        super.addEventListeners();
         EventSystem.addSynchronousListener(RegisterParameterEvent.class, this::onRegisterParameter);
     }
 
@@ -99,6 +107,7 @@ public class Configuration implements ICachedObject, IEventListener
     @Override
     public void removeEventListeners()
     {
+        super.removeEventListeners();
         EventSystem.removeSynchronousListener(RegisterParameterEvent.class);
     }
 
@@ -122,33 +131,6 @@ public class Configuration implements ICachedObject, IEventListener
         }
 
         return String.format(ConfigurationConstants.BASIC_PARAMETER_FORMAT, maxLength);
-    }
-
-
-    /**
-     * Assembles a pretty String that summarizes all options and flags.
-     *
-     * @param moduleName the name of the service
-     *
-     * @return a pretty String that summarizes all options and flags
-     */
-    public String getInfoString(String moduleName)
-    {
-        final StringBuilder validValues = new StringBuilder();
-
-        for (AbstractParameter<?> param : getParameters()) {
-            // ignore unregistered parameters
-            if (!param.isRegistered())
-                continue;
-
-            if (validValues.length() != 0)
-                validValues.append(", ");
-
-            validValues.append(param.getCompositeKey());
-        }
-
-        // return assembled string
-        return String.format(ConfigurationConstants.REST_INFO, moduleName, this.toString(), validValues.toString());
     }
 
 
@@ -305,6 +287,23 @@ public class Configuration implements ICachedObject, IEventListener
 
 
     /**
+     * Changes multiple parameters, returning a status message about the change.
+     *
+     * @param values a map of key-value parameter pairs
+     *
+     * @return a message describing if the operations were successful, or if not, why they failed
+     */
+    public String setParameters(Map<String, String> values)
+    {
+        final StringBuilder sb = new StringBuilder();
+        values.forEach(
+            (String key, String value) -> sb.append(setParameter(key, value)).append('\n')
+        );
+        return sb.toString();
+    }
+
+
+    /**
      * Retrieves a collection of all parameters.
      *
      * @return a collection of all parameters
@@ -316,13 +315,12 @@ public class Configuration implements ICachedObject, IEventListener
 
 
     @Override
-    public String toString()
+    protected String getPrettyPlainText()
     {
         final String format = getParameterFormat();
         final Map<String, StringBuilder> categoryStringBuilders = new HashMap<>();
 
         for (AbstractParameter<?> param : getParameters()) {
-
             // ignore unregistered parameters
             if (!param.isRegistered())
                 continue;
@@ -339,9 +337,18 @@ public class Configuration implements ICachedObject, IEventListener
         }
 
         StringBuilder combinedBuilder = new StringBuilder();
-        categoryStringBuilders.forEach((String categoryName, StringBuilder categoryString) ->
-                                       combinedBuilder.append(categoryString.toString())
-                                      );
+        categoryStringBuilders.forEach((String categoryName, StringBuilder categoryString) -> {
+            if (combinedBuilder.length() != 0)
+                combinedBuilder.append("\n\n");
+            combinedBuilder.append(categoryString.toString());
+        });
         return combinedBuilder.toString();
+    }
+
+
+    @Override
+    public String getAsJson(MultivaluedMap<String, String> query)
+    {
+        return gson.toJson(this);
     }
 }

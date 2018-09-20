@@ -31,11 +31,12 @@ import javax.ws.rs.core.Response;
 import de.gerdiproject.harvest.application.MainContext;
 import de.gerdiproject.harvest.config.Configuration;
 import de.gerdiproject.harvest.config.constants.ConfigurationConstants;
+import de.gerdiproject.harvest.config.events.GetConfigurationEvent;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.harvester.constants.HarvesterConstants;
 import de.gerdiproject.harvest.harvester.events.GetMaxDocumentCountEvent;
+import de.gerdiproject.harvest.rest.HttpResponseFactory;
 import de.gerdiproject.harvest.state.StateMachine;
-import de.gerdiproject.harvest.utils.ServerResponseFactory;
 import de.gerdiproject.harvest.utils.logger.HarvesterLog;
 import de.gerdiproject.harvest.utils.logger.events.GetMainLogEvent;
 
@@ -49,7 +50,7 @@ import de.gerdiproject.harvest.utils.logger.events.GetMainLogEvent;
  * @author Robin Weiss
  */
 @Path("")
-public class HarvesterFacade
+public class HarvesterRestResource
 {
     /**
      * Starts a harvest using the harvester that is registered in the
@@ -87,7 +88,7 @@ public class HarvesterFacade
         // get harvesting range
         String from = HarvesterConstants.UNKNOWN_NUMBER;
         String to = HarvesterConstants.UNKNOWN_NUMBER;
-        final Configuration config = MainContext.getConfiguration();
+        final Configuration config = EventSystem.sendSynchronousEvent(new GetConfigurationEvent());
 
         if (config != null) {
             // get the range specified in the config
@@ -223,13 +224,13 @@ public class HarvesterFacade
         final HarvesterLog mainLog = EventSystem.sendSynchronousEvent(new GetMainLogEvent());
 
         if (mainLog == null)
-            return ServerResponseFactory.createServerErrorResponse();
+            return HttpResponseFactory.createServerErrorResponse();
 
         final String log = mainLog.getLog(dateFilters, levelFilters, classFilters);
 
         if (log == null)
-            return ServerResponseFactory.createServerErrorResponse();
+            return HttpResponseFactory.createServerErrorResponse();
         else
-            return ServerResponseFactory.createOkResponse(log);
+            return HttpResponseFactory.createOkResponse(log);
     }
 }

@@ -25,7 +25,7 @@ import java.util.Set;
 
 import org.junit.Test;
 
-import de.gerdiproject.AbstractUnitTest;
+import de.gerdiproject.AbstractObjectUnitTest;
 import de.gerdiproject.application.examples.MockedContextListener;
 import de.gerdiproject.harvest.application.ContextListener;
 import de.gerdiproject.harvest.application.MainContext;
@@ -40,7 +40,7 @@ import de.gerdiproject.harvest.submission.events.GetSubmitterIdsEvent;
  *
  * @author Robin Weiss
  */
-public class ContextListenerTest extends AbstractUnitTest<ContextListener<?>>
+public class ContextListenerTest extends AbstractObjectUnitTest<ContextListener<?>>
 {
     private static final int INIT_TIMEOUT = 5000;
 
