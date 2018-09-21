@@ -16,10 +16,14 @@
 package de.gerdiproject.harvest.harvester.rest;
 
 
+import java.util.Arrays;
+import java.util.List;
+
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
@@ -31,6 +35,8 @@ import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.harvester.constants.HarvesterConstants;
 import de.gerdiproject.harvest.harvester.events.GetMaxDocumentCountEvent;
 import de.gerdiproject.harvest.state.StateMachine;
+import de.gerdiproject.harvest.utils.ServerResponseFactory;
+import de.gerdiproject.harvest.utils.logger.LoggerUtils;
 
 
 /**
@@ -187,5 +193,36 @@ public class HarvesterFacade
     public Response reset()
     {
         return StateMachine.getCurrentState().reset();
+    }
+
+    /**
+     * Attempts to retrieve the log of the harvester service.
+     *
+     * @param dateString the log dates in YYYY-MM-DD format of the log messages as comma
+     *         separated string, or null if this filter should not be applied
+     * @param levelString the log levels of the log messages as comma separated string,
+     *         or null if this filter should not be applied
+     * @param classString the logger names of the log messages as comma separated string,
+     *         or null if this filter should not be applied
+     *
+     * @return a the log of the harvester service
+     */
+    @GET
+    @Path("log")
+    @Produces({
+        MediaType.TEXT_PLAIN
+    })
+    public Response getLog(@QueryParam("date") String dateString, @QueryParam("level") String levelString, @QueryParam("class") String classString)
+    {
+        final List<String> dateFilters = dateString == null ? null : Arrays.asList(dateString.split(","));
+        final List<String> levelFilters = levelString == null ? null : Arrays.asList(levelString.split(","));
+        final List<String> classFilters = classString == null ? null : Arrays.asList(classString.split(","));
+
+        final String log = LoggerUtils.getLog(dateFilters, levelFilters, classFilters);
+
+        if (log == null)
+            return ServerResponseFactory.createServerErrorResponse();
+        else
+            return ServerResponseFactory.createOkResponse(log);
     }
 }
