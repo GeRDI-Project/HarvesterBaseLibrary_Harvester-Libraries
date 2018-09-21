@@ -64,21 +64,25 @@ public class CacheConstants
 
     public static final String REPLACE_FILE_SUCCESS = "Replaced file '%s' with '%s'.";
     public static final String REPLACE_FILE_FAILED = "Could not replace file '%s' with '%s'!";
+    public static final String REPLACE_FILE_FAILED_NO_FILE = "Could not replace file '%s' with '%s', because it does not exist!";
     public static final String REPLACE_FILE_FAILED_NO_TARGET_DIR = "Could not replace file '%s' with '%s': "
                                                                    + "The target directory does not exist and could not be created!";
+    public static final String REPLACE_FILE_FAILED_CANNOT_BACKUP = "Could not replace file '%s' with '%s', because a backup file could not be created!";
+    public static final String REPLACE_FILE_FAILED_CANNOT_RESTORE = "Could not restore backup file '%s'!";
 
     public static final String CREATE_FILE_SUCCESS = "Created file '%s'.";
     public static final String CREATE_FILE_FAILED = "Could not create file '%s'!";
 
     public static final String COPY_FILE_SUCCESS = "Copied file '%s' to '%s'.";
     public static final String COPY_FILE_FAILED = "Could not copy file '%s' to '%s'!";
+    public static final String COPY_FILE_FAILED_NO_FILE = "Could not copy file '%s' to '%s', because it does not exist!";
 
     public static final String CREATE_DIR_SUCCESS = "Created directory '%s'.";
     public static final String CREATE_DIR_FAILED = "Could not create directory '%s'!";
 
     public static final String DIR_MERGE_SUCCESS = "Merged folder '%s' into '%s'.";
     public static final String DIR_MERGE_FAILED_NOT_DIRS = "Could not merge '%s' into '%s': Both paths must denote directories!";
-    public static final String DIR_MERGE_FAILED_NO_TARGET_DIR = "Could not merge '%s' into '%s': The target directory does not exist and could not be created!";
+    public static final String DIR_MERGE_FAILED_NO_SOURCE_DIR = "Could not merge '%s' into '%s': The source directory does not exist!";
     public static final String DIR_MERGE_FAILED = "Could not merge '%s' into '%s'!";
 
     // AbstractStreamHarvester
