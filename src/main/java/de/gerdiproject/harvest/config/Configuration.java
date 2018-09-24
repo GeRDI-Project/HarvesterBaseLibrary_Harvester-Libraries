@@ -160,13 +160,13 @@ public class Configuration
                 // copy harvester parameters
                 config.harvesterParameters.forEach((String key, AbstractParameter<?> param) -> {
                     if (harvesterParameters.containsKey(key))
-                        setParameter(key, param.getStringValue());
+                        harvesterParameters.get(key).setValue(param.getStringValue(), null);
                 });
 
                 // copy global parameters
                 config.globalParameters.forEach((String key, AbstractParameter<?> param) -> {
                     if (globalParameters.containsKey(key))
-                        setParameter(key, param.getStringValue());
+                        globalParameters.get(key).setValue(param.getStringValue(), null);
                 });
 
                 LOGGER.info(String.format(ConfigurationConstants.LOAD_OK, path));

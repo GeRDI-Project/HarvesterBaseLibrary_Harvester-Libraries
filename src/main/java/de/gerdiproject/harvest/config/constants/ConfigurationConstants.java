@@ -50,6 +50,7 @@ public class ConfigurationConstants
     public static final String SUBMIT_FORCED = "submitOutdated";
     public static final String FORCE_HARVEST = "forceHarvest";
     public static final String DELETE_UNFINISHED_SAVE = "deleteFailedSaves";
+    public static final String PERSIST_CACHE = "persistCache";
 
     public static final String CHANGED_PARAM = "Set parameter '%s' to '%s'.";
 

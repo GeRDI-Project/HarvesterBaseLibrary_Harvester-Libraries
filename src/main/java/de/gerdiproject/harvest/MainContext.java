@@ -25,7 +25,6 @@ import org.slf4j.LoggerFactory;
 
 import de.gerdiproject.harvest.application.constants.ApplicationConstants;
 import de.gerdiproject.harvest.config.Configuration;
-import de.gerdiproject.harvest.config.constants.ConfigurationConstants;
 import de.gerdiproject.harvest.config.parameters.AbstractParameter;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.harvester.AbstractHarvester;
@@ -149,23 +148,20 @@ public class MainContext
             instance.submitter = submitter;
             instance.submitter.init();
 
-            // initialize harvester
-            instance.harvester = harvesterClass.newInstance();
-            instance.harvester.setAsMainHarvester();
-
             // initialize the configuration
             final Configuration config = new Configuration(harvesterParams);
             config.loadFromEnvironmentVariables();
             config.loadFromCache();
-
             instance.configuration = config;
+
+            // initialize harvester
+            instance.harvester = harvesterClass.newInstance();
+            instance.harvester.setAsMainHarvester();
+
+            config.updateAllParameters();
 
             // initialize the harvester properly (relies on the configuration)
             instance.harvester.init();
-
-            // update the harvesting range
-            config.updateParameter(ConfigurationConstants.HARVEST_START_INDEX);
-            config.updateParameter(ConfigurationConstants.HARVEST_END_INDEX);
 
             // init scheduler
             instance.scheduler = new Scheduler();
