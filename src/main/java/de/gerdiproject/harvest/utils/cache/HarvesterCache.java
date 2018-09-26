@@ -151,6 +151,9 @@ public class HarvesterCache
      */
     public void applyChanges(boolean isSuccessful, boolean isAborted)
     {
+        if (changesCache.size() == 0)
+            return;
+
         changesCache.applyChanges();
 
         // work-around SAI-1186: delete old cache at the beginning if the corresponding flag is false
