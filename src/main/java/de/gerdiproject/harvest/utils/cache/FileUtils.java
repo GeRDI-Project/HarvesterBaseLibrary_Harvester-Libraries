@@ -88,49 +88,110 @@ public class FileUtils
 
 
     /**
-     * Replaces one cache file with another and logs any errors.
+     * Replaces one file with another and logs any errors.
      *
      * @param targetFile the file that is to be replaced
-     * @param newFile the new file
+     * @param newFile the new file that replaces the target file
      */
     public static void replaceFile(File targetFile, File newFile)
     {
-        deleteFile(targetFile);
+        if (!newFile.exists()) {
+            LOGGER.error(String.format(
+                             CacheConstants.REPLACE_FILE_FAILED_NO_FILE,
+                             targetFile.getPath(),
+                             newFile.getPath()));
+            return;
+        }
+
+        File backup = null;
+
+        // back up target file, in case something goes wrong
+        if (targetFile.exists()) {
+            backup = new File(targetFile.getPath() + CacheConstants.TEMP_FILE_EXTENSION);
+
+            if (!targetFile.renameTo(backup)) {
+                LOGGER.error(String.format(
+                                 CacheConstants.REPLACE_FILE_FAILED_CANNOT_BACKUP,
+                                 targetFile.getPath(),
+                                 newFile.getPath()));
+                return;
+            }
+        }
 
         if (!createDirectories(targetFile.getParentFile())) {
             LOGGER.error(String.format(
                              CacheConstants.REPLACE_FILE_FAILED_NO_TARGET_DIR,
-                             targetFile.getAbsolutePath(),
-                             newFile.getAbsolutePath()));
+                             targetFile.getPath(),
+                             newFile.getPath()));
+
+            if (backup != null && !backup.renameTo(targetFile))
+                LOGGER.error(String.format(CacheConstants.REPLACE_FILE_FAILED_CANNOT_RESTORE, targetFile.getPath()));
+
             return;
         }
 
-        if (!newFile.renameTo(targetFile))
+        if (!newFile.renameTo(targetFile)) {
             LOGGER.error(String.format(CacheConstants.REPLACE_FILE_FAILED, targetFile.getPath(), newFile.getPath()));
-        else
+
+            if (backup != null && !backup.renameTo(targetFile))
+                LOGGER.error(String.format(CacheConstants.REPLACE_FILE_FAILED_CANNOT_RESTORE, targetFile.getPath()));
+
+        } else {
             LOGGER.trace(String.format(CacheConstants.REPLACE_FILE_SUCCESS, targetFile.getPath(), newFile.getPath()));
+
+            if (backup != null)
+                deleteFile(backup);
+        }
     }
 
 
     /**
-     * Copies one cache file to another and logs any errors.
+     * Copies a single file to a target destination and logs any errors.
      *
      * @param sourceFile the file that is to be copied
      * @param targetFile the destination file
      */
     public static void copyFile(File sourceFile, File targetFile)
     {
-        if (createDirectories(sourceFile.isDirectory() ? targetFile : targetFile.getParentFile())) {
+        if (!sourceFile.exists())
+            LOGGER.error(String.format(
+                             CacheConstants.COPY_FILE_FAILED_NO_FILE,
+                             sourceFile.getAbsolutePath(),
+                             targetFile.getAbsolutePath()));
 
-            try {
-                Files.copy(sourceFile.toPath(), targetFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
-            } catch (IOException e) {
-                LOGGER.error(
-                    String.format(
-                        CacheConstants.COPY_FILE_FAILED,
-                        sourceFile.getAbsolutePath(),
-                        targetFile.getAbsolutePath()));
-                return;
+        else if (createDirectories(sourceFile.isDirectory() ? targetFile : targetFile.getParentFile())) {
+            if (sourceFile.isDirectory()) {
+                try
+                    (DirectoryStream<Path> sourceStream = Files.newDirectoryStream(sourceFile.toPath())) {
+                    for (Path sourceFilePath : sourceStream) {
+                        final File sourceDirContent = sourceFilePath.toFile();
+                        final File targetDirContent = new File(targetFile, sourceDirContent.getName());
+
+                        if (sourceDirContent.isDirectory())
+                            copyFile(sourceDirContent, targetDirContent);
+                        else
+                            Files.copy(sourceDirContent.toPath(), targetDirContent.toPath(), StandardCopyOption.REPLACE_EXISTING);
+                    }
+                } catch (IOException e) {
+                    LOGGER.error(String.format(
+                                     CacheConstants.COPY_FILE_FAILED,
+                                     sourceFile.getPath(),
+                                     targetFile.getPath()),
+                                 e);
+                    return;
+                }
+            } else {
+                try {
+                    Files.copy(sourceFile.toPath(), targetFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+                } catch (IOException e) {
+                    LOGGER.error(
+                        String.format(
+                            CacheConstants.COPY_FILE_FAILED,
+                            sourceFile.getAbsolutePath(),
+                            targetFile.getAbsolutePath()),
+                        e);
+                    return;
+                }
             }
 
             LOGGER.trace(String.format(CacheConstants.COPY_FILE_SUCCESS, sourceFile.getPath(), targetFile.getPath()));
@@ -201,22 +262,27 @@ public class FileUtils
      */
     public static void integrateDirectory(File sourceDirectory, File targetDirectory, boolean replaceFiles)
     {
-        // make sure the target directory exists
-        if (!createDirectories(targetDirectory)) {
+        // make sure the source directory exists
+        if (!sourceDirectory.exists()) {
             LOGGER.error(String.format(
-                             CacheConstants.DIR_MERGE_FAILED_NO_TARGET_DIR,
+                             CacheConstants.DIR_MERGE_FAILED_NO_SOURCE_DIR,
                              sourceDirectory.getPath(),
                              targetDirectory.getPath()));
             return;
         }
 
-
         // make sure both files are directories
-        if (!sourceDirectory.isDirectory() || !targetDirectory.isDirectory()) {
+        if (!sourceDirectory.isDirectory() || targetDirectory.exists() && !targetDirectory.isDirectory()) {
             LOGGER.error(String.format(
                              CacheConstants.DIR_MERGE_FAILED_NOT_DIRS,
                              sourceDirectory.getPath(),
                              targetDirectory.getPath()));
+            return;
+        }
+
+        // if the target directory does not exist, simply rename the source directory
+        if (!targetDirectory.exists()) {
+            replaceFile(targetDirectory, sourceDirectory);
             return;
         }
 
@@ -231,13 +297,9 @@ public class FileUtils
                     integrateDirectory(sourceFile, targetFile, replaceFiles);
 
                 else {
-                    // delete existing file, if in replace-mode
-                    if (replaceFiles)
-                        deleteFile(targetFile);
-
                     // copy single file
-                    if (!targetFile.exists())
-                        copyFile(sourceFile, targetFile);
+                    if (replaceFiles || !targetFile.exists())
+                        replaceFile(targetFile, sourceFile);
                 }
             }
         } catch (IOException e) {

@@ -40,6 +40,7 @@ import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.harvester.AbstractHarvester;
 import de.gerdiproject.harvest.submission.AbstractSubmitter;
 import de.gerdiproject.harvest.submission.elasticsearch.ElasticSearchSubmitter;
+import de.gerdiproject.harvest.utils.cache.HarvesterCacheManager;
 import de.gerdiproject.harvest.utils.logger.LoggerUtils;
 import de.gerdiproject.harvest.utils.maven.MavenUtils;
 import de.gerdiproject.json.GsonUtils;
@@ -196,6 +197,7 @@ public class ContextListener<T extends AbstractHarvester> implements ServletCont
         LOGGER.info(resetMsg);
 
         EventSystem.reset();
+        HarvesterCacheManager.instance().reset();
         contextInitialized(null);
     }
 }

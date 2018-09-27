@@ -20,6 +20,8 @@ import java.io.File;
 import de.gerdiproject.harvest.IDocument;
 import de.gerdiproject.harvest.MainContext;
 import de.gerdiproject.harvest.application.events.ContextDestroyedEvent;
+import de.gerdiproject.harvest.config.Configuration;
+import de.gerdiproject.harvest.config.constants.ConfigurationConstants;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.harvester.events.GetProviderNameEvent;
 import de.gerdiproject.harvest.save.HarvestSaver;
@@ -149,9 +151,16 @@ public class HarvesterCache
      */
     public void applyChanges(boolean isSuccessful, boolean isAborted)
     {
+        if (changesCache.size() == 0)
+            return;
+
         changesCache.applyChanges();
 
-        if (isSuccessful && !isAborted) {
+        // work-around SAI-1186: delete old cache at the beginning if the corresponding flag is false
+        Configuration config = MainContext.getConfiguration();
+        boolean persistCache = config.getParameterValue(ConfigurationConstants.PERSIST_CACHE, Boolean.class);
+
+        if (isSuccessful && !isAborted && persistCache) {
             changesCache.forEach((String documentId, DataCiteJson document) -> {
                 if (document == null)
                     versionsCache.removeFile(documentId);
@@ -173,6 +182,14 @@ public class HarvesterCache
      */
     public void init(String hash, int harvestStartIndex, int harvestEndIndex)
     {
+        // work-around SAI-1186: delete old cache at the beginning if the corresponding flag is false
+        Configuration config = MainContext.getConfiguration();
+
+        if (!config.getParameterValue(ConfigurationConstants.PERSIST_CACHE, Boolean.class)) {
+            File stableFolder = new File(versionsCache.stableFolderPath).getParentFile();
+            FileUtils.deleteFile(stableFolder);
+        }
+
         final String harvesterHash = hash == null
                                      ? null
                                      : HashGenerator.instance().getShaHash(hash + harvestStartIndex + harvestEndIndex);
