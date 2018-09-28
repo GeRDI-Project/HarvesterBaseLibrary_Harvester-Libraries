@@ -34,7 +34,7 @@ public class LoggerConstants
     public static final Logger ROOT_LOGGER = (Logger) LoggerFactory.getLogger(org.slf4j.Logger.ROOT_LOGGER_NAME);
     public static final Level DEFAULT_LOG_LEVEL = Level.ALL;
 
-    public static final String LOG_FILE_PATH = "/var/log/%s.log";
+    public static final String LOG_FILE_PATH = "/var/log/harvester/%s.log";
     public static final String LOG_PATTERN = "%date %logger{0} %level %msg%n";
     public static final Pattern PARSE_LOG_PATTERN = Pattern.compile("^([^ ]+) [^ ]+ ([^ ]+) (\\w+?) [\\d\\D]*$");
     public static final String ERROR_READING_LOG = "Could not read log file: %s";
