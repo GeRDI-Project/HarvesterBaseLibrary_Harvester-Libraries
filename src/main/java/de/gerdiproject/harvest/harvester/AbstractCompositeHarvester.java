@@ -69,6 +69,7 @@ public abstract class AbstractCompositeHarvester extends AbstractHarvester
     @Override
     protected void setStartIndex(int startIndex)
     {
+        super.setStartIndex(startIndex);
         updateRangeIndex(startIndex, (AbstractHarvester h, Integer index) -> {
             h.setStartIndex(index);
         });
@@ -78,6 +79,7 @@ public abstract class AbstractCompositeHarvester extends AbstractHarvester
     @Override
     protected void setEndIndex(int endIndex)
     {
+        super.setEndIndex(endIndex);
         updateRangeIndex(endIndex, (AbstractHarvester h, Integer index) -> {
             h.setEndIndex(index);
         });
