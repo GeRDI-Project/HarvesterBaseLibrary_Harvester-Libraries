@@ -56,8 +56,8 @@ public abstract class AbstractCache <T>
      */
     public AbstractCache(final String stableFolderPath, final String wipFolderPath, final Class<T> fileContentClass)
     {
-        this.stableFolderPath = stableFolderPath;
-        this.wipFolderPath = wipFolderPath;
+        this.stableFolderPath = stableFolderPath.endsWith("/") ? stableFolderPath : stableFolderPath + '/';
+        this.wipFolderPath = wipFolderPath.endsWith("/") ? wipFolderPath : wipFolderPath + '/';
         this.fileContentClass = fileContentClass;
         this.diskIo = new DiskIO();
 
@@ -172,8 +172,20 @@ public abstract class AbstractCache <T>
         final File documentFile = getFile(documentId, false);
 
         // delete old file
-        if (documentFile.exists())
+        if (documentFile.exists()) {
             FileUtils.deleteFile(documentFile);
+
+            // remove folder of document file if it is empty now
+            final File folder = documentFile.getParentFile();
+
+            if (folder != null) {
+                final File[] containedFiles = folder.listFiles();
+
+                if (containedFiles != null && containedFiles.length == 0)
+                    FileUtils.deleteFile(folder);
+            }
+
+        }
 
         // write new file
         if (document != null)

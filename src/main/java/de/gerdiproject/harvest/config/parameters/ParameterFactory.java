@@ -59,6 +59,7 @@ public final class ParameterFactory
         AbstractParameter<?> deleteUnfinishedSaves = createDeleteUnfinishedSaves();
         AbstractParameter<?> submitIncompleteHarvests = createSubmitIncomplete();
         AbstractParameter<?> submitOutdated = createSubmitOutdated();
+        AbstractParameter<?> persistCache = createPersistCache();
 
         params.put(autoSave.getKey(), autoSave);
         params.put(autoSubmit.getKey(), autoSubmit);
@@ -71,6 +72,7 @@ public final class ParameterFactory
         params.put(readFromDisk.getKey(), readFromDisk);
         params.put(writeToDisk.getKey(), writeToDisk);
         params.put(deleteUnfinishedSaves.getKey(), deleteUnfinishedSaves);
+        params.put(persistCache.getKey(), persistCache);
 
         return params;
     }
@@ -327,6 +329,28 @@ public final class ParameterFactory
                                                                 HarvestingState.class,
                                                                 SavingState.class);
         return new BooleanParameter(ConfigurationConstants.SUBMIT_INCOMPLETE, allowedStates, false);
+    }
+
+
+
+
+    /**
+     * TEMPORARY WORK-AROUND SAI-1186<br><br>
+     *
+     * If false, the cached documents are deleted on startup, which causes no
+     * performance impact in the initialization phase and when harvesting the last document.
+     * This should be set to false for harvesters that harvest more than 30.000 documents.
+     *
+     * @return a flag-parameter for changing whether cached documents should be persisted
+     */
+    private static AbstractParameter<?> createPersistCache()
+    {
+        final List<Class<? extends IState>> allowedStates = Arrays.asList(
+                                                                ErrorState.class,
+                                                                IdleState.class,
+                                                                SubmittingState.class,
+                                                                SavingState.class);
+        return new BooleanParameter(ConfigurationConstants.PERSIST_CACHE, allowedStates, true);
     }
 
 

@@ -149,21 +149,22 @@ public class MainContext
             instance.submitter = submitter;
             instance.submitter.init();
 
-            // initialize harvester
-            instance.harvester = harvesterClass.newInstance();
-            instance.harvester.setAsMainHarvester();
-
             // initialize the configuration
             final Configuration config = new Configuration(harvesterParams);
             config.loadFromEnvironmentVariables();
             config.loadFromCache();
-
             instance.configuration = config;
+
+            // initialize harvester
+            instance.harvester = harvesterClass.newInstance();
+            instance.harvester.setAsMainHarvester();
+
+            config.updateAllParameters();
 
             // initialize the harvester properly (relies on the configuration)
             instance.harvester.init();
-
-            // update the harvesting range
+            
+            // work-around for a bug that causes the range to be 0-0 for CompositeHarvesters
             config.updateParameter(ConfigurationConstants.HARVEST_START_INDEX);
             config.updateParameter(ConfigurationConstants.HARVEST_END_INDEX);
 
