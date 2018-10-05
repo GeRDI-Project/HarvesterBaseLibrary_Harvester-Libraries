@@ -25,6 +25,7 @@ import org.slf4j.LoggerFactory;
 
 import de.gerdiproject.harvest.application.constants.ApplicationConstants;
 import de.gerdiproject.harvest.config.Configuration;
+import de.gerdiproject.harvest.config.constants.ConfigurationConstants;
 import de.gerdiproject.harvest.config.parameters.AbstractParameter;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.harvester.AbstractHarvester;
@@ -162,6 +163,10 @@ public class MainContext
 
             // initialize the harvester properly (relies on the configuration)
             instance.harvester.init();
+            
+            // work-around for a bug that causes the range to be 0-0 for CompositeHarvesters
+            config.updateParameter(ConfigurationConstants.HARVEST_START_INDEX);
+            config.updateParameter(ConfigurationConstants.HARVEST_END_INDEX);
 
             // init scheduler
             instance.scheduler = new Scheduler();
