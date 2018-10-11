@@ -30,10 +30,10 @@ import javax.ws.rs.core.Response;
 
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.harvester.ETLPreconditionException;
-import de.gerdiproject.harvest.harvester.ETLRegistry;
 import de.gerdiproject.harvest.harvester.constants.HarvesterConstants;
 import de.gerdiproject.harvest.harvester.enums.HarvesterStatus;
 import de.gerdiproject.harvest.harvester.events.GetETLRegistryEvent;
+import de.gerdiproject.harvest.harvester.utils.ETLRegistry;
 import de.gerdiproject.harvest.rest.AbstractRestResource;
 import de.gerdiproject.harvest.rest.HttpResponseFactory;
 import de.gerdiproject.harvest.state.StateMachine;

@@ -14,25 +14,8 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package de.gerdiproject.harvest.harvester;
-
 /**
- * This class represents the Loader of an ETL process.
- *
  * @author Robin Weiss
+ *
  */
-public interface ILoader <OUT>
-{
-    /**
-     * Initializes the loader, making it ready to receive
-     * another harvest.
-     */
-    void init();
-
-    /**
-     * Submits the document to a targeted search index.
-     *
-     * @param document the document that is to be submitted
-     */
-    void load(OUT document);
-}
+package de.gerdiproject.harvest.harvester.extractors;

@@ -16,7 +16,6 @@
 package de.gerdiproject.harvest.submission.elasticsearch;
 
 
-import java.nio.charset.Charset;
 import java.rmi.ServerException;
 import java.util.List;
 import java.util.Map;
@@ -26,13 +25,15 @@ import javax.ws.rs.core.MediaType;
 import com.google.gson.Gson;
 
 import de.gerdiproject.harvest.IDocument;
-import de.gerdiproject.harvest.submission.AbstractSubmitter;
+import de.gerdiproject.harvest.harvester.AbstractETL;
+import de.gerdiproject.harvest.submission.AbstractURLLoader;
 import de.gerdiproject.harvest.submission.elasticsearch.constants.ElasticSearchConstants;
 import de.gerdiproject.harvest.submission.elasticsearch.json.ElasticSearchIndex;
 import de.gerdiproject.harvest.submission.elasticsearch.json.ElasticSearchIndexWrapper;
 import de.gerdiproject.harvest.submission.elasticsearch.json.ElasticSearchResponse;
 import de.gerdiproject.harvest.utils.data.WebDataRetriever;
 import de.gerdiproject.harvest.utils.data.enums.RestRequestType;
+import de.gerdiproject.json.datacite.DataCiteJson;
 
 
 /**
@@ -41,7 +42,7 @@ import de.gerdiproject.harvest.utils.data.enums.RestRequestType;
  *
  * @author Robin Weiss
  */
-public class ElasticSearchSubmitter extends AbstractSubmitter
+public class ElasticSearchLoader extends AbstractURLLoader<DataCiteJson>
 {
     private final WebDataRetriever webRequester;
     private final Gson gson;
@@ -50,19 +51,20 @@ public class ElasticSearchSubmitter extends AbstractSubmitter
     /**
      * Constructor that initializes a Json parser for server responses.
      */
-    public ElasticSearchSubmitter()
+    public ElasticSearchLoader()
     {
         super();
         this.gson = new Gson();
         this.webRequester = new WebDataRetriever(gson, charset);
+        this.webRequester.setCharset(charset);
     }
 
 
     @Override
-    public void setCharset(Charset charset)
+    public <H extends AbstractETL<?, ?>> void init(H harvester)
     {
-        super.setCharset(charset);
-        webRequester.setCharset(charset);
+        // TODO Auto-generated method stub
+
     }
 
 

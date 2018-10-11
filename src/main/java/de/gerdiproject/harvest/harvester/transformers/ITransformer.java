@@ -14,34 +14,31 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package de.gerdiproject.harvest.harvester;
+package de.gerdiproject.harvest.harvester.transformers;
 
-import java.util.Iterator;
+import de.gerdiproject.harvest.harvester.AbstractETL;
 
 /**
- * This loader can load multiple documents.
+ * This class represents the Transformer of an ETL process.
  *
  * @author Robin Weiss
  */
-public abstract class AbstractIteratorLoader <OUT> implements ILoader<Iterator<OUT>>
+public interface ITransformer <IN, OUT>
 {
     /**
-     * Loads all documents of a specified {@linkplain Iterable}.
+     * Initializes the transformer for a new harvest.
      *
-     * @param documents an {@linkplain Iterable} of documents that are to be loaded
+     * @param harvester the harvester to which the transformer belongs
      */
-    @Override
-    public void load(Iterator<OUT> documents)
-    {
-        while (documents.hasNext())
-            loadElement(documents.next());
-    }
+    <H extends AbstractETL<?, ?>> void init(H harvester);
 
 
     /**
-     * Loads a single element of the {@linkplain Iterable}.
+     * Transforms an extracted element to a document that can be loaded.
      *
-     * @param document a document that is to be loaded
+     * @param source an extracted element
+     *
+     * @return a document that can be loaded
      */
-    public abstract void loadElement(OUT document);
+    OUT transform(IN source);
 }

@@ -36,7 +36,7 @@ import de.gerdiproject.harvest.utils.cache.HarvesterCache;
 import de.gerdiproject.harvest.utils.cache.constants.CacheConstants;
 import de.gerdiproject.harvest.utils.data.DiskIO;
 import de.gerdiproject.json.datacite.DataCiteJson;
-import de.gerdiproject.utils.examples.harvestercache.MockedHarvester;
+import de.gerdiproject.utils.examples.harvestercache.MockedETL;
 
 /**
  * This class provides test cases for the {@linkplain HarvesterCache}.
@@ -51,14 +51,14 @@ public class HarvesterCacheTest extends AbstractFileSystemUnitTest<HarvesterCach
     private static final String SOURCE_ID = "source1";
     private static final String DOCUMENT_ID = "381f236a968160abe96cfb223a43bbf2e917c14c";
 
-    private MockedHarvester harvester;
+    private MockedETL harvester;
     private String tempFolder;
 
 
     @Override
     protected HarvesterCache setUpTestObjects()
     {
-        harvester = new MockedHarvester(testFolder);
+        harvester = new MockedETL(testFolder);
         tempFolder = harvester.getTemporaryCacheFolder();
 
         String stableFolder = harvester.getStableCacheFolder();

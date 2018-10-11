@@ -32,15 +32,16 @@ import de.gerdiproject.harvest.application.MainContext;
 import de.gerdiproject.harvest.application.events.ContextDestroyedEvent;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.harvester.events.HarvesterInitializedEvent;
-import de.gerdiproject.harvest.submission.AbstractSubmitter;
-import de.gerdiproject.harvest.submission.events.GetSubmitterIdsEvent;
+import de.gerdiproject.harvest.harvester.loaders.ILoader;
+import de.gerdiproject.harvest.submission.AbstractURLLoader;
+import de.gerdiproject.harvest.submission.events.GetLoaderNamesEvent;
 
 /**
  * This class offers unit tests for the {@linkplain ContextListener}.
  *
  * @author Robin Weiss
  */
-public class ContextListenerTest extends AbstractObjectUnitTest<ContextListener<?>>
+public class ContextListenerTest extends AbstractObjectUnitTest<ContextListener>
 {
     private static final int INIT_TIMEOUT = 5000;
 
@@ -130,14 +131,14 @@ public class ContextListenerTest extends AbstractObjectUnitTest<ContextListener<
 
 
     /**
-     * Tests if the getSubmitterClasses() method provides at least one {@linkplain AbstractSubmitter} class.
+     * Tests if the getSubmitterClasses() method provides at least one {@linkplain AbstractURLLoader} class.
      */
     @Test
     public void testSubmitterClasses()
     {
         // trigger reset
         assertFalse("The method getSubmitterClasses() is supposed to return a non-empty list of classe!",
-                    ((MockedContextListener) testedObject).getSubmitterClasses().isEmpty());
+                    ((MockedContextListener) testedObject).getLoaderClasses().isEmpty());
     }
 
 
@@ -156,13 +157,13 @@ public class ContextListenerTest extends AbstractObjectUnitTest<ContextListener<
                      () -> testedObject.contextInitialized(null));
 
         // get list of registered submitters
-        final Set<String> registeredSubmitterIds = EventSystem.sendSynchronousEvent(new GetSubmitterIdsEvent());
+        final Set<String> registeredSubmitterIds = EventSystem.sendSynchronousEvent(new GetLoaderNamesEvent());
 
         // compare registered submitters to the ones provided by the ContextListener
-        for (Class<? extends AbstractSubmitter> submitterClass : ((MockedContextListener) testedObject).getSubmitterClasses()) {
+        for (Class<? extends ILoader<?>> loaderClass : ((MockedContextListener) testedObject).getLoaderClasses()) {
             assertTrue(
                 "The ID of every submitter defined by getSubmitterClasses() should be registered after initialization!",
-                registeredSubmitterIds.contains(submitterClass.newInstance().getId()));
+                registeredSubmitterIds.contains(loaderClass.getSimpleName()));
         }
     }
 }

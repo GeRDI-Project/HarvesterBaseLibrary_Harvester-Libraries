@@ -18,8 +18,8 @@ package de.gerdiproject.harvest.harvester.json;
 
 import de.gerdiproject.harvest.application.enums.HealthStatus;
 import de.gerdiproject.harvest.harvester.AbstractETL;
-import de.gerdiproject.harvest.harvester.ETLRegistry;
 import de.gerdiproject.harvest.harvester.enums.HarvesterStatus;
+import de.gerdiproject.harvest.harvester.utils.ETLRegistry;
 
 /**
  * @author Robin Weiss
@@ -34,7 +34,7 @@ public class ETLDetails
     private final int maxDocumentCount;
 
 
-    public ETLDetails(AbstractETL<?, ?, ?, ?, ?> etl)
+    public ETLDetails(AbstractETL<?, ?> etl)
     {
         name = etl.getName();
         status = etl.getStatus();

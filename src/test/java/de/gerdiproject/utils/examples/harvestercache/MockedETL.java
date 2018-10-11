@@ -18,14 +18,15 @@ package de.gerdiproject.utils.examples.harvestercache;
 
 import java.io.File;
 import java.util.Arrays;
-import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
 
 import de.gerdiproject.AbstractFileSystemUnitTest;
 import de.gerdiproject.application.ContextListenerTest;
-import de.gerdiproject.harvest.IDocument;
 import de.gerdiproject.harvest.application.ContextListener;
-import de.gerdiproject.harvest.harvester.ListETL;
+import de.gerdiproject.harvest.harvester.StaticIteratorETL;
+import de.gerdiproject.harvest.harvester.extractors.AbstractIteratorExtractor;
+import de.gerdiproject.harvest.harvester.transformers.AbstractIteratorTransformer;
 import de.gerdiproject.json.datacite.DataCiteJson;
 import de.gerdiproject.json.datacite.Title;
 
@@ -35,7 +36,7 @@ import de.gerdiproject.json.datacite.Title;
  *
  * @author Robin Weiss
  */
-public class MockedHarvester extends ListETL<String>
+public class MockedETL extends StaticIteratorETL<String, DataCiteJson>
 {
     protected final List<String> mockedEntries;
     private final String cacheFolder;
@@ -46,7 +47,7 @@ public class MockedHarvester extends ListETL<String>
      * This constructor is used by {@linkplain ContextListenerTest}.
      *
      */
-    public MockedHarvester()
+    public MockedETL()
     {
         this(new File(AbstractFileSystemUnitTest.TEST_FOLDER, ContextListener.class.getSimpleName()));
     }
@@ -58,9 +59,10 @@ public class MockedHarvester extends ListETL<String>
      * @param mockedEntries a list of strings to be harvested
      * @param cacheFolder the folder where documents are cached
      */
-    public MockedHarvester(final List<String> mockedEntries, final File cacheFolder)
+    public MockedETL(final List<String> mockedEntries, final File cacheFolder)
     {
-        super(1);
+        super(new MockedExtractor(), new MockedTransformer());
+
         this.mockedEntries = mockedEntries;
         this.cacheFolder = cacheFolder + "/";
     }
@@ -70,7 +72,7 @@ public class MockedHarvester extends ListETL<String>
      * This constructor generates a short list to be used as entries.
      * @param cacheFolder the folder where documents are cached
      */
-    public MockedHarvester(final File cacheFolder)
+    public MockedETL(final File cacheFolder)
     {
         this(Arrays.asList("mockedEntry1", "mockedEntry2", "mockedEntry3"), cacheFolder);
     }
@@ -82,7 +84,7 @@ public class MockedHarvester extends ListETL<String>
      */
     public String getId()
     {
-        return name;
+        return getName();
     }
 
 
@@ -106,18 +108,46 @@ public class MockedHarvester extends ListETL<String>
     }
 
 
-    @Override
-    protected Collection<String> extractEntries()
+    private static class MockedExtractor extends AbstractIteratorExtractor<String>
     {
-        return mockedEntries;
+        private List<String> mockedList = Arrays.asList("mockedEntry1", "mockedEntry2", "mockedEntry3");
+
+        @Override
+        public Iterator<String> extract()
+        {
+            return mockedList.iterator();
+        }
+
+
+        @Override
+        public String getUniqueVersionString()
+        {
+            return null;
+        }
+
+        @Override
+        public int size()
+        {
+            return mockedList.size();
+        }
+
+
+        @Override
+        protected Iterator<String> extractAll()
+        {
+            return mockedList.iterator();
+        }
     }
 
 
-    @Override
-    protected List<IDocument> harvestEntry(String entry)
+    private static class MockedTransformer extends AbstractIteratorTransformer<String, DataCiteJson>
     {
-        DataCiteJson mockedDocument = new DataCiteJson("source: " + entry);
-        mockedDocument.setTitles(Arrays.asList(new Title("title: " + entry)));
-        return Arrays.asList(mockedDocument);
+        @Override
+        protected DataCiteJson transformElement(String source)
+        {
+            DataCiteJson mockedDocument = new DataCiteJson("source: " + source);
+            mockedDocument.setTitles(Arrays.asList(new Title("title: " + source)));
+            return mockedDocument;
+        }
     }
 }

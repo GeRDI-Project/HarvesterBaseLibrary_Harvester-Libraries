@@ -19,15 +19,15 @@ import java.text.ParseException;
 import java.util.Set;
 
 import de.gerdiproject.harvest.event.EventSystem;
-import de.gerdiproject.harvest.submission.AbstractSubmitter;
-import de.gerdiproject.harvest.submission.events.GetSubmitterIdsEvent;
+import de.gerdiproject.harvest.harvester.loaders.ILoader;
+import de.gerdiproject.harvest.submission.events.GetLoaderNamesEvent;
 
 /**
- * This parameter holds an identifier of an {@linkplain AbstractSubmitter}.
+ * This parameter holds an identifier of an {@linkplain ILoader}.
  *
  * @author Robin Weiss
  */
-public class SubmitterParameter extends StringParameter
+public class LoaderParameter extends StringParameter
 {
     /**
      * Constructor that assigns a category and a key that must be unique within the category.
@@ -37,7 +37,7 @@ public class SubmitterParameter extends StringParameter
      *
      * @see AbstractParameter#AbstractParameter(String, ParameterCategory)
      */
-    public SubmitterParameter(String key, ParameterCategory category)
+    public LoaderParameter(String key, ParameterCategory category)
     {
         super(key, category);
     }
@@ -52,16 +52,16 @@ public class SubmitterParameter extends StringParameter
      *
      * @see AbstractParameter#AbstractParameter(String, ParameterCategory, Object)
      */
-    public SubmitterParameter(String key, ParameterCategory category, String defaultValue)
+    public LoaderParameter(String key, ParameterCategory category, String defaultValue)
     {
         super(key, category, defaultValue);
     }
 
 
     @Override
-    public SubmitterParameter copy()
+    public LoaderParameter copy()
     {
-        return new SubmitterParameter(key, category, value);
+        return new LoaderParameter(key, category, value);
     }
 
 
@@ -73,7 +73,7 @@ public class SubmitterParameter extends StringParameter
     @Override
     protected String getAllowedValues()
     {
-        final Set<String> validValues = EventSystem.sendSynchronousEvent(new GetSubmitterIdsEvent());
+        final Set<String> validValues = EventSystem.sendSynchronousEvent(new GetLoaderNamesEvent());
 
         if (validValues != null) {
             String validValueString = validValues.toString();
@@ -87,7 +87,7 @@ public class SubmitterParameter extends StringParameter
     @Override
     public String stringToValue(String value) throws ParseException, ClassCastException
     {
-        final Set<String> validValues = EventSystem.sendSynchronousEvent(new GetSubmitterIdsEvent());
+        final Set<String> validValues = EventSystem.sendSynchronousEvent(new GetLoaderNamesEvent());
 
         if (validValues == null || !validValues.contains(value))
             throw new ClassCastException();

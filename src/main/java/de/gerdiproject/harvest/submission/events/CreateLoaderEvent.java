@@ -17,15 +17,13 @@ package de.gerdiproject.harvest.submission.events;
 
 
 import de.gerdiproject.harvest.event.ISynchronousEvent;
-import de.gerdiproject.harvest.submission.AbstractSubmitter;
+import de.gerdiproject.harvest.harvester.loaders.ILoader;
 
 /**
- * This event attempts to signal the active {@linkplain AbstractSubmitter} to
- * finish submitting its remaining cached documents.
- * Returns false if the submission fails.
+ * This event aims to instantiate an {@linkplain ILoader}.
  *
  * @author Robin Weiss
  */
-public class FinishSubmissionEvent implements ISynchronousEvent<Boolean>
+public class CreateLoaderEvent implements ISynchronousEvent<ILoader<?>>
 {
 }

@@ -31,10 +31,6 @@ public class StatusConstants
                                                                  StateConstants.HARVEST_STATUS,
                                                                  ProcessTimeMeasure.ProcessStatus.Failed.toString());
 
-    public static final String FAILED_SUBMISSION_HEALTH_CHECK = String.format(
-                                                                    StateConstants.SUBMIT_STATUS,
-                                                                    ProcessTimeMeasure.ProcessStatus.Failed.toString());
-
     public static final String REST_INFO = "- %s Extended REST Interface -%n%n"
                                            + "GET          Returns this overview of possible HTTP calls.%n"
                                            + "GET/state    Returns plain text describing what the service is doing.%n"

@@ -16,23 +16,25 @@
  */
 package de.gerdiproject.application.examples;
 
+import java.util.Arrays;
 import java.util.List;
 
 import de.gerdiproject.harvest.application.ContextListener;
-import de.gerdiproject.harvest.submission.AbstractSubmitter;
-import de.gerdiproject.utils.examples.harvestercache.MockedHarvester;
+import de.gerdiproject.harvest.harvester.AbstractETL;
+import de.gerdiproject.harvest.harvester.loaders.ILoader;
+import de.gerdiproject.utils.examples.harvestercache.MockedETL;
 
 /**
  * This class is a mocked ContextListener.
  *
  * @author Robin Weiss
  */
-public class MockedContextListener extends ContextListener<MockedHarvester>
+public class MockedContextListener extends ContextListener
 {
     @Override
-    public List<Class<? extends AbstractSubmitter>> getSubmitterClasses() // NOPMD not a useless override because the accessor changed
+    public List<Class<? extends ILoader<?>>> getLoaderClasses() // NOPMD not a useless override because the accessor changed
     {
-        return super.getSubmitterClasses();
+        return super.getLoaderClasses();
     }
 
 
@@ -40,5 +42,15 @@ public class MockedContextListener extends ContextListener<MockedHarvester>
     public String getServiceName() // NOPMD not a useless override because the accessor changed
     {
         return super.getServiceName();
+    }
+
+
+    /* (non-Javadoc)
+     * @see de.gerdiproject.harvest.application.ContextListener#createETLs()
+     */
+    @Override
+    protected List<? extends AbstractETL<?, ?>> createETLs()
+    {
+        return Arrays.asList(new MockedETL());
     }
 }

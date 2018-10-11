@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 /**
- * This package contains classes and packages that are related to the {@linkplain de.gerdiproject.harvest.submission.AbstractSubmitter}.
+ * This package contains classes and packages that are related to the {@linkplain de.gerdiproject.harvest.submission.AbstractURLLoader}.
  *
  * @author Robin Weiss
  */

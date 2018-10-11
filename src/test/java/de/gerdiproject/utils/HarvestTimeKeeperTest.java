@@ -44,14 +44,13 @@ import de.gerdiproject.harvest.utils.time.ProcessTimeMeasure.ProcessStatus;
 public class HarvestTimeKeeperTest extends AbstractFileSystemUnitTest<HarvestTimeKeeper>
 {
     private static final String HARVEST_MEASURE = "harvest";
-    private static final String SUBMISSION_MEASURE = "submission";
     private static final String ASSERT_LOAD_STATE_MESSAGE = "A measure that was saved in the %s-state should be in the %s-state when loaded!";
     private static final String ASSERT_CHANGE_STATE_MESSAGE = "Sending a %s should switch the measure from the %s- to the %s-state!";
 
     @Parameters(name = "tested measure: {0}")
     public static Object[] getParameters()
     {
-        return new Object[] {HARVEST_MEASURE, SUBMISSION_MEASURE};
+        return new Object[] {HARVEST_MEASURE};
     }
 
     private final String cachePath = testFolder + "/processTimes.json";
@@ -116,7 +115,7 @@ public class HarvestTimeKeeperTest extends AbstractFileSystemUnitTest<HarvestTim
     public void testHarvestIncompleteDuringStartedProcess()
     {
         testedObject.addEventListeners();
-        EventSystem.sendEvent(new HarvestStartedEvent(null,1));
+        EventSystem.sendEvent(new HarvestStartedEvent(null, 1));
         assertFalse("The method isHarvestIncomplete() should return false if a harvest is in progress!",
                     testedObject.isHarvestIncomplete());
     }
@@ -130,7 +129,7 @@ public class HarvestTimeKeeperTest extends AbstractFileSystemUnitTest<HarvestTim
     public void testHarvestIncompleteDuringFinishedProcess()
     {
         testedObject.addEventListeners();
-        EventSystem.sendEvent(new HarvestStartedEvent(null,1));
+        EventSystem.sendEvent(new HarvestStartedEvent(null, 1));
         EventSystem.sendEvent(new HarvestFinishedEvent(true, null));
         assertFalse("The method isHarvestIncomplete() should return false if a harvest finished successfully!",
                     testedObject.isHarvestIncomplete());
@@ -145,7 +144,7 @@ public class HarvestTimeKeeperTest extends AbstractFileSystemUnitTest<HarvestTim
     public void testHarvestIncompleteDuringFailedProcess()
     {
         testedObject.addEventListeners();
-        EventSystem.sendEvent(new HarvestStartedEvent(null,1));
+        EventSystem.sendEvent(new HarvestStartedEvent(null, 1));
         EventSystem.sendEvent(new HarvestFinishedEvent(false, null));
         assertTrue("The method isHarvestIncomplete() should return true if a harvest failed!",
                    testedObject.isHarvestIncomplete());
@@ -160,22 +159,10 @@ public class HarvestTimeKeeperTest extends AbstractFileSystemUnitTest<HarvestTim
     public void testHarvestIncompleteDuringAbortedProcess()
     {
         testedObject.addEventListeners();
-        EventSystem.sendEvent(new HarvestStartedEvent(null,1));
+        EventSystem.sendEvent(new HarvestStartedEvent(null, 1));
         EventSystem.sendEvent(new AbortingStartedEvent());
         assertTrue("The method isHarvestIncomplete() should return true if a harvest was aborted!",
                    testedObject.isHarvestIncomplete());
-    }
-
-
-    /**
-     * Tests the constructor by checking that the there are no unsubmitted
-     * changes.
-     */
-    @Test
-    public void testInitialUnsubmittedChangesGetter()
-    {
-        assertFalse("The method hasUnsubmittedChanges() should return false if nothing was harvested, yet!",
-                    testedObject.hasUnsubmittedChanges());
     }
 
 
@@ -410,13 +397,11 @@ public class HarvestTimeKeeperTest extends AbstractFileSystemUnitTest<HarvestTim
             case HARVEST_MEASURE:
                 return loadedKeeper.getHarvestMeasure();
 
-            case SUBMISSION_MEASURE:
-                return loadedKeeper.getSubmissionMeasure();
-
             default:
                 throw new IllegalArgumentException();
         }
     }
+
 
     /**
      * Sends a specified event and asserts if the status of the tested measure changes as expected.

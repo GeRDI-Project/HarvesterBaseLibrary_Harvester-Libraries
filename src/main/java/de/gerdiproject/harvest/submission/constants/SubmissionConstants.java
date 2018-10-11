@@ -22,7 +22,7 @@ import de.gerdiproject.harvest.config.parameters.IntegerParameter;
 import de.gerdiproject.harvest.config.parameters.ParameterCategory;
 import de.gerdiproject.harvest.config.parameters.PasswordParameter;
 import de.gerdiproject.harvest.config.parameters.StringParameter;
-import de.gerdiproject.harvest.config.parameters.SubmitterParameter;
+import de.gerdiproject.harvest.config.parameters.LoaderParameter;
 import de.gerdiproject.harvest.config.parameters.UrlParameter;
 import de.gerdiproject.harvest.state.impl.ErrorState;
 import de.gerdiproject.harvest.state.impl.HarvestingState;
@@ -91,13 +91,13 @@ public class SubmissionConstants
         PARAMETER_CATEGORY,
         true);
 
-    public static final SubmitterParameter SUBMITTER_TYPE_PARAM =
-        new SubmitterParameter(
+    public static final LoaderParameter SUBMITTER_TYPE_PARAM =
+        new LoaderParameter(
         "submitter",
         PARAMETER_CATEGORY);
 
 
-    public static final String SUBMIT_PARTIAL_OK = " Submitted documents %d to %d.";
+    public static final String SUBMIT_PARTIAL_OK = " Submitted %d documents.";
     public static final String SUBMIT_PARTIAL_FAILED = "Error submitting documents %s to %s.";
     public static final String UNKNOWN_DOCUMENT_COUNT = "???";
 

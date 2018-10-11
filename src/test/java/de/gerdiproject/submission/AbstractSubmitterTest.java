@@ -29,7 +29,7 @@ import de.gerdiproject.AbstractFileSystemUnitTest;
 import de.gerdiproject.harvest.config.Configuration;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.harvester.events.HarvestFinishedEvent;
-import de.gerdiproject.harvest.submission.AbstractSubmitter;
+import de.gerdiproject.harvest.submission.AbstractURLLoader;
 import de.gerdiproject.harvest.submission.constants.SubmissionConstants;
 import de.gerdiproject.harvest.submission.events.StartSubmissionEvent;
 import de.gerdiproject.harvest.submission.events.SubmissionFinishedEvent;
@@ -43,11 +43,11 @@ import de.gerdiproject.submission.examples.MockedSubmitter;
 import de.gerdiproject.utils.examples.harvestercache.MockedHarvester;
 
 /**
- * This class offers unit tests for {@linkplain AbstractSubmitter}.
+ * This class offers unit tests for {@linkplain AbstractURLLoader}.
  *
  * @author Robin Weiss
  */
-public class AbstractSubmitterTest extends AbstractFileSystemUnitTest<AbstractSubmitter>
+public class AbstractSubmitterTest extends AbstractFileSystemUnitTest<AbstractURLLoader>
 {
     private static final String MODULE_NAME = "mocked";
     private static final String TEST_URL = "http://www.gerdi-project.de/";
@@ -63,7 +63,7 @@ public class AbstractSubmitterTest extends AbstractFileSystemUnitTest<AbstractSu
 
 
     @Override
-    protected AbstractSubmitter setUpTestObjects()
+    protected AbstractURLLoader setUpTestObjects()
     {
         final long startTimestamp = random.nextLong();
         final long endTimestamp = random.longs(startTimestamp + 1, startTimestamp + 99999999).findAny().getAsLong();
@@ -74,7 +74,7 @@ public class AbstractSubmitterTest extends AbstractFileSystemUnitTest<AbstractSu
         config = new Configuration(MODULE_NAME);
         config.addEventListeners();
 
-        AbstractSubmitter mockedSubmitter = new MockedSubmitter();
+        AbstractURLLoader mockedSubmitter = new MockedSubmitter();
 
         return mockedSubmitter;
     }
@@ -82,7 +82,7 @@ public class AbstractSubmitterTest extends AbstractFileSystemUnitTest<AbstractSu
 
     /**
      * Tests if changing the 'submissionUrl' parameter causes the 'url' field
-     * in {@linkplain AbstractSubmitter} to be updated.
+     * in {@linkplain AbstractURLLoader} to be updated.
      */
     @Test
     public void testChangingSubmissionUrl()
@@ -98,7 +98,7 @@ public class AbstractSubmitterTest extends AbstractFileSystemUnitTest<AbstractSu
 
     /**
      * Tests if changing the 'submissionSize' parameter causes the 'maxBatchSize' field
-     * in {@linkplain AbstractSubmitter} to be updated.
+     * in {@linkplain AbstractURLLoader} to be updated.
      */
     @Test
     public void testChangingMaxBatchSize()
@@ -127,7 +127,7 @@ public class AbstractSubmitterTest extends AbstractFileSystemUnitTest<AbstractSu
 
     /**
      * Tests if changing only the 'submissionUserName' parameter causes the 'credentials' field
-     * in {@linkplain AbstractSubmitter} to remain null.
+     * in {@linkplain AbstractURLLoader} to remain null.
      */
     @Test
     public void testChangingUserName()
@@ -141,7 +141,7 @@ public class AbstractSubmitterTest extends AbstractFileSystemUnitTest<AbstractSu
 
     /**
      * Tests if changing only the 'submissionPassword' parameter causes the 'credentials' field
-     * in {@linkplain AbstractSubmitter} to remain null.
+     * in {@linkplain AbstractURLLoader} to remain null.
      */
     @Test
     public void testChangingPassword()
@@ -155,7 +155,7 @@ public class AbstractSubmitterTest extends AbstractFileSystemUnitTest<AbstractSu
 
     /**
      * Tests if changing the 'submissionUserName' and 'submissionPassword' parameters causes the 'credentials' field
-     * in {@linkplain AbstractSubmitter} to be filled.
+     * in {@linkplain AbstractURLLoader} to be filled.
      */
     @Test
     public void testChangingUserNameAndPassword()
@@ -441,8 +441,6 @@ public class AbstractSubmitterTest extends AbstractFileSystemUnitTest<AbstractSu
      */
     private void addSubmittableDocuments(int size)
     {
-        testedObject.setCacheManager(cacheManager);
-
         final MockedHarvester harvester = new MockedHarvester(testFolder);
         final HarvesterCache harvesterCache = new HarvesterCache(
             harvester.getId(),

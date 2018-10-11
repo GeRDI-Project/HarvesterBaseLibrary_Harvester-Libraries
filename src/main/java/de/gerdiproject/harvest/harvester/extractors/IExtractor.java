@@ -14,7 +14,9 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package de.gerdiproject.harvest.harvester;
+package de.gerdiproject.harvest.harvester.extractors;
+
+import de.gerdiproject.harvest.harvester.AbstractETL;
 
 /**
  * This class represents the Extractor of an ETL process.
@@ -24,10 +26,11 @@ package de.gerdiproject.harvest.harvester;
 public interface IExtractor <IN>
 {
     /**
-     * Initializes the extractor, making it ready to receive
-     * another harvest.
+     * Initializes the extractor for a new harvest.
+     *
+     * @param harvester the harvester to which the extractor belongs
      */
-    void init();
+    <H extends AbstractETL<?, ?>> void init(H harvester);
 
     /**
      * Extracts elements from a source repository.

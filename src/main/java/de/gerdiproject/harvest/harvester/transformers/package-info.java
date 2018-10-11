@@ -14,28 +14,8 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package de.gerdiproject.harvest.harvester;
-
 /**
- * This class represents the Transformer of an ETL process.
- *
  * @author Robin Weiss
+ *
  */
-public interface ITransformer <IN, OUT>
-{
-    /**
-     * Initializes the transformer, making it ready to receive
-     * another harvest.
-     */
-    void init();
-
-
-    /**
-     * Transforms an extracted element to a document that can be loaded.
-     *
-     * @param source an extracted element
-     *
-     * @return a document that can be loaded
-     */
-    OUT transform(IN source);
-}
+package de.gerdiproject.harvest.harvester.transformers;

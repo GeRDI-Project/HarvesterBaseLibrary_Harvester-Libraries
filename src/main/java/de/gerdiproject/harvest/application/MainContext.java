@@ -27,15 +27,15 @@ import de.gerdiproject.harvest.config.Configuration;
 import de.gerdiproject.harvest.config.constants.ConfigurationConstants;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.harvester.AbstractETL;
-import de.gerdiproject.harvest.harvester.ETLRegistry;
 import de.gerdiproject.harvest.harvester.events.GetRepositoryNameEvent;
 import de.gerdiproject.harvest.harvester.events.HarvesterInitializedEvent;
+import de.gerdiproject.harvest.harvester.loaders.ILoader;
+import de.gerdiproject.harvest.harvester.utils.ETLRegistry;
 import de.gerdiproject.harvest.scheduler.Scheduler;
 import de.gerdiproject.harvest.scheduler.constants.SchedulerConstants;
 import de.gerdiproject.harvest.state.StateMachine;
 import de.gerdiproject.harvest.state.impl.InitializationState;
-import de.gerdiproject.harvest.submission.AbstractSubmitter;
-import de.gerdiproject.harvest.submission.SubmitterManager;
+import de.gerdiproject.harvest.submission.LoaderFactory;
 import de.gerdiproject.harvest.submission.constants.SubmissionConstants;
 import de.gerdiproject.harvest.utils.CancelableFuture;
 import de.gerdiproject.harvest.utils.cache.HarvesterCacheManager;
@@ -47,7 +47,6 @@ import de.gerdiproject.harvest.utils.logger.events.GetMainLogEvent;
 import de.gerdiproject.harvest.utils.maven.MavenUtils;
 import de.gerdiproject.harvest.utils.maven.events.GetMavenUtilsEvent;
 import de.gerdiproject.harvest.utils.time.HarvestTimeKeeper;
-import de.gerdiproject.harvest.utils.time.ProcessTimeMeasure.ProcessStatus;
 
 
 /**
@@ -69,7 +68,7 @@ public class MainContext
     private final Configuration configuration;
 
     @SuppressWarnings("unused") // the submitter is connected via the event system
-    private final SubmitterManager submitterManager;
+    private final LoaderFactory submitterManager;
     private final Scheduler scheduler;
     private final MavenUtils mavenUtils;
 
@@ -80,8 +79,7 @@ public class MainContext
      * @param callerClass the class of the object that initialized the context
      * @param repositoryNameSupplier a getter function for retrieving the name of the targeted repository
      * @param etlSupplier a function that provides all {@linkplain AbstractETL}s required for harvesting
-     * @param submitterSupplier a function that provides a list of {@linkplain AbstractSubmitter}s for
-     *         submitting documents to a search index
+     * @param loaderClasses a list of {@linkplain ILoader} classes for loading documents to a search index
      *
      * @throws IllegalAccessException can be thrown when the harvester class cannot be instantiated
      * @throws InstantiationException can be thrown when the harvester class cannot be instantiated
@@ -91,8 +89,8 @@ public class MainContext
     private MainContext(
         Class<? extends ContextListener> callerClass,
         Supplier<String> repositoryNameSupplier,
-        Supplier<List<AbstractETL<?, ?, ?, ?, ?>>> etlSupplier,
-        Supplier<List<AbstractSubmitter>> submitterSupplier) throws InstantiationException, IllegalAccessException
+        Supplier<List<? extends AbstractETL<?, ?>>> etlSupplier,
+        List<Class<? extends ILoader<?>>> loaderClasses) throws InstantiationException, IllegalAccessException
     {
         this.moduleName = repositoryNameSupplier.get().replaceAll(" ", "") + ApplicationConstants.HARVESTER_SERVICE_NAME_SUFFIX;
 
@@ -110,8 +108,8 @@ public class MainContext
 
         EventSystem.addSynchronousListener(GetRepositoryNameEvent.class, repositoryNameSupplier);
 
+        this.submitterManager = createLoaderFactory(loaderClasses);
         this.etlRegistry = createEtlRegistry(moduleName, etlSupplier);
-        this.submitterManager = createSubmitterManager(submitterSupplier, timeKeeper, cacheManager);
         this.scheduler = createScheduler(moduleName);
     }
 
@@ -122,14 +120,13 @@ public class MainContext
      * @param callerClass the class of the object that called this function
      * @param repositoryNameSupplier a getter function for retrieving the name of the targeted repository
      * @param etlSupplier a function that provides all {@linkplain AbstractETL}s required for harvesting
-     * @param submitterSupplier a function that provides a list of {@linkplain AbstractSubmitter}s for
-     *         submitting documents to a search index
+     * @param loaderClasses a list of {@linkplain ILoader} classes for loading documents to a search index
      */
     public static void init(
         Class<? extends ContextListener> callerClass,
         Supplier<String> repositoryNameSupplier,
-        Supplier<List<AbstractETL<?, ?, ?, ?, ?>>> etlSupplier,
-        Supplier<List<AbstractSubmitter>> submitterSupplier)
+        Supplier<List<? extends AbstractETL<?, ?>>> etlSupplier,
+        List<Class<? extends ILoader<?>>> loaderClasses)
     {
         LOGGER.info(ApplicationConstants.INIT_SERVICE);
         StateMachine.setState(new InitializationState());
@@ -138,7 +135,7 @@ public class MainContext
             // clear old instance if necessary
             destroy();
 
-            instance = new MainContext(callerClass, repositoryNameSupplier, etlSupplier, submitterSupplier);
+            instance = new MainContext(callerClass, repositoryNameSupplier, etlSupplier, loaderClasses);
             return true;
         });
 
@@ -256,39 +253,24 @@ public class MainContext
 
 
     /**
-     * Creates a {@linkplain SubmitterManager}, instantiating and registering all submitter classes.
+     * Creates a {@linkplain LoaderFactory}, and registers all loader classes.
      *
-     * @param submitterSupplier a function that provides a list of {@linkplain AbstractSubmitter}s for
-     *         submitting documents to a search index
-     * @param keeper the harvest time keeper
-     * @param harvesterCacheManager the documents cache
-     * @param submitterManager the submitter manager where the submitter is to be registered
+     * @param loaderClasses a list of {@linkplain ILoader} classes for
+     *         loading documents to a search index
      *
-     * @return a {@linkplain SubmitterManager}
+     * @return a new {@linkplain LoaderFactory}
      */
-    private SubmitterManager createSubmitterManager(Supplier<List<AbstractSubmitter>> submitterSupplier,
-                                                    HarvestTimeKeeper keeper, HarvesterCacheManager harvesterCacheManager)
+    private LoaderFactory createLoaderFactory(List<Class<? extends ILoader<?>>> loaderClasses)
     {
-        LOGGER.info(String.format(ApplicationConstants.INIT_FIELD, SubmitterManager.class.getSimpleName()));
+        LOGGER.info(String.format(ApplicationConstants.INIT_FIELD, LoaderFactory.class.getSimpleName()));
 
-        final SubmitterManager manager = new SubmitterManager();
+        final LoaderFactory manager = new LoaderFactory();
         manager.addEventListeners();
 
-        final List<AbstractSubmitter> submitters = submitterSupplier.get();
+        for (Class<? extends ILoader<?>> s : loaderClasses)
+            manager.registerLoader(s);
 
-        for (AbstractSubmitter s : submitters) {
-            LOGGER.info(String.format(ApplicationConstants.INIT_FIELD, s.getClass().getSimpleName()));
-
-            s.setCacheManager(harvesterCacheManager);
-            s.setHarvestIncomplete(keeper.isHarvestIncomplete());
-            s.setHasSubmittedAll(keeper.getSubmissionMeasure().getStatus() == ProcessStatus.Finished);
-            s.addEventListeners();
-            manager.registerSubmitter(s);
-
-            LOGGER.info(String.format(ApplicationConstants.INIT_FIELD_SUCCESS, s.getClass().getSimpleName()));
-        }
-
-        LOGGER.info(String.format(ApplicationConstants.INIT_FIELD_SUCCESS, SubmitterManager.class.getSimpleName()));
+        LOGGER.info(String.format(ApplicationConstants.INIT_FIELD_SUCCESS, LoaderFactory.class.getSimpleName()));
 
         return manager;
     }
@@ -360,7 +342,7 @@ public class MainContext
      *
      * @return a new {@linkplain ETLRegistry} for this context
      */
-    private ETLRegistry createEtlRegistry(String moduleName, Supplier<List<AbstractETL<?, ?, ?, ?, ?>>> etlSupplier)
+    private ETLRegistry createEtlRegistry(String moduleName, Supplier<List<? extends AbstractETL<?, ?>>> etlSupplier)
     throws InstantiationException, IllegalAccessException
     {
         LOGGER.info(String.format(ApplicationConstants.INIT_FIELD, ETLRegistry.class.getSimpleName()));
@@ -368,10 +350,10 @@ public class MainContext
         final ETLRegistry registry = new ETLRegistry(moduleName);
 
         // construct harvesters
-        final List<AbstractETL<?, ?, ?, ?, ?>> etlComponents = etlSupplier.get();
+        final List<? extends AbstractETL<?, ?>> etlComponents = etlSupplier.get();
 
         // initialize and register harvesters
-        for (AbstractETL<?, ?, ?, ?, ?> etl : etlComponents) {
+        for (AbstractETL<?, ?> etl : etlComponents) {
             LOGGER.info(String.format(ApplicationConstants.INIT_FIELD, etl.getClass().getSimpleName()));
 
             etl.init(moduleName);

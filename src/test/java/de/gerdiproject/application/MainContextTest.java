@@ -18,15 +18,12 @@ package de.gerdiproject.application;
 
 import static org.junit.Assert.assertTrue;
 
-import java.util.Arrays;
-
 import org.junit.Test;
 
 import de.gerdiproject.AbstractUnitTest;
+import de.gerdiproject.application.examples.MockedContextListener;
 import de.gerdiproject.harvest.application.MainContext;
 import de.gerdiproject.harvest.harvester.events.HarvesterInitializedEvent;
-import de.gerdiproject.submission.examples.MockedSubmitter;
-import de.gerdiproject.utils.examples.harvestercache.MockedHarvester;
 
 /**
  * This class offers unit tests for the {@linkplain MainContext}.
@@ -35,7 +32,6 @@ import de.gerdiproject.utils.examples.harvestercache.MockedHarvester;
  */
 public class MainContextTest extends AbstractUnitTest
 {
-    private static final String TEST_SERVICE_NAME = "TestService";
     private static final int INIT_TIMEOUT = 5000;
 
 
@@ -46,10 +42,12 @@ public class MainContextTest extends AbstractUnitTest
     @Test
     public void testInitialization()
     {
+        final MockedContextListener mockedContextListener = new MockedContextListener();
+
         HarvesterInitializedEvent initDoneEvent = waitForEvent(
                                                       HarvesterInitializedEvent.class,
                                                       INIT_TIMEOUT,
-                                                      () -> MainContext.init(TEST_SERVICE_NAME, MockedHarvester.class, Arrays.asList(MockedSubmitter.class)));
+                                                      () -> mockedContextListener.contextInitialized(null));
 
         assertTrue("Expected the method init() to send an event marking the initialization as successful!",
                    initDoneEvent.isSuccessful());

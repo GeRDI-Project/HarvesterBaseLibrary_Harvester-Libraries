@@ -89,11 +89,9 @@ public class HarvestTimeKeeper implements IEventListener, ICachedObject
     {
         final HarvestTimeKeeper parsedKeeper = diskIo.getObject(cacheFilePath, HarvestTimeKeeper.class);
 
-        if (parsedKeeper != null) {
-
+        if (parsedKeeper != null && parsedKeeper.harvestMeasure.getStatus() != ProcessStatus.Started) {
             // copy status if it is not started
-            if (parsedKeeper.harvestMeasure.getStatus() != ProcessStatus.Started)
-                harvestMeasure.set(parsedKeeper.harvestMeasure);
+            harvestMeasure.set(parsedKeeper.harvestMeasure);
         }
     }
 

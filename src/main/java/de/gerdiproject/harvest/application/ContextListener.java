@@ -31,8 +31,9 @@ import de.gerdiproject.harvest.application.events.ContextInitializedEvent;
 import de.gerdiproject.harvest.application.events.ResetContextEvent;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.harvester.AbstractETL;
-import de.gerdiproject.harvest.submission.AbstractSubmitter;
-import de.gerdiproject.harvest.submission.elasticsearch.ElasticSearchSubmitter;
+import de.gerdiproject.harvest.harvester.loaders.ILoader;
+import de.gerdiproject.harvest.submission.AbstractURLLoader;
+import de.gerdiproject.harvest.submission.elasticsearch.ElasticSearchLoader;
 
 
 /**
@@ -86,19 +87,19 @@ public abstract class ContextListener implements ServletContextListener
      *
      * @return a harvested documents submitter
      */
-    protected abstract List<AbstractETL<?, ?, ?, ?, ?>> createETLs();
+    protected abstract List<? extends AbstractETL<?, ?>> createETLs();
 
 
     /**
-     * Creates a list of {@linkplain AbstractSubmitter} implementations that can be chosen to transfer data to the search index.
+     * Creates a list of {@linkplain AbstractURLLoader} implementations that can be chosen to transfer data to the search index.
      *
      * @return a harvested documents submitter
      */
-    protected List<AbstractSubmitter> createSubmitters()
+    protected List<Class<? extends ILoader<?>>> getLoaderClasses()
     {
-        final List<AbstractSubmitter> submitters = new LinkedList<>();
-        submitters.add(new ElasticSearchSubmitter());
-        return submitters;
+        final List<Class<? extends ILoader<?>>> loaderClasses = new LinkedList<>();
+        loaderClasses.add(ElasticSearchLoader.class);
+        return loaderClasses;
     }
 
 
@@ -123,7 +124,7 @@ public abstract class ContextListener implements ServletContextListener
             getClass(),
             this::getRepositoryName,
             this::createETLs,
-            this::createSubmitters);
+            getLoaderClasses());
 
         EventSystem.sendEvent(new ContextInitializedEvent());
     }

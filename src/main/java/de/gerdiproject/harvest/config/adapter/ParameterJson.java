@@ -26,7 +26,7 @@ import de.gerdiproject.harvest.config.parameters.IntegerParameter;
 import de.gerdiproject.harvest.config.parameters.ParameterCategory;
 import de.gerdiproject.harvest.config.parameters.PasswordParameter;
 import de.gerdiproject.harvest.config.parameters.StringParameter;
-import de.gerdiproject.harvest.config.parameters.SubmitterParameter;
+import de.gerdiproject.harvest.config.parameters.LoaderParameter;
 import de.gerdiproject.harvest.config.parameters.UrlParameter;
 
 /**
@@ -77,8 +77,8 @@ class ParameterJson
         else if (type.equals(PasswordParameter.class.getSimpleName()))
             param = new PasswordParameter(key, category, value);
 
-        else if (type.equals(SubmitterParameter.class.getSimpleName()))
-            param = new SubmitterParameter(key, category, value);
+        else if (type.equals(LoaderParameter.class.getSimpleName()))
+            param = new LoaderParameter(key, category, value);
 
         else if (type.equals(UrlParameter.class.getSimpleName())) {
             try {

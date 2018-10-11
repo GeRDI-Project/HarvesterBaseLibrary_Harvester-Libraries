@@ -46,15 +46,15 @@ import de.gerdiproject.harvest.config.parameters.IntegerParameter;
 import de.gerdiproject.harvest.config.parameters.ParameterCategory;
 import de.gerdiproject.harvest.config.parameters.PasswordParameter;
 import de.gerdiproject.harvest.config.parameters.StringParameter;
-import de.gerdiproject.harvest.config.parameters.SubmitterParameter;
+import de.gerdiproject.harvest.config.parameters.LoaderParameter;
 import de.gerdiproject.harvest.config.parameters.UrlParameter;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.state.IState;
 import de.gerdiproject.harvest.state.StateMachine;
 import de.gerdiproject.harvest.state.impl.HarvestingState;
 import de.gerdiproject.harvest.state.impl.InitializationState;
-import de.gerdiproject.harvest.submission.SubmitterManager;
-import de.gerdiproject.harvest.submission.events.GetSubmitterIdsEvent;
+import de.gerdiproject.harvest.submission.LoaderFactory;
+import de.gerdiproject.harvest.submission.events.GetLoaderNamesEvent;
 import de.gerdiproject.harvest.utils.data.DiskIO;
 
 /**
@@ -278,9 +278,9 @@ public class ConfigurationTest extends AbstractFileSystemUnitTest<Configuration>
 
 
     /**
-     * Tests if the value of a {@linkplain SubmitterParameter} can be changed via
+     * Tests if the value of a {@linkplain LoaderParameter} can be changed via
      * the setter function of the {@linkplain Configuration} if the SubmitterID
-     * is registered at the {@linkplain SubmitterManager}.
+     * is registered at the {@linkplain LoaderFactory}.
      */
     @Test
     public void testSubmitterParameterChange()
@@ -289,22 +289,22 @@ public class ConfigurationTest extends AbstractFileSystemUnitTest<Configuration>
         final String valueAfter = STRING_VALUE + 2;
 
         // mock the registration of the submitter IDs
-        EventSystem.addSynchronousListener(GetSubmitterIdsEvent.class, (event) -> {
+        EventSystem.addSynchronousListener(GetLoaderNamesEvent.class, (event) -> {
             Set<String> validValues = new HashSet<String>();
             validValues.add(valueBefore);
             validValues.add(valueAfter);
             return validValues;
         });
 
-        final SubmitterParameter param = new SubmitterParameter(PARAM_KEY, TEST_CATEGORY, valueBefore);
+        final LoaderParameter param = new LoaderParameter(PARAM_KEY, TEST_CATEGORY, valueBefore);
         assertThatParmeterValueCanChange(param, valueAfter);
     }
 
 
     /**
-     * Tests if the value of a {@linkplain SubmitterParameter} cannot be changed via
+     * Tests if the value of a {@linkplain LoaderParameter} cannot be changed via
      * the setter function of the {@linkplain Configuration} if the the SubmitterID
-     * is NOT registered at the {@linkplain SubmitterManager}.
+     * is NOT registered at the {@linkplain LoaderFactory}.
      */
     @Test
     public void testSubmitterParameterChangeUnregistered()
@@ -312,7 +312,7 @@ public class ConfigurationTest extends AbstractFileSystemUnitTest<Configuration>
         final String valueBefore = STRING_VALUE + 1;
         final String valueAfter = STRING_VALUE + 2;
 
-        final SubmitterParameter param = new SubmitterParameter(PARAM_KEY, TEST_CATEGORY, valueBefore);
+        final LoaderParameter param = new LoaderParameter(PARAM_KEY, TEST_CATEGORY, valueBefore);
 
         testedObject = createConfigWithCustomParameters(param);
         testedObject.setParameter(param.getCompositeKey(), valueAfter);
@@ -589,7 +589,7 @@ public class ConfigurationTest extends AbstractFileSystemUnitTest<Configuration>
                                               new BooleanParameter(PARAM_KEY + 3, TEST_CATEGORY),
                                               new UrlParameter(PARAM_KEY + 4, TEST_CATEGORY),
                                               new PasswordParameter(PARAM_KEY + 5, TEST_CATEGORY),
-                                              new SubmitterParameter(PARAM_KEY + 6, TEST_CATEGORY));
+                                              new LoaderParameter(PARAM_KEY + 6, TEST_CATEGORY));
 
         // register parameters to mark them for serialization
         savedConfig.getParameters().forEach((AbstractParameter<?> param) -> param.setRegistered(true));
@@ -877,7 +877,7 @@ public class ConfigurationTest extends AbstractFileSystemUnitTest<Configuration>
                    new BooleanParameter(PARAM_KEY + 6, TEST_CATEGORY, BOOL_VALUE_2),
                    new UrlParameter(PARAM_KEY + 7, TEST_CATEGORY, new URL(URL_VALUE_1)),
                    new PasswordParameter(PARAM_KEY + 8, TEST_CATEGORY, PASSWORD_VALUE_1),
-                   new SubmitterParameter(PARAM_KEY + 9, TEST_CATEGORY, STRING_VALUE)
+                   new LoaderParameter(PARAM_KEY + 9, TEST_CATEGORY, STRING_VALUE)
                );
     }
 

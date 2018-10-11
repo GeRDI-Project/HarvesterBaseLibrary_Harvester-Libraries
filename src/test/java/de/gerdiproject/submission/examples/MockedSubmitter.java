@@ -21,14 +21,14 @@ import java.util.List;
 import java.util.Map;
 
 import de.gerdiproject.harvest.IDocument;
-import de.gerdiproject.harvest.submission.AbstractSubmitter;
+import de.gerdiproject.harvest.submission.AbstractURLLoader;
 import de.gerdiproject.json.datacite.DataCiteJson;
 
 /**
  * @author Robin Weiss
  *
  */
-public class MockedSubmitter extends AbstractSubmitter
+public class MockedSubmitter extends AbstractURLLoader
 {
     private List<Integer> submittedIndices = new LinkedList<>();
 

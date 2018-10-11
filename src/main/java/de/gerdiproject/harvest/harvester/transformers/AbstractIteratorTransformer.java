@@ -14,9 +14,12 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package de.gerdiproject.harvest.harvester;
+package de.gerdiproject.harvest.harvester.transformers;
 
 import java.util.Iterator;
+
+import de.gerdiproject.harvest.harvester.AbstractETL;
+import de.gerdiproject.harvest.harvester.extractors.AbstractIteratorExtractor;
 
 /**
  * This transformer can transform multiple documents.
@@ -25,6 +28,14 @@ import java.util.Iterator;
  */
 public abstract class AbstractIteratorTransformer <TRANSIN, TRANSOUT> implements ITransformer<Iterator<TRANSIN>, Iterator<TRANSOUT>>
 {
+
+    @Override
+    public <H extends AbstractETL<?, ?>> void init(H harvester)
+    {
+        // by default, nothing needs to be done
+    }
+
+
     /**
      * Transforms a single element from the input iterator.
      *
@@ -49,7 +60,7 @@ public abstract class AbstractIteratorTransformer <TRANSIN, TRANSOUT> implements
 
     /**
      * This class is an {@linkplain Iterator} that wraps around the {@linkplain Iterator} provided by
-     * an {@linkplain IIteratorExtractor} and transforms each element before returning it.
+     * an {@linkplain AbstractIteratorExtractor} and transforms each element before returning it.
      *
      * @author Robin Weiss
      */

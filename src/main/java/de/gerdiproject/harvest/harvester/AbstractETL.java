@@ -18,6 +18,7 @@ package de.gerdiproject.harvest.harvester;
 
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
 import org.slf4j.Logger;
@@ -27,24 +28,23 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonDeserializer;
 import com.google.gson.JsonSerializer;
 
-import de.gerdiproject.harvest.ICleanable;
-import de.gerdiproject.harvest.IDocument;
 import de.gerdiproject.harvest.application.enums.HealthStatus;
 import de.gerdiproject.harvest.config.Configuration;
 import de.gerdiproject.harvest.config.parameters.BooleanParameter;
-import de.gerdiproject.harvest.config.parameters.IntegerParameter;
 import de.gerdiproject.harvest.config.parameters.ParameterCategory;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.event.IEventListener;
 import de.gerdiproject.harvest.harvester.constants.HarvesterConstants;
 import de.gerdiproject.harvest.harvester.enums.HarvesterStatus;
-import de.gerdiproject.harvest.harvester.events.DocumentsHarvestedEvent;
+import de.gerdiproject.harvest.harvester.extractors.IExtractor;
+import de.gerdiproject.harvest.harvester.loaders.ILoader;
 import de.gerdiproject.harvest.harvester.rest.HarvesterRestResource;
+import de.gerdiproject.harvest.harvester.transformers.ITransformer;
 import de.gerdiproject.harvest.state.events.StartAbortingEvent;
-import de.gerdiproject.harvest.submission.elasticsearch.ElasticSearchSubmitter;
+import de.gerdiproject.harvest.submission.elasticsearch.ElasticSearchLoader;
+import de.gerdiproject.harvest.submission.events.CreateLoaderEvent;
 import de.gerdiproject.harvest.utils.HashGenerator;
 import de.gerdiproject.harvest.utils.cache.HarvesterCache;
-import de.gerdiproject.harvest.utils.cache.constants.CacheConstants;
 import de.gerdiproject.harvest.utils.cache.events.RegisterHarvesterCacheEvent;
 import de.gerdiproject.harvest.utils.data.HttpRequester;
 import de.gerdiproject.harvest.utils.data.constants.DataOperationConstants;
@@ -54,7 +54,7 @@ import de.gerdiproject.json.GsonUtils;
 /**
  * AbstractHarvesters offer a skeleton for harvesting a data provider to
  * retrieve all of its metadata. The metadata can subsequently be submitted to
- * ElasticSearch via the {@link ElasticSearchSubmitter}. This most basic
+ * ElasticSearch via the {@link ElasticSearchLoader}. This most basic
  * Harvester class offers functions that can be controlled via REST requests
  * from the {@link HarvesterRestResource}, as well as some utility objects that are
  * required by all harvests. Subclasses must implement the concrete harvesting
@@ -62,72 +62,43 @@ import de.gerdiproject.json.GsonUtils;
  *
  * @author Robin Weiss
  */
-public abstract class AbstractETL <EOUT, TOUT, E extends IExtractor<EOUT>, T extends ITransformer<EOUT, TOUT>, L extends ILoader<TOUT>> implements IEventListener
+public abstract class AbstractETL <EOUT, TOUT> implements IEventListener
 {
-    protected final E extractor;
-    protected final T transformer;
-    protected final L loader;
-    protected String targetUrl;
+    protected IExtractor<EOUT> extractor;
+    protected ITransformer<EOUT, TOUT> transformer;
+    protected ILoader<TOUT> loader;
 
     protected final ParameterCategory harvesterCategory;
     protected volatile BooleanParameter forceHarvestParameter;
-    protected volatile IntegerParameter startIndexParameter;
-    protected volatile IntegerParameter endIndexParameter;
     protected volatile BooleanParameter enableHarvesterParameter;
-    protected volatile BooleanParameter cacheParameter;
 
-    private volatile int maxDocumentCount;
-    private volatile HarvesterCache documentsCache;
+    private AtomicInteger maxDocumentCount;
 
     protected final Logger logger; // NOPMD - we want to retrieve the type of the inheriting class
     protected final HttpRequester httpRequester;
     protected volatile boolean isAborting;
-    protected volatile boolean isFailing;
     protected volatile String hash;
 
-    protected final String name;
 
     protected volatile HealthStatus health;
     protected volatile HarvesterStatus status;
 
 
     /**
-     * Simple constructor that uses the class name as the harvester name.
-     *
-     * @param extractor retrieves an object from the harvested repository
-     * @param transformer transforms the extracted object to a document that can be put to the search index
-     * @param loader submits the transformed object to a search index
-     */
-    public AbstractETL(E extractor, T transformer, L loader)
-    {
-        this(null, extractor, transformer, loader);
-    }
-
-
-    /**
      * Constructor that initializes helper classes and fields.
      *
-     * @param harvesterName a unique name that describes the harvester
-     * @param extractor retrieves an object from the harvested repository
-     * @param transformer transforms the extracted object to a document that can be put to the search index
-     * @param loader submits the transformed object to a search index
      */
-    public AbstractETL(String harvesterName, E extractor, T transformer, L loader)
+    public AbstractETL()
     {
         this.status = HarvesterStatus.BUSY;
         this.health = HealthStatus.OK;
 
-        this.name = (harvesterName != null) ? harvesterName : getClass().getSimpleName();
-        this.logger = LoggerFactory.getLogger(name);
+        this.logger = LoggerFactory.getLogger(getName());
 
-        this.extractor = extractor;
-        this.transformer = transformer;
-        this.loader = loader;
-
-        this.maxDocumentCount = 0;
+        this.maxDocumentCount = new AtomicInteger(0);
 
         this.harvesterCategory = new ParameterCategory(
-            name,
+            getName(),
             HarvesterConstants.PARAMETER_CATEGORY.getAllowedStates());
 
         registerParameters();
@@ -141,26 +112,13 @@ public abstract class AbstractETL <EOUT, TOUT, E extends IExtractor<EOUT>, T ext
      */
     protected void registerParameters()
     {
-        this.startIndexParameter =
-            Configuration.registerParameter(new IntegerParameter(
-                                                HarvesterConstants.START_INDEX_PARAM.getKey(),
-                                                harvesterCategory));
-
-        this.endIndexParameter =
-            Configuration.registerParameter(new IntegerParameter(
-                                                HarvesterConstants.END_INDEX_PARAM.getKey(),
-                                                harvesterCategory));
-
         this.enableHarvesterParameter =
             Configuration.registerParameter(new BooleanParameter(
                                                 HarvesterConstants.ENABLED_PARAM.getKey(),
                                                 harvesterCategory));
 
-        this.cacheParameter = Configuration.registerParameter(HarvesterConstants.CACHE_PARAM);
-
         // all harvesters share the 'forced' parameter
         this.forceHarvestParameter = Configuration.registerParameter(HarvesterConstants.FORCED_PARAM);
-
     }
 
 
@@ -200,19 +158,6 @@ public abstract class AbstractETL <EOUT, TOUT, E extends IExtractor<EOUT>, T ext
         this.httpRequester.setCacheFolder(
             String.format(DataOperationConstants.CACHE_FOLDER_PATH, moduleName)
         );
-
-        // prepare documents cache
-        String tempPath = String.format(
-                              CacheConstants.TEMP_HARVESTER_CACHE_FOLDER_PATH,
-                              moduleName,
-                              getName());
-
-        String stablePath = String.format(
-                                CacheConstants.STABLE_HARVESTER_CACHE_FOLDER_PATH,
-                                moduleName,
-                                getName());
-
-        this.documentsCache = initCache(tempPath, stablePath);
     }
 
 
@@ -270,106 +215,65 @@ public abstract class AbstractETL <EOUT, TOUT, E extends IExtractor<EOUT>, T ext
     }
 
 
-    /**
-     * Updates the cache for harvested documents, if it exists.
-     */
-    protected void updateCache()
+    protected abstract IExtractor<EOUT> createExtractor();
+
+
+    protected abstract ITransformer<EOUT, TOUT> createTransformer();
+
+
+    @SuppressWarnings("unchecked") // NOPMD the possible ClassCastException is caught
+    protected ILoader<TOUT> createLoader()
     {
-        if (documentsCache != null) {
-            // update the harvester hash in the cache file
-            documentsCache.init(hash, getStartIndex(), getEndIndex());
+        try {
+            return (ILoader<TOUT>) EventSystem.sendSynchronousEvent(new CreateLoaderEvent());
+
+        } catch (ClassCastException e) {
+            logger.error(e.getMessage());
+            return null;
         }
     }
-
-
     /**
      * Updates the harvested source documents, calculating the hash and maximum number of
      * harvestable documents.
      */
-    public void update()
+    public void update() throws ETLPreconditionException
     {
+        extractor = createExtractor();
+
+        if (extractor == null)
+            throw new ETLPreconditionException(String.format(HarvesterConstants.EXTRACTOR_CREATE_ERROR, getName()));
+
+        extractor.init(this);
+
+        transformer = createTransformer();
+
+        if (transformer == null)
+            throw new ETLPreconditionException(String.format(HarvesterConstants.TRANSFORMER_CREATE_ERROR, getName()));
+
+        transformer.init(this);
+
+        loader = createLoader();
+
+        if (loader == null)
+            throw new ETLPreconditionException(String.format(HarvesterConstants.LOADER_CREATE_ERROR, getName()));
+
+        loader.init(this);
+
         final HarvesterStatus previousStatus = status;
         this.status = HarvesterStatus.BUSY;
-
-        extractor.init();
-        transformer.init();
-        loader.init();
-
-        isFailing = false;
 
         // calculate hash
         try {
             hash = initHash();
         } catch (NullPointerException e) {
-            logger.error(String.format(HarvesterConstants.HASH_CREATION_FAILED, name), e);
+            logger.error(String.format(HarvesterConstants.HASH_CREATION_FAILED, getName()), e);
             hash = null;
-            isFailing = true;
         }
 
         // calculate number of documents
-        maxDocumentCount = initMaxNumberOfDocuments();
-
-        // update documents cache
-        updateCache();
+        maxDocumentCount.set(initMaxNumberOfDocuments());
 
         this.status = previousStatus;
-    }
-
-
-    /**
-     * Returns start index 'a' of the harvesting range [a,b).
-     *
-     * @return the start index of the harvesting range
-     */
-    protected int getStartIndex()
-    {
-        int index = startIndexParameter.getValue();
-
-        if (index < 0)
-            return 0;
-
-        if (index == Integer.MAX_VALUE)
-            return maxDocumentCount;
-
-        return index;
-    }
-
-    /**
-     * Returns the end index 'b' of the harvesting range [a,b).
-     *
-     * @return the end index of the harvesting range
-     */
-    protected int getEndIndex()
-    {
-        int index = endIndexParameter.getValue();
-
-        if (index < 0)
-            return 0;
-
-        if (index == Integer.MAX_VALUE)
-            return maxDocumentCount;
-
-        return index;
-    }
-
-
-    /**
-     * Adds a document to the search index and logs the progress. If the
-     * document is null, it is not added to the search index, but the progress
-     * is incremented regardlessly.
-     *
-     * @param document the document that is to be added to the search index
-     */
-    protected void addDocument(IDocument document)
-    {
-        if (document != null) {
-            if (document instanceof ICleanable)
-                ((ICleanable) document).clean();
-
-            documentsCache.cacheDocument(document, forceHarvestParameter.getValue());
-        }
-
-        EventSystem.sendEvent(DocumentsHarvestedEvent.singleHarvestedDocument());
     }
 
 
@@ -380,7 +284,7 @@ public abstract class AbstractETL <EOUT, TOUT, E extends IExtractor<EOUT>, T ext
      */
     public final int getMaxNumberOfDocuments()
     {
-        return maxDocumentCount;
+        return maxDocumentCount.get();
     }
 
     /**
@@ -394,32 +298,23 @@ public abstract class AbstractETL <EOUT, TOUT, E extends IExtractor<EOUT>, T ext
         this.status = HarvesterStatus.BUSY;
 
         if (!enableHarvesterParameter.getValue()) {
-            skipAllDocuments();
             this.health = HealthStatus.OK;
             this.status = HarvesterStatus.DONE;
 
             throw new ETLPreconditionException(
-                String.format(HarvesterConstants.HARVESTER_SKIPPED_DISABLED, name));
+                String.format(HarvesterConstants.HARVESTER_SKIPPED_DISABLED, getName()));
         }
 
         // update to check if source data has changed
         update();
 
-        if (!forceHarvestParameter.getValue()) {
-            // cancel harvest if the checksum has not changed since the last harvest
-            if (!isOutdated()) {
-                skipAllDocuments();
-                this.health = HealthStatus.OK;
-                this.status = HarvesterStatus.DONE;
+        // cancel harvest if the checksum has not changed since the last harvest
+        if (!forceHarvestParameter.getValue() && !isOutdated()) {
+            this.health = HealthStatus.OK;
+            this.status = HarvesterStatus.DONE;
 
-                throw new ETLPreconditionException(
-                    String.format(HarvesterConstants.HARVESTER_SKIPPED_NO_CHANGES, name));
-            }
-        }
-
-        if (getStartIndex() == getEndIndex()) {
             throw new ETLPreconditionException(
-                String.format(HarvesterConstants.HARVESTER_SKIPPED_OUT_OF_RANGE, name));
+                String.format(HarvesterConstants.HARVESTER_SKIPPED_NO_CHANGES, getName()));
         }
 
         this.status = HarvesterStatus.HARVESTING;
@@ -460,7 +355,7 @@ public abstract class AbstractETL <EOUT, TOUT, E extends IExtractor<EOUT>, T ext
     {
         final EOUT exOut = extractor.extract();
         final TOUT transOut = transformer.transform(exOut);
-        loader.load(transOut);
+        loader.load(transOut, true);
     }
 
 
@@ -473,9 +368,7 @@ public abstract class AbstractETL <EOUT, TOUT, E extends IExtractor<EOUT>, T ext
         this.status = HarvesterStatus.BUSY;
         EventSystem.removeListener(StartAbortingEvent.class, onStartAborting);
 
-        logger.info(String.format(HarvesterConstants.HARVESTER_END, name));
-
-        applyCacheChanges();
+        logger.info(String.format(HarvesterConstants.HARVESTER_END, getName()));
 
         // dead-lock fix: clear aborting status
         if (isAborting) {
@@ -519,16 +412,11 @@ public abstract class AbstractETL <EOUT, TOUT, E extends IExtractor<EOUT>, T ext
         this.health = HealthStatus.HARVEST_FAILED;
         this.status = HarvesterStatus.BUSY;
 
-        isFailing = true;
-
         // log the error
         logger.error(reason.getMessage(), reason);
 
         // log failure
-        logger.warn(String.format(HarvesterConstants.HARVESTER_FAILED, name));
-
-        // finish caching
-        applyCacheChanges();
+        logger.warn(String.format(HarvesterConstants.HARVESTER_FAILED, getName()));
 
         this.status = HarvesterStatus.DONE;
     }
@@ -543,12 +431,11 @@ public abstract class AbstractETL <EOUT, TOUT, E extends IExtractor<EOUT>, T ext
         this.health = HealthStatus.HARVEST_FAILED;
         this.status = HarvesterStatus.ABORTING;
 
-        applyCacheChanges();
         // TODO EventSystem.sendEvent(new AbortingFinishedEvent(isMainHarvester));
 
         isAborting = false;
 
-        logger.warn(String.format(HarvesterConstants.HARVESTER_ABORTED, name));
+        logger.warn(String.format(HarvesterConstants.HARVESTER_ABORTED, getName()));
 
         this.status = HarvesterStatus.DONE;
     }
@@ -574,7 +461,8 @@ public abstract class AbstractETL <EOUT, TOUT, E extends IExtractor<EOUT>, T ext
      */
     public boolean isOutdated()
     {
-        return documentsCache.getVersionsCache().isOutdated();
+        //TODO return documentsCache.getVersionsCache().isOutdated();
+        return true;
     }
 
 
@@ -609,30 +497,6 @@ public abstract class AbstractETL <EOUT, TOUT, E extends IExtractor<EOUT>, T ext
 
 
     /**
-     * Applies all changes caused by the harvest to the cache.
-     */
-    protected void applyCacheChanges()
-    {
-        documentsCache.applyChanges(!isFailing, isAborting);
-    }
-
-
-    /**
-     * Skips all documents that are to be harvested.
-     */
-    protected void skipAllDocuments()
-    {
-        HarvesterStatus oldStatus = getStatus();
-        this.status = HarvesterStatus.BUSY;
-
-        documentsCache.skipAllDocuments();
-        EventSystem.sendEvent(new DocumentsHarvestedEvent(getMaxNumberOfDocuments()));
-
-        this.status = oldStatus;
-    }
-
-
-    /**
      * Creates a GsonBuilder for parsing harvested source data. If you
      * have custom JSON (de-)serialization adapters, you can register them to
      * the GsonBuilder when overriding this method.
@@ -655,7 +519,7 @@ public abstract class AbstractETL <EOUT, TOUT, E extends IExtractor<EOUT>, T ext
      */
     public String getName()
     {
-        return name;
+        return getClass().getSimpleName();
     }
 
 

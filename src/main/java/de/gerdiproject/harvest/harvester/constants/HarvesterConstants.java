@@ -23,6 +23,10 @@ import de.gerdiproject.harvest.config.constants.ConfigurationConstants;
 import de.gerdiproject.harvest.config.parameters.BooleanParameter;
 import de.gerdiproject.harvest.config.parameters.IntegerParameter;
 import de.gerdiproject.harvest.config.parameters.ParameterCategory;
+import de.gerdiproject.harvest.harvester.AbstractIteratorETL;
+import de.gerdiproject.harvest.harvester.extractors.AbstractIteratorExtractor;
+import de.gerdiproject.harvest.harvester.loaders.AbstractIteratorLoader;
+import de.gerdiproject.harvest.harvester.transformers.AbstractIteratorTransformer;
 import de.gerdiproject.harvest.state.IState;
 import de.gerdiproject.harvest.state.impl.ErrorState;
 import de.gerdiproject.harvest.state.impl.IdleState;
@@ -48,11 +52,6 @@ public class HarvesterConstants
 
     public static final BooleanParameter FORCED_PARAM = new BooleanParameter(
         "forced",
-        PARAMETER_CATEGORY,
-        false);
-
-    public static final BooleanParameter CACHE_PARAM = new BooleanParameter(
-        "cacheDocuments",
         PARAMETER_CATEGORY,
         false);
 
@@ -125,6 +124,16 @@ public class HarvesterConstants
 
     public static final String BUSY_ERROR_MESSAGE = "The harvesters are currently processing another request!";
 
+    public static final String EXTRACTOR_CREATE_ERROR = "Could not create EXTRACTOR for %s!";
+    public static final String TRANSFORMER_CREATE_ERROR = "Could not create TRANSFORMER for %s!";
+    public static final String LOADER_CREATE_ERROR = "Could not create LOADER for %s!";
+
+    public static final String ETL_PROCESSING_ERROR = "Error iterating through ETL components!";
+    public static final String DUPLICATE_ETL_REGISTERED_ERROR = "Did not register %s, because it was already registered!";
+
+    public static final String INVALID_ITER_EXTRACTOR_ERROR = AbstractIteratorETL.class.getSimpleName() + " instances must use subclasses of " + AbstractIteratorExtractor.class.getSimpleName() + " as Extractors!";
+    public static final String INVALID_ITER_TRANSFORMER_ERROR = AbstractIteratorETL.class.getSimpleName() + " instances must use subclasses of " + AbstractIteratorTransformer.class.getSimpleName() + " as Transformers!";
+    public static final String INVALID_ITER_LOADER_ERROR = AbstractIteratorETL.class.getSimpleName() + " instances must use subclasses of " + AbstractIteratorLoader.class.getSimpleName() + " as Loaders!";
 
     /**
      * Private constructor, because this class just serves as a place to define

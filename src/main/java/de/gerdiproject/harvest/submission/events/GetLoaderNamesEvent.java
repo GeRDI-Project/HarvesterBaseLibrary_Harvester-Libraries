@@ -19,14 +19,14 @@ package de.gerdiproject.harvest.submission.events;
 import java.util.Set;
 
 import de.gerdiproject.harvest.event.ISynchronousEvent;
-import de.gerdiproject.harvest.submission.AbstractSubmitter;
+import de.gerdiproject.harvest.submission.AbstractURLLoader;
 
 /**
- * A synchronous event that aims to return a list of registered {@linkplain AbstractSubmitter}s.
+ * A synchronous event that aims to return a list of registered {@linkplain AbstractURLLoader}s.
  *
  * @author Robin Weiss
  */
-public class GetSubmitterIdsEvent implements ISynchronousEvent<Set<String>>
+public class GetLoaderNamesEvent implements ISynchronousEvent<Set<String>>
 {
 
 }

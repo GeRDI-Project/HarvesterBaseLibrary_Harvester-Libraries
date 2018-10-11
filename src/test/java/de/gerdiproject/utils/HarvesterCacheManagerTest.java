@@ -30,7 +30,7 @@ import de.gerdiproject.harvest.utils.cache.HarvesterCache;
 import de.gerdiproject.harvest.utils.cache.HarvesterCacheManager;
 import de.gerdiproject.harvest.utils.cache.events.RegisterHarvesterCacheEvent;
 import de.gerdiproject.json.datacite.DataCiteJson;
-import de.gerdiproject.utils.examples.harvestercache.MockedHarvester;
+import de.gerdiproject.utils.examples.harvestercache.MockedETL;
 
 /**
  * This class contains unit tests for the {@linkplain HarvestSaver}.
@@ -145,7 +145,7 @@ public class HarvesterCacheManagerTest extends AbstractFileSystemUnitTest<Harves
      */
     private HarvesterCache registerCache()
     {
-        final MockedHarvester mockedHarvester = new MockedHarvester(testFolder);
+        final MockedETL mockedHarvester = new MockedETL(testFolder);
         final HarvesterCache registeredCache = new HarvesterCache(
             HARVESTER_ID,
             mockedHarvester.getTemporaryCacheFolder(),

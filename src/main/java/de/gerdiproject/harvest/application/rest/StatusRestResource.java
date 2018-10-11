@@ -199,12 +199,9 @@ public final class StatusRestResource
             final String status = currentState.getStatusString();
 
             final boolean hasHarvestFailed = status.contains(StatusConstants.FAILED_HARVEST_HEALTH_CHECK);
-            final boolean hasSubmissionFailed = status.contains(StatusConstants.FAILED_SUBMISSION_HEALTH_CHECK);
 
             if (hasHarvestFailed)
                 health = HealthStatus.HARVEST_FAILED;
-            else if (hasSubmissionFailed)
-                health = HealthStatus.SUBMISSION_FAILED;
         }
 
         final Status status =  health == HealthStatus.OK

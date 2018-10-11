@@ -14,23 +14,25 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package de.gerdiproject.harvest.harvester;
-
-import java.util.Iterator;
+package de.gerdiproject.harvest.harvester.loaders;
 
 /**
- * This {@linkplain IExtractor} can extract an {@linkplain Iterator} in order
- * to be able to iterate lists or similar constructs.
+ * This exception is thrown when an {@linkplain ILoader} fails to submit
+ * documents.
  *
  * @author Robin Weiss
  */
-public interface IIteratorExtractor <IN> extends IExtractor<Iterator<IN>>
+public class LoaderException extends Exception
 {
+    private static final long serialVersionUID = -3315557273151442217L;
+
     /**
-     * Sets the interval of extracted elements to [startIndex, endIndex).
+     * Constructor that forwards the super class constructor.
      *
-     * @param startIndex the index of the first element to be retrieved (inclusive)
-     * @param endIndex the index of the last element to be retrieved (exclusive)
+     * @param message a message describing the exception
      */
-    void setRange(int startIndex, int endIndex);
+    public LoaderException(String message)
+    {
+        super(message);
+    }
 }

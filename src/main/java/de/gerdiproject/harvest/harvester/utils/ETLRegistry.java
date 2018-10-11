@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.gerdiproject.harvest.harvester;
+package de.gerdiproject.harvest.harvester.utils;
 
 
 import java.nio.charset.StandardCharsets;
@@ -35,6 +35,8 @@ import de.gerdiproject.harvest.config.Configuration;
 import de.gerdiproject.harvest.config.parameters.BooleanParameter;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.event.IEventListener;
+import de.gerdiproject.harvest.harvester.AbstractETL;
+import de.gerdiproject.harvest.harvester.ETLPreconditionException;
 import de.gerdiproject.harvest.harvester.constants.HarvesterConstants;
 import de.gerdiproject.harvest.harvester.enums.HarvesterStatus;
 import de.gerdiproject.harvest.harvester.events.GetETLRegistryEvent;
@@ -55,7 +57,7 @@ public class ETLRegistry extends AbstractRestObject<ETLRegistry, ETLDetails>
     private static final Logger LOGGER = LoggerFactory.getLogger(ETLRegistry.class);
 
     // fields and members
-    private final List<AbstractETL<?, ?, ?, ?, ?>> harvesters;
+    private final List<AbstractETL<?, ?>> harvesters;
     private final BooleanParameter concurrentParam;
 
 
@@ -85,10 +87,10 @@ public class ETLRegistry extends AbstractRestObject<ETLRegistry, ETLDetails>
     }
 
 
-    public void register(AbstractETL<?, ?, ?, ?, ?> harvester)
+    public void register(AbstractETL<?, ?> harvester)
     {
         if (harvesters.contains(harvester))
-            LOGGER.info(String.format("Did not register %s, because it was already registered!", harvester.getClass().getSimpleName()));
+            LOGGER.info(String.format(HarvesterConstants.DUPLICATE_ETL_REGISTERED_ERROR, harvester.getClass().getSimpleName()));
         else
             harvesters.add(harvester);
     }
@@ -96,7 +98,7 @@ public class ETLRegistry extends AbstractRestObject<ETLRegistry, ETLDetails>
 
     public boolean hasOutdatedHarvesters()
     {
-        final List<Boolean> outDatedValues = processHarvesters((AbstractETL<?, ?, ?, ?, ?> harvester) -> {
+        final List<Boolean> outDatedValues = processHarvesters((AbstractETL<?, ?> harvester) -> {
             harvester.update();
             return harvester.isOutdated();
         });
@@ -109,7 +111,7 @@ public class ETLRegistry extends AbstractRestObject<ETLRegistry, ETLDetails>
     {
         super.addEventListeners();
 
-        processHarvesters((AbstractETL<?, ?, ?, ?, ?> harvester) -> {
+        processHarvesters((AbstractETL<?, ?> harvester) -> {
             if (harvester instanceof IEventListener)
                 ((IEventListener)harvester).addEventListeners();
         });
@@ -121,7 +123,7 @@ public class ETLRegistry extends AbstractRestObject<ETLRegistry, ETLDetails>
     {
         super.removeEventListeners();
 
-        processHarvesters((AbstractETL<?, ?, ?, ?, ?> harvester) -> {
+        processHarvesters((AbstractETL<?, ?> harvester) -> {
             if (harvester instanceof IEventListener)
                 ((IEventListener)harvester).removeEventListeners();
         });
@@ -133,14 +135,14 @@ public class ETLRegistry extends AbstractRestObject<ETLRegistry, ETLDetails>
         // do it asynchronously, so we can immediately return
         CompletableFuture.runAsync(()-> {
 
-            processHarvesters((AbstractETL<?, ?, ?, ?, ?> harvester) -> {
+            processHarvesters((AbstractETL<?, ?> harvester) -> {
                 harvester.prepareHarvest();
             });
 
             if (getStatus() == HarvesterStatus.HARVESTING)
                 EventSystem.sendEvent(new HarvestStartedEvent(getHash(), getMaxNumberOfDocuments()));
 
-            processHarvesters((AbstractETL<?, ?, ?, ?, ?> harvester) -> {
+            processHarvesters((AbstractETL<?, ?> harvester) -> {
                 if (harvester.getStatus() == HarvesterStatus.HARVESTING)
                     harvester.harvest();
 
@@ -159,7 +161,7 @@ public class ETLRegistry extends AbstractRestObject<ETLRegistry, ETLDetails>
 
     public int getMaxNumberOfDocuments()
     {
-        final List<Integer> sizes = processHarvesters((AbstractETL<?, ?, ?, ?, ?> harvester) ->
+        final List<Integer> sizes = processHarvesters((AbstractETL<?, ?> harvester) ->
                                                       harvester.getMaxNumberOfDocuments());
         int total = 0;
 
@@ -177,7 +179,7 @@ public class ETLRegistry extends AbstractRestObject<ETLRegistry, ETLDetails>
 
     public void abortHarvest()
     {
-        processHarvesters((AbstractETL<?, ?, ?, ?, ?> harvester) -> harvester.abortHarvest());
+        processHarvesters((AbstractETL<?, ?> harvester) -> harvester.abortHarvest());
         // TODO EventSystem.sendEvent(new AbortingFinishedEvent());
     }
 
@@ -187,7 +189,7 @@ public class ETLRegistry extends AbstractRestObject<ETLRegistry, ETLDetails>
         // for now, concatenate all hashes
         final StringBuffer hashBuilder = new StringBuffer();
 
-        harvesters.forEach((AbstractETL<?, ?, ?, ?, ?> subHarvester) -> hashBuilder.append(subHarvester.getHash()));
+        harvesters.forEach((AbstractETL<?, ?> subHarvester) -> hashBuilder.append(subHarvester.getHash()));
 
         final HashGenerator generator = new HashGenerator(StandardCharsets.UTF_8);
         return generator.getShaHash(hashBuilder.toString());
@@ -202,14 +204,14 @@ public class ETLRegistry extends AbstractRestObject<ETLRegistry, ETLDetails>
     public int getHarvestedCount()
     {
         return sumUpHarvesterValues(
-                   (AbstractETL<?, ?, ?, ?, ?> harvester) -> harvester.getHarvestedCount()
+                   (AbstractETL<?, ?> harvester) -> harvester.getHarvestedCount()
                );
     }
 
 
     public HealthStatus getHealth()
     {
-        final List<HealthStatus> healthStatuses = processHarvesters((AbstractETL<?, ?, ?, ?, ?> harvester) ->
+        final List<HealthStatus> healthStatuses = processHarvesters((AbstractETL<?, ?> harvester) ->
                                                                     harvester.getHealth());
 
         if (healthStatuses.contains(HealthStatus.FUBAR))
@@ -227,7 +229,7 @@ public class ETLRegistry extends AbstractRestObject<ETLRegistry, ETLDetails>
 
     public HarvesterStatus getStatus()
     {
-        final List<HarvesterStatus> statuses = processHarvesters((AbstractETL<?, ?, ?, ?, ?> harvester) -> harvester.getStatus());
+        final List<HarvesterStatus> statuses = processHarvesters((AbstractETL<?, ?> harvester) -> harvester.getStatus());
 
         if (statuses.contains(HarvesterStatus.ABORTING))
             return HarvesterStatus.ABORTING;
@@ -245,7 +247,7 @@ public class ETLRegistry extends AbstractRestObject<ETLRegistry, ETLDetails>
     }
 
 
-    private void processHarvesters(Consumer<AbstractETL<?, ?, ?, ?, ?>> consumer)
+    private void processHarvesters(Consumer<AbstractETL<?, ?>> consumer)
     {
         if (concurrentParam.getValue()) {
             final int len = harvesters.size();
@@ -260,16 +262,16 @@ public class ETLRegistry extends AbstractRestObject<ETLRegistry, ETLDetails>
             try {
                 CompletableFuture.allOf(subProcesses).get();
             } catch (InterruptedException | ExecutionException e) {
-                LOGGER.warn("Could not process harvesters!", e);
+                LOGGER.error(HarvesterConstants.ETL_PROCESSING_ERROR, e);
             }
         } else {
-            for (AbstractETL<?, ?, ?, ?, ?> harvester : harvesters)
+            for (AbstractETL<?, ?> harvester : harvesters)
                 consumer.accept(harvester);
         }
     }
 
 
-    private int sumUpHarvesterValues(Function<AbstractETL<?, ?, ?, ?, ?>, Integer> function)
+    private int sumUpHarvesterValues(Function<AbstractETL<?, ?>, Integer> function)
     {
         final List<Integer> processedData = processHarvesters(function);
 
@@ -282,7 +284,7 @@ public class ETLRegistry extends AbstractRestObject<ETLRegistry, ETLDetails>
     }
 
 
-    private <T> List<T> processHarvesters(Function<AbstractETL<?, ?, ?, ?, ?>, T> function)
+    private <T> List<T> processHarvesters(Function<AbstractETL<?, ?>, T> function)
     {
         final int len = harvesters.size();
         final List<T> returnValues = new ArrayList<>(len);
@@ -298,10 +300,8 @@ public class ETLRegistry extends AbstractRestObject<ETLRegistry, ETLDetails>
             // wait for all sub-processes to complete
             try {
                 CompletableFuture.allOf(subProcesses).get();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            } catch (ExecutionException e) {
-                e.printStackTrace();
+            } catch (InterruptedException | ExecutionException e) {
+                LOGGER.error(HarvesterConstants.ETL_PROCESSING_ERROR, e);
             }
         } else {
             for (int i = 0; i < len; i++)
