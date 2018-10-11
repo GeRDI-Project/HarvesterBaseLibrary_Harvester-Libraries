@@ -26,64 +26,33 @@ import de.gerdiproject.harvest.event.IEvent;
  */
 public class HarvestStartedEvent implements IEvent
 {
+    private final int maxHarvestableDocuments;
     private final long startTimestamp;
-    private final int startIndex;
-    private final int endIndex;
     private final String harvesterHash;
 
 
     /**
      * Constructor that sets up the payload, and uses the current time as the start timestamp.
      *
-     * @param startIndex the index of the first document to be harvested
-     * @param endIndex the index of the last document that is to be harvested + 1
      * @param harvesterHash a hash value representing the current state of the source data
      */
-    public HarvestStartedEvent(int startIndex, int endIndex, String harvesterHash)
+    public HarvestStartedEvent(String harvesterHash, int maxHarvestableDocuments)
     {
-        this.startIndex = startIndex;
-        this.endIndex = endIndex;
-        this.harvesterHash = harvesterHash;
-        this.startTimestamp = Instant.now().toEpochMilli();
+        this(harvesterHash, maxHarvestableDocuments, Instant.now().toEpochMilli());
     }
 
 
     /**
      * Constructor that sets up the payload, and allows to define the start timestamp.
      *
-     * @param startIndex the index of the first document to be harvested
-     * @param endIndex the index of the last document that is to be harvested + 1
      * @param harvesterHash a hash value representing the current state of the source data
      * @param timestamp the time at wich the harvest started
      */
-    public HarvestStartedEvent(int startIndex, int endIndex, String harvesterHash, long timestamp)
+    public HarvestStartedEvent(String harvesterHash, int maxHarvestableDocuments, long timestamp)
     {
-        this.startIndex = startIndex;
-        this.endIndex = endIndex;
         this.harvesterHash = harvesterHash;
+        this.maxHarvestableDocuments = maxHarvestableDocuments;
         this.startTimestamp = timestamp;
-    }
-
-
-    /**
-     * Returns the index of the first document to be harvested.
-     *
-     * @return the index of the first document to be harvested
-     */
-    public int getStartIndex()
-    {
-        return startIndex;
-    }
-
-
-    /**
-     * Returns the index of the last document that is to be harvested + 1.
-     *
-     * @return the index of the last document that is to be harvested + 1
-     */
-    public int getEndIndex()
-    {
-        return endIndex;
     }
 
 
@@ -106,5 +75,16 @@ public class HarvestStartedEvent implements IEvent
     public String getHarvesterHash()
     {
         return harvesterHash;
+    }
+
+
+    /**
+     * Returns the maximum number of harvestable documents.
+     *
+     * @return the maximum number of harvestable documents
+     */
+    public int getMaxHarvestableDocuments()
+    {
+        return maxHarvestableDocuments;
     }
 }

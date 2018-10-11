@@ -25,7 +25,7 @@ import de.gerdiproject.AbstractFileSystemUnitTest;
 import de.gerdiproject.application.ContextListenerTest;
 import de.gerdiproject.harvest.IDocument;
 import de.gerdiproject.harvest.application.ContextListener;
-import de.gerdiproject.harvest.harvester.AbstractListHarvester;
+import de.gerdiproject.harvest.harvester.ListETL;
 import de.gerdiproject.json.datacite.DataCiteJson;
 import de.gerdiproject.json.datacite.Title;
 
@@ -35,7 +35,7 @@ import de.gerdiproject.json.datacite.Title;
  *
  * @author Robin Weiss
  */
-public class MockedHarvester extends AbstractListHarvester<String>
+public class MockedHarvester extends ListETL<String>
 {
     protected final List<String> mockedEntries;
     private final String cacheFolder;
@@ -107,7 +107,7 @@ public class MockedHarvester extends AbstractListHarvester<String>
 
 
     @Override
-    protected Collection<String> loadEntries()
+    protected Collection<String> extractEntries()
     {
         return mockedEntries;
     }

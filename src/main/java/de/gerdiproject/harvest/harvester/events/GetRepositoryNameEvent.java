@@ -18,14 +18,11 @@ package de.gerdiproject.harvest.harvester.events;
 import de.gerdiproject.harvest.event.ISynchronousEvent;
 
 /**
- * This synchronous event returns an estimated number of the
- * maximum amount of documents that can possibly be harvested.
- * The calculation of that number includes the harvesting range,
- * determined by the harvestFrom and harvestTo parameters.
+ * This synchronous event returns the name of the harvested data provider.
  *
  * @author Robin Weiss
  */
-public class GetMaxDocumentCountEvent implements ISynchronousEvent<Integer>
+public class GetRepositoryNameEvent implements ISynchronousEvent<String>
 {
 
 }

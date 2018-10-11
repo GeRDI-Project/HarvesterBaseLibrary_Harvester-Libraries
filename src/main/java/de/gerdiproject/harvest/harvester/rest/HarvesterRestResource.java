@@ -28,15 +28,17 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 
-import de.gerdiproject.harvest.application.MainContext;
-import de.gerdiproject.harvest.config.Configuration;
-import de.gerdiproject.harvest.config.constants.ConfigurationConstants;
-import de.gerdiproject.harvest.config.events.GetConfigurationEvent;
 import de.gerdiproject.harvest.event.EventSystem;
+import de.gerdiproject.harvest.harvester.ETLPreconditionException;
+import de.gerdiproject.harvest.harvester.ETLRegistry;
 import de.gerdiproject.harvest.harvester.constants.HarvesterConstants;
-import de.gerdiproject.harvest.harvester.events.GetMaxDocumentCountEvent;
+import de.gerdiproject.harvest.harvester.enums.HarvesterStatus;
+import de.gerdiproject.harvest.harvester.events.GetETLRegistryEvent;
+import de.gerdiproject.harvest.rest.AbstractRestResource;
 import de.gerdiproject.harvest.rest.HttpResponseFactory;
 import de.gerdiproject.harvest.state.StateMachine;
+import de.gerdiproject.harvest.state.constants.StateConstants;
+import de.gerdiproject.harvest.state.events.AbortingStartedEvent;
 import de.gerdiproject.harvest.utils.logger.HarvesterLog;
 import de.gerdiproject.harvest.utils.logger.events.GetMainLogEvent;
 
@@ -46,11 +48,11 @@ import de.gerdiproject.harvest.utils.logger.events.GetMainLogEvent;
  * REST requests that manipulate the harvester in order to prepare and send
  * search indices to Elastic Search.
  *
- * @see de.gerdiproject.harvest.harvester.AbstractHarvester
+ * @see de.gerdiproject.harvest.harvester.AbstractETL
  * @author Robin Weiss
  */
 @Path("")
-public class HarvesterRestResource
+public class HarvesterRestResource extends AbstractRestResource<ETLRegistry, GetETLRegistryEvent>
 {
     /**
      * Starts a harvest using the harvester that is registered in the
@@ -67,53 +69,13 @@ public class HarvesterRestResource
     })
     public Response startHarvest(final MultivaluedMap<String, String> formParams)
     {
-        return StateMachine.getCurrentState().startHarvest();
-    }
-
-
-    /**
-     * Displays a text that describes the status and possible REST calls.
-     *
-     * @return a text describing the harvesting status and available RESTful
-     *         calls
-     */
-    @GET
-    @Produces({
-        MediaType.TEXT_PLAIN, MediaType.APPLICATION_JSON
-    })
-    public String getInfo()
-    {
-        final String status = StateMachine.getCurrentState().getStatusString();
-
-        // get harvesting range
-        String from = HarvesterConstants.UNKNOWN_NUMBER;
-        String to = HarvesterConstants.UNKNOWN_NUMBER;
-        final Configuration config = EventSystem.sendSynchronousEvent(new GetConfigurationEvent());
-
-        if (config != null) {
-            // get the range specified in the config
-            from = config.getParameterStringValue(HarvesterConstants.START_INDEX_PARAM.getCompositeKey());
-            to = config.getParameterStringValue(HarvesterConstants.END_INDEX_PARAM.getCompositeKey());
-
-            // add the real expected number of max documents from the main harvester
-            if (to.equals(ConfigurationConstants.INTEGER_VALUE_MAX)) {
-                Integer maxDocs = EventSystem.sendSynchronousEvent(new GetMaxDocumentCountEvent());
-
-                if (maxDocs != null && maxDocs > 0) {
-                    try {
-                        int maxRange = Integer.parseInt(from) + maxDocs;
-                        to = String.format(HarvesterConstants.MAX_RANGE_NUMBER, maxRange);
-                    } catch (NumberFormatException e) { // NOPMD - just leave the String how it was before
-
-                    }
-                }
-            }
+        try {
+            // start a harvest
+            restObject.harvest();
+            return HttpResponseFactory.createAcceptedResponse(StateConstants.HARVEST_STARTED);
+        } catch (ETLPreconditionException e) {
+            return HttpResponseFactory.createBadRequestResponse(e.getMessage());
         }
-
-        // get harvester name
-        final String name = MainContext.getServiceName();
-
-        return String.format(HarvesterConstants.REST_INFO, name, status, from, to);
     }
 
 
@@ -129,7 +91,10 @@ public class HarvesterRestResource
     })
     public Response isOutdated()
     {
-        return StateMachine.getCurrentState().isOutdated();
+        if (restObject.getStatus() == HarvesterStatus.BUSY)
+            return HttpResponseFactory.createBusyResponse(HarvesterConstants.BUSY_ERROR_MESSAGE, 10);
+        else
+            return HttpResponseFactory.createOkResponse(restObject.hasOutdatedHarvesters());
     }
 
 
@@ -145,40 +110,20 @@ public class HarvesterRestResource
     })
     public Response abort()
     {
-        return StateMachine.getCurrentState().abort();
-    }
+        if (restObject.getStatus() == HarvesterStatus.HARVESTING) {
+            EventSystem.sendEvent(new AbortingStartedEvent());
+            restObject.abortHarvest();
 
 
-    /**
-     * Saves harvested documents to disk.
-     *
-     * @return a status message describing if the saving could be started or not
-     */
-    @GET
-    @Path("download")
-    @Produces({
-        MediaType.TEXT_PLAIN
-    })
-    public Response saveDocuments()
-    {
-        return StateMachine.getCurrentState().save();
-    }
-
-
-    /**
-     * Submits harvested documents.
-     *
-     * @return a status message describing if the submission could be started or
-     *         not
-     */
-    @POST
-    @Path("submit")
-    @Produces({
-        MediaType.TEXT_PLAIN
-    })
-    public Response submitDocuments()
-    {
-        return StateMachine.getCurrentState().submit();
+            return HttpResponseFactory.createAcceptedResponse(
+                       String.format(StateConstants.ABORT_STATUS, HarvesterStatus.HARVESTING.toString()));
+        } else {
+            final String message = String.format(
+                                       StateConstants.CANNOT_ABORT_PREFIX
+                                       + StateConstants.NO_HARVEST_IN_PROGRESS,
+                                       StateConstants.HARVESTING_PROCESS);
+            return HttpResponseFactory.createBadRequestResponse(message);
+        }
     }
 
 
@@ -232,5 +177,12 @@ public class HarvesterRestResource
             return HttpResponseFactory.createServerErrorResponse();
         else
             return HttpResponseFactory.createOkResponse(log);
+    }
+
+
+    @Override
+    protected String getAllowedRequests()
+    {
+        return HarvesterConstants.ALLOWED_REQUESTS;
     }
 }

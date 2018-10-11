@@ -15,7 +15,7 @@
  */
 /**
  * This package contains facades that map incoming REST requests
- * to internal functions concerning the {@linkplain de.gerdiproject.harvest.harvester.AbstractHarvester}.
+ * to internal functions concerning the {@linkplain de.gerdiproject.harvest.harvester.AbstractETL}.
  *
  * @author Robin Weiss
  */

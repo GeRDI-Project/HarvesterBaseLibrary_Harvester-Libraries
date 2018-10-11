@@ -50,8 +50,6 @@ public class HarvestSaver implements IEventListener
 {
     private final static Logger LOGGER = LoggerFactory.getLogger(HarvestSaver.class);
 
-    private int harvestFrom;
-    private int harvestTo;
     private long harvestStartTime;
     private long harvestEndTime;
     private String sourceHash;
@@ -83,8 +81,6 @@ public class HarvestSaver implements IEventListener
         this.harvestEndTime = harvestMeasure.getEndTimestamp();
 
         this.sourceHash = null;
-        this.harvestFrom = -1;
-        this.harvestTo = -1;
     }
 
 
@@ -170,16 +166,6 @@ public class HarvestSaver implements IEventListener
         writer.name(SaveConstants.DURATION_JSON);
         writer.value((harvestEndTime - harvestStartTime) / 1000l);
 
-        if (harvestFrom != -1) {
-            writer.name(SaveConstants.HARVEST_FROM_JSON);
-            writer.value(harvestFrom);
-        }
-
-        if (harvestTo != -1) {
-            writer.name(SaveConstants.HARVEST_TO_JSON);
-            writer.value(harvestTo);
-        }
-
         if (sourceHash != null) {
             writer.name(SaveConstants.SOURCE_HASH_JSON);
             writer.value(sourceHash);
@@ -226,8 +212,6 @@ public class HarvestSaver implements IEventListener
      */
     private final Consumer<HarvestStartedEvent> onHarvestStarted = (HarvestStartedEvent event) -> {
         this.sourceHash = event.getHarvesterHash();
-        this.harvestFrom = event.getStartIndex();
-        this.harvestTo = event.getEndIndex();
         this.harvestStartTime = event.getStartTimestamp();
         this.harvestEndTime = -1;
     };

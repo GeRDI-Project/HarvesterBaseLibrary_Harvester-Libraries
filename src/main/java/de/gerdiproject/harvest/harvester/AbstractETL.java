@@ -18,9 +18,6 @@ package de.gerdiproject.harvest.harvester;
 
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
 import org.slf4j.Logger;
@@ -32,27 +29,20 @@ import com.google.gson.JsonSerializer;
 
 import de.gerdiproject.harvest.ICleanable;
 import de.gerdiproject.harvest.IDocument;
-import de.gerdiproject.harvest.application.MainContext;
-import de.gerdiproject.harvest.application.constants.ApplicationConstants;
+import de.gerdiproject.harvest.application.enums.HealthStatus;
 import de.gerdiproject.harvest.config.Configuration;
 import de.gerdiproject.harvest.config.parameters.BooleanParameter;
 import de.gerdiproject.harvest.config.parameters.IntegerParameter;
+import de.gerdiproject.harvest.config.parameters.ParameterCategory;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.event.IEventListener;
 import de.gerdiproject.harvest.harvester.constants.HarvesterConstants;
+import de.gerdiproject.harvest.harvester.enums.HarvesterStatus;
 import de.gerdiproject.harvest.harvester.events.DocumentsHarvestedEvent;
-import de.gerdiproject.harvest.harvester.events.GetHarvesterOutdatedEvent;
-import de.gerdiproject.harvest.harvester.events.GetMaxDocumentCountEvent;
-import de.gerdiproject.harvest.harvester.events.GetProviderNameEvent;
-import de.gerdiproject.harvest.harvester.events.HarvestFinishedEvent;
-import de.gerdiproject.harvest.harvester.events.HarvestStartedEvent;
-import de.gerdiproject.harvest.harvester.events.StartHarvestEvent;
 import de.gerdiproject.harvest.harvester.rest.HarvesterRestResource;
-import de.gerdiproject.harvest.state.events.AbortingFinishedEvent;
-import de.gerdiproject.harvest.state.events.AbortingStartedEvent;
 import de.gerdiproject.harvest.state.events.StartAbortingEvent;
 import de.gerdiproject.harvest.submission.elasticsearch.ElasticSearchSubmitter;
-import de.gerdiproject.harvest.utils.CancelableFuture;
+import de.gerdiproject.harvest.utils.HashGenerator;
 import de.gerdiproject.harvest.utils.cache.HarvesterCache;
 import de.gerdiproject.harvest.utils.cache.constants.CacheConstants;
 import de.gerdiproject.harvest.utils.cache.events.RegisterHarvesterCacheEvent;
@@ -72,32 +62,45 @@ import de.gerdiproject.json.GsonUtils;
  *
  * @author Robin Weiss
  */
-public abstract class AbstractHarvester implements IEventListener
+public abstract class AbstractETL <EOUT, TOUT, E extends IExtractor<EOUT>, T extends ITransformer<EOUT, TOUT>, L extends ILoader<TOUT>> implements IEventListener
 {
-    private final BooleanParameter forceHarvestParameter;
-    protected IntegerParameter startIndexParameter;
-    protected IntegerParameter endIndexParameter;
+    protected final E extractor;
+    protected final T transformer;
+    protected final L loader;
+    protected String targetUrl;
 
-    private final AtomicInteger maxDocumentCount;
-    private HarvesterCache documentsCache;
+    protected final ParameterCategory harvesterCategory;
+    protected volatile BooleanParameter forceHarvestParameter;
+    protected volatile IntegerParameter startIndexParameter;
+    protected volatile IntegerParameter endIndexParameter;
+    protected volatile BooleanParameter enableHarvesterParameter;
+    protected volatile BooleanParameter cacheParameter;
+
+    private volatile int maxDocumentCount;
+    private volatile HarvesterCache documentsCache;
 
     protected final Logger logger; // NOPMD - we want to retrieve the type of the inheriting class
     protected final HttpRequester httpRequester;
-    protected CancelableFuture<Boolean> currentHarvestingProcess;
-    protected boolean isMainHarvester;
-    protected boolean isAborting;
-    protected boolean isFailing;
-    protected String name;
-    protected String hash;
+    protected volatile boolean isAborting;
+    protected volatile boolean isFailing;
+    protected volatile String hash;
 
+    protected final String name;
+
+    protected volatile HealthStatus health;
+    protected volatile HarvesterStatus status;
 
 
     /**
      * Simple constructor that uses the class name as the harvester name.
+     *
+     * @param extractor retrieves an object from the harvested repository
+     * @param transformer transforms the extracted object to a document that can be put to the search index
+     * @param loader submits the transformed object to a search index
      */
-    public AbstractHarvester()
+    public AbstractETL(E extractor, T transformer, L loader)
     {
-        this(null);
+        this(null, extractor, transformer, loader);
     }
 
 
@@ -105,71 +108,84 @@ public abstract class AbstractHarvester implements IEventListener
      * Constructor that initializes helper classes and fields.
      *
      * @param harvesterName a unique name that describes the harvester
+     * @param extractor retrieves an object from the harvested repository
+     * @param transformer transforms the extracted object to a document that can be put to the search index
+     * @param loader submits the transformed object to a search index
      */
-    public AbstractHarvester(String harvesterName)
+    public AbstractETL(String harvesterName, E extractor, T transformer, L loader)
     {
+        this.status = HarvesterStatus.BUSY;
+        this.health = HealthStatus.OK;
+
         this.name = (harvesterName != null) ? harvesterName : getClass().getSimpleName();
         this.logger = LoggerFactory.getLogger(name);
 
-        this.currentHarvestingProcess = null;
-        this.maxDocumentCount = new AtomicInteger();
+        this.extractor = extractor;
+        this.transformer = transformer;
+        this.loader = loader;
 
-        // every harvester has a dedicated set of range parameters
-        this.startIndexParameter = HarvesterConstants.START_INDEX_PARAM.copy();
-        this.endIndexParameter = HarvesterConstants.END_INDEX_PARAM.copy();
+        this.maxDocumentCount = 0;
 
-        // all harvesters share the 'forced' parameter
-        this.forceHarvestParameter = Configuration.registerParameter(HarvesterConstants.FORCED_PARAM);
+        this.harvesterCategory = new ParameterCategory(
+            name,
+            HarvesterConstants.PARAMETER_CATEGORY.getAllowedStates());
+
+        registerParameters();
 
         this.httpRequester = new HttpRequester(createGsonBuilder().create(), getCharset());
     }
 
 
     /**
-     * The main harvesting method. The overridden implementation should add
-     * documents to the search index by calling addDocumentToIndex().
-     *
-     * @param startIndex the index of the first document to be harvested
-     * @param endIndex the index of the last document to be harvested
-     * @throws Exception any kind of exception that can occur during the
-     *             harvesting process
-     * @return true, if everything was harvested
+     * Registers all configurable parameters.
      */
-    protected abstract boolean harvestInternal(int startIndex, int endIndex) throws Exception; // NOPMD - we want the inheriting class to be able to throw any exception
+    protected void registerParameters()
+    {
+        this.startIndexParameter =
+            Configuration.registerParameter(new IntegerParameter(
+                                                HarvesterConstants.START_INDEX_PARAM.getKey(),
+                                                harvesterCategory));
+
+        this.endIndexParameter =
+            Configuration.registerParameter(new IntegerParameter(
+                                                HarvesterConstants.END_INDEX_PARAM.getKey(),
+                                                harvesterCategory));
+
+        this.enableHarvesterParameter =
+            Configuration.registerParameter(new BooleanParameter(
+                                                HarvesterConstants.ENABLED_PARAM.getKey(),
+                                                harvesterCategory));
+
+        this.cacheParameter = Configuration.registerParameter(HarvesterConstants.CACHE_PARAM);
+
+        // all harvesters share the 'forced' parameter
+        this.forceHarvestParameter = Configuration.registerParameter(HarvesterConstants.FORCED_PARAM);
+
+    }
 
 
     @Override
     public void addEventListeners()
     {
-        if (isMainHarvester) {
-            EventSystem.addListener(StartHarvestEvent.class, onStartHarvest);
-            EventSystem.addSynchronousListener(GetMaxDocumentCountEvent.class, this::getMaxDocumentCount);
-            EventSystem.addSynchronousListener(GetProviderNameEvent.class, this::getDataProviderName);
-            EventSystem.addSynchronousListener(GetHarvesterOutdatedEvent.class, this::checkIfHarvesterIsOutdated);
-        }
     }
 
 
     @Override
     public void removeEventListeners()
     {
-        if (isMainHarvester) {
-            EventSystem.removeListener(StartHarvestEvent.class, onStartHarvest);
-            EventSystem.removeListener(StartAbortingEvent.class, onStartAborting);
-            EventSystem.removeSynchronousListener(GetMaxDocumentCountEvent.class);
-            EventSystem.removeSynchronousListener(GetProviderNameEvent.class);
-            EventSystem.removeSynchronousListener(GetHarvesterOutdatedEvent.class);
-        }
+        EventSystem.removeListener(StartAbortingEvent.class, onStartAborting);
     }
 
 
     /**
      * Aborts the harvesting process, allowing a new harvest to be started.
      */
-    protected void abortHarvest()
+    public void abortHarvest()
     {
-        if (currentHarvestingProcess != null)
+        if (status == HarvesterStatus.HARVESTING) {
+            this.status = HarvesterStatus.ABORTING;
             isAborting = true;
+        }
     }
 
 
@@ -177,21 +193,13 @@ public abstract class AbstractHarvester implements IEventListener
      * Initializes the Harvester, calculating the hash and maximum number of
      * harvestable documents.
      *
-     * @param isMainHarvester if true, this is the harvester that can be triggered via REST
      * @param moduleName the name of the harvester service
      */
-    public void init(final boolean isMainHarvester, final String moduleName)
+    public void init(final String moduleName)
     {
-        this.isMainHarvester = isMainHarvester;
         this.httpRequester.setCacheFolder(
             String.format(DataOperationConstants.CACHE_FOLDER_PATH, moduleName)
         );
-
-        // if this is the main harvester, make the parameters changeable via the configuration
-        if (isMainHarvester) {
-            startIndexParameter = Configuration.registerParameter(startIndexParameter);
-            endIndexParameter = Configuration.registerParameter(endIndexParameter);
-        }
 
         // prepare documents cache
         String tempPath = String.format(
@@ -213,7 +221,10 @@ public abstract class AbstractHarvester implements IEventListener
      *
      * @return the total number of documents that are to be harvested
      */
-    protected abstract int initMaxNumberOfDocuments();
+    protected int initMaxNumberOfDocuments()
+    {
+        return extractor.size();
+    }
 
 
     /**
@@ -221,13 +232,18 @@ public abstract class AbstractHarvester implements IEventListener
      * used for checking if the files have changed.
      *
      * @return a hash as a checksum of the data which is to be harvested
-     *
-     * @throws NoSuchAlgorithmException occurs if an invalid algorithm is used
-     *             for a {@linkplain MessageDigest}
-     * @throws NullPointerException occurs for several reasons, depending on the
-     *             implementation
      */
-    protected abstract String initHash() throws NoSuchAlgorithmException, NullPointerException;
+    protected String initHash()
+    {
+        final String versionString = extractor.getUniqueVersionString();
+
+        if (versionString != null) {
+            final HashGenerator generator = new HashGenerator(getCharset());
+            return generator.getShaHash(versionString);
+        }
+
+        return null;
+    }
 
 
     /**
@@ -241,10 +257,8 @@ public abstract class AbstractHarvester implements IEventListener
      */
     protected HarvesterCache initCache(final String temporaryPath, final String stablePath)
     {
-        final String harvesterID = getDataProviderName() + getName();
-
         final HarvesterCache cache = new HarvesterCache(
-            harvesterID,
+            getName(),
             temporaryPath,
             stablePath,
             getCharset());
@@ -274,23 +288,31 @@ public abstract class AbstractHarvester implements IEventListener
      */
     public void update()
     {
+        final HarvesterStatus previousStatus = status;
+        this.status = HarvesterStatus.BUSY;
+
+        extractor.init();
+        transformer.init();
+        loader.init();
+
         isFailing = false;
 
         // calculate hash
         try {
             hash = initHash();
-        } catch (NoSuchAlgorithmException | NullPointerException e) {
+        } catch (NullPointerException e) {
             logger.error(String.format(HarvesterConstants.HASH_CREATION_FAILED, name), e);
             hash = null;
             isFailing = true;
         }
 
         // calculate number of documents
-        int maxHarvestableDocs = initMaxNumberOfDocuments();
-        maxDocumentCount.set(maxHarvestableDocs);
+        maxDocumentCount = initMaxNumberOfDocuments();
 
         // update documents cache
         updateCache();
+
+        this.status = previousStatus;
     }
 
 
@@ -307,11 +329,10 @@ public abstract class AbstractHarvester implements IEventListener
             return 0;
 
         if (index == Integer.MAX_VALUE)
-            return maxDocumentCount.get();
+            return maxDocumentCount;
 
         return index;
     }
-
 
     /**
      * Returns the end index 'b' of the harvesting range [a,b).
@@ -326,7 +347,7 @@ public abstract class AbstractHarvester implements IEventListener
             return 0;
 
         if (index == Integer.MAX_VALUE)
-            return maxDocumentCount.get();
+            return maxDocumentCount;
 
         return index;
     }
@@ -357,62 +378,89 @@ public abstract class AbstractHarvester implements IEventListener
      *
      * @return the total number of documents that can possibly be harvested
      */
-    protected final int getMaxNumberOfDocuments()
+    public final int getMaxNumberOfDocuments()
     {
-        return maxDocumentCount.get();
+        return maxDocumentCount;
     }
 
-
     /**
-     * Starts an asynchronous harvest with the implemented harvestInternal()
-     * method and saves the result and date for this session
+     * Checks pre-conditions required for starting a harvest and updates the data
+     * that is to be extracted.
+     *
+     * @throws ETLPreconditionException thrown if the harvest cannot start
      */
-    protected final void harvest()
+    public void prepareHarvest() throws ETLPreconditionException
     {
-        logger.info(String.format(HarvesterConstants.HARVESTER_START, name));
+        this.status = HarvesterStatus.BUSY;
+
+        if (!enableHarvesterParameter.getValue()) {
+            skipAllDocuments();
+            this.health = HealthStatus.OK;
+            this.status = HarvesterStatus.DONE;
+
+            throw new ETLPreconditionException(
+                String.format(HarvesterConstants.HARVESTER_SKIPPED_DISABLED, name));
+        }
 
         // update to check if source data has changed
         update();
 
         if (!forceHarvestParameter.getValue()) {
-            // cancel harvest if the checksum changed since the last harvest
+            // cancel harvest if the checksum has not changed since the last harvest
             if (!isOutdated()) {
-                logger.info(String.format(HarvesterConstants.HARVESTER_SKIPPED_OUTDATED, name));
                 skipAllDocuments();
-                return;
-            }
+                this.health = HealthStatus.OK;
+                this.status = HarvesterStatus.DONE;
 
-            // cancel harvest if previous changes were not submitted
-            if (isMainHarvester && MainContext.getTimeKeeper().hasUnsubmittedChanges()) {
-                logger.info(String.format(HarvesterConstants.HARVESTER_SKIPPED_SUBMIT, name));
-                skipAllDocuments();
-                return;
+                throw new ETLPreconditionException(
+                    String.format(HarvesterConstants.HARVESTER_SKIPPED_NO_CHANGES, name));
             }
         }
 
-        // get harvesting range
-        final int from = getStartIndex();
-        final int to = getEndIndex();
-
-        // only send events from the main harvester
-        if (isMainHarvester) {
-            EventSystem.addListener(StartAbortingEvent.class, onStartAborting);
-            EventSystem.sendEvent(new HarvestStartedEvent(from, to, getHash(false)));
+        if (getStartIndex() == getEndIndex()) {
+            throw new ETLPreconditionException(
+                String.format(HarvesterConstants.HARVESTER_SKIPPED_OUT_OF_RANGE, name));
         }
 
-        // start asynchronous harvest
-        currentHarvestingProcess = new CancelableFuture<>(() -> harvestInternal(from, to));
+        this.status = HarvesterStatus.HARVESTING;
+    }
 
-        // success handler
-        currentHarvestingProcess.thenApply((isSuccessful) -> {
+
+    /**
+     * Starts the harvest.
+     */
+    public final void harvest()
+    {
+        EventSystem.addListener(StartAbortingEvent.class, onStartAborting);
+        this.status = HarvesterStatus.HARVESTING;
+
+        logger.info(String.format(HarvesterConstants.HARVESTER_START, getName()));
+
+        // start harvest
+        try {
+            harvestInternal();
             finishHarvestSuccessfully();
-            return isSuccessful;
-        })
-        // exception handler
-        .exceptionally(throwable -> {
-            finishHarvestExceptionally(throwable.getCause());
-            return false;
-        });
+        } catch (Exception e) {
+            finishHarvestExceptionally(e);
+        }
+    }
+
+
+    /**
+     * The main harvesting method. The overridden implementation should add
+     * documents to the search index by calling addDocumentToIndex().
+     *
+     * @param startIndex the index of the first document to be harvested
+     * @param endIndex the index of the last document to be harvested
+     * @throws Exception any kind of exception that can occur during the
+     *             harvesting process
+     * @return true, if everything was harvested
+     */
+    protected void harvestInternal() throws Exception // NOPMD - we want the inheriting class to be able to throw any exception
+    {
+        final EOUT exOut = extractor.extract();
+        final TOUT transOut = transformer.transform(exOut);
+        loader.load(transOut);
     }
 
 
@@ -421,27 +469,22 @@ public abstract class AbstractHarvester implements IEventListener
      */
     protected void finishHarvestSuccessfully()
     {
-        currentHarvestingProcess = null;
+        this.health = HealthStatus.OK;
+        this.status = HarvesterStatus.BUSY;
+        EventSystem.removeListener(StartAbortingEvent.class, onStartAborting);
+
         logger.info(String.format(HarvesterConstants.HARVESTER_END, name));
 
-        // do some things, only if this is the main harvester
-        if (isMainHarvester) {
-            EventSystem.removeListener(StartAbortingEvent.class, onStartAborting);
-
-            // finish caching
-            applyCacheChanges();
-
-            // send events
-            EventSystem.sendEvent(new HarvestFinishedEvent(true, getHash(false)));
-        }
+        applyCacheChanges();
 
         // dead-lock fix: clear aborting status
         if (isAborting) {
             isAborting = false;
 
-            if (isMainHarvester)
-                EventSystem.sendEvent(new AbortingFinishedEvent());
+            // TODO EventSystem.sendEvent(new AbortingFinishedEvent(isMainHarvester));
         }
+
+        this.status = HarvesterStatus.DONE;
     }
 
 
@@ -454,8 +497,7 @@ public abstract class AbstractHarvester implements IEventListener
      */
     protected void finishHarvestExceptionally(Throwable reason)
     {
-        // clean up the harvesting process reference
-        currentHarvestingProcess = null;
+        EventSystem.removeListener(StartAbortingEvent.class, onStartAborting);
 
         // check if the harvest was aborted
         if (isAborting)
@@ -474,6 +516,9 @@ public abstract class AbstractHarvester implements IEventListener
      */
     protected void onHarvestFailed(Throwable reason)
     {
+        this.health = HealthStatus.HARVEST_FAILED;
+        this.status = HarvesterStatus.BUSY;
+
         isFailing = true;
 
         // log the error
@@ -482,15 +527,10 @@ public abstract class AbstractHarvester implements IEventListener
         // log failure
         logger.warn(String.format(HarvesterConstants.HARVESTER_FAILED, name));
 
-        if (isMainHarvester) {
-            EventSystem.removeListener(StartAbortingEvent.class, onStartAborting);
+        // finish caching
+        applyCacheChanges();
 
-            // finish caching
-            applyCacheChanges();
-
-            // send events
-            EventSystem.sendEvent(new HarvestFinishedEvent(false, getHash(false)));
-        }
+        this.status = HarvesterStatus.DONE;
     }
 
 
@@ -500,34 +540,28 @@ public abstract class AbstractHarvester implements IEventListener
      */
     protected void onHarvestAborted()
     {
-        if (isMainHarvester) {
-            applyCacheChanges();
-            EventSystem.sendEvent(new AbortingFinishedEvent());
-            EventSystem.sendEvent(new HarvestFinishedEvent(false, getHash(false)));
-        }
+        this.health = HealthStatus.HARVEST_FAILED;
+        this.status = HarvesterStatus.ABORTING;
+
+        applyCacheChanges();
+        // TODO EventSystem.sendEvent(new AbortingFinishedEvent(isMainHarvester));
 
         isAborting = false;
 
         logger.warn(String.format(HarvesterConstants.HARVESTER_ABORTED, name));
+
+        this.status = HarvesterStatus.DONE;
     }
 
 
-    /**
-     * Returns the checksum hash of the entries which are to be harvested.
-     *
-     * @param recalculate if true, recalculates the hash value
-     * @return the checksum hash of the entries which are to be harvested
-     */
-    protected String getHash(boolean recalculate)
-    {
-        if (recalculate) {
-            try {
-                hash = initHash();
-            } catch (NoSuchAlgorithmException | NullPointerException e) {
-                logger.error(String.format(HarvesterConstants.HASH_CREATION_FAILED, name), e);
-            }
-        }
 
+    /**
+     * Returns the checksum hash of the documents which are to be harvested.
+     *
+     * @return the checksum hash of the documents which are to be harvested
+     */
+    public String getHash()
+    {
         return hash;
     }
 
@@ -538,10 +572,40 @@ public abstract class AbstractHarvester implements IEventListener
      * @return true if the previously harvested documents are outdated or the
      *         harvesting range changed
      */
-    protected boolean isOutdated()
+    public boolean isOutdated()
     {
         return documentsCache.getVersionsCache().isOutdated();
     }
+
+
+    /**
+     * Returns an enum that represents what the harvester is currently doing.
+     *
+     * @return an enum that represents the state of the harvester
+     */
+    public HarvesterStatus getStatus()
+    {
+        return status;
+    }
+
+
+    /**
+     * Returns an enum that represents the health status of the harvester.
+     *
+     * @return an enum that represents the health status of the harvester
+     */
+    public HealthStatus getHealth()
+    {
+        return health;
+    }
+
+
+    /**
+     * Retrieves the number of documents that have been loaded.
+     *
+     * @return the number of documents that have been loaded
+     */
+    public abstract int getHarvestedCount();
 
 
     /**
@@ -558,8 +622,13 @@ public abstract class AbstractHarvester implements IEventListener
      */
     protected void skipAllDocuments()
     {
+        HarvesterStatus oldStatus = getStatus();
+        this.status = HarvesterStatus.BUSY;
+
         documentsCache.skipAllDocuments();
         EventSystem.sendEvent(new DocumentsHarvestedEvent(getMaxNumberOfDocuments()));
+
+        this.status = oldStatus;
     }
 
 
@@ -610,62 +679,6 @@ public abstract class AbstractHarvester implements IEventListener
      */
     private final Consumer<StartAbortingEvent> onStartAborting = (StartAbortingEvent e) -> {
         EventSystem.removeListener(StartAbortingEvent.class, this.onStartAborting);
-        EventSystem.sendEvent(new AbortingStartedEvent());
         abortHarvest();
     };
-
-
-    /**
-     * Event callback for starting the harvester.
-     *
-     * @param event the event that triggered this callback function
-     */
-    private final Consumer<StartHarvestEvent> onStartHarvest = (StartHarvestEvent event) -> {
-        harvest();
-    };
-
-
-    /**
-     * Synchronous event callback that returns the name of the data provider
-     * that is harvested.
-     *
-     * @return the name of the data provider that is harvested
-     */
-    protected String getDataProviderName()
-    {
-        String name = getClass().getSimpleName();
-
-        // remove HarvesterXXX if it exists within the name
-        int harvesterIndex = name.toLowerCase().lastIndexOf(ApplicationConstants.HARVESTER_NAME_SUB_STRING);
-
-        if (harvesterIndex != -1)
-            name = name.substring(0, harvesterIndex);
-
-        return name;
-    }
-
-
-    /**
-     * Synchronous event callback that returns true if the harvester requires an
-     * update.
-     *
-     * @return true if the harvester requires an update
-     */
-    private Boolean checkIfHarvesterIsOutdated()
-    {
-        update();
-        return isOutdated();
-    }
-
-
-    /**
-     * Synchronous event callback for retrieving the max number of harvestable
-     * documents.
-     *
-     * @return the max number of harvestable documents
-     */
-    private Integer getMaxDocumentCount()
-    {
-        return getEndIndex() - getStartIndex();
-    }
 }

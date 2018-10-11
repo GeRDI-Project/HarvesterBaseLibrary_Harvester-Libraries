@@ -29,13 +29,10 @@ import de.gerdiproject.AbstractFileSystemUnitTest;
 import de.gerdiproject.harvest.config.Configuration;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.harvester.events.HarvestFinishedEvent;
-import de.gerdiproject.harvest.state.events.AbortingFinishedEvent;
-import de.gerdiproject.harvest.state.events.StartAbortingEvent;
 import de.gerdiproject.harvest.submission.AbstractSubmitter;
 import de.gerdiproject.harvest.submission.constants.SubmissionConstants;
 import de.gerdiproject.harvest.submission.events.StartSubmissionEvent;
 import de.gerdiproject.harvest.submission.events.SubmissionFinishedEvent;
-import de.gerdiproject.harvest.submission.events.SubmissionStartedEvent;
 import de.gerdiproject.harvest.utils.cache.HarvesterCache;
 import de.gerdiproject.harvest.utils.cache.HarvesterCacheManager;
 import de.gerdiproject.harvest.utils.cache.events.RegisterHarvesterCacheEvent;
@@ -416,36 +413,6 @@ public class AbstractSubmitterTest extends AbstractFileSystemUnitTest<AbstractSu
 
         assertNotNull("The method submitAll() should cause a " + secondEvent.getClass().getSimpleName() + " to be sent, when the " + submitOutdatedKey + "-parameter is true and a submission succeeded in the past!",
                       secondEvent);
-    }
-
-
-    /**
-     * Tests if aborting a submission causes it to end prematurely.
-     */
-    @Test
-    public void testAborting()
-    {
-        testedObject.addEventListeners();
-        setRandomUrl();
-
-        // add at least two documents, so we need at least two batches of submission
-        final int numberOfAddedDocs = 2 + random.nextInt(9);
-        addSubmittableDocuments(numberOfAddedDocs);
-        setBatchSize(1);
-
-        waitForEvent(
-            SubmissionStartedEvent.class,
-            2000,
-            () -> testedObject.submitAll());
-
-
-        AbortingFinishedEvent abortingEvent = waitForEvent(
-                                                  AbortingFinishedEvent.class,
-                                                  2000,
-                                                  () -> EventSystem.sendEvent(new StartAbortingEvent()));
-
-        assertNotNull("The method submitAll() should cause an " + abortingEvent.getClass().getSimpleName() + " to be sent, when the submission was aborted!",
-                      abortingEvent);
     }
 
 

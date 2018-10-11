@@ -19,14 +19,18 @@ package de.gerdiproject.harvest.submission;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Consumer;
 
 import de.gerdiproject.harvest.config.Configuration;
 import de.gerdiproject.harvest.config.parameters.SubmitterParameter;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.event.IEventListener;
+import de.gerdiproject.harvest.harvester.events.HarvestFinishedEvent;
 import de.gerdiproject.harvest.submission.constants.SubmissionConstants;
+import de.gerdiproject.harvest.submission.events.FinishSubmissionEvent;
 import de.gerdiproject.harvest.submission.events.GetSubmitterIdsEvent;
 import de.gerdiproject.harvest.submission.events.StartSubmissionEvent;
+import de.gerdiproject.harvest.submission.events.SubmitDocumentEvent;
 
 /**
  * This class maps submitter names to {@linkplain AbstractSubmitter}s at runtime.
@@ -69,7 +73,9 @@ public class SubmitterManager implements IEventListener
     @Override
     public void addEventListeners()
     {
-        EventSystem.addSynchronousListener(StartSubmissionEvent.class, this::onStartSubmission);
+        EventSystem.addSynchronousListener(StartSubmissionEvent.class, this::startSubmission);
+        EventSystem.addSynchronousListener(SubmitDocumentEvent.class, this::submitDocument);
+        EventSystem.addSynchronousListener(FinishSubmissionEvent.class, this::finishSubmission);
         EventSystem.addSynchronousListener(GetSubmitterIdsEvent.class, this::getSubmitterIDs);
     }
 
@@ -78,6 +84,8 @@ public class SubmitterManager implements IEventListener
     public void removeEventListeners()
     {
         EventSystem.removeSynchronousListener(StartSubmissionEvent.class);
+        EventSystem.removeSynchronousListener(SubmitDocumentEvent.class);
+        EventSystem.removeSynchronousListener(FinishSubmissionEvent.class);
         EventSystem.removeSynchronousListener(GetSubmitterIdsEvent.class);
     }
 
@@ -97,21 +105,53 @@ public class SubmitterManager implements IEventListener
     // Event Callback Functions //
     //////////////////////////////
 
+
+    private final Consumer<HarvestFinishedEvent> onHarvestFinished = (HarvestFinishedEvent e) -> finishSubmission();
+
     /**
-     * Event callback: When a submission starts, submit the cache file via the
-     * {@linkplain AbstractSubmitter}.
+     * 
+     * @return 
      */
-    private String onStartSubmission()
+    private String startSubmission()
     {
-        AbstractSubmitter submitter = submitterMap.get(submitterParam.getValue());
+        final AbstractSubmitter submitter = submitterMap.get(submitterParam.getValue());
 
         if (submitter == null)
             return SubmissionConstants.NO_SUBMITTER_CONFIGURED;
 
         try {
-            return submitter.submitAll();
+            submitter.startSubmission();
         } catch (IllegalStateException e) {
             return e.getMessage();
+        }
+
+        return String.format(SubmissionConstants.SUBMISSION_START, submitter.getId());
+    }
+    
+    /**
+     * Event callback: When the harvest is over, submit the remaining documents.
+     */
+    private Boolean finishSubmission()
+    {
+        final AbstractSubmitter submitter = submitterMap.get(submitterParam.getValue());
+
+        return submitter.finishSubmission();
+    }
+
+
+    /**
+     * Event callback: When a document is submitted, pass it on to the active submitter.
+     *
+     * @param event the event that aims to submit the document
+     */
+    private Boolean submitDocument(SubmitDocumentEvent event)
+    {
+        final AbstractSubmitter submitter = submitterMap.get(submitterParam.getValue());
+
+        try {
+            return submitter.addDocument(event.getDocumentId(), event.getDocument());
+        } catch (Exception e) {
+            return false;
         }
     }
 }

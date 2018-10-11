@@ -71,13 +71,6 @@ public class ErrorState implements IState
 
 
     @Override
-    public Response submit()
-    {
-        return HttpResponseFactory.createFubarResponse();
-    }
-
-
-    @Override
     public Response save()
     {
         return HttpResponseFactory.createFubarResponse();

@@ -19,9 +19,7 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.function.Consumer;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,19 +31,8 @@ import de.gerdiproject.harvest.config.parameters.IntegerParameter;
 import de.gerdiproject.harvest.config.parameters.StringParameter;
 import de.gerdiproject.harvest.config.parameters.UrlParameter;
 import de.gerdiproject.harvest.event.EventSystem;
-import de.gerdiproject.harvest.event.IEventListener;
-import de.gerdiproject.harvest.harvester.events.HarvestFinishedEvent;
-import de.gerdiproject.harvest.state.events.AbortingFinishedEvent;
-import de.gerdiproject.harvest.state.events.AbortingStartedEvent;
-import de.gerdiproject.harvest.state.events.StartAbortingEvent;
 import de.gerdiproject.harvest.submission.constants.SubmissionConstants;
 import de.gerdiproject.harvest.submission.events.DocumentsSubmittedEvent;
-import de.gerdiproject.harvest.submission.events.SubmissionFinishedEvent;
-import de.gerdiproject.harvest.submission.events.SubmissionStartedEvent;
-import de.gerdiproject.harvest.utils.CancelableFuture;
-import de.gerdiproject.harvest.utils.cache.HarvesterCache;
-import de.gerdiproject.harvest.utils.cache.HarvesterCacheManager;
-import de.gerdiproject.json.datacite.DataCiteJson;
 
 /**
  * This abstract class offers a basis for sending documents to a DataBase any
@@ -53,11 +40,8 @@ import de.gerdiproject.json.datacite.DataCiteJson;
  *
  * @author Robin Weiss
  */
-public abstract class AbstractSubmitter implements IEventListener
+public abstract class AbstractSubmitter
 {
-    private CancelableFuture<Boolean> currentSubmissionProcess;
-    private int failedDocumentCount;
-
     private final StringParameter userName;
     private final StringParameter password;
     private final BooleanParameter canSubmitOutdatedDocs;
@@ -106,17 +90,9 @@ public abstract class AbstractSubmitter implements IEventListener
     protected int processedDocumentCount;
 
     /**
-     * True, if the submission process is being aborted.
-     */
-    protected boolean isAborting;
-
-    /**
      * The size of the current batch request in bytes.
      */
     private int currentBatchSize = 0;
-
-
-    private HarvesterCacheManager cacheManager;
 
 
     /**
@@ -126,7 +102,6 @@ public abstract class AbstractSubmitter implements IEventListener
     {
         logger = LoggerFactory.getLogger(getClass());
         batchMap = new HashMap<>();
-        failedDocumentCount = 0;
 
         url = Configuration.registerParameter(SubmissionConstants.URL_PARAM);
         userName = Configuration.registerParameter(SubmissionConstants.USER_NAME_PARAM);
@@ -137,29 +112,40 @@ public abstract class AbstractSubmitter implements IEventListener
     }
 
 
-    @Override
-    public void addEventListeners()
+    /**
+     * Checks if the submitter is set up correctly.
+     *
+     * @throws IllegalStateException if the submitter is not set up correctly
+     */
+    public void startSubmission()
     {
-        EventSystem.addListener(HarvestFinishedEvent.class, onHarvestFinished);
-    }
+        batchMap.clear();
 
+        // check if we can submit
+        final String errorMessage = checkPreconditionErrors();
 
-    @Override
-    public void removeEventListeners()
-    {
-        EventSystem.removeListener(HarvestFinishedEvent.class, onHarvestFinished);
+        if (errorMessage != null)
+            throw new IllegalStateException(errorMessage);
     }
 
 
     /**
-     * Changes the {@linkplain HarvesterCacheManager} used for retrieving the documents to be submitted.
+     * Submits the remaining unsubmitted documents and resets the submitter.
      *
-     * @param cacheManager the {@linkplain HarvesterCacheManager} used for retrieving documents
+     * @return true if all remaining documents were submitted
      */
-    public void setCacheManager(HarvesterCacheManager cacheManager)
+    public boolean finishSubmission()
     {
-        this.cacheManager = cacheManager;
+        boolean isSuccessful = true;
+
+        if (batchMap.size() > 0) {
+            isSuccessful = trySubmitBatch();
+            batchMap.clear();
+        }
+
+        return isSuccessful;
     }
+
 
 
     /**
@@ -196,147 +182,44 @@ public abstract class AbstractSubmitter implements IEventListener
 
 
     /**
-     * Reads cached documents and submits them.
-     *
-     * @return a feedback message
-     *
-     * @throws IllegalStateException thrown when the submission cannot start due to
-     * unfulfilled preconditions
-     */
-    public String submitAll() throws IllegalStateException
-    {
-        final int numberOfDocuments = getNumberOfSubmittableChanges();
-        failedDocumentCount = numberOfDocuments;
-        isAborting = false;
-        processedDocumentCount = 0;
-        currentBatchSize = 0;
-        batchMap.clear();
-
-        // send event
-        EventSystem.sendEvent(new SubmissionStartedEvent(numberOfDocuments));
-
-        // check if we can submit
-        final String errorMessage = checkPreconditionErrors();
-
-        if (errorMessage != null) {
-            finishSubmission();
-            throw new IllegalStateException(errorMessage);
-        }
-
-        // listen to abort requests
-        EventSystem.addListener(StartAbortingEvent.class, onStartAborting);
-
-        // log the beginning of the submission
-        logger.info(String.format(SubmissionConstants.SUBMISSION_START, getUrl()));
-
-        // start asynchronous submission
-        currentSubmissionProcess = startSubmissionProcess();
-
-        // finished handler
-        currentSubmissionProcess.thenApply((isSuccessful) -> {
-            finishSubmission();
-            return isSuccessful;
-        })
-        // exception handler
-        .exceptionally(throwable -> {
-            if (isAborting)
-                finishAbortingSubmission();
-            else
-            {
-                logger.error(SubmissionConstants.SUBMISSION_INTERRUPTED, throwable);
-                finishSubmission();
-            }
-            return false;
-        });
-
-        return String.format(SubmissionConstants.SUBMISSION_START, url.toString());
-    }
-
-
-    /**
-     * Creates an asynchronous function that sequentially submits all harvested
-     * documents in subsets of adjustable size.
-     *
-     * @return a function that can be used of asynchronous requests
-     */
-    protected CancelableFuture<Boolean> startSubmissionProcess()
-    {
-        return new CancelableFuture<>(() -> {
-            boolean areAllSubmissionsSuccessful = true;
-
-            // go through all registered caches and process their documents
-            final List<HarvesterCache> cacheList = cacheManager.getHarvesterCaches();
-
-            for (final HarvesterCache cache : cacheList)
-            {
-                // stop cache iteration if aborting
-                if (isAborting)
-                    break;
-
-                boolean wasCacheSubmitted = cache.getChangesCache().forEach(
-                (String documentId, DataCiteJson addedDoc) -> {
-                    addDocument(documentId, addedDoc);
-                    return !isAborting;
-                });
-
-                areAllSubmissionsSuccessful &= wasCacheSubmitted;
-            }
-
-            // cancel the asynchronous process
-            if (isAborting)
-            {
-                batchMap.clear();
-                currentSubmissionProcess.cancel(false);
-            }
-            // send remainder of documents
-            else if (batchMap.size() > 0)
-            {
-                areAllSubmissionsSuccessful &= trySubmitBatch();
-                batchMap.clear();
-            }
-
-            return areAllSubmissionsSuccessful;
-        });
-    }
-
-
-    /**
      * Adds a document to the batch of submissions.
      *
      * @param documentId the unique identifier of the document
      * @param document the document that is to be added to the submission, or
      *            null if the document is supposed to be deleted from the index
      */
-    protected void addDocument(String documentId, DataCiteJson document)
+    protected boolean addDocument(String documentId, IDocument document)
     {
-        if (!isAborting) {
-            int documentSize = getSizeOfDocument(documentId, document);
+        int documentSize = getSizeOfDocument(documentId, document);
 
-            // check if the document alone is bigger than the maximum allowed submission size
-            if (currentBatchSize == 0 && documentSize > maxBatchSize.getValue()) {
-                logger.error(
-                    String.format(
-                        SubmissionConstants.DOCUMENT_TOO_LARGE,
-                        documentId,
-                        documentSize,
-                        maxBatchSize.getValue()));
+        // check if the document alone is bigger than the maximum allowed submission size
+        if (currentBatchSize == 0 && documentSize > maxBatchSize.getValue()) {
+            logger.error(
+                String.format(
+                    SubmissionConstants.DOCUMENT_TOO_LARGE,
+                    documentId,
+                    documentSize,
+                    maxBatchSize.getValue()));
 
-                // abort here, because we must skip this document
-                processedDocumentCount++;
-                EventSystem.sendEvent(new DocumentsSubmittedEvent(false, 1));
-                return;
-            }
-
-            // check if the batch size is reached and submit
-            if (currentBatchSize + documentSize > maxBatchSize.getValue()) {
-                trySubmitBatch();
-                batchMap.clear();
-                currentBatchSize = 0;
-            }
-
-            batchMap.put(documentId, document);
-            currentBatchSize += documentSize;
+            // abort here, because we must skip this document
+            processedDocumentCount++;
+            EventSystem.sendEvent(new DocumentsSubmittedEvent(false, 1));
+            return false;
         }
+
+        boolean isSuccessful = true;
+
+        // check if the batch size is reached and submit
+        if (currentBatchSize + documentSize > maxBatchSize.getValue()) {
+            isSuccessful = trySubmitBatch();
+            batchMap.clear();
+            currentBatchSize = 0;
+        }
+
+        batchMap.put(documentId, document);
+        currentBatchSize += documentSize;
+
+        return isSuccessful;
     }
 
 
@@ -387,9 +270,6 @@ public abstract class AbstractSubmitter implements IEventListener
         if (url == null || url.isEmpty())
             return SubmissionConstants.NO_URL_ERROR;
 
-        if (getNumberOfSubmittableChanges() == 0)
-            return SubmissionConstants.NO_DOCS_ERROR;
-
         // check if the cache was submitted already
         if (!canSubmitOutdatedDocs.getValue() && hasSubmittedAll)
             return SubmissionConstants.OUTDATED_ERROR;
@@ -400,46 +280,6 @@ public abstract class AbstractSubmitter implements IEventListener
 
 
         return null;
-    }
-
-
-    /**
-     * Marks the submission as finished, logging a brief summary and sending an
-     * event.
-     */
-    protected void finishSubmission()
-    {
-        currentSubmissionProcess = null;
-        EventSystem.removeListener(StartAbortingEvent.class, onStartAborting);
-
-        // log the end of the submission
-
-        if (failedDocumentCount == processedDocumentCount || processedDocumentCount == 0)
-            logger.warn(SubmissionConstants.SUBMISSION_DONE_ALL_FAILED);
-
-        else if (failedDocumentCount == 0) {
-            logger.info(SubmissionConstants.SUBMISSION_DONE_ALL_OK);
-            setHasSubmittedAll(true);
-        } else
-            logger.warn(String.format(SubmissionConstants.SUBMISSION_DONE_SOME_FAILED, failedDocumentCount));
-
-        EventSystem.sendEvent(new SubmissionFinishedEvent(failedDocumentCount == 0 && processedDocumentCount > 0));
-
-        // prevents dead-locks if the submission was aborted after it finished
-        if (isAborting)
-            finishAbortingSubmission();
-    }
-
-
-    /**
-     * This function is called after the submission process was stopped due to
-     * being aborted.
-     */
-    protected void finishAbortingSubmission()
-    {
-        currentSubmissionProcess = null;
-        isAborting = false;
-        EventSystem.sendEvent(new AbortingFinishedEvent());
     }
 
 
@@ -466,7 +306,6 @@ public abstract class AbstractSubmitter implements IEventListener
                         processedDocumentCount + numberOfDocs));
             }
 
-            failedDocumentCount -= numberOfDocs;
             isSuccessful = true;
         } catch (Exception e) {
             // log the failure
@@ -487,18 +326,6 @@ public abstract class AbstractSubmitter implements IEventListener
         processedDocumentCount += numberOfDocs;
 
         return isSuccessful;
-    }
-
-
-    /**
-     * Iterates through all registered caches and calculates the total number of
-     * submitted changes.
-     *
-     * @return the total number of submitted changes.
-     */
-    protected int getNumberOfSubmittableChanges()
-    {
-        return cacheManager.getNumberOfHarvestedDocuments();
     }
 
 
@@ -541,29 +368,4 @@ public abstract class AbstractSubmitter implements IEventListener
         setHasSubmittedAll(other.hasSubmittedAll);
         setHarvestIncomplete(other.isHarvestIncomplete);
     }
-
-
-    //////////////////////////////
-    // Event Callback Functions //
-    //////////////////////////////
-
-
-    /**
-     * Event listener for aborting the submitter.
-     */
-    private final Consumer<StartAbortingEvent> onStartAborting = (StartAbortingEvent e) -> {
-        isAborting = true;
-        EventSystem.removeListener(StartAbortingEvent.class, this.onStartAborting);
-        EventSystem.sendEvent(new AbortingStartedEvent());
-    };
-
-
-    /**
-     * Event callback: When a harvest is finished, notify that there are unsubmitted changes.
-     * {@linkplain AbstractSubmitter}.
-     */
-    private final Consumer<HarvestFinishedEvent> onHarvestFinished = (HarvestFinishedEvent e) -> {
-        setHarvestIncomplete(!e.isSuccessful());
-        setHasSubmittedAll(false);
-    };
 }

@@ -92,13 +92,6 @@ public class AbortingState implements IState
 
 
     @Override
-    public Response submit()
-    {
-        return createServiceUnavailableResponse();
-    }
-
-
-    @Override
     public Response save()
     {
         return createServiceUnavailableResponse();

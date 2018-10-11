@@ -81,14 +81,6 @@ public interface IState
 
 
     /**
-     * Attempts to submit harvested documents.
-     *
-     * @return a status message about the success or failure of the operation
-     */
-    Response submit();
-
-
-    /**
      * Attempts to save harvested documents to disk.
      *
      * @return a status message about the success or failure of the operation

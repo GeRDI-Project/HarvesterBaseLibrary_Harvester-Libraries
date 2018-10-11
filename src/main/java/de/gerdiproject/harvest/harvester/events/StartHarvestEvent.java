@@ -15,13 +15,14 @@
  */
 package de.gerdiproject.harvest.harvester.events;
 
-import de.gerdiproject.harvest.event.IEvent;
+import de.gerdiproject.harvest.event.ISynchronousEvent;
 
 /**
- * This event aims to start a harvest.
+ * This synchronous event aims to start a harvest.
+ * The synchronous return value offers a feedback message.
  *
  * @author Robin Weiss
  */
-public class StartHarvestEvent implements IEvent
+public class StartHarvestEvent implements ISynchronousEvent<String>
 {
 }

@@ -37,7 +37,7 @@ import de.gerdiproject.harvest.state.impl.InitializationState;
  */
 public class SubmissionConstants
 {
-    public static final String SUBMISSION_START = "Submitting documents to: %s";
+    public static final String SUBMISSION_START = "Submitter '%s' is valid.";
     public static final String SUBMISSION_DONE_ALL_OK = "Submission done! All documents were submitted!";
     public static final String SUBMISSION_DONE_SOME_FAILED = "Submission done! Failed to submit %d documents!";
     public static final String SUBMISSION_DONE_ALL_FAILED = "Submission failed!";

@@ -28,7 +28,6 @@ import de.gerdiproject.harvest.state.impl.ErrorState;
 import de.gerdiproject.harvest.state.impl.HarvestingState;
 import de.gerdiproject.harvest.state.impl.IdleState;
 import de.gerdiproject.harvest.state.impl.InitializationState;
-import de.gerdiproject.harvest.state.impl.SubmittingState;
 
 /**
  * This class serves as a convenient JSON representation of {@linkplain ParameterCategory}s.
@@ -120,9 +119,6 @@ class ParameterCategoryJson
 
             else if (stateClassSimpleName.equals(InitializationState.class.getSimpleName()))
                 stateClasses.add(InitializationState.class);
-
-            else if (stateClassSimpleName.equals(SubmittingState.class.getSimpleName()))
-                stateClasses.add(SubmittingState.class);
         }
 
         return new ParameterCategory(categoryName, stateClasses);

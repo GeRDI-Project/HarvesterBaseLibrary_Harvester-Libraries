@@ -59,9 +59,7 @@ public class StateConstants
     public static final String HARVEST_STARTED = "Harvest started!";
 
     public static final String HARVEST_STATUS = "Harvest:     %s";
-    public static final String SUBMIT_STATUS = "Submission:  %s";
-    public static final String IDLE_STATUS = HARVEST_STATUS + "%n"
-                                             + SUBMIT_STATUS;
+    public static final String IDLE_STATUS = HARVEST_STATUS;
 
     public static final String HARVEST_DONE = "Harvest finished!";
     public static final String HARVEST_FAILED = "Harvest failed!";

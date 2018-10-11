@@ -61,6 +61,7 @@ public class HarvestFinishedEvent extends AbstractSucceededOrFailedEvent
 
     /**
      * Returns a hash value over all harvested documents.
+     *
      * @return a hash value over all harvested documents
      */
     public String getDocumentChecksum()

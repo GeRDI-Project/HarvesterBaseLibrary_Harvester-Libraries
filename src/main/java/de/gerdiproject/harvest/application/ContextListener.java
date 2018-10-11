@@ -16,7 +16,6 @@
 package de.gerdiproject.harvest.application;
 
 
-import java.lang.reflect.ParameterizedType;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -31,7 +30,7 @@ import de.gerdiproject.harvest.application.events.ContextDestroyedEvent;
 import de.gerdiproject.harvest.application.events.ContextInitializedEvent;
 import de.gerdiproject.harvest.application.events.ResetContextEvent;
 import de.gerdiproject.harvest.event.EventSystem;
-import de.gerdiproject.harvest.harvester.AbstractHarvester;
+import de.gerdiproject.harvest.harvester.AbstractETL;
 import de.gerdiproject.harvest.submission.AbstractSubmitter;
 import de.gerdiproject.harvest.submission.elasticsearch.ElasticSearchSubmitter;
 
@@ -44,19 +43,13 @@ import de.gerdiproject.harvest.submission.elasticsearch.ElasticSearchSubmitter;
  * @param <T> an AbstractHarvester sub-class
  *
  * @see javax.servlet.annotation.WebListener
- * @see de.gerdiproject.harvest.harvester.AbstractHarvester
+ * @see de.gerdiproject.harvest.harvester.AbstractETL
  *
  * @author Robin Weiss
  */
-public class ContextListener<T extends AbstractHarvester> implements ServletContextListener
+public abstract class ContextListener implements ServletContextListener
 {
     protected static final Logger LOGGER = LoggerFactory.getLogger(ContextListener.class);
-
-
-    // this warning is suppressed, because the only generic Superclass MUST be T. The cast will always succeed.
-    @SuppressWarnings("unchecked")
-    private Class<T> harvesterClass =
-        (Class<T>)((ParameterizedType) getClass().getGenericSuperclass()).getActualTypeArguments()[0];
 
 
     /**
@@ -66,29 +59,46 @@ public class ContextListener<T extends AbstractHarvester> implements ServletCont
      */
     protected String getServiceName()
     {
-        // get name of main harvester class
-        String name = harvesterClass.getSimpleName();
-
-        // remove HarvesterXXX if it exists within the name
-        int harvesterIndex = name.toLowerCase().lastIndexOf(ApplicationConstants.HARVESTER_NAME_SUB_STRING);
-
-        if (harvesterIndex != -1)
-            name = name.substring(0, harvesterIndex);
-
-        return name + ApplicationConstants.HARVESTER_SERVICE_NAME_SUFFIX;
+        return getRepositoryName() + ApplicationConstants.HARVESTER_SERVICE_NAME_SUFFIX;
     }
 
 
     /**
-     * Creates a list of submitter classes that can be chosen to transfer data to the search index.
+     * Retrieves the name of the repository that is to be harvested.
+     *
+     * @return the name of the repository that is to be harvested
+     */
+    protected String getRepositoryName()
+    {
+        final String className = getClass().getSimpleName();
+        final int suffixIndex = className.lastIndexOf(ContextListener.class.getSimpleName());
+
+        return suffixIndex == -1
+               ? className
+               : className.substring(0, suffixIndex);
+    }
+
+
+
+    /**
+     * Creates a list of {@linkplain AbstractETL} implementations that can be chosen to extract, transform and load
+     * data from the targeted repository.
      *
      * @return a harvested documents submitter
      */
-    protected List<Class<? extends AbstractSubmitter>> getSubmitterClasses()
+    protected abstract List<AbstractETL<?, ?, ?, ?, ?>> createETLs();
+
+
+    /**
+     * Creates a list of {@linkplain AbstractSubmitter} implementations that can be chosen to transfer data to the search index.
+     *
+     * @return a harvested documents submitter
+     */
+    protected List<AbstractSubmitter> createSubmitters()
     {
-        final List<Class<? extends AbstractSubmitter>> submitterClasses = new LinkedList<>();
-        submitterClasses.add(ElasticSearchSubmitter.class);
-        return submitterClasses;
+        final List<AbstractSubmitter> submitters = new LinkedList<>();
+        submitters.add(new ElasticSearchSubmitter());
+        return submitters;
     }
 
 
@@ -110,9 +120,10 @@ public class ContextListener<T extends AbstractHarvester> implements ServletCont
 
         // init main context
         MainContext.init(
-            getServiceName(),
-            harvesterClass,
-            getSubmitterClasses());
+            getClass(),
+            this::getRepositoryName,
+            this::createETLs,
+            this::createSubmitters);
 
         EventSystem.sendEvent(new ContextInitializedEvent());
     }

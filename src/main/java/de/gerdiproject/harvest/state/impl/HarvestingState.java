@@ -19,7 +19,6 @@ import java.util.function.Consumer;
 
 import javax.ws.rs.core.Response;
 
-import de.gerdiproject.harvest.application.MainContext;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.harvester.events.DocumentsHarvestedEvent;
 import de.gerdiproject.harvest.harvester.events.HarvestFinishedEvent;
@@ -28,8 +27,6 @@ import de.gerdiproject.harvest.rest.constants.RestConstants;
 import de.gerdiproject.harvest.state.AbstractProgressingState;
 import de.gerdiproject.harvest.state.constants.StateConstants;
 import de.gerdiproject.harvest.state.constants.StateEventHandlerConstants;
-import de.gerdiproject.harvest.submission.events.SubmissionStartedEvent;
-import de.gerdiproject.harvest.utils.time.HarvestTimeKeeper;
 
 /**
  * This state indicates that a harvest is currently in progress.
@@ -63,7 +60,6 @@ public class HarvestingState extends AbstractProgressingState
         super.onStateEnter();
 
         EventSystem.addListener(HarvestFinishedEvent.class, StateEventHandlerConstants.ON_HARVEST_FINISHED);
-        EventSystem.addListener(SubmissionStartedEvent.class, StateEventHandlerConstants.ON_SUBMISSION_STARTED);
         EventSystem.addListener(DocumentsHarvestedEvent.class, onDocumentHarvested);
     }
 
@@ -74,7 +70,6 @@ public class HarvestingState extends AbstractProgressingState
         super.onStateLeave();
 
         EventSystem.removeListener(HarvestFinishedEvent.class, StateEventHandlerConstants.ON_HARVEST_FINISHED);
-        EventSystem.removeListener(SubmissionStartedEvent.class, StateEventHandlerConstants.ON_SUBMISSION_STARTED);
         EventSystem.removeListener(DocumentsHarvestedEvent.class, onDocumentHarvested);
     }
 
@@ -82,11 +77,9 @@ public class HarvestingState extends AbstractProgressingState
     @Override
     public String getStatusString()
     {
-        HarvestTimeKeeper timeKeeper = MainContext.getTimeKeeper();
         return String.format(
                    StateConstants.IDLE_STATUS,
-                   super.getStatusString(),
-                   timeKeeper.getSubmissionMeasure().toString());
+                   super.getStatusString());
     }
 
 
@@ -95,15 +88,6 @@ public class HarvestingState extends AbstractProgressingState
     {
         return HttpResponseFactory.createBusyResponse(
                    StateConstants.CANNOT_START_PREFIX + StateConstants.HARVEST_IN_PROGRESS,
-                   estimateRemainingSeconds());
-    }
-
-
-    @Override
-    public Response submit()
-    {
-        return HttpResponseFactory.createBusyResponse(
-                   StateConstants.CANNOT_SUBMIT_PREFIX + StateConstants.HARVEST_IN_PROGRESS,
                    estimateRemainingSeconds());
     }
 

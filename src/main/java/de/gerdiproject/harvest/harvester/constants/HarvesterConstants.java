@@ -27,7 +27,6 @@ import de.gerdiproject.harvest.state.IState;
 import de.gerdiproject.harvest.state.impl.ErrorState;
 import de.gerdiproject.harvest.state.impl.IdleState;
 import de.gerdiproject.harvest.state.impl.InitializationState;
-import de.gerdiproject.harvest.state.impl.SubmittingState;
 
 /**
  * This static class is a collection of constants that are used by harvesters.
@@ -42,14 +41,29 @@ public class HarvesterConstants
             Arrays.asList(
                 InitializationState.class,
                 ErrorState.class,
-                IdleState.class,
-                SubmittingState.class));
+                IdleState.class));
 
     public static final ParameterCategory PARAMETER_CATEGORY = new ParameterCategory(
         "Harvester", HARVESTER_PARAMETER_ALLOWED_STATES);
 
     public static final BooleanParameter FORCED_PARAM = new BooleanParameter(
         "forced",
+        PARAMETER_CATEGORY,
+        false);
+
+    public static final BooleanParameter CACHE_PARAM = new BooleanParameter(
+        "cacheDocuments",
+        PARAMETER_CATEGORY,
+        false);
+
+    public static final BooleanParameter ENABLED_PARAM = new BooleanParameter(
+        "enabled",
+        PARAMETER_CATEGORY,
+        false);
+
+
+    public static final BooleanParameter CONCURRENT_PARAM = new BooleanParameter(
+        "concurrentHarvest",
         PARAMETER_CATEGORY,
         false);
 
@@ -73,9 +87,11 @@ public class HarvesterConstants
     public static final String HARVESTER_END = "%s finished!";
     public static final String HARVESTER_FAILED = "%s failed!";
     public static final String HARVESTER_ABORTED = "%s aborted!";
-    public static final String HARVESTER_SKIPPED_OUTDATED = "Skipping %s, because no changes were detected!";
+
+    public static final String HARVESTER_SKIPPED_DISABLED = "Skipping %s, because it is disabled!";
+    public static final String HARVESTER_SKIPPED_NO_CHANGES = "Skipping %s, because no changes were detected!";
     public static final String HARVESTER_SKIPPED_SUBMIT =
-        "Cancelling %s, because previous changes have not been submitted!%n"
+        "Cannot harvest, because previous changes have not been submitted!%n"
         + "Either /submit the current index or set the '"
         + FORCED_PARAM.getCompositeKey()
         + "' flag to true when harvesting.";
@@ -83,29 +99,31 @@ public class HarvesterConstants
     // LIST HARVESTER
     public static final String ERROR_NO_ENTRIES =
         "Cannot harvest %s - The source entries are empty or could not be retrieved!";
-    public static final String LOG_OUT_OF_RANGE = "Skipping %s - Document indices out of range.";
+    public static final String HARVESTER_SKIPPED_OUT_OF_RANGE = "Skipping %s - Document indices out of range.";
 
     // REST
-    public static final String REST_INFO = "- %s -%n%n%s%n%nRange:  %s-%s%n%n"
-                                           + "GET/outdated  Checks if there is unharvested metadata%n"
-                                           + "POST          Starts the harvest%n"
-                                           + "POST/abort    Aborts an ongoing harvest, saving, or submission%n"
-                                           + "POST/submit   Submits harvested documents to a DataBase%n"
-                                           + "POST/download Downloads harvested documents to disk%n"
-                                           + "POST/reset    Attempts to re-initialize this service%n"
-                                           + "%n"
-                                           + "GET/config    Displays a table of parameters and a means of%n"
-                                           + "              configuring them%n"
-                                           + "GET/status    Additional GET requests for retrieving concrete%n"
-                                           + "              harvester status values%n"
-                                           + "GET/schedule  Displays a configurable set of cron jobs that%n"
-                                           + "              can trigger harvests automatically%n"
-                                           + "GET/log       Displays the server log. The query parameters%n"
-                                           + "              'date', 'class', and 'level' can be used to%n"
-                                           + "              filter the log with comma-separated values of%n"
-                                           + "              dates, logger classes, and log levels.";
+    public static final String ALLOWED_REQUESTS =
+        "GET/outdated  Checks if there is unharvested metadata\n"
+        + "POST          Starts the harvest\n"
+        + "POST/abort    Aborts an ongoing harvest, saving, or submission\n"
+        + "POST/submit   Submits harvested documents to a DataBase\n"
+        + "POST/download Downloads harvested documents to disk\n"
+        + "POST/reset    Attempts to re-initialize this service\n"
+        + "\n"
+        + "GET/config    Displays a table of parameters and a means of\n"
+        + "              configuring them\n"
+        + "GET/status    Additional GET requests for retrieving concrete\n"
+        + "              harvester status values\n"
+        + "GET/schedule  Displays a configurable set of cron jobs that\n"
+        + "              can trigger harvests automatically\n"
+        + "GET/log       Displays the server log. The query parameters\n"
+        + "              'date', 'class', and 'level' can be used to\n"
+        + "              filter the log with comma-separated values of\n"
+        + "              dates, logger classes, and log levels.";
     public static final String UNKNOWN_NUMBER = "???";
     public static final String MAX_RANGE_NUMBER = "%d (" + ConfigurationConstants.INTEGER_VALUE_MAX + ")";
+
+    public static final String BUSY_ERROR_MESSAGE = "The harvesters are currently processing another request!";
 
 
     /**

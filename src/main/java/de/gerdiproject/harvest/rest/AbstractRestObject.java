@@ -38,7 +38,7 @@ import de.gerdiproject.harvest.rest.events.GetRestObjectEvent;
 public abstract class AbstractRestObject <T extends AbstractRestObject<T, P>, P> implements IEventListener
 {
     private Class<? extends GetRestObjectEvent<T>> getterEventClass;
-    private final String moduleName;
+    protected final String moduleName;
 
     /**
      * Constructor that requires the moduleName for pretty printing and the class

@@ -30,8 +30,8 @@ import de.gerdiproject.harvest.application.MainContext;
 import de.gerdiproject.harvest.application.constants.StatusConstants;
 import de.gerdiproject.harvest.application.enums.HealthStatus;
 import de.gerdiproject.harvest.event.EventSystem;
-import de.gerdiproject.harvest.harvester.events.GetMaxDocumentCountEvent;
-import de.gerdiproject.harvest.harvester.events.GetProviderNameEvent;
+import de.gerdiproject.harvest.harvester.events.GetETLRegistryEvent;
+import de.gerdiproject.harvest.harvester.events.GetRepositoryNameEvent;
 import de.gerdiproject.harvest.rest.HttpResponseFactory;
 import de.gerdiproject.harvest.state.IState;
 import de.gerdiproject.harvest.state.StateMachine;
@@ -93,7 +93,7 @@ public final class StatusRestResource
     })
     public Response getDataProvider()
     {
-        return HttpResponseFactory.createSynchronousEventResponse(new GetProviderNameEvent());
+        return HttpResponseFactory.createSynchronousEventResponse(new GetRepositoryNameEvent());
     }
 
 
@@ -110,14 +110,14 @@ public final class StatusRestResource
     })
     public Response getMaxDocumentCount()
     {
-        Response resp =
-            HttpResponseFactory.createSynchronousEventResponse(
-                new GetMaxDocumentCountEvent());
+        // TODO remove
+        int maxDocs = EventSystem.sendSynchronousEvent(new GetETLRegistryEvent()).getMaxNumberOfDocuments();
 
-        if (resp.getEntity().equals("-1"))
+
+        if (maxDocs == -1)
             return HttpResponseFactory.createBadRequestResponse();
         else
-            return resp;
+            return HttpResponseFactory.createOkResponse(maxDocs);
     }
 
 

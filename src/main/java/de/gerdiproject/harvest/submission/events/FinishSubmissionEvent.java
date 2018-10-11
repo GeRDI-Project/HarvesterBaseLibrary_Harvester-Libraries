@@ -13,16 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.gerdiproject.harvest.harvester.events;
+package de.gerdiproject.harvest.submission.events;
+
 
 import de.gerdiproject.harvest.event.ISynchronousEvent;
+import de.gerdiproject.harvest.submission.AbstractSubmitter;
 
 /**
- * This synchronous event returns the name of the harvested data provider.
+ * This event attempts to signal the active {@linkplain AbstractSubmitter} to
+ * finish submitting its remaining cached documents.
+ * Returns false if the submission fails.
  *
  * @author Robin Weiss
  */
-public class GetProviderNameEvent implements ISynchronousEvent<String>
+public class FinishSubmissionEvent implements ISynchronousEvent<Boolean>
 {
-
 }

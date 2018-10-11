@@ -23,7 +23,6 @@ import de.gerdiproject.harvest.config.Configuration;
 import de.gerdiproject.harvest.config.parameters.ParameterCategory;
 import de.gerdiproject.harvest.state.impl.ErrorState;
 import de.gerdiproject.harvest.state.impl.IdleState;
-import de.gerdiproject.harvest.state.impl.SubmittingState;
 import de.gerdiproject.harvest.utils.cache.constants.CacheConstants;
 
 /**
@@ -96,8 +95,7 @@ public class ConfigurationConstants
         "Debug",
         Arrays.asList(
             ErrorState.class,
-            IdleState.class,
-            SubmittingState.class));
+            IdleState.class));
 
     public static final String KEY_FORMAT = "%s.%s";
     public static final String VALID_PARAM_NAME_REGEX = "[a-zA-Z0-9]+";

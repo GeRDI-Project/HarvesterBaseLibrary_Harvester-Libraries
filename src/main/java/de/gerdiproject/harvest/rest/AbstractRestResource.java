@@ -54,9 +54,11 @@ public abstract class AbstractRestResource<T1 extends AbstractRestObject<T1, ?>,
     /**
      * This constructor constructs and dispatches an instance of the generic {@linkplain GetRestObjectEvent}
      * in order to retrieve the singleton object.
+     *
+     * @param gson a gson instance used to parse JSON requests and responses
      */
     @SuppressWarnings("unchecked") // this warning is suppressed, because the only generic Superclass MUST be T2. The cast will always succeed.
-    public AbstractRestResource()
+    public AbstractRestResource(Gson gson)
     {
         final Class<T2> getEventClass =
             (Class<T2>)((ParameterizedType) getClass().getGenericSuperclass()).getActualTypeArguments()[1];
@@ -71,7 +73,17 @@ public abstract class AbstractRestResource<T1 extends AbstractRestObject<T1, ?>,
         }
 
         this.restObject = retrievedObject;
-        this.gson = new Gson();
+        this.gson = gson;
+    }
+
+
+    /**
+     * This constructor constructs and dispatches an instance of the generic {@linkplain GetRestObjectEvent}
+     * in order to retrieve the singleton object. It creates a new {@linkplain Gson} instance without custom adapters.
+     */
+    public AbstractRestResource()
+    {
+        this(new Gson());
     }
 
 

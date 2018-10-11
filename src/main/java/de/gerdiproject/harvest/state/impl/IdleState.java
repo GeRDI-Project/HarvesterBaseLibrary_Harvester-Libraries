@@ -42,7 +42,6 @@ import javax.ws.rs.core.Response.ResponseBuilder;
 import de.gerdiproject.harvest.application.MainContext;
 import de.gerdiproject.harvest.application.events.ResetContextEvent;
 import de.gerdiproject.harvest.event.EventSystem;
-import de.gerdiproject.harvest.harvester.events.GetHarvesterOutdatedEvent;
 import de.gerdiproject.harvest.harvester.events.HarvestStartedEvent;
 import de.gerdiproject.harvest.harvester.events.StartHarvestEvent;
 import de.gerdiproject.harvest.rest.HttpResponseFactory;
@@ -51,8 +50,6 @@ import de.gerdiproject.harvest.save.events.SaveHarvestEvent;
 import de.gerdiproject.harvest.state.IState;
 import de.gerdiproject.harvest.state.constants.StateConstants;
 import de.gerdiproject.harvest.state.constants.StateEventHandlerConstants;
-import de.gerdiproject.harvest.submission.events.StartSubmissionEvent;
-import de.gerdiproject.harvest.submission.events.SubmissionStartedEvent;
 import de.gerdiproject.harvest.utils.time.HarvestTimeKeeper;
 
 /**
@@ -66,7 +63,6 @@ public class IdleState implements IState
     public void onStateEnter()
     {
         EventSystem.addListener(HarvestStartedEvent.class, StateEventHandlerConstants.ON_HARVEST_STARTED);
-        EventSystem.addListener(SubmissionStartedEvent.class, StateEventHandlerConstants.ON_SUBMISSION_STARTED);
     }
 
 
@@ -74,7 +70,6 @@ public class IdleState implements IState
     public void onStateLeave()
     {
         EventSystem.removeListener(HarvestStartedEvent.class, StateEventHandlerConstants.ON_HARVEST_STARTED);
-        EventSystem.removeListener(SubmissionStartedEvent.class, StateEventHandlerConstants.ON_SUBMISSION_STARTED);
     }
 
 
@@ -84,17 +79,14 @@ public class IdleState implements IState
         HarvestTimeKeeper timeKeeper = MainContext.getTimeKeeper();
         return String.format(
                    StateConstants.IDLE_STATUS,
-                   timeKeeper.getHarvestMeasure().toString(),
-                   timeKeeper.getSubmissionMeasure().toString());
+                   timeKeeper.getHarvestMeasure().toString());
     }
 
 
     @Override
     public Response startHarvest()
     {
-        EventSystem.sendEvent(new StartHarvestEvent());
-        return HttpResponseFactory.createAcceptedResponse(
-                   StateConstants.HARVEST_STARTED);
+        return HttpResponseFactory.createSynchronousEventResponse(new StartHarvestEvent());
     }
 
 
@@ -106,21 +98,6 @@ public class IdleState implements IState
                                    + StateConstants.NO_HARVEST_IN_PROGRESS,
                                    StateConstants.HARVESTING_PROCESS);
         return HttpResponseFactory.createBadRequestResponse(message);
-    }
-
-
-    @Override
-    public Response submit()
-    {
-        Response response;
-
-        try {
-            response = HttpResponseFactory.createSynchronousEventResponse(new StartSubmissionEvent());
-        } catch (IllegalStateException e) {
-            response = HttpResponseFactory.createBadRequestResponse(e.getMessage());
-        }
-
-        return response;
     }
 
 
@@ -173,6 +150,7 @@ public class IdleState implements IState
     @Override
     public Response isOutdated()
     {
-        return HttpResponseFactory.createSynchronousEventResponse(new GetHarvesterOutdatedEvent());
+        // TODO remove
+        return null;
     }
 }
