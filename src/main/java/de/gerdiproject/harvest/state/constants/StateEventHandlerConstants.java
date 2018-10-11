@@ -61,8 +61,7 @@ public class StateEventHandlerConstants
 
 
     /**
-     * If the harvesting process is done either go to the
-     * {@linkplain IdleState} or {@linkplain SubmittingState}, depending on the configuration.
+     * If the harvesting process is done, go to the {@linkplain IdleState}.
      */
     public static final Consumer<HarvestFinishedEvent> ON_HARVEST_FINISHED = (HarvestFinishedEvent e) -> {
         finishHarvest(e.isSuccessful());

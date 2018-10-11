@@ -52,8 +52,9 @@ public class LoaderFactory implements IEventListener
 
 
     /**
-     * Registers a submitter class via an identifier.
-     * @param submitter the submitter that is to be registered
+     * Registers an {@linkplain ILoader} class via its class name.
+     *
+     * @param loaderClass the class of the loader that is to be registered
      */
     public void registerLoader(Class<? extends ILoader<?>> loaderClass)
     {

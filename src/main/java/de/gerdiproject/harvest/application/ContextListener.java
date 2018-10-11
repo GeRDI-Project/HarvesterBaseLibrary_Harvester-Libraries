@@ -41,8 +41,6 @@ import de.gerdiproject.harvest.submission.elasticsearch.ElasticSearchLoader;
  * sub-class with the @WebListener annotation must be implemented in order for
  * the harvester micro service to work.
  *
- * @param <T> an AbstractHarvester sub-class
- *
  * @see javax.servlet.annotation.WebListener
  * @see de.gerdiproject.harvest.harvester.AbstractETL
  *

@@ -345,11 +345,8 @@ public abstract class AbstractETL <EOUT, TOUT> implements IEventListener
      * The main harvesting method. The overridden implementation should add
      * documents to the search index by calling addDocumentToIndex().
      *
-     * @param startIndex the index of the first document to be harvested
-     * @param endIndex the index of the last document to be harvested
      * @throws Exception any kind of exception that can occur during the
      *             harvesting process
-     * @return true, if everything was harvested
      */
     protected void harvestInternal() throws Exception // NOPMD - we want the inheriting class to be able to throw any exception
     {

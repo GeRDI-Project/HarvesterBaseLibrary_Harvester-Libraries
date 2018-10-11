@@ -49,6 +49,8 @@ import de.gerdiproject.harvest.utils.HashGenerator;
 
 
 /**
+ * This class serves as an interface for all {@linkplain AbstractETL}s that
+ * are required to harvest the repository.
  *
  * @author Robin Weiss
  */
@@ -63,6 +65,8 @@ public class ETLRegistry extends AbstractRestObject<ETLRegistry, ETLDetails>
 
     /**
      * Constructor
+     *
+     * @param moduleName the name of the harvester service
      */
     public ETLRegistry(String moduleName)
     {

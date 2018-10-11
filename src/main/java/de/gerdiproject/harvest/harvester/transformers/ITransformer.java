@@ -21,14 +21,18 @@ import de.gerdiproject.harvest.harvester.AbstractETL;
 /**
  * This class represents the Transformer of an ETL process.
  *
+ * @param <TRANSIN> the type of objects that are to be transformed
+ * @param <TRANSOUT> the resulting type of the transformed objects
+ *
  * @author Robin Weiss
  */
-public interface ITransformer <IN, OUT>
+public interface ITransformer <TRANSIN, TRANSOUT>
 {
     /**
      * Initializes the transformer for a new harvest.
      *
      * @param harvester the harvester to which the transformer belongs
+     * @param <H> the type of the harvester to which the extractor belongs
      */
     <H extends AbstractETL<?, ?>> void init(H harvester);
 
@@ -40,5 +44,5 @@ public interface ITransformer <IN, OUT>
      *
      * @return a document that can be loaded
      */
-    OUT transform(IN source);
+    TRANSOUT transform(TRANSIN source);
 }

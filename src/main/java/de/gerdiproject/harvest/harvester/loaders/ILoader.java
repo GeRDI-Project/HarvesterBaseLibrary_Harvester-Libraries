@@ -21,14 +21,17 @@ import de.gerdiproject.harvest.harvester.AbstractETL;
 /**
  * This class represents the Loader of an ETL process.
  *
+ * @param <LOUT> the type of the document that is to be loaded
+ *
  * @author Robin Weiss
  */
-public interface ILoader <OUT>
+public interface ILoader <LOUT>
 {
     /**
      * Initializes the loader for a new harvest.
      *
      * @param harvester the harvester to which the loader belongs
+     * @param <H> the type of the harvester to which the extractor belongs
      */
     <H extends AbstractETL<?, ?>> void init(H harvester);
 
@@ -48,5 +51,5 @@ public interface ILoader <OUT>
      *
      * @throws LoaderException when the load did not work properly
      */
-    void load(OUT document, boolean isLastDocument) throws LoaderException;
+    void load(LOUT document, boolean isLastDocument) throws LoaderException;
 }

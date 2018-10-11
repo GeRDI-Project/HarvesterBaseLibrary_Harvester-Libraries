@@ -35,6 +35,7 @@ public class HarvestStartedEvent implements IEvent
      * Constructor that sets up the payload, and uses the current time as the start timestamp.
      *
      * @param harvesterHash a hash value representing the current state of the source data
+     * @param maxHarvestableDocuments the maximum number of expected documents
      */
     public HarvestStartedEvent(String harvesterHash, int maxHarvestableDocuments)
     {
@@ -46,6 +47,7 @@ public class HarvestStartedEvent implements IEvent
      * Constructor that sets up the payload, and allows to define the start timestamp.
      *
      * @param harvesterHash a hash value representing the current state of the source data
+     * @param maxHarvestableDocuments the maximum number of expected documents
      * @param timestamp the time at wich the harvest started
      */
     public HarvestStartedEvent(String harvesterHash, int maxHarvestableDocuments, long timestamp)

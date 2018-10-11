@@ -21,17 +21,14 @@ import java.util.Iterator;
 /**
  * This loader can load multiple documents.
  *
+ * @param <LOUT> the type of the documents to be loaded
+ *
  * @author Robin Weiss
  */
-public abstract class AbstractIteratorLoader <OUT> implements ILoader<Iterator<OUT>>
+public abstract class AbstractIteratorLoader <LOUT> implements ILoader<Iterator<LOUT>>
 {
-    /**
-     * Loads all documents of a specified {@linkplain Iterable}.
-     *
-     * @param documents an {@linkplain Iterable} of documents that are to be loaded
-     */
     @Override
-    public void load(Iterator<OUT> documents, boolean isLastDocument)
+    public void load(Iterator<LOUT> documents, boolean isLastDocument)
     {
         while (documents.hasNext())
             loadElement(documents.next(), isLastDocument && !documents.hasNext());
@@ -39,9 +36,10 @@ public abstract class AbstractIteratorLoader <OUT> implements ILoader<Iterator<O
 
 
     /**
-     * Loads a single element of the {@linkplain Iterable}.
+     * Loads a single element of the {@linkplain Iterator}.
      *
      * @param document a document that is to be loaded
+     * @param isLastDocument if true, this is the last document that is to be loaded
      */
-    public abstract void loadElement(OUT document, boolean isLastDocument);
+    public abstract void loadElement(LOUT document, boolean isLastDocument);
 }

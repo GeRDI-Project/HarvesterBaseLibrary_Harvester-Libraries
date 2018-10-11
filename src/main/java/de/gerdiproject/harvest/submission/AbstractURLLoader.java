@@ -86,8 +86,6 @@ public abstract class AbstractURLLoader <OUT extends DataCiteJson> implements IL
 
     /**
      * Constructor that initializes the {@linkplain Logger}.
-     *
-     * @param charset the charset used for generating hashes and parsing the documents
      */
     public AbstractURLLoader()
     {
@@ -154,8 +152,6 @@ public abstract class AbstractURLLoader <OUT extends DataCiteJson> implements IL
 
     /**
      * Submits the remaining unsubmitted documents and resets the submitter.
-     *
-     * @return true if all remaining documents were submitted
      */
     @Override
     public void reset()

@@ -24,6 +24,9 @@ import de.gerdiproject.harvest.harvester.extractors.AbstractIteratorExtractor;
 /**
  * This transformer can transform multiple documents.
  *
+ * @param <TRANSIN> the type of objects that are to be transformed
+ * @param <TRANSOUT> the resulting type of the transformed objects
+ *
  * @author Robin Weiss
  */
 public abstract class AbstractIteratorTransformer <TRANSIN, TRANSOUT> implements ITransformer<Iterator<TRANSIN>, Iterator<TRANSOUT>>
@@ -46,11 +49,6 @@ public abstract class AbstractIteratorTransformer <TRANSIN, TRANSOUT> implements
     protected abstract TRANSOUT transformElement(TRANSIN source);
 
 
-    /**
-     * Loads all documents of a specified {@linkplain Iterable}.
-     *
-     * @param documents an {@linkplain Iterable} of documents that are to be loaded
-     */
     @Override
     public Iterator<TRANSOUT> transform(Iterator<TRANSIN> elements)
     {
