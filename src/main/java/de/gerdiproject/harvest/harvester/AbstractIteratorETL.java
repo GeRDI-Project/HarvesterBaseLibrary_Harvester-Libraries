@@ -50,12 +50,14 @@ public abstract class AbstractIteratorETL<EXOUT, TRANSOUT> extends AbstractETL<I
         this.startIndexParameter =
             Configuration.registerParameter(new IntegerParameter(
                                                 HarvesterConstants.START_INDEX_PARAM.getKey(),
-                                                harvesterCategory));
+                                                harvesterCategory,
+                                                HarvesterConstants.START_INDEX_PARAM.getValue()));
 
         this.endIndexParameter =
             Configuration.registerParameter(new IntegerParameter(
                                                 HarvesterConstants.END_INDEX_PARAM.getKey(),
-                                                harvesterCategory));
+                                                harvesterCategory,
+                                                HarvesterConstants.END_INDEX_PARAM.getValue()));
     }
 
 
@@ -102,7 +104,7 @@ public abstract class AbstractIteratorETL<EXOUT, TRANSOUT> extends AbstractETL<I
             final TRANSOUT out = transformed.next();
 
             if (out != null)
-                iterLoader.loadElement(transformed.next(), !transformed.hasNext());
+                iterLoader.loadElement(out, !transformed.hasNext());
 
             harvestedCount.incrementAndGet();
         }

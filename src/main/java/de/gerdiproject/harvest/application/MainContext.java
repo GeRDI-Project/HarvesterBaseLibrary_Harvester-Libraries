@@ -27,16 +27,16 @@ import de.gerdiproject.harvest.config.Configuration;
 import de.gerdiproject.harvest.config.constants.ConfigurationConstants;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.harvester.AbstractETL;
+import de.gerdiproject.harvest.harvester.ETLPreconditionException;
 import de.gerdiproject.harvest.harvester.events.GetRepositoryNameEvent;
 import de.gerdiproject.harvest.harvester.events.HarvesterInitializedEvent;
 import de.gerdiproject.harvest.harvester.loaders.ILoader;
+import de.gerdiproject.harvest.harvester.loaders.utils.LoaderFactory;
 import de.gerdiproject.harvest.harvester.utils.ETLRegistry;
 import de.gerdiproject.harvest.scheduler.Scheduler;
 import de.gerdiproject.harvest.scheduler.constants.SchedulerConstants;
 import de.gerdiproject.harvest.state.StateMachine;
 import de.gerdiproject.harvest.state.impl.InitializationState;
-import de.gerdiproject.harvest.submission.LoaderFactory;
-import de.gerdiproject.harvest.submission.constants.SubmissionConstants;
 import de.gerdiproject.harvest.utils.CancelableFuture;
 import de.gerdiproject.harvest.utils.cache.HarvesterCacheManager;
 import de.gerdiproject.harvest.utils.cache.constants.CacheConstants;
@@ -357,7 +357,12 @@ public class MainContext
             LOGGER.info(String.format(ApplicationConstants.INIT_FIELD, etl.getClass().getSimpleName()));
 
             etl.init(moduleName);
-            etl.update();
+
+            try {
+                etl.update();
+            } catch (ETLPreconditionException e) { // NOPMD - Ignore exceptions, because we do not need to harvest yet
+            }
+
             registry.register(etl);
 
             LOGGER.info(String.format(ApplicationConstants.INIT_FIELD_SUCCESS, etl.getClass().getSimpleName()));
@@ -433,8 +438,6 @@ public class MainContext
         config.setCacheFilePath(String.format(ConfigurationConstants.CONFIG_PATH, moduleName));
         config.loadFromDisk();
         config.addEventListeners();
-
-        Configuration.registerParameter(SubmissionConstants.AUTO_SUBMIT_PARAM);
 
         LOGGER.info(String.format(ApplicationConstants.INIT_FIELD_SUCCESS, Configuration.class.getSimpleName()));
 

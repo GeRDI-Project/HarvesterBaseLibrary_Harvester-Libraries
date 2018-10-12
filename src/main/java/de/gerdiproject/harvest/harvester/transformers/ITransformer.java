@@ -42,7 +42,9 @@ public interface ITransformer <TRANSIN, TRANSOUT>
      *
      * @param source an extracted element
      *
+     * @throws TransformerException thrown when an element cannot be transformed
+     *
      * @return a document that can be loaded
      */
-    TRANSOUT transform(TRANSIN source);
+    TRANSOUT transform(TRANSIN source) throws TransformerException;
 }

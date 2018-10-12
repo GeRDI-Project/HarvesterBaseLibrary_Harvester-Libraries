@@ -13,16 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.gerdiproject.harvest.submission.constants;
+package de.gerdiproject.harvest.harvester.loaders.constants;
 
 import java.util.Arrays;
 
 import de.gerdiproject.harvest.config.parameters.BooleanParameter;
 import de.gerdiproject.harvest.config.parameters.IntegerParameter;
+import de.gerdiproject.harvest.config.parameters.LoaderParameter;
 import de.gerdiproject.harvest.config.parameters.ParameterCategory;
 import de.gerdiproject.harvest.config.parameters.PasswordParameter;
 import de.gerdiproject.harvest.config.parameters.StringParameter;
-import de.gerdiproject.harvest.config.parameters.LoaderParameter;
 import de.gerdiproject.harvest.config.parameters.UrlParameter;
 import de.gerdiproject.harvest.state.impl.ErrorState;
 import de.gerdiproject.harvest.state.impl.HarvestingState;
@@ -35,7 +35,7 @@ import de.gerdiproject.harvest.state.impl.InitializationState;
  *
  * @author Robin Weiss
  */
-public class SubmissionConstants
+public class LoaderConstants
 {
     public static final String SUBMISSION_START = "Submitter '%s' is valid.";
     public static final String SUBMISSION_DONE_ALL_OK = "Submission done! All documents were submitted!";
@@ -85,12 +85,6 @@ public class SubmissionConstants
         PARAMETER_CATEGORY,
         1048576);
 
-    public static final BooleanParameter AUTO_SUBMIT_PARAM =
-        new BooleanParameter(
-        "autoSubmit",
-        PARAMETER_CATEGORY,
-        true);
-
     public static final LoaderParameter SUBMITTER_TYPE_PARAM =
         new LoaderParameter(
         "submitter",
@@ -125,7 +119,7 @@ public class SubmissionConstants
      * Private constructor, because this class just serves as a place to define
      * constants.
      */
-    private SubmissionConstants()
+    private LoaderConstants()
     {
     }
 }

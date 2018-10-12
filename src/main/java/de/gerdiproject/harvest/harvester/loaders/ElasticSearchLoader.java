@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.gerdiproject.harvest.submission.elasticsearch;
+package de.gerdiproject.harvest.harvester.loaders;
 
 
 import java.rmi.ServerException;
@@ -25,12 +25,10 @@ import javax.ws.rs.core.MediaType;
 import com.google.gson.Gson;
 
 import de.gerdiproject.harvest.IDocument;
-import de.gerdiproject.harvest.harvester.AbstractETL;
-import de.gerdiproject.harvest.submission.AbstractURLLoader;
-import de.gerdiproject.harvest.submission.elasticsearch.constants.ElasticSearchConstants;
-import de.gerdiproject.harvest.submission.elasticsearch.json.ElasticSearchIndex;
-import de.gerdiproject.harvest.submission.elasticsearch.json.ElasticSearchIndexWrapper;
-import de.gerdiproject.harvest.submission.elasticsearch.json.ElasticSearchResponse;
+import de.gerdiproject.harvest.harvester.loaders.constants.ElasticSearchConstants;
+import de.gerdiproject.harvest.harvester.loaders.json.ElasticSearchIndex;
+import de.gerdiproject.harvest.harvester.loaders.json.ElasticSearchIndexWrapper;
+import de.gerdiproject.harvest.harvester.loaders.json.ElasticSearchResponse;
 import de.gerdiproject.harvest.utils.data.WebDataRetriever;
 import de.gerdiproject.harvest.utils.data.enums.RestRequestType;
 import de.gerdiproject.json.datacite.DataCiteJson;
@@ -61,14 +59,6 @@ public class ElasticSearchLoader extends AbstractURLLoader<DataCiteJson>
 
 
     @Override
-    public <H extends AbstractETL<?, ?>> void init(H harvester)
-    {
-        // TODO Auto-generated method stub
-
-    }
-
-
-    @Override
     protected void submitBatch(Map<String, IDocument> documents) throws Exception // NOPMD - Exception is explicitly thrown, because it is up to the implementation which Exception causes the submission to fail
     {
         // clear previous batch
@@ -78,7 +68,6 @@ public class ElasticSearchLoader extends AbstractURLLoader<DataCiteJson>
         documents.forEach(
             (String documentId, IDocument document) -> batchRequestBuilder.append(
                 createBulkInstruction(documentId, document)));
-
 
         // send POST request to Elastic search
         String response = webRequester.getRestResponse(
@@ -200,13 +189,6 @@ public class ElasticSearchLoader extends AbstractURLLoader<DataCiteJson>
         }
 
         return null;
-    }
-
-
-    @Override
-    public String getId()
-    {
-        return ElasticSearchConstants.SUBMITTER_ID;
     }
 
 

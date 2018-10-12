@@ -14,8 +14,10 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
+
 /**
- * @author Robin Weiss
+ * This package contains Loader JSON responses.
  *
+ * @author Robin Weiss
  */
-package de.gerdiproject.harvest.harvester.impl;
+package de.gerdiproject.harvest.harvester.loaders.json;

@@ -37,12 +37,12 @@ import de.gerdiproject.harvest.event.IEventListener;
 import de.gerdiproject.harvest.harvester.constants.HarvesterConstants;
 import de.gerdiproject.harvest.harvester.enums.HarvesterStatus;
 import de.gerdiproject.harvest.harvester.extractors.IExtractor;
+import de.gerdiproject.harvest.harvester.loaders.ElasticSearchLoader;
 import de.gerdiproject.harvest.harvester.loaders.ILoader;
+import de.gerdiproject.harvest.harvester.loaders.events.CreateLoaderEvent;
 import de.gerdiproject.harvest.harvester.rest.HarvesterRestResource;
 import de.gerdiproject.harvest.harvester.transformers.ITransformer;
 import de.gerdiproject.harvest.state.events.StartAbortingEvent;
-import de.gerdiproject.harvest.submission.elasticsearch.ElasticSearchLoader;
-import de.gerdiproject.harvest.submission.events.CreateLoaderEvent;
 import de.gerdiproject.harvest.utils.HashGenerator;
 import de.gerdiproject.harvest.utils.cache.HarvesterCache;
 import de.gerdiproject.harvest.utils.cache.events.RegisterHarvesterCacheEvent;
@@ -104,6 +104,10 @@ public abstract class AbstractETL <EOUT, TOUT> implements IEventListener
         registerParameters();
 
         this.httpRequester = new HttpRequester(createGsonBuilder().create(), getCharset());
+
+        this.extractor = createExtractor();
+        this.transformer = createTransformer();
+        this.loader = createLoader();
     }
 
 
@@ -115,7 +119,8 @@ public abstract class AbstractETL <EOUT, TOUT> implements IEventListener
         this.enableHarvesterParameter =
             Configuration.registerParameter(new BooleanParameter(
                                                 HarvesterConstants.ENABLED_PARAM.getKey(),
-                                                harvesterCategory));
+                                                harvesterCategory,
+                                                HarvesterConstants.ENABLED_PARAM.getValue()));
 
         // all harvesters share the 'forced' parameter
         this.forceHarvestParameter = Configuration.registerParameter(HarvesterConstants.FORCED_PARAM);
@@ -232,32 +237,25 @@ public abstract class AbstractETL <EOUT, TOUT> implements IEventListener
             return null;
         }
     }
+
+
     /**
      * Updates the harvested source documents, calculating the hash and maximum number of
      * harvestable documents.
      */
     public void update() throws ETLPreconditionException
     {
-        extractor = createExtractor();
+        // the extractor may need to retrieve information about the repository, initialize it early
+        try {
+            extractor = createExtractor();
 
-        if (extractor == null)
-            throw new ETLPreconditionException(String.format(HarvesterConstants.EXTRACTOR_CREATE_ERROR, getName()));
+            if (extractor == null)
+                throw new ETLPreconditionException(String.format(HarvesterConstants.EXTRACTOR_CREATE_ERROR, getName()));
 
-        extractor.init(this);
-
-        transformer = createTransformer();
-
-        if (transformer == null)
-            throw new ETLPreconditionException(String.format(HarvesterConstants.TRANSFORMER_CREATE_ERROR, getName()));
-
-        transformer.init(this);
-
-        loader = createLoader();
-
-        if (loader == null)
-            throw new ETLPreconditionException(String.format(HarvesterConstants.LOADER_CREATE_ERROR, getName()));
-
-        loader.init(this);
+            extractor.init(this);
+        } catch (IllegalStateException e) {
+            throw new ETLPreconditionException(e.getMessage());
+        }
 
         final HarvesterStatus previousStatus = status;
         this.status = HarvesterStatus.BUSY;
@@ -287,6 +285,7 @@ public abstract class AbstractETL <EOUT, TOUT> implements IEventListener
         return maxDocumentCount.get();
     }
 
+
     /**
      * Checks pre-conditions required for starting a harvest and updates the data
      * that is to be extracted.
@@ -307,6 +306,25 @@ public abstract class AbstractETL <EOUT, TOUT> implements IEventListener
 
         // update to check if source data has changed
         update();
+
+        // loader and transformer only become relevant when the harvest is about to start, load them now
+        try {
+            transformer = createTransformer();
+
+            if (transformer == null)
+                throw new ETLPreconditionException(String.format(HarvesterConstants.TRANSFORMER_CREATE_ERROR, getName()));
+
+            transformer.init(this);
+
+            loader = createLoader();
+
+            if (loader == null)
+                throw new ETLPreconditionException(String.format(HarvesterConstants.LOADER_CREATE_ERROR, getName()));
+
+            loader.init(this);
+        } catch (IllegalStateException e) {
+            throw new ETLPreconditionException(e.getMessage());
+        }
 
         // cancel harvest if the checksum has not changed since the last harvest
         if (!forceHarvestParameter.getValue() && !isOutdated()) {

@@ -49,12 +49,12 @@ import de.gerdiproject.harvest.config.parameters.StringParameter;
 import de.gerdiproject.harvest.config.parameters.LoaderParameter;
 import de.gerdiproject.harvest.config.parameters.UrlParameter;
 import de.gerdiproject.harvest.event.EventSystem;
+import de.gerdiproject.harvest.harvester.loaders.events.GetLoaderNamesEvent;
+import de.gerdiproject.harvest.harvester.loaders.utils.LoaderFactory;
 import de.gerdiproject.harvest.state.IState;
 import de.gerdiproject.harvest.state.StateMachine;
 import de.gerdiproject.harvest.state.impl.HarvestingState;
 import de.gerdiproject.harvest.state.impl.InitializationState;
-import de.gerdiproject.harvest.submission.LoaderFactory;
-import de.gerdiproject.harvest.submission.events.GetLoaderNamesEvent;
 import de.gerdiproject.harvest.utils.data.DiskIO;
 
 /**

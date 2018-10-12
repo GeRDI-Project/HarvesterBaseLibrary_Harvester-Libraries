@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.gerdiproject.harvest.submission;
+package de.gerdiproject.harvest.harvester.loaders;
 
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
@@ -29,12 +29,8 @@ import de.gerdiproject.harvest.config.Configuration;
 import de.gerdiproject.harvest.config.parameters.IntegerParameter;
 import de.gerdiproject.harvest.config.parameters.StringParameter;
 import de.gerdiproject.harvest.config.parameters.UrlParameter;
-import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.harvester.AbstractETL;
-import de.gerdiproject.harvest.harvester.loaders.ILoader;
-import de.gerdiproject.harvest.harvester.loaders.LoaderException;
-import de.gerdiproject.harvest.submission.constants.SubmissionConstants;
-import de.gerdiproject.harvest.submission.events.DocumentsSubmittedEvent;
+import de.gerdiproject.harvest.harvester.loaders.constants.LoaderConstants;
 import de.gerdiproject.harvest.utils.HashGenerator;
 import de.gerdiproject.json.datacite.DataCiteJson;
 
@@ -44,9 +40,9 @@ import de.gerdiproject.json.datacite.DataCiteJson;
  *
  * @author Robin Weiss
  */
-public abstract class AbstractURLLoader <OUT extends DataCiteJson> implements ILoader<OUT>
+public abstract class AbstractURLLoader <OUT extends DataCiteJson> extends AbstractIteratorLoader<OUT>
 {
-    private HashGenerator hashGenerator;
+    private volatile HashGenerator hashGenerator;
 
     private final StringParameter userName;
     private final StringParameter password;
@@ -92,10 +88,10 @@ public abstract class AbstractURLLoader <OUT extends DataCiteJson> implements IL
         this.logger = LoggerFactory.getLogger(getClass());
         this.batchMap = new HashMap<>();
 
-        this.url = Configuration.registerParameter(SubmissionConstants.URL_PARAM);
-        this.userName = Configuration.registerParameter(SubmissionConstants.USER_NAME_PARAM);
-        this.password = Configuration.registerParameter(SubmissionConstants.PASSWORD_PARAM);
-        this.maxBatchSize = Configuration.registerParameter(SubmissionConstants.MAX_BATCH_SIZE_PARAM);
+        this.url = Configuration.registerParameter(LoaderConstants.URL_PARAM);
+        this.userName = Configuration.registerParameter(LoaderConstants.USER_NAME_PARAM);
+        this.password = Configuration.registerParameter(LoaderConstants.PASSWORD_PARAM);
+        this.maxBatchSize = Configuration.registerParameter(LoaderConstants.MAX_BATCH_SIZE_PARAM);
     }
 
 
@@ -117,8 +113,11 @@ public abstract class AbstractURLLoader <OUT extends DataCiteJson> implements IL
 
 
     @Override
-    public void load(OUT document, boolean isLastDocument) throws LoaderException
+    public void loadElement(OUT document, boolean isLastDocument) throws LoaderException
     {
+        if (document == null)
+            return;
+
         final String documentId = hashGenerator.getShaHash(document.getSourceId());
         int documentSize = getSizeOfDocument(documentId, document);
 
@@ -126,7 +125,7 @@ public abstract class AbstractURLLoader <OUT extends DataCiteJson> implements IL
         if (currentBatchSize == 0 && documentSize > maxBatchSize.getValue()) {
             throw new LoaderException(
                 String.format(
-                    SubmissionConstants.DOCUMENT_TOO_LARGE,
+                    LoaderConstants.DOCUMENT_TOO_LARGE,
                     documentId,
                     documentSize,
                     maxBatchSize.getValue()));
@@ -159,16 +158,6 @@ public abstract class AbstractURLLoader <OUT extends DataCiteJson> implements IL
         batchMap.clear();
         currentBatchSize = 0;
     }
-
-
-    /**
-     * Returns a unique identifier of this submitter class.
-     * This identifier is used to be able to set the submitter during runtime
-     * via the Configuration.
-     *
-     * @return a unique identifier of this submitter class
-     */
-    public abstract String getId();
 
 
     /**
@@ -206,7 +195,7 @@ public abstract class AbstractURLLoader <OUT extends DataCiteJson> implements IL
         final String url = getUrl();
 
         if (url == null || url.isEmpty())
-            return SubmissionConstants.NO_URL_ERROR;
+            return LoaderConstants.NO_URL_ERROR;
 
         return null;
     }
@@ -230,16 +219,13 @@ public abstract class AbstractURLLoader <OUT extends DataCiteJson> implements IL
             if (logger.isInfoEnabled()) {
                 logger.info(
                     String.format(
-                        SubmissionConstants.SUBMIT_PARTIAL_OK, numberOfDocs));
+                        LoaderConstants.SUBMIT_PARTIAL_OK, numberOfDocs));
             }
 
             isSuccessful = true;
         } catch (Exception e) {
-            throw new LoaderException(e.getMessage());
+            throw new LoaderException( e.toString());
         }
-
-        // send event
-        EventSystem.sendEvent(new DocumentsSubmittedEvent(isSuccessful, numberOfDocs));
     }
 
 

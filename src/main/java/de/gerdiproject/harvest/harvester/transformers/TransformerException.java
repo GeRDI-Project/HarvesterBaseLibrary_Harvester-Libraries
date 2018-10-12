@@ -14,19 +14,26 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package de.gerdiproject.harvest.submission.events;
-
-import java.util.Set;
-
-import de.gerdiproject.harvest.event.ISynchronousEvent;
-import de.gerdiproject.harvest.submission.AbstractURLLoader;
+package de.gerdiproject.harvest.harvester.transformers;
 
 /**
- * A synchronous event that aims to return a list of registered {@linkplain AbstractURLLoader}s.
+ * This exception is thrown when an {@linkplain ITransformer} fails to transform
+ * elements.
  *
  * @author Robin Weiss
  */
-public class GetLoaderNamesEvent implements ISynchronousEvent<Set<String>>
+public class TransformerException extends RuntimeException
 {
+    private static final long serialVersionUID = 7676375273362447887L;
 
+
+    /**
+     * Forwarded super-class constructor
+     *
+     * @param message a message describing the cause of the exception
+     */
+    public TransformerException(String message)
+    {
+        super(message);
+    }
 }

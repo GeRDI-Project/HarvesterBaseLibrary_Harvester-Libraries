@@ -13,10 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package de.gerdiproject.harvest.harvester.loaders.events;
+
+
+import de.gerdiproject.harvest.event.ISynchronousEvent;
+import de.gerdiproject.harvest.harvester.loaders.ILoader;
+
 /**
- * This package contains static classes of constants concerning
- * the submission of harvested documents to ElasticSearch.
+ * This event aims to instantiate an {@linkplain ILoader}.
  *
  * @author Robin Weiss
  */
-package de.gerdiproject.harvest.submission.elasticsearch.constants;
+public class CreateLoaderEvent implements ISynchronousEvent<ILoader<?>>
+{
+}

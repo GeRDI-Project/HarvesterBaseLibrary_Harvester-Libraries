@@ -25,9 +25,11 @@ import de.gerdiproject.harvest.harvester.AbstractIteratorETL;
  * This {@linkplain IExtractor} can extract an {@linkplain Iterator} in order
  * to be able to iterate lists or similar constructs.
  *
+ * @param <EXOUT> the type of objects that are extracted
+ *
  * @author Robin Weiss
  */
-public abstract class AbstractIteratorExtractor <IN> implements IExtractor<Iterator<IN>>
+public abstract class AbstractIteratorExtractor <EXOUT> implements IExtractor<Iterator<EXOUT>>
 {
     private int startIndex;
     private int endIndex;
@@ -45,11 +47,18 @@ public abstract class AbstractIteratorExtractor <IN> implements IExtractor<Itera
     }
 
 
-    protected abstract Iterator<IN> extractAll();
+    /**
+     * This method extracts everything there is to extract.
+     *
+     * @return an {@linkplain Iterator} over the complete data
+     *
+     * @throws ExtractorException thrown when the extraction fails
+     */
+    protected abstract Iterator<EXOUT> extractAll()  throws ExtractorException;
 
 
     @Override
-    public Iterator<IN> extract()
+    public Iterator<EXOUT> extract() throws ExtractorException
     {
         return new RangeRestrictedIterator(extractAll());
     }
@@ -68,12 +77,13 @@ public abstract class AbstractIteratorExtractor <IN> implements IExtractor<Itera
      *
      * @author Robin Weiss
      */
-    private class RangeRestrictedIterator implements Iterator<IN>
+    private class RangeRestrictedIterator implements Iterator<EXOUT>
     {
-        final Iterator<IN> completeIterator;
+        final Iterator<EXOUT> completeIterator;
         int index;
 
-        public RangeRestrictedIterator(Iterator<IN> completeIterator)
+
+        public RangeRestrictedIterator(Iterator<EXOUT> completeIterator)
         {
             this.completeIterator = completeIterator;
             index = 0;
@@ -94,7 +104,7 @@ public abstract class AbstractIteratorExtractor <IN> implements IExtractor<Itera
 
 
         @Override
-        public IN next()
+        public EXOUT next()
         {
             return completeIterator.next();
         }

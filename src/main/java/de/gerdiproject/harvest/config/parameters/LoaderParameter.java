@@ -20,7 +20,7 @@ import java.util.Set;
 
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.harvester.loaders.ILoader;
-import de.gerdiproject.harvest.submission.events.GetLoaderNamesEvent;
+import de.gerdiproject.harvest.harvester.loaders.events.GetLoaderNamesEvent;
 
 /**
  * This parameter holds an identifier of an {@linkplain ILoader}.

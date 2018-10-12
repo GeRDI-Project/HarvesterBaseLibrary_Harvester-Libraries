@@ -14,24 +14,25 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package de.gerdiproject.harvest.harvester.loaders;
+package de.gerdiproject.harvest.harvester.extractors;
 
 /**
- * This exception is thrown when an {@linkplain ILoader} fails to submit
- * documents.
+ * This exception is thrown when an {@linkplain IExtractor} fails to extract
+ * elements.
  *
  * @author Robin Weiss
  */
-public class LoaderException extends RuntimeException
+public class ExtractorException extends RuntimeException
 {
-    private static final long serialVersionUID = -3315557273151442217L;
+    private static final long serialVersionUID = 7676375273362447887L;
+
 
     /**
-     * Constructor that forwards the super class constructor.
+     * Forwarded super-class constructor
      *
-     * @param message a message describing the exception
+     * @param message a message describing the cause of the exception
      */
-    public LoaderException(String message)
+    public ExtractorException(String message)
     {
         super(message);
     }

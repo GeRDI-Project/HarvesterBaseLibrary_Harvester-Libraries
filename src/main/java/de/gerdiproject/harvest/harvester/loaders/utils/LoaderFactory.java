@@ -14,7 +14,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package de.gerdiproject.harvest.submission;
+package de.gerdiproject.harvest.harvester.loaders.utils;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -25,9 +25,9 @@ import de.gerdiproject.harvest.config.parameters.LoaderParameter;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.event.IEventListener;
 import de.gerdiproject.harvest.harvester.loaders.ILoader;
-import de.gerdiproject.harvest.submission.constants.SubmissionConstants;
-import de.gerdiproject.harvest.submission.events.CreateLoaderEvent;
-import de.gerdiproject.harvest.submission.events.GetLoaderNamesEvent;
+import de.gerdiproject.harvest.harvester.loaders.constants.LoaderConstants;
+import de.gerdiproject.harvest.harvester.loaders.events.CreateLoaderEvent;
+import de.gerdiproject.harvest.harvester.loaders.events.GetLoaderNamesEvent;
 
 /**
  * This class maps loader names to {@linkplain ILoader}s at runtime.
@@ -47,7 +47,7 @@ public class LoaderFactory implements IEventListener
     public LoaderFactory()
     {
         this.loaderMap = new HashMap<>();
-        this.loaderParam = SubmissionConstants.SUBMITTER_TYPE_PARAM.copy();
+        this.loaderParam = LoaderConstants.SUBMITTER_TYPE_PARAM.copy();
     }
 
 

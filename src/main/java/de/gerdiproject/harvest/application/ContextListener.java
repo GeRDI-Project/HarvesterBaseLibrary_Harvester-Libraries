@@ -31,9 +31,9 @@ import de.gerdiproject.harvest.application.events.ContextInitializedEvent;
 import de.gerdiproject.harvest.application.events.ResetContextEvent;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.harvester.AbstractETL;
+import de.gerdiproject.harvest.harvester.loaders.AbstractURLLoader;
+import de.gerdiproject.harvest.harvester.loaders.ElasticSearchLoader;
 import de.gerdiproject.harvest.harvester.loaders.ILoader;
-import de.gerdiproject.harvest.submission.AbstractURLLoader;
-import de.gerdiproject.harvest.submission.elasticsearch.ElasticSearchLoader;
 
 
 /**

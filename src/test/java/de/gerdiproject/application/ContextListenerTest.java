@@ -32,9 +32,9 @@ import de.gerdiproject.harvest.application.MainContext;
 import de.gerdiproject.harvest.application.events.ContextDestroyedEvent;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.harvester.events.HarvesterInitializedEvent;
+import de.gerdiproject.harvest.harvester.loaders.AbstractURLLoader;
 import de.gerdiproject.harvest.harvester.loaders.ILoader;
-import de.gerdiproject.harvest.submission.AbstractURLLoader;
-import de.gerdiproject.harvest.submission.events.GetLoaderNamesEvent;
+import de.gerdiproject.harvest.harvester.loaders.events.GetLoaderNamesEvent;
 
 /**
  * This class offers unit tests for the {@linkplain ContextListener}.

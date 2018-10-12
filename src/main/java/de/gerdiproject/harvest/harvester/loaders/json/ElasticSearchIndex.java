@@ -13,11 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.gerdiproject.harvest.submission.elasticsearch.json;
+package de.gerdiproject.harvest.harvester.loaders.json;
 
 import com.google.gson.annotations.SerializedName;
 
-import de.gerdiproject.harvest.submission.elasticsearch.constants.ElasticSearchConstants;
+import de.gerdiproject.harvest.harvester.loaders.constants.ElasticSearchConstants;
 
 /**
  * This JSON object is part of an ElasticSearch submission response.

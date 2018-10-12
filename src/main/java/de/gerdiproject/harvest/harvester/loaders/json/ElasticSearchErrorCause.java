@@ -13,25 +13,40 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.gerdiproject.harvest.submission.events;
+package de.gerdiproject.harvest.harvester.loaders.json;
 
-
-import de.gerdiproject.harvest.event.AbstractSucceededOrFailedEvent;
 
 /**
- * This event signifies that a document submission has finished.
+ * This JSON object is part of an ElasticSearch submission response if an error appears.
  *
  * @author Robin Weiss
  */
-public class SubmissionFinishedEvent extends AbstractSucceededOrFailedEvent
+public class ElasticSearchErrorCause
 {
-    /**
-     * Simple Constructor.
-     *
-     * @param isSuccessful true if the submission finished successfully
-     */
-    public SubmissionFinishedEvent(boolean isSuccessful)
+    private String type;
+    private String reason;
+
+
+    public String getType()
     {
-        super(isSuccessful);
+        return type;
+    }
+
+
+    public void setType(String type)
+    {
+        this.type = type;
+    }
+
+
+    public String getReason()
+    {
+        return reason;
+    }
+
+
+    public void setReason(String reason)
+    {
+        this.reason = reason;
     }
 }

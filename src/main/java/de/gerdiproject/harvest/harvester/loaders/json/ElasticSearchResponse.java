@@ -13,40 +13,55 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.gerdiproject.harvest.submission.elasticsearch.json;
+package de.gerdiproject.harvest.harvester.loaders.json;
+
+import java.util.List;
 
 
 /**
- * This JSON object is part of an ElasticSearch submission response if an error appears.
+ * This JSON object represents the response of an ElasticSearch submission.
  *
  * @author Robin Weiss
  */
-public class ElasticSearchErrorCause
+public class ElasticSearchResponse
 {
-    private String type;
-    private String reason;
+    private int took;
+    private boolean errors;
+    private List<ElasticSearchIndexWrapper> items;
 
 
-    public String getType()
+    public int getTook()
     {
-        return type;
+        return took;
     }
 
 
-    public void setType(String type)
+    public boolean hasErrors()
     {
-        this.type = type;
+        return errors;
     }
 
 
-    public String getReason()
+    public List<ElasticSearchIndexWrapper> getItems()
     {
-        return reason;
+        return items;
     }
 
 
-    public void setReason(String reason)
+    public void setTook(int took)
     {
-        this.reason = reason;
+        this.took = took;
+    }
+
+
+    public void setErrors(boolean errors)
+    {
+        this.errors = errors;
+    }
+
+
+    public void setItems(List<ElasticSearchIndexWrapper> items)
+    {
+        this.items = items;
     }
 }

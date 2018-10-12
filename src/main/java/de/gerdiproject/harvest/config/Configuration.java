@@ -288,6 +288,7 @@ public class Configuration extends AbstractRestObject<Configuration, String> imp
 
     /**
      * Changes multiple parameters, returning a status message about the change.
+     * Also saves the configuration afterwards.
      *
      * @param values a map of key-value parameter pairs
      *
@@ -299,6 +300,8 @@ public class Configuration extends AbstractRestObject<Configuration, String> imp
         values.forEach(
             (String key, String value) -> sb.append(setParameter(key, value)).append('\n')
         );
+        saveToDisk();
+
         return sb.toString();
     }
 

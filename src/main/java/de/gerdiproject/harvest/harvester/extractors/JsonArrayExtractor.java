@@ -16,46 +16,54 @@
  */
 package de.gerdiproject.harvest.harvester.extractors;
 
-import java.lang.reflect.Type;
+import java.lang.reflect.ParameterizedType;
 import java.nio.charset.StandardCharsets;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
-import com.google.gson.reflect.TypeToken;
 
 import de.gerdiproject.harvest.harvester.AbstractETL;
 import de.gerdiproject.harvest.utils.HashGenerator;
 import de.gerdiproject.harvest.utils.data.HttpRequester;
 
+
 /**
- * @author Robin Weiss
+ * This class represents the Extractor of an ETL process that
+ * parses a JSON array from a HTTP response.
  *
+ * @param <EXOUT> the type of elements of the JSON array
+ *
+ * @author Robin Weiss
  */
-public class JsonArrayExtractor<IN> extends AbstractIteratorExtractor<IN>
+public class JsonArrayExtractor<EXOUT> extends AbstractIteratorExtractor<EXOUT>
 {
+    // this warning is suppressed, because the only generic Superclass MUST be T. The cast will always succeed.
+    @SuppressWarnings("unchecked")
+    private final Class<EXOUT> outputClass =
+        (Class<EXOUT>)((ParameterizedType) getClass().getGenericSuperclass()).getActualTypeArguments()[0];
+
     private final Gson gson;
     private final String jsonQuery;
     private final HttpRequester httpRequester;
-    private final String url;
+    private String url;
 
     private String hash;
-    private List<IN> extractedList;
+    private List<EXOUT> extractedList;
 
 
     /**
      * Constructor that expects a JSON array to be contained in the
      * HTTP response, navigating through the response via a specified query.
      *
-     * @param url the URL that is used to retrieve the JSON response
      * @param gson used to parse the JSON response
      * @param jsonQuery a dot separated object structure at which the JSON array is expected
      */
-    public JsonArrayExtractor(String url, Gson gson, String jsonQuery)
+    public JsonArrayExtractor(Gson gson, String jsonQuery)
     {
-        this.url = url;
         this.jsonQuery = jsonQuery;
         this.httpRequester = new HttpRequester(gson, StandardCharsets.UTF_8);
         this.gson = gson;
@@ -64,14 +72,35 @@ public class JsonArrayExtractor<IN> extends AbstractIteratorExtractor<IN>
 
     /**
      * Constructor that expects a JSON array to be returned directly
-     * as response from the specified URL.
+     * as response from a specified URL.
      *
-     * @param url the URL that is used to retrieve the JSON response
      * @param gson used to parse the JSON response
      */
-    public JsonArrayExtractor(String url, Gson gson)
+    public JsonArrayExtractor(Gson gson)
     {
-        this(url, gson, null);
+        this(gson, null);
+    }
+
+
+    /**
+     * Retrieves the URL that is used to retrieve the JSON response.
+     *
+     * @return the URL that is used to retrieve the JSON response
+     */
+    public String getUrl()
+    {
+        return url;
+    }
+
+
+    /**
+     * Changes the URL that is used to retrieve the JSON response.
+     *
+     * @param url the new URL
+     */
+    public void setUrl(String url)
+    {
+        this.url = url;
     }
 
 
@@ -88,7 +117,7 @@ public class JsonArrayExtractor<IN> extends AbstractIteratorExtractor<IN>
 
 
     @Override
-    public Iterator<IN> extractAll()
+    public Iterator<EXOUT> extractAll()
     {
         return extractedList.listIterator();
     }
@@ -128,9 +157,11 @@ public class JsonArrayExtractor<IN> extends AbstractIteratorExtractor<IN>
      *
      * @param json the JSON object of which the list is retrieved
      *
+     * @throws ExtractorException thrown when the extraction fails
+     *
      * @return a list containing the elements of a JSON array
      */
-    protected List<IN> getListFromJson(JsonElement json)
+    protected List<EXOUT> getListFromJson(JsonElement json) throws ExtractorException
     {
         // retrieve the JsonArray from the JsonObject via the provided query
         if (jsonQuery != null) {
@@ -138,8 +169,16 @@ public class JsonArrayExtractor<IN> extends AbstractIteratorExtractor<IN>
                 json = json.getAsJsonObject().get(q);
         }
 
-        // convert JSON array to List
-        final Type listType = new TypeToken<LinkedList<IN>>() {} .getType();
-        return gson.fromJson(json, listType);
+        if (!json.isJsonArray())
+            throw new ExtractorException("%s did not yield a JSON-Array at '%s'!");
+
+        final List<EXOUT> list = new LinkedList<>();
+
+        final JsonArray sourceArray = json.getAsJsonArray();
+
+        for (JsonElement ele : sourceArray)
+            list.add(gson.fromJson(ele, outputClass));
+
+        return list;
     }
 }

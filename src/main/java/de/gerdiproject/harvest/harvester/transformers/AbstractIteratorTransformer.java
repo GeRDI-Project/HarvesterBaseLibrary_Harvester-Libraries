@@ -44,13 +44,15 @@ public abstract class AbstractIteratorTransformer <TRANSIN, TRANSOUT> implements
      *
      * @param source a single element from the input iterator
      *
+     * @throws TransformerException thrown when an element cannot be transformed
+     *
      * @return a transformed document
      */
-    protected abstract TRANSOUT transformElement(TRANSIN source);
+    protected abstract TRANSOUT transformElement(TRANSIN source) throws TransformerException;
 
 
     @Override
-    public Iterator<TRANSOUT> transform(Iterator<TRANSIN> elements)
+    public Iterator<TRANSOUT> transform(Iterator<TRANSIN> elements) throws TransformerException
     {
         return new PassThroughIterator(elements);
     }

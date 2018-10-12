@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.gerdiproject.harvest.submission.elasticsearch.constants;
+package de.gerdiproject.harvest.harvester.loaders.constants;
 
 /**
  * This static class is a collection of constants that relate to the submission
@@ -26,7 +26,6 @@ public class ElasticSearchConstants
     public static final String BATCH_INDEX_INSTRUCTION = "{\"index\":{\"_id\":\"%s\"}}%n%s%n";
     public static final String BATCH_DELETE_INSTRUCTION = "{\"delete\":{\"_id\":\"%s\"}}%n";
     public static final String BULK_SUBMISSION_URL_SUFFIX = "_bulk";
-    public static final String SUBMITTER_ID = "ElasticSearch";
 
     // DATE RANGE FIX
     public static final String DATE_REGEX = "\"value\":(\"\\d\\d\\d\\d-\\d\\d-\\d\\dT\\d\\d:\\d\\d[^\"/]*Z\")";

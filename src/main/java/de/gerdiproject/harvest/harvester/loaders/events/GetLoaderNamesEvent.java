@@ -14,25 +14,19 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package de.gerdiproject.harvest.harvester.loaders;
+package de.gerdiproject.harvest.harvester.loaders.events;
+
+import java.util.Set;
+
+import de.gerdiproject.harvest.event.ISynchronousEvent;
+import de.gerdiproject.harvest.harvester.loaders.AbstractURLLoader;
 
 /**
- * This exception is thrown when an {@linkplain ILoader} fails to submit
- * documents.
+ * A synchronous event that aims to return a list of registered {@linkplain AbstractURLLoader}s.
  *
  * @author Robin Weiss
  */
-public class LoaderException extends RuntimeException
+public class GetLoaderNamesEvent implements ISynchronousEvent<Set<String>>
 {
-    private static final long serialVersionUID = -3315557273151442217L;
 
-    /**
-     * Constructor that forwards the super class constructor.
-     *
-     * @param message a message describing the exception
-     */
-    public LoaderException(String message)
-    {
-        super(message);
-    }
 }

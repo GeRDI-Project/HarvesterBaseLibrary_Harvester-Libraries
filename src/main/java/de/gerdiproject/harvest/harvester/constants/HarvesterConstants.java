@@ -58,7 +58,7 @@ public class HarvesterConstants
     public static final BooleanParameter ENABLED_PARAM = new BooleanParameter(
         "enabled",
         PARAMETER_CATEGORY,
-        false);
+        true);
 
 
     public static final BooleanParameter CONCURRENT_PARAM = new BooleanParameter(
@@ -85,7 +85,8 @@ public class HarvesterConstants
     public static final String HARVESTER_START = "Starting %s...";
     public static final String HARVESTER_END = "%s finished!";
     public static final String HARVESTER_FAILED = "%s failed!";
-    public static final String HARVESTER_ABORTED = "%s aborted!";
+    public static final String HARVESTER_ABORTED = "%s aborted!";;
+    public static final String ALL_FAILED = "Harvesting interrupted by unexpected error!";
 
     public static final String HARVESTER_SKIPPED_DISABLED = "Skipping %s, because it is disabled!";
     public static final String HARVESTER_SKIPPED_NO_CHANGES = "Skipping %s, because no changes were detected!";

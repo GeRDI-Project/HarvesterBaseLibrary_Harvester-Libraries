@@ -22,6 +22,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -139,13 +140,26 @@ public class ETLRegistry extends AbstractRestObject<ETLRegistry, ETLDetails>
         // do it asynchronously, so we can immediately return
         CompletableFuture.runAsync(()-> {
 
+            LOGGER.info("Preparing Harvesters");
+            final AtomicInteger preparedCount = new AtomicInteger(0);
             processHarvesters((AbstractETL<?, ?> harvester) -> {
-                harvester.prepareHarvest();
+                try
+                {
+                    harvester.prepareHarvest();
+                    preparedCount.incrementAndGet();
+                } catch (ETLPreconditionException e)
+                {
+                    LOGGER.info(e.getMessage());
+                }
             });
+
+            if (preparedCount.get() == 0)
+                throw new IllegalStateException("No harvester could be started.");
 
             if (getStatus() == HarvesterStatus.HARVESTING)
                 EventSystem.sendEvent(new HarvestStartedEvent(getHash(), getMaxNumberOfDocuments()));
 
+            LOGGER.info("Starting Harvesters");
             processHarvesters((AbstractETL<?, ?> harvester) -> {
                 if (harvester.getStatus() == HarvesterStatus.HARVESTING)
                     harvester.harvest();
@@ -155,8 +169,8 @@ public class ETLRegistry extends AbstractRestObject<ETLRegistry, ETLDetails>
         .thenAccept((Void v) -> {
             EventSystem.sendEvent(new HarvestFinishedEvent(true, getHash()));
         })
-        .exceptionally((Throwable cause) -> {
-
+        .exceptionally((Throwable reason) -> {
+            LOGGER.error(HarvesterConstants.ALL_FAILED, reason);
             EventSystem.sendEvent(new HarvestFinishedEvent(false, getHash()));
             return null;
         });
@@ -298,7 +312,7 @@ public class ETLRegistry extends AbstractRestObject<ETLRegistry, ETLDetails>
 
             for (int i = 0; i < len; i++) {
                 final int j = i;
-                subProcesses[i] = CompletableFuture.runAsync(() -> returnValues.set(j, function.apply(harvesters.get(j))));
+                subProcesses[i] = CompletableFuture.runAsync(() -> returnValues.add(function.apply(harvesters.get(j))));
             }
 
             // wait for all sub-processes to complete
@@ -309,7 +323,7 @@ public class ETLRegistry extends AbstractRestObject<ETLRegistry, ETLDetails>
             }
         } else {
             for (int i = 0; i < len; i++)
-                returnValues.set(i, function.apply(harvesters.get(i)));
+                returnValues.add(function.apply(harvesters.get(i)));
         }
 
         return returnValues;

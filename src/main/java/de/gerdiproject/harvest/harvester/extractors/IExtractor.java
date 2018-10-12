@@ -39,9 +39,11 @@ public interface IExtractor <EXOUT>
     /**
      * Extracts elements from a source repository.
      *
+     * @throws ExtractorException thrown when the extraction fails
+     *
      * @return an object that is to be transformed
      */
-    EXOUT extract();
+    EXOUT extract() throws ExtractorException;
 
 
     /**

@@ -14,25 +14,10 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package de.gerdiproject.harvest.harvester.loaders;
-
 /**
- * This exception is thrown when an {@linkplain ILoader} fails to submit
- * documents.
+ * This package contains static classes of constants concerning
+ * the loaders of {@linkplain de.gerdiproject.harvest.harvester.AbstractETL} components.
  *
  * @author Robin Weiss
  */
-public class LoaderException extends RuntimeException
-{
-    private static final long serialVersionUID = -3315557273151442217L;
-
-    /**
-     * Constructor that forwards the super class constructor.
-     *
-     * @param message a message describing the exception
-     */
-    public LoaderException(String message)
-    {
-        super(message);
-    }
-}
+package de.gerdiproject.harvest.harvester.loaders.constants;

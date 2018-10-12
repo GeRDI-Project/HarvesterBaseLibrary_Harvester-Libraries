@@ -28,7 +28,7 @@ import java.util.Iterator;
 public abstract class AbstractIteratorLoader <LOUT> implements ILoader<Iterator<LOUT>>
 {
     @Override
-    public void load(Iterator<LOUT> documents, boolean isLastDocument)
+    public void load(Iterator<LOUT> documents, boolean isLastDocument) throws LoaderException
     {
         while (documents.hasNext())
             loadElement(documents.next(), isLastDocument && !documents.hasNext());
@@ -40,6 +40,8 @@ public abstract class AbstractIteratorLoader <LOUT> implements ILoader<Iterator<
      *
      * @param document a document that is to be loaded
      * @param isLastDocument if true, this is the last document that is to be loaded
+     *
+     * @throws LoaderException when the load did not work properly
      */
-    public abstract void loadElement(LOUT document, boolean isLastDocument);
+    public abstract void loadElement(LOUT document, boolean isLastDocument) throws LoaderException;
 }
