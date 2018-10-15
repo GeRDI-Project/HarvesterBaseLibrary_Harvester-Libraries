@@ -37,9 +37,9 @@ import javax.ws.rs.core.Response;
 
 import de.gerdiproject.harvest.application.MainContext;
 import de.gerdiproject.harvest.application.events.ResetContextEvent;
+import de.gerdiproject.harvest.etls.events.HarvestStartedEvent;
+import de.gerdiproject.harvest.etls.events.StartHarvestEvent;
 import de.gerdiproject.harvest.event.EventSystem;
-import de.gerdiproject.harvest.harvester.events.HarvestStartedEvent;
-import de.gerdiproject.harvest.harvester.events.StartHarvestEvent;
 import de.gerdiproject.harvest.rest.HttpResponseFactory;
 import de.gerdiproject.harvest.state.IState;
 import de.gerdiproject.harvest.state.constants.StateConstants;

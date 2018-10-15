@@ -18,9 +18,9 @@ package de.gerdiproject.harvest.config.parameters;
 import java.text.ParseException;
 import java.util.Set;
 
+import de.gerdiproject.harvest.etls.loaders.ILoader;
+import de.gerdiproject.harvest.etls.loaders.events.GetLoaderNamesEvent;
 import de.gerdiproject.harvest.event.EventSystem;
-import de.gerdiproject.harvest.harvester.loaders.ILoader;
-import de.gerdiproject.harvest.harvester.loaders.events.GetLoaderNamesEvent;
 
 /**
  * This parameter holds an identifier of an {@linkplain ILoader}.

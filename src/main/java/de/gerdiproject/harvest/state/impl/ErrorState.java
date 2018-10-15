@@ -18,8 +18,8 @@ package de.gerdiproject.harvest.state.impl;
 import javax.ws.rs.core.Response;
 
 import de.gerdiproject.harvest.application.events.ResetContextEvent;
+import de.gerdiproject.harvest.etls.events.HarvesterInitializedEvent;
 import de.gerdiproject.harvest.event.EventSystem;
-import de.gerdiproject.harvest.harvester.events.HarvesterInitializedEvent;
 import de.gerdiproject.harvest.rest.HttpResponseFactory;
 import de.gerdiproject.harvest.state.IState;
 import de.gerdiproject.harvest.state.constants.StateConstants;

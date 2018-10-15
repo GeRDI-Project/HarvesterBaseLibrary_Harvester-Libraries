@@ -23,7 +23,7 @@ import org.junit.Test;
 import de.gerdiproject.AbstractUnitTest;
 import de.gerdiproject.application.examples.MockedContextListener;
 import de.gerdiproject.harvest.application.MainContext;
-import de.gerdiproject.harvest.harvester.events.HarvesterInitializedEvent;
+import de.gerdiproject.harvest.etls.events.HarvesterInitializedEvent;
 
 /**
  * This class offers unit tests for the {@linkplain MainContext}.

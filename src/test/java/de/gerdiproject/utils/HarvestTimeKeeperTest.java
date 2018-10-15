@@ -26,10 +26,10 @@ import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
 import de.gerdiproject.AbstractFileSystemUnitTest;
+import de.gerdiproject.harvest.etls.events.HarvestFinishedEvent;
+import de.gerdiproject.harvest.etls.events.HarvestStartedEvent;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.event.IEvent;
-import de.gerdiproject.harvest.harvester.events.HarvestFinishedEvent;
-import de.gerdiproject.harvest.harvester.events.HarvestStartedEvent;
 import de.gerdiproject.harvest.state.events.AbortingStartedEvent;
 import de.gerdiproject.harvest.utils.time.HarvestTimeKeeper;
 import de.gerdiproject.harvest.utils.time.ProcessTimeMeasure;

@@ -20,8 +20,8 @@ import java.util.Arrays;
 import java.util.List;
 
 import de.gerdiproject.harvest.application.ContextListener;
-import de.gerdiproject.harvest.harvester.AbstractETL;
-import de.gerdiproject.harvest.harvester.loaders.ILoader;
+import de.gerdiproject.harvest.etls.AbstractETL;
+import de.gerdiproject.harvest.etls.loaders.ILoader;
 import de.gerdiproject.utils.examples.harvestercache.MockedETL;
 
 /**

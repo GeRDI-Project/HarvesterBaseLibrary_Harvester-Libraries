@@ -20,10 +20,10 @@ import java.util.function.Consumer;
 
 import com.google.gson.GsonBuilder;
 
+import de.gerdiproject.harvest.etls.events.HarvestFinishedEvent;
+import de.gerdiproject.harvest.etls.events.HarvestStartedEvent;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.event.IEventListener;
-import de.gerdiproject.harvest.harvester.events.HarvestFinishedEvent;
-import de.gerdiproject.harvest.harvester.events.HarvestStartedEvent;
 import de.gerdiproject.harvest.utils.cache.ICachedObject;
 import de.gerdiproject.harvest.utils.data.DiskIO;
 import de.gerdiproject.harvest.utils.time.ProcessTimeMeasure.ProcessStatus;

@@ -36,9 +36,9 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 
 import de.gerdiproject.AbstractFileSystemUnitTest;
+import de.gerdiproject.harvest.etls.events.HarvestFinishedEvent;
+import de.gerdiproject.harvest.etls.events.HarvestStartedEvent;
 import de.gerdiproject.harvest.event.EventSystem;
-import de.gerdiproject.harvest.harvester.events.HarvestFinishedEvent;
-import de.gerdiproject.harvest.harvester.events.HarvestStartedEvent;
 import de.gerdiproject.harvest.save.HarvestSaver;
 import de.gerdiproject.harvest.save.constants.SaveConstants;
 import de.gerdiproject.harvest.save.events.SaveHarvestEvent;

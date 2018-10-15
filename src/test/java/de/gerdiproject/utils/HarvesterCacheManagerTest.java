@@ -24,8 +24,8 @@ import java.nio.charset.StandardCharsets;
 import org.junit.Test;
 
 import de.gerdiproject.AbstractFileSystemUnitTest;
+import de.gerdiproject.harvest.etls.loaders.DiskLoader;
 import de.gerdiproject.harvest.event.EventSystem;
-import de.gerdiproject.harvest.harvester.loaders.DiskLoader;
 import de.gerdiproject.harvest.utils.cache.HarvesterCache;
 import de.gerdiproject.harvest.utils.cache.HarvesterCacheManager;
 import de.gerdiproject.harvest.utils.cache.events.RegisterHarvesterCacheEvent;

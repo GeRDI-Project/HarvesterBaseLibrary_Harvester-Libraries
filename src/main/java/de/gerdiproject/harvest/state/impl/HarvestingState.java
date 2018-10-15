@@ -19,9 +19,9 @@ import java.util.function.Consumer;
 
 import javax.ws.rs.core.Response;
 
+import de.gerdiproject.harvest.etls.events.DocumentsHarvestedEvent;
+import de.gerdiproject.harvest.etls.events.HarvestFinishedEvent;
 import de.gerdiproject.harvest.event.EventSystem;
-import de.gerdiproject.harvest.harvester.events.DocumentsHarvestedEvent;
-import de.gerdiproject.harvest.harvester.events.HarvestFinishedEvent;
 import de.gerdiproject.harvest.rest.HttpResponseFactory;
 import de.gerdiproject.harvest.rest.constants.RestConstants;
 import de.gerdiproject.harvest.state.AbstractProgressingState;

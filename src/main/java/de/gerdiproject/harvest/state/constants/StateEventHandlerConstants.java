@@ -20,9 +20,9 @@ import java.util.function.Consumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import de.gerdiproject.harvest.harvester.events.HarvestFinishedEvent;
-import de.gerdiproject.harvest.harvester.events.HarvestStartedEvent;
-import de.gerdiproject.harvest.harvester.events.HarvesterInitializedEvent;
+import de.gerdiproject.harvest.etls.events.HarvestFinishedEvent;
+import de.gerdiproject.harvest.etls.events.HarvestStartedEvent;
+import de.gerdiproject.harvest.etls.events.HarvesterInitializedEvent;
 import de.gerdiproject.harvest.state.StateMachine;
 import de.gerdiproject.harvest.state.events.AbortingFinishedEvent;
 import de.gerdiproject.harvest.state.impl.ErrorState;

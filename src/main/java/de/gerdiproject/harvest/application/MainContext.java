@@ -25,14 +25,14 @@ import org.slf4j.LoggerFactory;
 import de.gerdiproject.harvest.application.constants.ApplicationConstants;
 import de.gerdiproject.harvest.config.Configuration;
 import de.gerdiproject.harvest.config.constants.ConfigurationConstants;
+import de.gerdiproject.harvest.etls.AbstractETL;
+import de.gerdiproject.harvest.etls.ETLPreconditionException;
+import de.gerdiproject.harvest.etls.events.GetRepositoryNameEvent;
+import de.gerdiproject.harvest.etls.events.HarvesterInitializedEvent;
+import de.gerdiproject.harvest.etls.loaders.ILoader;
+import de.gerdiproject.harvest.etls.loaders.utils.LoaderFactory;
+import de.gerdiproject.harvest.etls.utils.ETLRegistry;
 import de.gerdiproject.harvest.event.EventSystem;
-import de.gerdiproject.harvest.harvester.AbstractETL;
-import de.gerdiproject.harvest.harvester.ETLPreconditionException;
-import de.gerdiproject.harvest.harvester.events.GetRepositoryNameEvent;
-import de.gerdiproject.harvest.harvester.events.HarvesterInitializedEvent;
-import de.gerdiproject.harvest.harvester.loaders.ILoader;
-import de.gerdiproject.harvest.harvester.loaders.utils.LoaderFactory;
-import de.gerdiproject.harvest.harvester.utils.ETLRegistry;
 import de.gerdiproject.harvest.scheduler.Scheduler;
 import de.gerdiproject.harvest.scheduler.constants.SchedulerConstants;
 import de.gerdiproject.harvest.state.StateMachine;
@@ -84,7 +84,7 @@ public class MainContext
      * @throws IllegalAccessException can be thrown when the harvester class cannot be instantiated
      * @throws InstantiationException can be thrown when the harvester class cannot be instantiated
      *
-     * @see de.gerdiproject.harvest.harvester.AbstractETL
+     * @see de.gerdiproject.harvest.etls.AbstractETL
      */
     private MainContext(
         Class<? extends ContextListener> callerClass,

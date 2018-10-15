@@ -29,12 +29,12 @@ import de.gerdiproject.harvest.application.constants.ApplicationConstants;
 import de.gerdiproject.harvest.application.events.ContextDestroyedEvent;
 import de.gerdiproject.harvest.application.events.ContextInitializedEvent;
 import de.gerdiproject.harvest.application.events.ResetContextEvent;
+import de.gerdiproject.harvest.etls.AbstractETL;
+import de.gerdiproject.harvest.etls.loaders.AbstractURLLoader;
+import de.gerdiproject.harvest.etls.loaders.DiskLoader;
+import de.gerdiproject.harvest.etls.loaders.ElasticSearchLoader;
+import de.gerdiproject.harvest.etls.loaders.ILoader;
 import de.gerdiproject.harvest.event.EventSystem;
-import de.gerdiproject.harvest.harvester.AbstractETL;
-import de.gerdiproject.harvest.harvester.loaders.AbstractURLLoader;
-import de.gerdiproject.harvest.harvester.loaders.DiskLoader;
-import de.gerdiproject.harvest.harvester.loaders.ElasticSearchLoader;
-import de.gerdiproject.harvest.harvester.loaders.ILoader;
 
 
 /**
@@ -43,7 +43,7 @@ import de.gerdiproject.harvest.harvester.loaders.ILoader;
  * the harvester micro service to work.
  *
  * @see javax.servlet.annotation.WebListener
- * @see de.gerdiproject.harvest.harvester.AbstractETL
+ * @see de.gerdiproject.harvest.etls.AbstractETL
  *
  * @author Robin Weiss
  */

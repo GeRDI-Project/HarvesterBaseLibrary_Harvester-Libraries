@@ -24,9 +24,9 @@ import java.util.List;
 import de.gerdiproject.AbstractFileSystemUnitTest;
 import de.gerdiproject.application.ContextListenerTest;
 import de.gerdiproject.harvest.application.ContextListener;
-import de.gerdiproject.harvest.harvester.StaticIteratorETL;
-import de.gerdiproject.harvest.harvester.extractors.AbstractIteratorExtractor;
-import de.gerdiproject.harvest.harvester.transformers.AbstractIteratorTransformer;
+import de.gerdiproject.harvest.etls.StaticIteratorETL;
+import de.gerdiproject.harvest.etls.extractors.AbstractIteratorExtractor;
+import de.gerdiproject.harvest.etls.transformers.AbstractIteratorTransformer;
 import de.gerdiproject.json.datacite.DataCiteJson;
 import de.gerdiproject.json.datacite.Title;
 

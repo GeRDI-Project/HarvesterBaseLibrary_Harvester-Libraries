@@ -21,10 +21,10 @@ import java.util.function.Consumer;
 
 import de.gerdiproject.harvest.IDocument;
 import de.gerdiproject.harvest.application.events.ContextDestroyedEvent;
+import de.gerdiproject.harvest.etls.loaders.AbstractURLLoader;
+import de.gerdiproject.harvest.etls.loaders.DiskLoader;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.event.IEventListener;
-import de.gerdiproject.harvest.harvester.loaders.AbstractURLLoader;
-import de.gerdiproject.harvest.harvester.loaders.DiskLoader;
 import de.gerdiproject.harvest.utils.FileUtils;
 import de.gerdiproject.harvest.utils.HashGenerator;
 import de.gerdiproject.json.datacite.DataCiteJson;
