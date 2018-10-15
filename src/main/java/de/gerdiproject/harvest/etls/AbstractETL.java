@@ -48,8 +48,6 @@ import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.event.IEventListener;
 import de.gerdiproject.harvest.state.events.StartAbortingEvent;
 import de.gerdiproject.harvest.utils.HashGenerator;
-import de.gerdiproject.harvest.utils.cache.HarvesterCache;
-import de.gerdiproject.harvest.utils.cache.events.RegisterHarvesterCacheEvent;
 import de.gerdiproject.harvest.utils.data.HttpRequester;
 import de.gerdiproject.harvest.utils.data.constants.DataOperationConstants;
 import de.gerdiproject.json.GsonUtils;
@@ -112,6 +110,44 @@ public abstract class AbstractETL <EOUT, TOUT> implements IEventListener
         this.extractor = createExtractor();
         this.transformer = createTransformer();
         this.loader = createLoader();
+    }
+
+
+    /**
+     * Creates an {@linkplain IExtractor} for retrieving elements from
+     * the harvested repository.
+     *
+     * @return an {@linkplain IExtractor} for retrieving elements from
+     * the harvested repository
+     */
+    protected abstract IExtractor<EOUT> createExtractor();
+
+
+    /**
+     * Creates an {@linkplain ITransformer} for transforming source elements
+     * to documents that can be submitted.
+     *
+     * @return {@linkplain ITransformer} for transforming source elements
+     */
+    protected abstract ITransformer<EOUT, TOUT> createTransformer();
+
+
+    /**
+     * Creates an {@linkplain ILoader} for submitting the harvested documents
+     * to a search index.
+     *
+     * @return an {@linkplain ILoader} for submitting the harvested documents
+     */
+    @SuppressWarnings("unchecked") // NOPMD the possible ClassCastException is caught
+    protected ILoader<TOUT> createLoader()
+    {
+        try {
+            return (ILoader<TOUT>) EventSystem.sendSynchronousEvent(new CreateLoaderEvent());
+
+        } catch (ClassCastException e) {
+            logger.error(e.getMessage());
+            return null;
+        }
     }
 
 
@@ -203,47 +239,6 @@ public abstract class AbstractETL <EOUT, TOUT> implements IEventListener
     }
 
 
-    /**
-     * Creates a cache for harvested documents.
-     *
-     * @param temporaryPath the path to a folder were documents are temporarily stored
-     * @param stablePath the path to a folder were documents are permanently stored
-     *         when the harvest was successful
-     *
-     * @return a cache for harvested documents
-     */
-    protected HarvesterCache initCache(final String temporaryPath, final String stablePath)
-    {
-        final HarvesterCache cache = new HarvesterCache(
-            getName(),
-            temporaryPath,
-            stablePath,
-            getCharset());
-
-        cache.addEventListeners();
-
-        EventSystem.sendEvent(new RegisterHarvesterCacheEvent(cache));
-        return cache;
-    }
-
-
-    protected abstract IExtractor<EOUT> createExtractor();
-
-
-    protected abstract ITransformer<EOUT, TOUT> createTransformer();
-
-
-    @SuppressWarnings("unchecked") // NOPMD the possible ClassCastException is caught
-    protected ILoader<TOUT> createLoader()
-    {
-        try {
-            return (ILoader<TOUT>) EventSystem.sendSynchronousEvent(new CreateLoaderEvent());
-
-        } catch (ClassCastException e) {
-            logger.error(e.getMessage());
-            return null;
-        }
-    }
 
 
     /**

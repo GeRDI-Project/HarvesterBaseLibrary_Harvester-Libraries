@@ -18,7 +18,7 @@ package de.gerdiproject;
 
 import java.io.File;
 
-import de.gerdiproject.harvest.utils.FileUtils;
+import de.gerdiproject.harvest.utils.file.FileUtils;
 
 /**
  * This class serves as a base for all unit tests that generate files for the purpose of testing.

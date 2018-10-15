@@ -23,7 +23,7 @@ import de.gerdiproject.harvest.config.Configuration;
 import de.gerdiproject.harvest.config.parameters.ParameterCategory;
 import de.gerdiproject.harvest.state.impl.ErrorState;
 import de.gerdiproject.harvest.state.impl.IdleState;
-import de.gerdiproject.harvest.utils.cache.constants.CacheConstants;
+import de.gerdiproject.harvest.utils.file.constants.FileConstants;
 
 /**
  * This static class is a collection of constants, commonly used for classes
@@ -63,7 +63,7 @@ public class ConfigurationConstants
     public static final String STRING_VALID_VALUES_TEXT = "<anything>";
     public static final String URL_VALID_VALUES_TEXT = "<a valid URL>";
 
-    public static final String CONFIG_PATH = CacheConstants.CACHE_FOLDER_PATH + "config.json";
+    public static final String CONFIG_PATH = FileConstants.CACHE_FOLDER_PATH + "config.json";
     public static final String LOAD_OK = "Loaded configuration from '%s'.";
     public static final String LOAD_FAILED = "Could not load configuration from '%s': %s";
     public static final String NO_CONFIG_FILE_EXISTS = "Did not load configuration, because it is not cached at '%s'!";

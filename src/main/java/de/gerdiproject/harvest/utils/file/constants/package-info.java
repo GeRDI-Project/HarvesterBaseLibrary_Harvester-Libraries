@@ -15,8 +15,8 @@
  */
 /**
  * This package contains static classes of constants concerning
- * the caching of harvested documents.
+ * file operations.
  *
  * @author Robin Weiss
  */
-package de.gerdiproject.harvest.utils.cache.constants;
+package de.gerdiproject.harvest.utils.file.constants;

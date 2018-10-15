@@ -36,7 +36,6 @@ import de.gerdiproject.harvest.rest.HttpResponseFactory;
 import de.gerdiproject.harvest.state.IState;
 import de.gerdiproject.harvest.state.StateMachine;
 import de.gerdiproject.harvest.state.impl.ErrorState;
-import de.gerdiproject.harvest.utils.cache.events.GetNumberOfHarvestedDocumentsEvent;
 import de.gerdiproject.harvest.utils.maven.MavenUtils;
 import de.gerdiproject.harvest.utils.maven.constants.MavenConstants;
 import de.gerdiproject.harvest.utils.maven.events.GetMavenUtilsEvent;
@@ -118,23 +117,6 @@ public final class StatusRestResource
             return HttpResponseFactory.createBadRequestResponse();
         else
             return HttpResponseFactory.createOkResponse(maxDocs);
-    }
-
-
-    /**
-     * Retrieves the amount of documents that were harvested and are currently
-     * cached.
-     *
-     * @return the amount of documents that were harvested
-     */
-    @GET
-    @Path("harvested-documents")
-    @Produces({
-        MediaType.TEXT_PLAIN
-    })
-    public Response getHarvestedDocumentCount()
-    {
-        return HttpResponseFactory.createSynchronousEventResponse(new GetNumberOfHarvestedDocumentsEvent());
     }
 
 

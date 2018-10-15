@@ -39,8 +39,8 @@ import de.gerdiproject.harvest.scheduler.events.ScheduledTaskExecutedEvent;
 import de.gerdiproject.harvest.scheduler.json.ChangeSchedulerRequest;
 import de.gerdiproject.harvest.scheduler.json.SchedulerResponse;
 import de.gerdiproject.harvest.scheduler.utils.CronUtils;
-import de.gerdiproject.harvest.utils.cache.ICachedObject;
 import de.gerdiproject.harvest.utils.data.DiskIO;
+import de.gerdiproject.harvest.utils.file.ICachedObject;
 
 /**
  * This class manages a schedule of cron tabs that trigger harvests. The schedule is saved to and loaded from disk.

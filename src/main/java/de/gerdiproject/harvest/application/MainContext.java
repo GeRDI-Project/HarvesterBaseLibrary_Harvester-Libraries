@@ -38,9 +38,7 @@ import de.gerdiproject.harvest.scheduler.constants.SchedulerConstants;
 import de.gerdiproject.harvest.state.StateMachine;
 import de.gerdiproject.harvest.state.impl.InitializationState;
 import de.gerdiproject.harvest.utils.CancelableFuture;
-import de.gerdiproject.harvest.utils.cache.HarvesterCacheManager;
-import de.gerdiproject.harvest.utils.cache.constants.CacheConstants;
-import de.gerdiproject.harvest.utils.cache.events.GetNumberOfHarvestedDocumentsEvent;
+import de.gerdiproject.harvest.utils.file.constants.FileConstants;
 import de.gerdiproject.harvest.utils.logger.HarvesterLog;
 import de.gerdiproject.harvest.utils.logger.constants.LoggerConstants;
 import de.gerdiproject.harvest.utils.logger.events.GetMainLogEvent;
@@ -61,7 +59,6 @@ public class MainContext
     private static volatile MainContext instance = null;
 
     private final HarvesterLog log;
-    private final HarvesterCacheManager cacheManager;
     private final String moduleName;
     private final HarvestTimeKeeper timeKeeper;
     private final ETLRegistry etlRegistry;
@@ -102,9 +99,6 @@ public class MainContext
 
         this.mavenUtils = createMavenUtils(callerClass);
         EventSystem.addSynchronousListener(GetMavenUtilsEvent.class, this::getMavenUtils);
-
-        this.cacheManager = createCacheManager();
-        EventSystem.addSynchronousListener(GetNumberOfHarvestedDocumentsEvent.class, this::getNumberOfHarvestedDocuments);
 
         EventSystem.addSynchronousListener(GetRepositoryNameEvent.class, repositoryNameSupplier);
 
@@ -188,24 +182,10 @@ public class MainContext
     {
         EventSystem.removeSynchronousListener(GetMainLogEvent.class);
         EventSystem.removeSynchronousListener(GetMavenUtilsEvent.class);
-        EventSystem.removeSynchronousListener(GetNumberOfHarvestedDocumentsEvent.class);
         timeKeeper.removeEventListeners();
         scheduler.removeEventListeners();
         configuration.removeEventListeners();
-        cacheManager.removeEventListeners();
         etlRegistry.removeEventListeners();
-    }
-
-
-    /**
-     * Synchronous Callback function:<br>
-     * Returns the number of harvested, cached documents.
-     *
-     * @return the number of harvested, cached documents
-     */
-    private int getNumberOfHarvestedDocuments()
-    {
-        return cacheManager.getNumberOfHarvestedDocuments();
     }
 
 
@@ -296,25 +276,6 @@ public class MainContext
     }
 
 
-
-    /**
-     * Creates a {@linkplain HarvesterCacheManager} and assigns it to this context.
-     *
-     * @return a new {@linkplain HarvesterCacheManager} for this context
-     */
-    private HarvesterCacheManager createCacheManager()
-    {
-        LOGGER.info(String.format(ApplicationConstants.INIT_FIELD, HarvesterCacheManager.class.getSimpleName()));
-
-        HarvesterCacheManager manager = new HarvesterCacheManager();
-        manager.addEventListeners();
-
-        LOGGER.info(String.format(ApplicationConstants.INIT_FIELD_SUCCESS, HarvesterCacheManager.class.getSimpleName()));
-        return manager;
-    }
-
-
-
     /**
      * Creates the {@linkplain ETLRegistry} with all {@linkplain AbstractETL}s and assigns it to this context.
      *
@@ -391,7 +352,7 @@ public class MainContext
 
         final String timeKeeperCachePath =
             String.format(
-                CacheConstants.HARVEST_TIME_KEEPER_CACHE_FILE_PATH,
+                FileConstants.HARVEST_TIME_KEEPER_CACHE_FILE_PATH,
                 moduleName);
 
         HarvestTimeKeeper keeper = new HarvestTimeKeeper(timeKeeperCachePath);

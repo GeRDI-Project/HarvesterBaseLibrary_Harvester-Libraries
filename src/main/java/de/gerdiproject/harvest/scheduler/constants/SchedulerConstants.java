@@ -16,7 +16,7 @@
  */
 package de.gerdiproject.harvest.scheduler.constants;
 
-import de.gerdiproject.harvest.utils.cache.constants.CacheConstants;
+import de.gerdiproject.harvest.utils.file.constants.FileConstants;
 
 /**
  * This class offers constants that are related to scheduling.
@@ -45,7 +45,7 @@ public class SchedulerConstants
         + "POST _deleteAll\n"
         + "Deletes all harvest tasks";
 
-    public static final String CACHE_PATH = CacheConstants.CACHE_FOLDER_PATH + "schedule.json";
+    public static final String CACHE_PATH = FileConstants.CACHE_FOLDER_PATH + "schedule.json";
     public static final String ERROR_RESCHEDULE = "Cannot re-schedule task: %s";
     public static final String LOAD_OK = "Successfully loaded schedule from disk!";
     public static final String ERROR_LOAD = "Cannot load cron tab from disk: %s";

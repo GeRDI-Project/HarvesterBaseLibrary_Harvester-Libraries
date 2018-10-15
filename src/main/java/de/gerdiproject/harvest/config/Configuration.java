@@ -41,8 +41,8 @@ import de.gerdiproject.harvest.config.parameters.AbstractParameter;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.rest.AbstractRestObject;
 import de.gerdiproject.harvest.state.StateMachine;
-import de.gerdiproject.harvest.utils.cache.ICachedObject;
 import de.gerdiproject.harvest.utils.data.DiskIO;
+import de.gerdiproject.harvest.utils.file.ICachedObject;
 
 
 

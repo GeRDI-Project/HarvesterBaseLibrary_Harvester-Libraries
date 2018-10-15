@@ -1,5 +1,5 @@
 /*
- *  Copyright © 2018 Robin Weiss (http://www.gerdi-project.de/)
+ *  Copyright © 2017 Robin Weiss (http://www.gerdi-project.de/)
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -14,16 +14,9 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package de.gerdiproject.harvest.utils.cache.events;
-
-import de.gerdiproject.harvest.event.ISynchronousEvent;
-
 /**
- * Returns the number of changed documents that are currently cached.
+ * This package contains constants classes for manipulating files.
  *
  * @author Robin Weiss
  */
-public class GetNumberOfHarvestedDocumentsEvent implements ISynchronousEvent<Integer>
-{
-
-}
+package de.gerdiproject.harvest.utils.file;

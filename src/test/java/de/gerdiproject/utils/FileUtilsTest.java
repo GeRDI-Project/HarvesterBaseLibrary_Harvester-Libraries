@@ -35,9 +35,9 @@ import org.junit.Test;
 import com.google.gson.Gson;
 
 import de.gerdiproject.AbstractUnitTest;
-import de.gerdiproject.harvest.utils.FileUtils;
-import de.gerdiproject.harvest.utils.cache.constants.CacheConstants;
 import de.gerdiproject.harvest.utils.data.DiskIO;
+import de.gerdiproject.harvest.utils.file.FileUtils;
+import de.gerdiproject.harvest.utils.file.constants.FileConstants;
 
 /**
  * This class provides test cases for the {@linkplain FileUtils}.
@@ -322,7 +322,7 @@ public class FileUtilsTest extends AbstractUnitTest
 
         // check if backup file has been removed
         assertFalse("The method replaceFile() should remove the backup files created during execution of the method!",
-                    new File(COPY_TEST_TARGET_FILE.getPath() + CacheConstants.TEMP_FILE_EXTENSION).exists());
+                    new File(COPY_TEST_TARGET_FILE.getPath() + FileConstants.TEMP_FILE_EXTENSION).exists());
     }
 
 
@@ -563,7 +563,7 @@ public class FileUtilsTest extends AbstractUnitTest
 
         // check if backup file has been removed
         assertFalse("The method replaceFile() should clean up all backup files created in the process!",
-                    new File(targetFile.getPath() + CacheConstants.TEMP_FILE_EXTENSION).exists());
+                    new File(targetFile.getPath() + FileConstants.TEMP_FILE_EXTENSION).exists());
     }
 
 

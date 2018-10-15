@@ -13,18 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.gerdiproject.harvest.utils.cache.constants;
+package de.gerdiproject.harvest.utils.file.constants;
 
 
-import de.gerdiproject.harvest.utils.cache.HarvesterCache;
 
 /**
- * This static class is a collection of constants, used by
- * {@linkplain HarvesterCache}s.
+ * This static class is a collection of constants, used by file operations.
  *
  * @author Robin Weiss
  */
-public class CacheConstants
+public class FileConstants
 {
     public static final String JSON_FILE_EXTENSION = ".json";
     public static final String TEMP_FILE_EXTENSION = ".tmp";
@@ -35,18 +33,6 @@ public class CacheConstants
         CACHE_FOLDER_PATH
         + "processTimes"
         + JSON_FILE_EXTENSION;
-
-
-    public static final String TEMP_HARVESTER_CACHE_FOLDER_PATH = CACHE_FOLDER_PATH + "documents_temp/%s/";
-    public static final String STABLE_HARVESTER_CACHE_FOLDER_PATH = CACHE_FOLDER_PATH + "documents/%s/";
-
-    public static final String VERSIONS_FOLDER_NAME = "versions";
-    public static final String CHANGES_FOLDER_NAME = "latestChanges";
-
-    public static final String DOCUMENT_HASH_FILE_PATH = "%s/%s/%s.json";
-    public static final String SOURCE_HASH_FILE_PATH = "%s/sourceHash.json";
-
-    public static final String CACHE_INIT_FAILED = "Could not initialize %s!";
 
     public static final String DELETE_FILE_SUCCESS = "Deleted file '%s'.";
     public static final String DELETE_FILE_FAILED = "Could not delete file '%s'!";
@@ -83,7 +69,7 @@ public class CacheConstants
      * Private constructor, because this class just serves as a place to define
      * constants.
      */
-    private CacheConstants()
+    private FileConstants()
     {
     }
 }

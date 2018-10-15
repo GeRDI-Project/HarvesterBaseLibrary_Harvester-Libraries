@@ -14,7 +14,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package de.gerdiproject.harvest.utils;
+package de.gerdiproject.harvest.utils.file;
 
 import java.io.File;
 import java.io.IOException;
@@ -26,7 +26,7 @@ import java.nio.file.StandardCopyOption;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import de.gerdiproject.harvest.utils.cache.constants.CacheConstants;
+import de.gerdiproject.harvest.utils.file.constants.FileConstants;
 
 /**
  * A small class with helper functions that are used for file operations.
@@ -77,11 +77,11 @@ public class FileUtils
 
             if (!wasDeleted) {
                 if (ioException != null)
-                    LOGGER.error(String.format(CacheConstants.DELETE_FILE_FAILED, deletedFile.getPath()), ioException);
+                    LOGGER.error(String.format(FileConstants.DELETE_FILE_FAILED, deletedFile.getPath()), ioException);
                 else
-                    LOGGER.error(String.format(CacheConstants.DELETE_FILE_FAILED, deletedFile.getPath()));
+                    LOGGER.error(String.format(FileConstants.DELETE_FILE_FAILED, deletedFile.getPath()));
             } else
-                LOGGER.trace(String.format(CacheConstants.DELETE_FILE_SUCCESS, deletedFile.getPath()));
+                LOGGER.trace(String.format(FileConstants.DELETE_FILE_SUCCESS, deletedFile.getPath()));
 
         }
     }
@@ -97,7 +97,7 @@ public class FileUtils
     {
         if (!newFile.exists()) {
             LOGGER.error(String.format(
-                             CacheConstants.REPLACE_FILE_FAILED_NO_FILE,
+                             FileConstants.REPLACE_FILE_FAILED_NO_FILE,
                              targetFile.getPath(),
                              newFile.getPath()));
             return;
@@ -107,11 +107,11 @@ public class FileUtils
 
         // back up target file, in case something goes wrong
         if (targetFile.exists()) {
-            backup = new File(targetFile.getPath() + CacheConstants.TEMP_FILE_EXTENSION);
+            backup = new File(targetFile.getPath() + FileConstants.TEMP_FILE_EXTENSION);
 
             if (!targetFile.renameTo(backup)) {
                 LOGGER.error(String.format(
-                                 CacheConstants.REPLACE_FILE_FAILED_CANNOT_BACKUP,
+                                 FileConstants.REPLACE_FILE_FAILED_CANNOT_BACKUP,
                                  targetFile.getPath(),
                                  newFile.getPath()));
                 return;
@@ -120,24 +120,24 @@ public class FileUtils
 
         if (!createDirectories(targetFile.getParentFile())) {
             LOGGER.error(String.format(
-                             CacheConstants.REPLACE_FILE_FAILED_NO_TARGET_DIR,
+                             FileConstants.REPLACE_FILE_FAILED_NO_TARGET_DIR,
                              targetFile.getPath(),
                              newFile.getPath()));
 
             if (backup != null && !backup.renameTo(targetFile))
-                LOGGER.error(String.format(CacheConstants.REPLACE_FILE_FAILED_CANNOT_RESTORE, targetFile.getPath()));
+                LOGGER.error(String.format(FileConstants.REPLACE_FILE_FAILED_CANNOT_RESTORE, targetFile.getPath()));
 
             return;
         }
 
         if (!newFile.renameTo(targetFile)) {
-            LOGGER.error(String.format(CacheConstants.REPLACE_FILE_FAILED, targetFile.getPath(), newFile.getPath()));
+            LOGGER.error(String.format(FileConstants.REPLACE_FILE_FAILED, targetFile.getPath(), newFile.getPath()));
 
             if (backup != null && !backup.renameTo(targetFile))
-                LOGGER.error(String.format(CacheConstants.REPLACE_FILE_FAILED_CANNOT_RESTORE, targetFile.getPath()));
+                LOGGER.error(String.format(FileConstants.REPLACE_FILE_FAILED_CANNOT_RESTORE, targetFile.getPath()));
 
         } else {
-            LOGGER.trace(String.format(CacheConstants.REPLACE_FILE_SUCCESS, targetFile.getPath(), newFile.getPath()));
+            LOGGER.trace(String.format(FileConstants.REPLACE_FILE_SUCCESS, targetFile.getPath(), newFile.getPath()));
 
             if (backup != null)
                 deleteFile(backup);
@@ -155,7 +155,7 @@ public class FileUtils
     {
         if (!sourceFile.exists())
             LOGGER.error(String.format(
-                             CacheConstants.COPY_FILE_FAILED_NO_FILE,
+                             FileConstants.COPY_FILE_FAILED_NO_FILE,
                              sourceFile.getAbsolutePath(),
                              targetFile.getAbsolutePath()));
 
@@ -174,7 +174,7 @@ public class FileUtils
                     }
                 } catch (IOException e) {
                     LOGGER.error(String.format(
-                                     CacheConstants.COPY_FILE_FAILED,
+                                     FileConstants.COPY_FILE_FAILED,
                                      sourceFile.getPath(),
                                      targetFile.getPath()),
                                  e);
@@ -186,7 +186,7 @@ public class FileUtils
                 } catch (IOException e) {
                     LOGGER.error(
                         String.format(
-                            CacheConstants.COPY_FILE_FAILED,
+                            FileConstants.COPY_FILE_FAILED,
                             sourceFile.getAbsolutePath(),
                             targetFile.getAbsolutePath()),
                         e);
@@ -194,7 +194,7 @@ public class FileUtils
                 }
             }
 
-            LOGGER.trace(String.format(CacheConstants.COPY_FILE_SUCCESS, sourceFile.getPath(), targetFile.getPath()));
+            LOGGER.trace(String.format(FileConstants.COPY_FILE_SUCCESS, sourceFile.getPath(), targetFile.getPath()));
         }
     }
 
@@ -214,9 +214,9 @@ public class FileUtils
         final boolean creationSuccessful = directory.mkdirs();
 
         if (creationSuccessful)
-            LOGGER.trace(String.format(CacheConstants.CREATE_DIR_SUCCESS, directory.getPath()));
+            LOGGER.trace(String.format(FileConstants.CREATE_DIR_SUCCESS, directory.getPath()));
         else
-            LOGGER.error(String.format(CacheConstants.CREATE_DIR_FAILED, directory.getPath()));
+            LOGGER.error(String.format(FileConstants.CREATE_DIR_FAILED, directory.getPath()));
 
         return creationSuccessful;
     }
@@ -244,11 +244,11 @@ public class FileUtils
 
         if (!creationSuccessful) {
             if (ioException != null)
-                LOGGER.error(String.format(CacheConstants.CREATE_FILE_FAILED, file.getPath()), ioException);
+                LOGGER.error(String.format(FileConstants.CREATE_FILE_FAILED, file.getPath()), ioException);
             else
-                LOGGER.error(String.format(CacheConstants.CREATE_FILE_FAILED, file.getPath()));
+                LOGGER.error(String.format(FileConstants.CREATE_FILE_FAILED, file.getPath()));
         } else
-            LOGGER.trace(String.format(CacheConstants.CREATE_FILE_SUCCESS, file.getPath()));
+            LOGGER.trace(String.format(FileConstants.CREATE_FILE_SUCCESS, file.getPath()));
     }
 
 
@@ -265,7 +265,7 @@ public class FileUtils
         // make sure the source directory exists
         if (!sourceDirectory.exists()) {
             LOGGER.error(String.format(
-                             CacheConstants.DIR_MERGE_FAILED_NO_SOURCE_DIR,
+                             FileConstants.DIR_MERGE_FAILED_NO_SOURCE_DIR,
                              sourceDirectory.getPath(),
                              targetDirectory.getPath()));
             return;
@@ -274,7 +274,7 @@ public class FileUtils
         // make sure both files are directories
         if (!sourceDirectory.isDirectory() || targetDirectory.exists() && !targetDirectory.isDirectory()) {
             LOGGER.error(String.format(
-                             CacheConstants.DIR_MERGE_FAILED_NOT_DIRS,
+                             FileConstants.DIR_MERGE_FAILED_NOT_DIRS,
                              sourceDirectory.getPath(),
                              targetDirectory.getPath()));
             return;
@@ -304,7 +304,7 @@ public class FileUtils
             }
         } catch (IOException e) {
             LOGGER.error(String.format(
-                             CacheConstants.DIR_MERGE_FAILED,
+                             FileConstants.DIR_MERGE_FAILED,
                              sourceDirectory.getPath(),
                              targetDirectory.getPath()),
                          e);
@@ -312,7 +312,7 @@ public class FileUtils
         }
 
         LOGGER.trace(String.format(
-                         CacheConstants.DIR_MERGE_SUCCESS,
+                         FileConstants.DIR_MERGE_SUCCESS,
                          sourceDirectory.getPath(),
                          targetDirectory.getPath()));
 

@@ -14,9 +14,24 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
+package de.gerdiproject.harvest.utils.file;
+
 /**
- * This package contains classes related to the caching of harvested documents.
+ * This interface represents objects that can be cached on disk.
  *
  * @author Robin Weiss
  */
-package de.gerdiproject.harvest.utils.cache.events;
+public interface ICachedObject
+{
+    /**
+     * Attempts to load and set values from a cached file.
+     */
+    void loadFromDisk();
+
+
+    /**
+     * Saves the object to a cache file on disk, which can be loaded
+     * via loadFromDisk().
+     */
+    void saveToDisk();
+}
