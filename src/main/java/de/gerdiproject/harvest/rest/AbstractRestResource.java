@@ -105,11 +105,17 @@ public abstract class AbstractRestResource<T1 extends AbstractRestObject<T1, ?>,
             return HttpResponseFactory.createInitResponse();
 
         // forward GET request to the object
-        final String responseText = restObject.getAsPlainText();
-        final String allowedRequests = getAllowedRequests()
-                                       .replaceAll(RestConstants.LINE_START_REGEX, RestConstants.LINE_START_REPLACEMENT);
+        try {
+            final String responseText = restObject.getAsPlainText();
+            final String allowedRequests = getAllowedRequests()
+                                           .replaceAll(RestConstants.LINE_START_REGEX, RestConstants.LINE_START_REPLACEMENT);
+            return HttpResponseFactory.createOkResponse(responseText + allowedRequests);
 
-        return HttpResponseFactory.createOkResponse(responseText + allowedRequests);
+        } catch (IllegalArgumentException e) {
+            return HttpResponseFactory.createBadRequestResponse(e.getMessage());
+        } catch (Exception e) {
+            return HttpResponseFactory.createUnknownErrorResponse();
+        }
     }
 
 
@@ -137,11 +143,18 @@ public abstract class AbstractRestResource<T1 extends AbstractRestObject<T1, ?>,
             return HttpResponseFactory.createServerErrorResponse();
 
         // try to parse the JSON object
-        final String responseText = responseObject instanceof String
-                                    ? (String) responseObject
-                                    : gson.toJson(responseObject);
+        try {
+            final String responseText = responseObject instanceof String
+                                        ? (String) responseObject
+                                        : gson.toJson(responseObject);
 
-        return HttpResponseFactory.createOkResponse(responseText);
+            return HttpResponseFactory.createOkResponse(responseText);
+
+        } catch (IllegalArgumentException e) {
+            return HttpResponseFactory.createBadRequestResponse(e.getMessage());
+        } catch (Exception e) {
+            return HttpResponseFactory.createUnknownErrorResponse();
+        }
     }
 
 

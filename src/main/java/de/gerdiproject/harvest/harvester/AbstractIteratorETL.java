@@ -21,8 +21,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import de.gerdiproject.harvest.config.Configuration;
 import de.gerdiproject.harvest.config.parameters.IntegerParameter;
+import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.harvester.constants.HarvesterConstants;
 import de.gerdiproject.harvest.harvester.enums.HarvesterStatus;
+import de.gerdiproject.harvest.harvester.events.DocumentsHarvestedEvent;
 import de.gerdiproject.harvest.harvester.extractors.AbstractIteratorExtractor;
 import de.gerdiproject.harvest.harvester.loaders.AbstractIteratorLoader;
 import de.gerdiproject.harvest.harvester.transformers.AbstractIteratorTransformer;
@@ -107,6 +109,7 @@ public abstract class AbstractIteratorETL<EXOUT, TRANSOUT> extends AbstractETL<I
                 iterLoader.loadElement(out, !transformed.hasNext());
 
             harvestedCount.incrementAndGet();
+            EventSystem.sendEvent(DocumentsHarvestedEvent.singleHarvestedDocument());
         }
     }
 

@@ -19,7 +19,6 @@ package de.gerdiproject.config; // NOPMD JUnit 4 requires many static imports
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -43,10 +42,10 @@ import de.gerdiproject.harvest.config.adapter.ConfigurationAdapter;
 import de.gerdiproject.harvest.config.parameters.AbstractParameter;
 import de.gerdiproject.harvest.config.parameters.BooleanParameter;
 import de.gerdiproject.harvest.config.parameters.IntegerParameter;
+import de.gerdiproject.harvest.config.parameters.LoaderParameter;
 import de.gerdiproject.harvest.config.parameters.ParameterCategory;
 import de.gerdiproject.harvest.config.parameters.PasswordParameter;
 import de.gerdiproject.harvest.config.parameters.StringParameter;
-import de.gerdiproject.harvest.config.parameters.LoaderParameter;
 import de.gerdiproject.harvest.config.parameters.UrlParameter;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.harvester.loaders.events.GetLoaderNamesEvent;
@@ -619,9 +618,6 @@ public class ConfigurationTest extends AbstractFileSystemUnitTest<Configuration>
         // save config with all parameters to disk
         final Configuration savedConfig = createConfigWithAllParameterTypes();
 
-        // register parameter to mark it for serialization
-        savedConfig.getParameters().forEach((AbstractParameter<?> param) -> param.setRegistered(true));
-
         // save and load
         testedObject = saveAndLoadConfig(savedConfig);
 
@@ -630,27 +626,6 @@ public class ConfigurationTest extends AbstractFileSystemUnitTest<Configuration>
             assertEquals("The original values of saved Parmeters must match the values of the loaded Parameters!",
                          param.getValue(),
                          testedObject.getParameterValue(param.getCompositeKey()));
-        }
-    }
-
-
-    /**
-     * Tests if a unregistered {@linkplain AbstractParameter}s are ignored during
-     * the serialization of the {@linkplain Configuration}.
-
-     * @throws MalformedURLException thrown if the URL parameter could not be created
-     */
-    @Test
-    public void testJsonSerializationOfUnregisteredParameters() throws MalformedURLException
-    {
-        // save config with all parameters to disk
-        final Configuration savedConfig = createConfigWithAllParameterTypes();
-        testedObject = saveAndLoadConfig(savedConfig);
-
-        // check if deserialized global parameters are correct
-        for (AbstractParameter<?> param : savedConfig.getParameters()) {
-            assertNull("Unregistered parmeters must not be saved!",
-                       testedObject.getParameterValue(param.getCompositeKey()));
         }
     }
 
@@ -830,6 +805,8 @@ public class ConfigurationTest extends AbstractFileSystemUnitTest<Configuration>
     private <T>
     void assertThatParmeterValueCanChange(AbstractParameter<T> param, T newValue)
     {
+        param.setRegistered(true);
+
         final String compositeKey = param.getCompositeKey();
         final T oldValue = param.getValue();
 
@@ -922,6 +899,7 @@ public class ConfigurationTest extends AbstractFileSystemUnitTest<Configuration>
 
         testedParam = new StringParameter(key, category, valueBefore);
         testedObject = createConfigWithCustomParameters(testedParam);
+        testedParam.setRegistered(true);
 
         // explicitly test a state that is not among the valid states of the parameter
         StateMachine.setState(testedState);

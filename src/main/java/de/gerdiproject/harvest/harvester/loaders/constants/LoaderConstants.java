@@ -85,9 +85,9 @@ public class LoaderConstants
         PARAMETER_CATEGORY,
         1048576);
 
-    public static final LoaderParameter SUBMITTER_TYPE_PARAM =
+    public static final LoaderParameter LOADER_TYPE_PARAM =
         new LoaderParameter(
-        "submitter",
+        "loader",
         PARAMETER_CATEGORY);
 
 

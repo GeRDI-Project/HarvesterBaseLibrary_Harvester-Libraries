@@ -58,6 +58,13 @@ public class DiskLoader extends AbstractIteratorLoader<DataCiteJson>
 
 
     @Override
+    public void unregisterParameters()
+    {
+        Configuration.unregisterParameter(saveFolderParam);
+    }
+
+
+    @Override
     public <H extends AbstractETL<?, ?>> void init(H harvester)
     {
         final String sourceHash = harvester.getHash();

@@ -47,7 +47,7 @@ public class LoaderFactory implements IEventListener
     public LoaderFactory()
     {
         this.loaderMap = new HashMap<>();
-        this.loaderParam = LoaderConstants.SUBMITTER_TYPE_PARAM.copy();
+        this.loaderParam = LoaderConstants.LOADER_TYPE_PARAM.copy();
     }
 
 
@@ -85,16 +85,6 @@ public class LoaderFactory implements IEventListener
     }
 
 
-    /**
-     * Returns all registered loader names.
-     *
-     * @return a set of registered loader names
-     */
-    private Set<String> getLoaderNames()
-    {
-        return loaderMap.keySet();
-    }
-
 
     //////////////////////////////
     // Event Callback Functions //
@@ -118,4 +108,13 @@ public class LoaderFactory implements IEventListener
     }
 
 
+    /**
+     * Returns all registered loader names.
+     *
+     * @return a set of registered loader names
+     */
+    private Set<String> getLoaderNames()
+    {
+        return loaderMap.keySet();
+    }
 }

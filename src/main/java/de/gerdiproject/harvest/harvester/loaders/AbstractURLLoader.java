@@ -43,40 +43,15 @@ import de.gerdiproject.json.datacite.DataCiteJson;
 public abstract class AbstractURLLoader <OUT extends DataCiteJson> extends AbstractIteratorLoader<OUT>
 {
     private volatile HashGenerator hashGenerator;
+    private final StringParameter userNameParam;
+    private final StringParameter passwordParam;
 
-    private final StringParameter userName;
-    private final StringParameter password;
-
-    /**
-     * The maximum number of bytes that are allowed to be submitted in each
-     * batch.
-     */
-    protected final IntegerParameter maxBatchSize;
-
-    /**
-     * The URL to which is submitted
-     */
-    protected final UrlParameter url;
-
-    /**
-     * The charset used to serialize the submitted documents.
-     */
+    protected final Logger logger; // NOPMD - we want to retrieve the type of the inheriting class
+    protected final Map<String, IDocument> batchMap;
+    protected final IntegerParameter maxBatchSizeParam;
+    protected final UrlParameter urlParam;
     protected Charset charset;
 
-    /**
-     * The logger for possible errors.
-     */
-    protected final Logger logger; // NOPMD - we want to retrieve the type of the inheriting class
-
-    /**
-     * A mapping between document IDs and documents that are to be submitted as
-     * a batch.
-     */
-    protected final Map<String, IDocument> batchMap;
-
-    /**
-     * The size of the current batch request in bytes.
-     */
     private int currentBatchSize = 0;
 
 
@@ -88,10 +63,20 @@ public abstract class AbstractURLLoader <OUT extends DataCiteJson> extends Abstr
         this.logger = LoggerFactory.getLogger(getClass());
         this.batchMap = new HashMap<>();
 
-        this.url = Configuration.registerParameter(LoaderConstants.URL_PARAM);
-        this.userName = Configuration.registerParameter(LoaderConstants.USER_NAME_PARAM);
-        this.password = Configuration.registerParameter(LoaderConstants.PASSWORD_PARAM);
-        this.maxBatchSize = Configuration.registerParameter(LoaderConstants.MAX_BATCH_SIZE_PARAM);
+        this.urlParam = Configuration.registerParameter(LoaderConstants.URL_PARAM);
+        this.userNameParam = Configuration.registerParameter(LoaderConstants.USER_NAME_PARAM);
+        this.passwordParam = Configuration.registerParameter(LoaderConstants.PASSWORD_PARAM);
+        this.maxBatchSizeParam = Configuration.registerParameter(LoaderConstants.MAX_BATCH_SIZE_PARAM);
+    }
+
+
+    @Override
+    public void unregisterParameters()
+    {
+        Configuration.unregisterParameter(urlParam);
+        Configuration.unregisterParameter(userNameParam);
+        Configuration.unregisterParameter(passwordParam);
+        Configuration.unregisterParameter(maxBatchSizeParam);
     }
 
 
@@ -122,17 +107,17 @@ public abstract class AbstractURLLoader <OUT extends DataCiteJson> extends Abstr
         int documentSize = getSizeOfDocument(documentId, document);
 
         // check if the document alone is bigger than the maximum allowed submission size
-        if (currentBatchSize == 0 && documentSize > maxBatchSize.getValue()) {
+        if (currentBatchSize == 0 && documentSize > maxBatchSizeParam.getValue()) {
             throw new LoaderException(
                 String.format(
                     LoaderConstants.DOCUMENT_TOO_LARGE,
                     documentId,
                     documentSize,
-                    maxBatchSize.getValue()));
+                    maxBatchSizeParam.getValue()));
         }
 
         // check if the batch size is reached and submit
-        if (currentBatchSize + documentSize > maxBatchSize.getValue()) {
+        if (currentBatchSize + documentSize > maxBatchSizeParam.getValue()) {
             trySubmitBatch();
             batchMap.clear();
             currentBatchSize = 0;
@@ -224,10 +209,10 @@ public abstract class AbstractURLLoader <OUT extends DataCiteJson> extends Abstr
      */
     protected String getCredentials()
     {
-        if (userName.getValue() == null || password.getValue() == null || userName.getValue().isEmpty())
+        if (userNameParam.getValue() == null || passwordParam.getValue() == null || userNameParam.getValue().isEmpty())
             return null;
         else
-            return Base64.getEncoder().encodeToString((userName.getValue() + ":" + password.getValue()).getBytes(StandardCharsets.UTF_8));
+            return Base64.getEncoder().encodeToString((userNameParam.getValue() + ":" + passwordParam.getValue()).getBytes(StandardCharsets.UTF_8));
     }
 
 
@@ -238,6 +223,6 @@ public abstract class AbstractURLLoader <OUT extends DataCiteJson> extends Abstr
      */
     protected String getUrl()
     {
-        return url.getStringValue();
+        return urlParam.getStringValue();
     }
 }

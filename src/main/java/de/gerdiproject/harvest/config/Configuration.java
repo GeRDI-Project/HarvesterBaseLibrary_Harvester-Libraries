@@ -21,6 +21,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.function.Consumer;
 
 import javax.ws.rs.core.MultivaluedMap;
 
@@ -33,7 +34,9 @@ import com.google.gson.GsonBuilder;
 import de.gerdiproject.harvest.config.adapter.ConfigurationAdapter;
 import de.gerdiproject.harvest.config.constants.ConfigurationConstants;
 import de.gerdiproject.harvest.config.events.GetConfigurationEvent;
+import de.gerdiproject.harvest.config.events.ParameterChangedEvent;
 import de.gerdiproject.harvest.config.events.RegisterParameterEvent;
+import de.gerdiproject.harvest.config.events.UnregisterParameterEvent;
 import de.gerdiproject.harvest.config.parameters.AbstractParameter;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.rest.AbstractRestObject;
@@ -95,12 +98,23 @@ public class Configuration extends AbstractRestObject<Configuration, String> imp
         return (T) EventSystem.sendSynchronousEvent(new RegisterParameterEvent(parameter));
     }
 
+    /**
+     * Convenience function for unregistering a parameter from the configuration.
+     *
+     * @param parameter the parameter to be unregistered
+     */
+    public static void unregisterParameter(AbstractParameter<?> parameter)
+    {
+        EventSystem.sendEvent(new UnregisterParameterEvent(parameter));
+    }
+
 
     @Override
     public void addEventListeners()
     {
         super.addEventListeners();
         EventSystem.addSynchronousListener(RegisterParameterEvent.class, this::onRegisterParameter);
+        EventSystem.addListener(UnregisterParameterEvent.class, onUnregisterParameter);
     }
 
 
@@ -109,6 +123,7 @@ public class Configuration extends AbstractRestObject<Configuration, String> imp
     {
         super.removeEventListeners();
         EventSystem.removeSynchronousListener(RegisterParameterEvent.class);
+        EventSystem.removeListener(UnregisterParameterEvent.class, onUnregisterParameter);
     }
 
 
@@ -194,42 +209,6 @@ public class Configuration extends AbstractRestObject<Configuration, String> imp
 
 
     /**
-     * Synchronous Event callback:<br>
-     * Registers a parameter in the configuration. If a parameter with the same key already exists
-     * in the configuration, the value will not be overwritten. A newly registered parameter
-     * checks if it is defined via environment variables, and will retrieve a value from there.
-     *
-     * @param event the event that triggered the callback
-     * @return the registered parameter as it appears in the configuration
-     */
-    private AbstractParameter<?> onRegisterParameter(RegisterParameterEvent event)
-    {
-        AbstractParameter<?> registeredParameter = event.getParamToBeRegistered();
-        final String compositeKey = registeredParameter.getCompositeKey();
-        final AbstractParameter<?> retrievedParameter = parameterMap.get(compositeKey);
-
-        if (retrievedParameter == null) {
-            // clone parameter in order to not override constant parameters
-            registeredParameter = registeredParameter.copy();
-
-            parameterMap.put(compositeKey, registeredParameter);
-            registeredParameter.loadFromEnvironmentVariables();
-
-            LOGGER.debug(String.format(ConfigurationConstants.REGISTERED_PARAM,
-                                       registeredParameter.getClass().getSimpleName(),
-                                       registeredParameter.getCompositeKey(),
-                                       registeredParameter.getStringValue()));
-
-            saveToDisk();
-        } else
-            registeredParameter = retrievedParameter;
-
-        registeredParameter.setRegistered(true);
-        return registeredParameter;
-    }
-
-
-    /**
      * Returns the value of the parameter with a specified key.
      *
      * @param compositeKey the parameter category and name, separated by a dot
@@ -279,10 +258,13 @@ public class Configuration extends AbstractRestObject<Configuration, String> imp
         final AbstractParameter<?> param = parameterMap.get(compositeKey.toLowerCase());
 
         // change the parameter value or return an error, if it does not exist
-        if (param == null)
+        if (param == null || !param.isRegistered())
             return String.format(ConfigurationConstants.UNKNOWN_PARAM, compositeKey);
-        else
-            return param.setValue(value, StateMachine.getCurrentState());
+
+        final String retValue = param.setValue(value, StateMachine.getCurrentState());
+        EventSystem.sendEvent(new ParameterChangedEvent(param));
+
+        return retValue;
     }
 
 
@@ -354,4 +336,53 @@ public class Configuration extends AbstractRestObject<Configuration, String> imp
     {
         return gson.toJson(this);
     }
+
+
+
+    //////////////////////////////
+    // Event Callback Functions //
+    //////////////////////////////
+
+    /**
+     * Synchronous Event callback:<br>
+     * Registers a parameter in the configuration. If a parameter with the same key already exists
+     * in the configuration, the value will not be overwritten. A newly registered parameter
+     * checks if it is defined via environment variables, and will retrieve a value from there.
+     *
+     * @param event the event that triggered the callback
+     * @return the registered parameter as it appears in the configuration
+     */
+    private AbstractParameter<?> onRegisterParameter(RegisterParameterEvent event)
+    {
+        AbstractParameter<?> registeredParameter = event.getParameter();
+        final String compositeKey = registeredParameter.getCompositeKey();
+        final AbstractParameter<?> retrievedParameter = parameterMap.get(compositeKey);
+
+        if (retrievedParameter == null) {
+            // clone parameter in order to not override constant parameters
+            registeredParameter = registeredParameter.copy();
+
+            parameterMap.put(compositeKey, registeredParameter);
+            registeredParameter.loadFromEnvironmentVariables();
+
+            LOGGER.debug(String.format(ConfigurationConstants.REGISTERED_PARAM,
+                                       registeredParameter.getClass().getSimpleName(),
+                                       registeredParameter.getCompositeKey(),
+                                       registeredParameter.getStringValue()));
+
+            saveToDisk();
+        } else
+            registeredParameter = retrievedParameter;
+
+        registeredParameter.setRegistered(true);
+        return registeredParameter;
+    }
+
+
+    /**
+     * Callback:<br>
+     * Unregisters a parameter so it can no longer be changed via REST.
+     */
+    private final Consumer<UnregisterParameterEvent> onUnregisterParameter = (UnregisterParameterEvent event) ->
+                                                                             event.getParameter().setRegistered(false);
 }

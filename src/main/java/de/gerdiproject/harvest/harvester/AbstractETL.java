@@ -30,15 +30,19 @@ import com.google.gson.JsonSerializer;
 
 import de.gerdiproject.harvest.application.enums.HealthStatus;
 import de.gerdiproject.harvest.config.Configuration;
+import de.gerdiproject.harvest.config.events.ParameterChangedEvent;
+import de.gerdiproject.harvest.config.parameters.AbstractParameter;
 import de.gerdiproject.harvest.config.parameters.BooleanParameter;
 import de.gerdiproject.harvest.config.parameters.ParameterCategory;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.event.IEventListener;
 import de.gerdiproject.harvest.harvester.constants.HarvesterConstants;
 import de.gerdiproject.harvest.harvester.enums.HarvesterStatus;
+import de.gerdiproject.harvest.harvester.events.DocumentsHarvestedEvent;
 import de.gerdiproject.harvest.harvester.extractors.IExtractor;
 import de.gerdiproject.harvest.harvester.loaders.ElasticSearchLoader;
 import de.gerdiproject.harvest.harvester.loaders.ILoader;
+import de.gerdiproject.harvest.harvester.loaders.constants.LoaderConstants;
 import de.gerdiproject.harvest.harvester.loaders.events.CreateLoaderEvent;
 import de.gerdiproject.harvest.harvester.rest.HarvesterRestResource;
 import de.gerdiproject.harvest.harvester.transformers.ITransformer;
@@ -79,9 +83,9 @@ public abstract class AbstractETL <EOUT, TOUT> implements IEventListener
     protected volatile boolean isAborting;
     protected volatile String hash;
 
-
     protected volatile HealthStatus health;
     protected volatile HarvesterStatus status;
+
 
 
     /**
@@ -130,12 +134,14 @@ public abstract class AbstractETL <EOUT, TOUT> implements IEventListener
     @Override
     public void addEventListeners()
     {
+        EventSystem.addListener(ParameterChangedEvent.class, onParameterChangedCallback);
     }
 
 
     @Override
     public void removeEventListeners()
     {
+        EventSystem.removeListener(ParameterChangedEvent.class, onParameterChangedCallback);
         EventSystem.removeListener(StartAbortingEvent.class, onStartAborting);
     }
 
@@ -163,6 +169,7 @@ public abstract class AbstractETL <EOUT, TOUT> implements IEventListener
         this.httpRequester.setCacheFolder(
             String.format(DataOperationConstants.CACHE_FOLDER_PATH, moduleName)
         );
+        status = HarvesterStatus.IDLE;
     }
 
 
@@ -297,8 +304,7 @@ public abstract class AbstractETL <EOUT, TOUT> implements IEventListener
         this.status = HarvesterStatus.BUSY;
 
         if (!enableHarvesterParameter.getValue()) {
-            this.health = HealthStatus.OK;
-            this.status = HarvesterStatus.DONE;
+            skipHarvest();
 
             throw new ETLPreconditionException(
                 String.format(HarvesterConstants.HARVESTER_SKIPPED_DISABLED, getName()));
@@ -309,33 +315,38 @@ public abstract class AbstractETL <EOUT, TOUT> implements IEventListener
 
         // loader and transformer only become relevant when the harvest is about to start, load them now
         try {
-            transformer = createTransformer();
-
             if (transformer == null)
                 throw new ETLPreconditionException(String.format(HarvesterConstants.TRANSFORMER_CREATE_ERROR, getName()));
-
-            transformer.init(this);
-
-            loader = createLoader();
 
             if (loader == null)
                 throw new ETLPreconditionException(String.format(HarvesterConstants.LOADER_CREATE_ERROR, getName()));
 
+            transformer.init(this);
             loader.init(this);
+
         } catch (IllegalStateException e) {
             throw new ETLPreconditionException(e.getMessage());
         }
 
         // cancel harvest if the checksum has not changed since the last harvest
         if (!forceHarvestParameter.getValue() && !isOutdated()) {
-            this.health = HealthStatus.OK;
-            this.status = HarvesterStatus.DONE;
-
+            skipHarvest();
             throw new ETLPreconditionException(
                 String.format(HarvesterConstants.HARVESTER_SKIPPED_NO_CHANGES, getName()));
         }
 
         this.status = HarvesterStatus.HARVESTING;
+    }
+
+
+    /**
+     * Marks the harvest as done.
+     */
+    protected void skipHarvest()
+    {
+        this.health = HealthStatus.OK;
+        this.status = HarvesterStatus.DONE;
+        EventSystem.sendEvent(new DocumentsHarvestedEvent(getMaxNumberOfDocuments()));
     }
 
 
@@ -371,6 +382,7 @@ public abstract class AbstractETL <EOUT, TOUT> implements IEventListener
         final EOUT exOut = extractor.extract();
         final TOUT transOut = transformer.transform(exOut);
         loader.load(transOut, true);
+        EventSystem.sendEvent(new DocumentsHarvestedEvent(getMaxNumberOfDocuments()));
     }
 
 
@@ -560,4 +572,30 @@ public abstract class AbstractETL <EOUT, TOUT> implements IEventListener
         EventSystem.removeListener(StartAbortingEvent.class, this.onStartAborting);
         abortHarvest();
     };
+
+
+    /**
+     * Event callback for changing the loader.
+     */
+    private final Consumer<ParameterChangedEvent> onParameterChangedCallback = (ParameterChangedEvent event) ->
+                                                                               onParameterChanged(event.getParameter());
+
+
+    /**
+     * The implementation of the parameter changed callback.
+     *
+     * @param param the parameter that has changed
+     */
+    protected void onParameterChanged(AbstractParameter<?> param)
+    {
+        if (status != HarvesterStatus.IDLE)
+            return;
+
+        if (param.getCompositeKey().equals(LoaderConstants.LOADER_TYPE_PARAM.getCompositeKey())) {
+            if (this.loader != null)
+                this.loader.unregisterParameters();
+
+            this.loader = createLoader();
+        }
+    }
 }

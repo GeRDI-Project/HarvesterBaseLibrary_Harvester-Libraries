@@ -16,38 +16,34 @@
  */
 package de.gerdiproject.harvest.config.events;
 
-import de.gerdiproject.harvest.config.Configuration;
 import de.gerdiproject.harvest.config.parameters.AbstractParameter;
-import de.gerdiproject.harvest.event.ISynchronousEvent;
+import de.gerdiproject.harvest.event.IEvent;
 
 /**
- * This event aims to register a new parameter in the {@linkplain Configuration}.
- * The return value of the callback function is the parameter as it appears in the configuration.
- * This guarantees that multiple registrations of the same parameter will always return
- * the correct object reference.
+ * This event is dispatched when the value of a parameter has changed.
  *
  * @author Robin Weiss
  */
-public class RegisterParameterEvent implements ISynchronousEvent<AbstractParameter<?>>
+public class ParameterChangedEvent implements IEvent
 {
     private final AbstractParameter<?> param;
 
 
     /**
-     * Constructor that sets up the payload.
+     * Constructor that requires the signal payload.
      *
-     * @param param the parameter that is to be registered in the {@linkplain Configuration}.
+     * @param param the parameter that has changed
      */
-    public RegisterParameterEvent(AbstractParameter<?> param)
+    public ParameterChangedEvent(AbstractParameter<?> param)
     {
         this.param = param;
     }
 
 
     /**
-     * Returns the parameter that is to be registered in the {@linkplain Configuration}.
+     * Retrieves the parameter that has changed.
      *
-     * @return the parameter that is to be registered in the {@linkplain Configuration}.
+     * @return the parameter that has changed
      */
     public AbstractParameter<?> getParameter()
     {

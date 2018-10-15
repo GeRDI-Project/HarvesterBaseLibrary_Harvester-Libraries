@@ -85,7 +85,7 @@ public class HarvesterConstants
     public static final String HARVESTER_START = "Starting %s...";
     public static final String HARVESTER_END = "%s finished!";
     public static final String HARVESTER_FAILED = "%s failed!";
-    public static final String HARVESTER_ABORTED = "%s aborted!";;
+    public static final String HARVESTER_ABORTED = "%s aborted!";
     public static final String ALL_FAILED = "Harvesting interrupted by unexpected error!";
 
     public static final String HARVESTER_SKIPPED_DISABLED = "Skipping %s, because it is disabled!";
@@ -120,7 +120,13 @@ public class HarvesterConstants
         + "              'date', 'class', and 'level' can be used to\n"
         + "              filter the log with comma-separated values of\n"
         + "              dates, logger classes, and log levels.";
+
+    public static final String ETL_INDEX_QUERY = "index";
+
     public static final String UNKNOWN_NUMBER = "???";
+    public static final String PROGRESS = " %d%% (%d / %d)";
+    public static final String NAME_TOTAL = "---\nOVERALL : ";
+
     public static final String MAX_RANGE_NUMBER = "%d (" + ConfigurationConstants.INTEGER_VALUE_MAX + ")";
 
     public static final String BUSY_ERROR_MESSAGE = "The harvesters are currently processing another request!";

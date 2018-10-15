@@ -18,17 +18,15 @@ package de.gerdiproject.harvest.config.events;
 
 import de.gerdiproject.harvest.config.Configuration;
 import de.gerdiproject.harvest.config.parameters.AbstractParameter;
-import de.gerdiproject.harvest.event.ISynchronousEvent;
+import de.gerdiproject.harvest.event.IEvent;
 
 /**
- * This event aims to register a new parameter in the {@linkplain Configuration}.
- * The return value of the callback function is the parameter as it appears in the configuration.
- * This guarantees that multiple registrations of the same parameter will always return
- * the correct object reference.
+ * This event aims to unregister a parameter from the {@linkplain Configuration}.
  *
  * @author Robin Weiss
+ *
  */
-public class RegisterParameterEvent implements ISynchronousEvent<AbstractParameter<?>>
+public class UnregisterParameterEvent implements IEvent
 {
     private final AbstractParameter<?> param;
 
@@ -36,18 +34,18 @@ public class RegisterParameterEvent implements ISynchronousEvent<AbstractParamet
     /**
      * Constructor that sets up the payload.
      *
-     * @param param the parameter that is to be registered in the {@linkplain Configuration}.
+     * @param param the parameter that is to be unregistered from the {@linkplain Configuration}.
      */
-    public RegisterParameterEvent(AbstractParameter<?> param)
+    public UnregisterParameterEvent(AbstractParameter<?> param)
     {
         this.param = param;
     }
 
 
     /**
-     * Returns the parameter that is to be registered in the {@linkplain Configuration}.
+     * Returns the parameter that is to be unregistered from the {@linkplain Configuration}.
      *
-     * @return the parameter that is to be registered in the {@linkplain Configuration}.
+     * @return the parameter that is to be unregistered from the {@linkplain Configuration}.
      */
     public AbstractParameter<?> getParameter()
     {

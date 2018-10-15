@@ -16,6 +16,7 @@
  */
 package de.gerdiproject.harvest.harvester.loaders;
 
+import de.gerdiproject.harvest.config.Configuration;
 import de.gerdiproject.harvest.harvester.AbstractETL;
 
 /**
@@ -45,4 +46,12 @@ public interface ILoader <LOUT>
      * @throws LoaderException when the load did not work properly
      */
     void load(LOUT document, boolean isLastDocument) throws LoaderException;
+
+
+    /**
+     * If the Loader created parameters in the {@linkplain Configuration},
+     * this method should unregister all of them. It's called
+     * when a different Loader is used.
+     */
+    void unregisterParameters();
 }

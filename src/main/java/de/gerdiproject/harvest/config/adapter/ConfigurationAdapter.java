@@ -79,11 +79,6 @@ public class ConfigurationAdapter implements JsonDeserializer<Configuration>, Js
         final Map<String, ParameterCategoryJson> jsonCategoriesMap = new HashMap<>();
 
         for (AbstractParameter<?> param : src.getParameters()) {
-
-            // do not save unregistered parameters, to remove outdated ones
-            if (!param.isRegistered())
-                continue;
-
             final String categoryName = param.getCategory().getName();
             ParameterCategoryJson category = jsonCategoriesMap.get(categoryName);
 

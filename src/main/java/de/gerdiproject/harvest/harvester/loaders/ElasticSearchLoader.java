@@ -166,10 +166,10 @@ public class ElasticSearchLoader extends AbstractURLLoader<DataCiteJson>
     @Override
     protected String getUrl()
     {
-        if (url.getValue() != null) {
-            String rawPath = url.getValue().getPath() + '/';
+        if (urlParam.getValue() != null) {
+            String rawPath = urlParam.getValue().getPath() + '/';
             String[] path = rawPath.substring(1).split("/");
-            String bulkSubmitUrl = url.getStringValue();
+            String bulkSubmitUrl = urlParam.getStringValue();
 
             // check if the URL already is a bulk submission URL
             if (path.length == 0 || !path[path.length - 1].equals(ElasticSearchConstants.BULK_SUBMISSION_URL_SUFFIX)) {

@@ -45,7 +45,6 @@ import de.gerdiproject.harvest.harvester.events.HarvestFinishedEvent;
 import de.gerdiproject.harvest.harvester.events.HarvestStartedEvent;
 import de.gerdiproject.harvest.harvester.json.ETLDetails;
 import de.gerdiproject.harvest.rest.AbstractRestObject;
-import de.gerdiproject.harvest.state.StateMachine;
 import de.gerdiproject.harvest.utils.HashGenerator;
 
 
@@ -60,7 +59,7 @@ public class ETLRegistry extends AbstractRestObject<ETLRegistry, ETLDetails>
     private static final Logger LOGGER = LoggerFactory.getLogger(ETLRegistry.class);
 
     // fields and members
-    private final List<AbstractETL<?, ?>> harvesters;
+    private final List<AbstractETL<?, ?>> etls;
     private final BooleanParameter concurrentParam;
 
 
@@ -73,7 +72,7 @@ public class ETLRegistry extends AbstractRestObject<ETLRegistry, ETLDetails>
     {
         super(moduleName, GetETLRegistryEvent.class);
 
-        this.harvesters = new LinkedList<>();
+        this.etls = new LinkedList<>();
         this.concurrentParam = Configuration.registerParameter(HarvesterConstants.CONCURRENT_PARAM);
     }
 
@@ -81,23 +80,82 @@ public class ETLRegistry extends AbstractRestObject<ETLRegistry, ETLDetails>
     @Override
     protected String getPrettyPlainText()
     {
-        return StateMachine.getCurrentState().getStatusString();
+        final StringBuilder sb = new StringBuilder();
+        int totalCurrCount = 0;
+        int totalMaxCount = 0;
+
+        for (AbstractETL<?, ?> etl : etls) {
+            sb.append(etl.getName()).append(" : ");
+
+            final HarvesterStatus status = etl.getStatus();
+            sb.append(status.toString().toLowerCase());
+
+            if (status == HarvesterStatus.HARVESTING) {
+                final int currCount = etl.getHarvestedCount();
+                final int maxCount = etl.getMaxNumberOfDocuments();
+
+                totalCurrCount += currCount;
+
+                if (maxCount != -1) {
+                    sb.append(String.format(HarvesterConstants.PROGRESS, Math.round(100f * currCount / maxCount), currCount, maxCount));
+
+                    if (totalMaxCount != -1)
+                        totalMaxCount += maxCount;
+                } else {
+                    sb.append(currCount);
+                    totalMaxCount = -1;
+                }
+            }
+
+            sb.append('\n');
+        }
+
+        sb.append(HarvesterConstants.NAME_TOTAL);
+
+        final HarvesterStatus status = getStatus();
+        sb.append(status.toString().toLowerCase());
+
+        if (status == HarvesterStatus.HARVESTING) {
+            if (totalMaxCount != -1)
+                sb.append(String.format(HarvesterConstants.PROGRESS, Math.round(100f * totalCurrCount / totalMaxCount), totalCurrCount, totalMaxCount));
+            else
+                sb.append(totalCurrCount);
+        }
+
+        sb.append('\n');
+        return sb.toString();
     }
 
 
     @Override
     public ETLDetails getAsJson(MultivaluedMap<String, String> query)
     {
-        return new ETLDetails(this);
+        List<String> etlIndexList = query.get(HarvesterConstants.ETL_INDEX_QUERY);
+
+        if (etlIndexList == null || etlIndexList.size() == 0)
+            return new ETLDetails(this);
+
+        int index;
+
+        try {
+            index = Integer.parseInt(etlIndexList.get(0));
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException(String.format("The query parameter 'index' must be a number in [0,%d]!", etls.size() - 1));
+        }
+
+        if (index < 0 || index >= etls.size())
+            throw new IllegalArgumentException(String.format("The query parameter 'index' must be a number in [0,%d]!", etls.size() - 1));
+
+        return new ETLDetails(etls.get(index));
     }
 
 
     public void register(AbstractETL<?, ?> harvester)
     {
-        if (harvesters.contains(harvester))
+        if (etls.contains(harvester))
             LOGGER.info(String.format(HarvesterConstants.DUPLICATE_ETL_REGISTERED_ERROR, harvester.getClass().getSimpleName()));
         else
-            harvesters.add(harvester);
+            etls.add(harvester);
     }
 
 
@@ -207,7 +265,7 @@ public class ETLRegistry extends AbstractRestObject<ETLRegistry, ETLDetails>
         // for now, concatenate all hashes
         final StringBuffer hashBuilder = new StringBuffer();
 
-        harvesters.forEach((AbstractETL<?, ?> subHarvester) -> hashBuilder.append(subHarvester.getHash()));
+        etls.forEach((AbstractETL<?, ?> subHarvester) -> hashBuilder.append(subHarvester.getHash()));
 
         final HashGenerator generator = new HashGenerator(StandardCharsets.UTF_8);
         return generator.getShaHash(hashBuilder.toString());
@@ -268,12 +326,12 @@ public class ETLRegistry extends AbstractRestObject<ETLRegistry, ETLDetails>
     private void processHarvesters(Consumer<AbstractETL<?, ?>> consumer)
     {
         if (concurrentParam.getValue()) {
-            final int len = harvesters.size();
+            final int len = etls.size();
             CompletableFuture<?>[] subProcesses = new CompletableFuture[len];
 
             for (int i = 0; i < len; i++) {
                 final int j = i;
-                subProcesses[i] = CompletableFuture.runAsync(() -> consumer.accept(harvesters.get(j)));
+                subProcesses[i] = CompletableFuture.runAsync(() -> consumer.accept(etls.get(j)));
             }
 
             // wait for all sub-processes to complete
@@ -283,7 +341,7 @@ public class ETLRegistry extends AbstractRestObject<ETLRegistry, ETLDetails>
                 LOGGER.error(HarvesterConstants.ETL_PROCESSING_ERROR, e);
             }
         } else {
-            for (AbstractETL<?, ?> harvester : harvesters)
+            for (AbstractETL<?, ?> harvester : etls)
                 consumer.accept(harvester);
         }
     }
@@ -304,7 +362,7 @@ public class ETLRegistry extends AbstractRestObject<ETLRegistry, ETLDetails>
 
     private <T> List<T> processHarvesters(Function<AbstractETL<?, ?>, T> function)
     {
-        final int len = harvesters.size();
+        final int len = etls.size();
         final List<T> returnValues = new ArrayList<>(len);
 
         if (concurrentParam.getValue()) {
@@ -312,7 +370,7 @@ public class ETLRegistry extends AbstractRestObject<ETLRegistry, ETLDetails>
 
             for (int i = 0; i < len; i++) {
                 final int j = i;
-                subProcesses[i] = CompletableFuture.runAsync(() -> returnValues.add(function.apply(harvesters.get(j))));
+                subProcesses[i] = CompletableFuture.runAsync(() -> returnValues.add(function.apply(etls.get(j))));
             }
 
             // wait for all sub-processes to complete
@@ -323,7 +381,7 @@ public class ETLRegistry extends AbstractRestObject<ETLRegistry, ETLDetails>
             }
         } else {
             for (int i = 0; i < len; i++)
-                returnValues.add(function.apply(harvesters.get(i)));
+                returnValues.add(function.apply(etls.get(i)));
         }
 
         return returnValues;
