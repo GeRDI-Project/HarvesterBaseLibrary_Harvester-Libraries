@@ -13,15 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.gerdiproject.harvest.save.constants;
+package de.gerdiproject.harvest.harvester.loaders.constants;
 
-import java.io.File;
-
-import de.gerdiproject.harvest.save.HarvestSaver;
+import de.gerdiproject.harvest.config.parameters.StringParameter;
+import de.gerdiproject.harvest.harvester.loaders.DiskLoader;
 
 /**
  * This static class is a collection of constants that are used by the
- * {@linkplain HarvestSaver}.
+ * {@linkplain DiskLoader}.
  *
  * @author Robin Weiss
  */
@@ -30,12 +29,9 @@ public class SaveConstants
     public static final String HARVEST_DATE_JSON = "harvestDate";
     public static final String DURATION_JSON = "durationInSeconds";
     public static final String SOURCE_HASH_JSON = "sourceHash";
-    public static final String HARVEST_FROM_JSON = "sourceRangeFrom";
-    public static final String HARVEST_TO_JSON = "sourceRangeTo";
 
-    public static final File DEFAULT_SAVE_FOLDER = new File("savedDocuments");
-    public static final String SAVE_FILE_NAME =  "%s.json";
-
+    public static final String SAVE_FOLDER_NAME =  "savedDocuments/";
+    public static final String JSON_EXTENSION =  ".json";
 
     public static final String SAVE_START = "Saving documents to: %s";
     public static final String SAVE_OK = "Saving done!";
@@ -47,6 +43,11 @@ public class SaveConstants
 
     public static final String CONTENT_HEADER = "Content-Disposition";
     public static final String CONTENT_HEADER_VALUE = "attachment; filename=\"%s\"";
+
+    public static final StringParameter FILE_PATH_PARAM = new StringParameter(
+        "saveFolder",
+        LoaderConstants.PARAMETER_CATEGORY,
+        SAVE_FOLDER_NAME);
 
 
     /**

@@ -71,13 +71,6 @@ public class InitializationState implements IState
 
 
     @Override
-    public Response save()
-    {
-        return HttpResponseFactory.createInitResponse();
-    }
-
-
-    @Override
     public Response getProgress()
     {
         return HttpResponseFactory.createBadRequestResponse();

@@ -96,13 +96,6 @@ public class TestState implements  IState
 
 
     @Override
-    public Response save()
-    {
-        return null;
-    }
-
-
-    @Override
     public Response isOutdated()
     {
         return null;

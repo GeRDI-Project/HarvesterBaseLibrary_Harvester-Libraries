@@ -27,7 +27,6 @@ import java.io.OutputStreamWriter;
 import java.io.Reader;
 import java.lang.reflect.Type;
 import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.util.stream.Collectors;
 
 import org.jsoup.Jsoup;
@@ -119,7 +118,7 @@ public class DiskIO implements IDataRetriever
         else {
             // write content to file
             try
-                (BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file), StandardCharsets.UTF_8))) {
+                (BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file), charset))) {
                 writer.write(fileContent);
 
                 // set status message

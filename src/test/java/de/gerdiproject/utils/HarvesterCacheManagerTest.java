@@ -25,7 +25,7 @@ import org.junit.Test;
 
 import de.gerdiproject.AbstractFileSystemUnitTest;
 import de.gerdiproject.harvest.event.EventSystem;
-import de.gerdiproject.harvest.save.HarvestSaver;
+import de.gerdiproject.harvest.harvester.loaders.DiskLoader;
 import de.gerdiproject.harvest.utils.cache.HarvesterCache;
 import de.gerdiproject.harvest.utils.cache.HarvesterCacheManager;
 import de.gerdiproject.harvest.utils.cache.events.RegisterHarvesterCacheEvent;
@@ -33,7 +33,7 @@ import de.gerdiproject.json.datacite.DataCiteJson;
 import de.gerdiproject.utils.examples.harvestercache.MockedETL;
 
 /**
- * This class contains unit tests for the {@linkplain HarvestSaver}.
+ * This class contains unit tests for the {@linkplain DiskLoader}.
  *
  * @author Robin Weiss
  */

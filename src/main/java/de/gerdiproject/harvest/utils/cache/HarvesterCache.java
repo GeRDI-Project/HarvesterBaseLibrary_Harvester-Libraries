@@ -24,7 +24,7 @@ import de.gerdiproject.harvest.application.events.ContextDestroyedEvent;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.event.IEventListener;
 import de.gerdiproject.harvest.harvester.loaders.AbstractURLLoader;
-import de.gerdiproject.harvest.save.HarvestSaver;
+import de.gerdiproject.harvest.harvester.loaders.DiskLoader;
 import de.gerdiproject.harvest.utils.FileUtils;
 import de.gerdiproject.harvest.utils.HashGenerator;
 import de.gerdiproject.json.datacite.DataCiteJson;
@@ -32,7 +32,7 @@ import de.gerdiproject.json.datacite.DataCiteJson;
 /**
  * This class serves as a cache for harvested documents. The cached documents
  * can be saved to disk along with harvesting related metadata using the
- * {@linkplain HarvestSaver}, or submitted to a Database via an
+ * {@linkplain DiskLoader}, or submitted to a Database via an
  * {@linkplain AbstractURLLoader}.
  *
  * @author Robin Weiss

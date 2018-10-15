@@ -15,7 +15,9 @@
  *  under the License.
  */
 /**
- * @author Robin Weiss
+ * This package contains sub-classes of {@linkplain de.gerdiproject.harvest.event.IEvent} that are related to
+ * the ETL load process.
  *
+ * @author Robin Weiss
  */
 package de.gerdiproject.harvest.harvester.loaders.events;

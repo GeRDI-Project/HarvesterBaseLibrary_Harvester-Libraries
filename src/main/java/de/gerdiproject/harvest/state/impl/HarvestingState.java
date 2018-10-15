@@ -93,15 +93,6 @@ public class HarvestingState extends AbstractProgressingState
 
 
     @Override
-    public Response save()
-    {
-        return HttpResponseFactory.createBusyResponse(
-                   StateConstants.CANNOT_SAVE_PREFIX + StateConstants.HARVEST_IN_PROGRESS,
-                   estimateRemainingSeconds());
-    }
-
-
-    @Override
     public Response isOutdated()
     {
         return HttpResponseFactory.createBusyResponse(

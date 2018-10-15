@@ -33,11 +33,7 @@
  */
 package de.gerdiproject.harvest.state.impl;
 
-import java.io.File;
-import java.io.UncheckedIOException;
-
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.ResponseBuilder;
 
 import de.gerdiproject.harvest.application.MainContext;
 import de.gerdiproject.harvest.application.events.ResetContextEvent;
@@ -45,8 +41,6 @@ import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.harvester.events.HarvestStartedEvent;
 import de.gerdiproject.harvest.harvester.events.StartHarvestEvent;
 import de.gerdiproject.harvest.rest.HttpResponseFactory;
-import de.gerdiproject.harvest.save.constants.SaveConstants;
-import de.gerdiproject.harvest.save.events.SaveHarvestEvent;
 import de.gerdiproject.harvest.state.IState;
 import de.gerdiproject.harvest.state.constants.StateConstants;
 import de.gerdiproject.harvest.state.constants.StateEventHandlerConstants;
@@ -98,29 +92,6 @@ public class IdleState implements IState
                                    + StateConstants.NO_HARVEST_IN_PROGRESS,
                                    StateConstants.HARVESTING_PROCESS);
         return HttpResponseFactory.createBadRequestResponse(message);
-    }
-
-
-    @Override
-    public Response save()
-    {
-        try {
-            final File harvestFile = EventSystem.sendSynchronousEvent(new SaveHarvestEvent());
-
-            if (harvestFile != null) {
-                ResponseBuilder response = Response.ok(harvestFile);
-                response.header(
-                    SaveConstants.CONTENT_HEADER,
-                    String.format(SaveConstants.CONTENT_HEADER_VALUE, harvestFile.getName()));
-                return response.build();
-            }
-        } catch (IllegalStateException iex) {
-            return HttpResponseFactory.createBadRequestResponse(iex.getMessage());
-        } catch (UncheckedIOException uex) {
-            return HttpResponseFactory.createKnownErrorResponse(uex.getMessage());
-        }
-
-        return HttpResponseFactory.createServerErrorResponse();
     }
 
 

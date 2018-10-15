@@ -81,14 +81,6 @@ public interface IState
 
 
     /**
-     * Attempts to save harvested documents to disk.
-     *
-     * @return a status message about the success or failure of the operation
-     */
-    Response save();
-
-
-    /**
      * Attempts to find out if there is new metadata ready to harvest.
      *
      * @return true if there is new metadata to harvest

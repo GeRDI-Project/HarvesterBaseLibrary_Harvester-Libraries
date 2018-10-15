@@ -31,6 +31,7 @@ import de.gerdiproject.harvest.harvester.loaders.json.ElasticSearchIndexWrapper;
 import de.gerdiproject.harvest.harvester.loaders.json.ElasticSearchResponse;
 import de.gerdiproject.harvest.utils.data.WebDataRetriever;
 import de.gerdiproject.harvest.utils.data.enums.RestRequestType;
+import de.gerdiproject.json.GsonUtils;
 import de.gerdiproject.json.datacite.DataCiteJson;
 
 
@@ -52,7 +53,7 @@ public class ElasticSearchLoader extends AbstractURLLoader<DataCiteJson>
     public ElasticSearchLoader()
     {
         super();
-        this.gson = new Gson();
+        this.gson = GsonUtils.createGerdiDocumentGsonBuilder().create();
         this.webRequester = new WebDataRetriever(gson, charset);
         this.webRequester.setCharset(charset);
     }

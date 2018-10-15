@@ -233,25 +233,6 @@ public class MainContext
     }
 
 
-    /*private HarvestSaver createHarvestSaver(String modName, Charset charset, HarvestTimeKeeper keeper, HarvesterCacheManager harvesterCacheManager)
-    {
-        LOGGER.info(String.format(ApplicationConstants.INIT_FIELD, HarvestSaver.class.getSimpleName()));
-
-        HarvestSaver saver = new HarvestSaver(
-            SaveConstants.DEFAULT_SAVE_FOLDER,
-            modName,
-            charset,
-            keeper.getHarvestMeasure(),
-            harvesterCacheManager);
-
-        saver.addEventListeners();
-
-        LOGGER.info(String.format(ApplicationConstants.INIT_FIELD_SUCCESS, HarvestSaver.class.getSimpleName()));
-
-        return saver;
-    }*/
-
-
     /**
      * Creates a {@linkplain LoaderFactory}, and registers all loader classes.
      *

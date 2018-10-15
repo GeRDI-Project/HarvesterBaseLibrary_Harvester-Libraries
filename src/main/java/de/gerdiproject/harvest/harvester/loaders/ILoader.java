@@ -37,13 +37,6 @@ public interface ILoader <LOUT>
 
 
     /**
-     * Resets the loader, making it ready to start
-     * another loading process.
-     */
-    void reset();
-
-
-    /**
      * Submits the document to a targeted search index.
      *
      * @param document the document that is to be submitted

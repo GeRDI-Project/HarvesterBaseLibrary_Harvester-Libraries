@@ -150,17 +150,6 @@ public abstract class AbstractURLLoader <OUT extends DataCiteJson> extends Abstr
 
 
     /**
-     * Submits the remaining unsubmitted documents and resets the submitter.
-     */
-    @Override
-    public void reset()
-    {
-        batchMap.clear();
-        currentBatchSize = 0;
-    }
-
-
-    /**
      * Calculates the size of a single document within the batch in bytes.
      *
      * @param documentId the unique identifier of the document
@@ -209,7 +198,6 @@ public abstract class AbstractURLLoader <OUT extends DataCiteJson> extends Abstr
     protected void trySubmitBatch() throws LoaderException
     {
         int numberOfDocs = batchMap.size();
-        boolean isSuccessful;
 
         try {
             // attempt to submit the batch
@@ -221,10 +209,8 @@ public abstract class AbstractURLLoader <OUT extends DataCiteJson> extends Abstr
                     String.format(
                         LoaderConstants.SUBMIT_PARTIAL_OK, numberOfDocs));
             }
-
-            isSuccessful = true;
         } catch (Exception e) {
-            throw new LoaderException( e.toString());
+            throw new LoaderException(e.toString());
         }
     }
 

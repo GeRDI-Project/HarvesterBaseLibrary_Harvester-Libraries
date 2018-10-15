@@ -32,6 +32,7 @@ import de.gerdiproject.harvest.application.events.ResetContextEvent;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.harvester.AbstractETL;
 import de.gerdiproject.harvest.harvester.loaders.AbstractURLLoader;
+import de.gerdiproject.harvest.harvester.loaders.DiskLoader;
 import de.gerdiproject.harvest.harvester.loaders.ElasticSearchLoader;
 import de.gerdiproject.harvest.harvester.loaders.ILoader;
 
@@ -97,6 +98,7 @@ public abstract class ContextListener implements ServletContextListener
     {
         final List<Class<? extends ILoader<?>>> loaderClasses = new LinkedList<>();
         loaderClasses.add(ElasticSearchLoader.class);
+        loaderClasses.add(DiskLoader.class);
         return loaderClasses;
     }
 

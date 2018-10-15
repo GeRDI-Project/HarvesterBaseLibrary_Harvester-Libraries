@@ -92,13 +92,6 @@ public class AbortingState implements IState
 
 
     @Override
-    public Response save()
-    {
-        return createServiceUnavailableResponse();
-    }
-
-
-    @Override
     public Response reset()
     {
         EventSystem.sendEvent(new ResetContextEvent());
