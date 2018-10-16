@@ -31,10 +31,9 @@ public interface ITransformer <TRANSIN, TRANSOUT>
     /**
      * Initializes the transformer for a new harvest.
      *
-     * @param harvester the harvester to which the transformer belongs
-     * @param <H> the type of the harvester to which the extractor belongs
+     * @param etl the {@linkplain AbstractETL} to which the transformer belongs
      */
-    <H extends AbstractETL<?, ?>> void init(H harvester);
+    void init(AbstractETL<?, ?> etl);
 
 
     /**

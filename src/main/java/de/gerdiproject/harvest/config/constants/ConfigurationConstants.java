@@ -65,8 +65,8 @@ public class ConfigurationConstants
 
     public static final String CONFIG_PATH = FileConstants.CACHE_FOLDER_PATH + "config.json";
     public static final String LOAD_OK = "Loaded configuration from '%s'.";
-    public static final String LOAD_FAILED = "Could not load configuration from '%s': %s";
-    public static final String NO_CONFIG_FILE_EXISTS = "Did not load configuration, because it is not cached at '%s'!";
+    public static final String LOAD_ERROR = "Could not load configuration from '%s': %s";
+    public static final String NO_CONFIG_FILE_ERROR = "Did not load configuration, because it is not cached at '%s'!";
     public static final String NO_PATH = "You must set a path first!";
 
     public static final String QUERY_KEY = "key";
@@ -81,8 +81,9 @@ public class ConfigurationConstants
         + "Sets x-www-form-urlencoded parameters for the harvester.\n"
         + "Valid keys: ";
 
-    public static final String SAVE_FAILED_NO_PATH = "Could not save configuration: " + NO_PATH;
+    public static final String SAVE_NO_PATH_ERROR = "Could not save configuration: " + NO_PATH;
     public static final String PARSE_ERROR = "Could not read configuration parameter value '%s' from key '%s'!";
+    public static final String REGISTER_ERROR = "Could not register parameter '%s', because no Configuration with event listeners exists, yet!";
 
     public static final String BASIC_PARAMETER_FORMAT = "%%n%%1$-%ds :  %%2$s";
     public static final String CATEGORY_FORMAT = "- %s -";

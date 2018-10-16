@@ -22,7 +22,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import de.gerdiproject.harvest.config.Configuration;
 import de.gerdiproject.harvest.config.parameters.IntegerParameter;
 import de.gerdiproject.harvest.etls.constants.ETLConstants;
-import de.gerdiproject.harvest.etls.enums.HarvesterStatus;
 import de.gerdiproject.harvest.etls.events.DocumentsHarvestedEvent;
 import de.gerdiproject.harvest.etls.extractors.AbstractIteratorExtractor;
 import de.gerdiproject.harvest.etls.loaders.AbstractIteratorLoader;
@@ -41,7 +40,6 @@ public abstract class AbstractIteratorETL<EXOUT, TRANSOUT> extends AbstractETL<I
     protected volatile IntegerParameter startIndexParameter;
     protected volatile IntegerParameter endIndexParameter;
     private final AtomicInteger harvestedCount = new AtomicInteger(0);
-
 
 
     @Override
@@ -100,17 +98,7 @@ public abstract class AbstractIteratorETL<EXOUT, TRANSOUT> extends AbstractETL<I
         final Iterator<TRANSOUT> transformed = transformer.transform(extracted);
 
         // load transformed elements
-        final AbstractIteratorLoader<TRANSOUT> iterLoader = (AbstractIteratorLoader<TRANSOUT>) loader;
-
-        while (transformed.hasNext() && status == HarvesterStatus.HARVESTING) {
-            final TRANSOUT out = transformed.next();
-
-            if (out != null)
-                iterLoader.loadElement(out, !transformed.hasNext());
-
-            harvestedCount.incrementAndGet();
-            EventSystem.sendEvent(DocumentsHarvestedEvent.singleHarvestedDocument());
-        }
+        loader.load(transformed, true);
     }
 
 
@@ -150,5 +138,16 @@ public abstract class AbstractIteratorETL<EXOUT, TRANSOUT> extends AbstractETL<I
             return 0;
 
         return index;
+    }
+
+
+    /**
+     * This function increments the document counter. It is called when
+     * the assigned {@linkplain AbstractIteratorLoader} loads a document.
+     */
+    public void incrementHarvestedDocuments()
+    {
+        harvestedCount.incrementAndGet();
+        EventSystem.sendEvent(DocumentsHarvestedEvent.singleHarvestedDocument());
     }
 }

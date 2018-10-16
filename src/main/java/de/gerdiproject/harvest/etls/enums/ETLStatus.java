@@ -20,7 +20,7 @@ package de.gerdiproject.harvest.etls.enums;
  * @author Robin Weiss
  *
  */
-public enum HarvesterStatus {
+public enum ETLStatus {
     IDLE,
     QUEUED,
     HARVESTING,

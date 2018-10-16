@@ -33,7 +33,7 @@ public abstract class AbstractIteratorTransformer <TRANSIN, TRANSOUT> implements
 {
 
     @Override
-    public <H extends AbstractETL<?, ?>> void init(H harvester)
+    public void init(AbstractETL<?, ?> etl)
     {
         // by default, nothing needs to be done
     }

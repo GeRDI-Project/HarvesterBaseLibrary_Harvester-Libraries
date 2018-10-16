@@ -35,7 +35,7 @@ import de.gerdiproject.harvest.config.parameters.AbstractParameter;
 import de.gerdiproject.harvest.config.parameters.BooleanParameter;
 import de.gerdiproject.harvest.config.parameters.ParameterCategory;
 import de.gerdiproject.harvest.etls.constants.ETLConstants;
-import de.gerdiproject.harvest.etls.enums.HarvesterStatus;
+import de.gerdiproject.harvest.etls.enums.ETLStatus;
 import de.gerdiproject.harvest.etls.events.DocumentsHarvestedEvent;
 import de.gerdiproject.harvest.etls.extractors.IExtractor;
 import de.gerdiproject.harvest.etls.loaders.ElasticSearchLoader;
@@ -82,7 +82,7 @@ public abstract class AbstractETL <EOUT, TOUT> implements IEventListener
     protected volatile String hash;
 
     protected volatile HealthStatus health;
-    protected volatile HarvesterStatus status;
+    protected volatile ETLStatus status;
 
 
 
@@ -92,7 +92,7 @@ public abstract class AbstractETL <EOUT, TOUT> implements IEventListener
      */
     public AbstractETL()
     {
-        this.status = HarvesterStatus.BUSY;
+        this.status = ETLStatus.BUSY;
         this.health = HealthStatus.OK;
 
         this.logger = LoggerFactory.getLogger(getName());
@@ -187,8 +187,8 @@ public abstract class AbstractETL <EOUT, TOUT> implements IEventListener
      */
     public void abortHarvest()
     {
-        if (status == HarvesterStatus.HARVESTING) {
-            this.status = HarvesterStatus.ABORTING;
+        if (status == ETLStatus.HARVESTING) {
+            this.status = ETLStatus.ABORTING;
             isAborting = true;
         }
     }
@@ -205,7 +205,7 @@ public abstract class AbstractETL <EOUT, TOUT> implements IEventListener
         this.httpRequester.setCacheFolder(
             String.format(DataOperationConstants.CACHE_FOLDER_PATH, moduleName)
         );
-        status = HarvesterStatus.IDLE;
+        status = ETLStatus.IDLE;
     }
 
 
@@ -259,8 +259,8 @@ public abstract class AbstractETL <EOUT, TOUT> implements IEventListener
             throw new ETLPreconditionException(e.getMessage());
         }
 
-        final HarvesterStatus previousStatus = status;
-        this.status = HarvesterStatus.BUSY;
+        final ETLStatus previousStatus = status;
+        this.status = ETLStatus.BUSY;
 
         // calculate hash
         try {
@@ -296,7 +296,7 @@ public abstract class AbstractETL <EOUT, TOUT> implements IEventListener
      */
     public void prepareHarvest() throws ETLPreconditionException
     {
-        this.status = HarvesterStatus.BUSY;
+        this.status = ETLStatus.BUSY;
 
         if (!enableHarvesterParameter.getValue()) {
             skipHarvest();
@@ -330,7 +330,7 @@ public abstract class AbstractETL <EOUT, TOUT> implements IEventListener
                 String.format(ETLConstants.HARVESTER_SKIPPED_NO_CHANGES, getName()));
         }
 
-        this.status = HarvesterStatus.HARVESTING;
+        this.status = ETLStatus.HARVESTING;
     }
 
 
@@ -340,7 +340,7 @@ public abstract class AbstractETL <EOUT, TOUT> implements IEventListener
     protected void skipHarvest()
     {
         this.health = HealthStatus.OK;
-        this.status = HarvesterStatus.DONE;
+        this.status = ETLStatus.DONE;
         EventSystem.sendEvent(new DocumentsHarvestedEvent(getMaxNumberOfDocuments()));
     }
 
@@ -351,7 +351,7 @@ public abstract class AbstractETL <EOUT, TOUT> implements IEventListener
     public final void harvest()
     {
         EventSystem.addListener(StartAbortingEvent.class, onStartAborting);
-        this.status = HarvesterStatus.HARVESTING;
+        this.status = ETLStatus.HARVESTING;
 
         logger.info(String.format(ETLConstants.HARVESTER_START, getName()));
 
@@ -387,7 +387,7 @@ public abstract class AbstractETL <EOUT, TOUT> implements IEventListener
     protected void finishHarvestSuccessfully()
     {
         this.health = HealthStatus.OK;
-        this.status = HarvesterStatus.BUSY;
+        this.status = ETLStatus.BUSY;
         EventSystem.removeListener(StartAbortingEvent.class, onStartAborting);
 
         logger.info(String.format(ETLConstants.HARVESTER_END, getName()));
@@ -399,7 +399,7 @@ public abstract class AbstractETL <EOUT, TOUT> implements IEventListener
             // TODO EventSystem.sendEvent(new AbortingFinishedEvent(isMainHarvester));
         }
 
-        this.status = HarvesterStatus.DONE;
+        this.status = ETLStatus.DONE;
     }
 
 
@@ -432,7 +432,7 @@ public abstract class AbstractETL <EOUT, TOUT> implements IEventListener
     protected void onHarvestFailed(Throwable reason)
     {
         this.health = HealthStatus.HARVEST_FAILED;
-        this.status = HarvesterStatus.BUSY;
+        this.status = ETLStatus.BUSY;
 
         // log the error
         logger.error(reason.getMessage(), reason);
@@ -440,7 +440,7 @@ public abstract class AbstractETL <EOUT, TOUT> implements IEventListener
         // log failure
         logger.warn(String.format(ETLConstants.HARVESTER_FAILED, getName()));
 
-        this.status = HarvesterStatus.DONE;
+        this.status = ETLStatus.DONE;
     }
 
 
@@ -451,7 +451,7 @@ public abstract class AbstractETL <EOUT, TOUT> implements IEventListener
     protected void onHarvestAborted()
     {
         this.health = HealthStatus.HARVEST_FAILED;
-        this.status = HarvesterStatus.ABORTING;
+        this.status = ETLStatus.ABORTING;
 
         // TODO EventSystem.sendEvent(new AbortingFinishedEvent(isMainHarvester));
 
@@ -459,7 +459,7 @@ public abstract class AbstractETL <EOUT, TOUT> implements IEventListener
 
         logger.warn(String.format(ETLConstants.HARVESTER_ABORTED, getName()));
 
-        this.status = HarvesterStatus.DONE;
+        this.status = ETLStatus.DONE;
     }
 
 
@@ -493,7 +493,7 @@ public abstract class AbstractETL <EOUT, TOUT> implements IEventListener
      *
      * @return an enum that represents the state of the harvester
      */
-    public HarvesterStatus getStatus()
+    public ETLStatus getStatus()
     {
         return status;
     }
@@ -583,7 +583,7 @@ public abstract class AbstractETL <EOUT, TOUT> implements IEventListener
      */
     protected void onParameterChanged(AbstractParameter<?> param)
     {
-        if (status != HarvesterStatus.IDLE)
+        if (status != ETLStatus.IDLE)
             return;
 
         if (param.getCompositeKey().equals(LoaderConstants.LOADER_TYPE_PARAM.getCompositeKey())) {

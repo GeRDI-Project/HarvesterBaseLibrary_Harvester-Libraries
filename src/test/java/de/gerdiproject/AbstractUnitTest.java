@@ -44,6 +44,7 @@ import de.gerdiproject.harvest.utils.logger.constants.LoggerConstants;
  */
 public abstract class AbstractUnitTest
 {
+    protected static final String MODULE_NAME = "UnitTestModule";
     private static final String EXPECTED_EVENT_FAIL_MESSAGE = "Expected the %s to be sent before %d ms have passed!";
     protected static final int DEFAULT_EVENT_TIMEOUT = 2000;
 

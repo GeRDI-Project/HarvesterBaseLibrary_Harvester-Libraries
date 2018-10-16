@@ -30,10 +30,9 @@ public interface IExtractor <EXOUT>
     /**
      * Initializes the extractor for a new harvest.
      *
-     * @param harvester the harvester to which the extractor belongs
-     * @param <H> the type of the harvester to which the extractor belongs
+     * @param etl the {@linkplain AbstractETL} to which the extractor belongs
      */
-    <H extends AbstractETL<?, ?>> void init(H harvester);
+    void init(AbstractETL<?, ?> etl);
 
 
     /**

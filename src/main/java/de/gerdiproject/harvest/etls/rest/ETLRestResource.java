@@ -30,7 +30,7 @@ import javax.ws.rs.core.Response;
 
 import de.gerdiproject.harvest.etls.ETLPreconditionException;
 import de.gerdiproject.harvest.etls.constants.ETLConstants;
-import de.gerdiproject.harvest.etls.enums.HarvesterStatus;
+import de.gerdiproject.harvest.etls.enums.ETLStatus;
 import de.gerdiproject.harvest.etls.events.GetETLRegistryEvent;
 import de.gerdiproject.harvest.etls.utils.ETLRegistry;
 import de.gerdiproject.harvest.event.EventSystem;
@@ -91,7 +91,7 @@ public class ETLRestResource extends AbstractRestResource<ETLRegistry, GetETLReg
     })
     public Response isOutdated()
     {
-        if (restObject.getStatus() == HarvesterStatus.BUSY)
+        if (restObject.getStatus() == ETLStatus.BUSY)
             return HttpResponseFactory.createBusyResponse(ETLConstants.BUSY_ERROR_MESSAGE, 10);
         else
             return HttpResponseFactory.createOkResponse(restObject.hasOutdatedHarvesters());
@@ -110,13 +110,13 @@ public class ETLRestResource extends AbstractRestResource<ETLRegistry, GetETLReg
     })
     public Response abort()
     {
-        if (restObject.getStatus() == HarvesterStatus.HARVESTING) {
+        if (restObject.getStatus() == ETLStatus.HARVESTING) {
             EventSystem.sendEvent(new AbortingStartedEvent());
             restObject.abortHarvest();
 
 
             return HttpResponseFactory.createAcceptedResponse(
-                       String.format(StateConstants.ABORT_STATUS, HarvesterStatus.HARVESTING.toString()));
+                       String.format(StateConstants.ABORT_STATUS, ETLStatus.HARVESTING.toString()));
         } else {
             final String message = String.format(
                                        StateConstants.CANNOT_ABORT_PREFIX

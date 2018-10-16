@@ -15,8 +15,9 @@
  *  under the License.
  */
 /**
- * This package contains unit tests of the saving procedure.
+ * This package contains tests for {@linkplain de.gerdiproject.harvest.etls.loaders.ILoader}
+ * classes.
  *
  * @author Robin Weiss
  */
-package de.gerdiproject.save;
+package de.gerdiproject.etls.loaders;

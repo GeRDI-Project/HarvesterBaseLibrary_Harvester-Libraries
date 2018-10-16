@@ -18,7 +18,7 @@ package de.gerdiproject.harvest.etls.json;
 
 import de.gerdiproject.harvest.application.enums.HealthStatus;
 import de.gerdiproject.harvest.etls.AbstractETL;
-import de.gerdiproject.harvest.etls.enums.HarvesterStatus;
+import de.gerdiproject.harvest.etls.enums.ETLStatus;
 import de.gerdiproject.harvest.etls.utils.ETLRegistry;
 
 /**
@@ -28,7 +28,7 @@ import de.gerdiproject.harvest.etls.utils.ETLRegistry;
 public class ETLDetails
 {
     private final String name;
-    private final HarvesterStatus status;
+    private final ETLStatus status;
     private final HealthStatus health;
     private final int harvestedCount;
     private final int maxDocumentCount;
@@ -60,7 +60,7 @@ public class ETLDetails
     }
 
 
-    public HarvesterStatus getStatus()
+    public ETLStatus getStatus()
     {
         return status;
     }

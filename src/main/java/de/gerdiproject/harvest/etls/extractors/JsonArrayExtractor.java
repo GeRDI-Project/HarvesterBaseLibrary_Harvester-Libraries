@@ -105,10 +105,10 @@ public class JsonArrayExtractor<EXOUT> extends AbstractIteratorExtractor<EXOUT>
 
 
     @Override
-    public <H extends AbstractETL<?, ?>> void init(H harvester)
+    public void init(AbstractETL<?, ?> etl)
     {
-        super.init(harvester);
-        this.httpRequester.setCharset(harvester.getCharset());
+        super.init(etl);
+        this.httpRequester.setCharset(etl.getCharset());
 
         final JsonElement jsonResponse = httpRequester.getObjectFromUrl(url, JsonElement.class);
         this.extractedList = getListFromJson(jsonResponse);

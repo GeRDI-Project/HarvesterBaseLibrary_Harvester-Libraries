@@ -81,9 +81,11 @@ public abstract class AbstractURLLoader <OUT extends DataCiteJson> extends Abstr
 
 
     @Override
-    public <H extends AbstractETL<?, ?>> void init(H harvester)
+    public void init(AbstractETL<?, ?> etl)
     {
-        this.charset = harvester.getCharset();
+        super.init(etl);
+
+        this.charset = etl.getCharset();
         this.hashGenerator = new HashGenerator(charset);
 
         batchMap.clear();

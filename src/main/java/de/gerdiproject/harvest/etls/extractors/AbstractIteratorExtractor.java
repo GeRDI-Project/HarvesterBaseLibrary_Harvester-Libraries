@@ -36,10 +36,10 @@ public abstract class AbstractIteratorExtractor <EXOUT> implements IExtractor<It
 
 
     @Override
-    public <H extends AbstractETL<?, ?>> void init(H harvester)
+    public void init(AbstractETL<?, ?> etl)
     {
-        if (harvester instanceof AbstractIteratorETL) {
-            final AbstractIteratorETL<?, ?> iterHarvester = (AbstractIteratorETL<?, ?>) harvester;
+        if (etl instanceof AbstractIteratorETL) {
+            final AbstractIteratorETL<?, ?> iterHarvester = (AbstractIteratorETL<?, ?>) etl;
 
             this.startIndex = iterHarvester.getStartIndex();
             this.endIndex = iterHarvester.getEndIndex();

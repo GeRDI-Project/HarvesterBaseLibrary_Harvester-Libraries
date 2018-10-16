@@ -90,12 +90,19 @@ public class Configuration extends AbstractRestObject<Configuration, String> imp
      * @param parameter the parameter to be registered
      * @param <T> the class of the parameter that is to be registered
      *
+     * @throws IllegalStateException thrown if no {@linkplain Configuration} exists
+     *
      * @return the registered parameter as it appears in the configuration
      */
     @SuppressWarnings("unchecked")  // the cast will succeed, because the value type is the one that is registered
-    public static <T extends AbstractParameter<?>> T registerParameter(T parameter)
+    public static <T extends AbstractParameter<?>> T registerParameter(T parameter) throws IllegalStateException
     {
-        return (T) EventSystem.sendSynchronousEvent(new RegisterParameterEvent(parameter));
+        final T registeredParam = (T) EventSystem.sendSynchronousEvent(new RegisterParameterEvent(parameter));
+
+        if (registeredParam == null)
+            throw new IllegalStateException(String.format(ConfigurationConstants.REGISTER_ERROR, parameter.getCompositeKey()));
+
+        return registeredParam;
     }
 
     /**
@@ -168,7 +175,7 @@ public class Configuration extends AbstractRestObject<Configuration, String> imp
     public void saveToDisk()
     {
         if (cacheFilePath == null)
-            LOGGER.error(ConfigurationConstants.SAVE_FAILED_NO_PATH);
+            LOGGER.error(ConfigurationConstants.SAVE_NO_PATH_ERROR);
         else
             diskIo.writeObjectToFile(cacheFilePath, this);
     }
@@ -183,7 +190,7 @@ public class Configuration extends AbstractRestObject<Configuration, String> imp
     public void loadFromDisk()
     {
         if (cacheFilePath == null) {
-            LOGGER.error(String.format(ConfigurationConstants.LOAD_FAILED, "", ConfigurationConstants.NO_PATH));
+            LOGGER.error(String.format(ConfigurationConstants.LOAD_ERROR, "", ConfigurationConstants.NO_PATH));
             return;
         }
 
@@ -191,7 +198,7 @@ public class Configuration extends AbstractRestObject<Configuration, String> imp
         final Configuration loadedConfig = diskIo.getObject(cacheFilePath, Configuration.class);
 
         if (loadedConfig == null) {
-            LOGGER.info(String.format(ConfigurationConstants.NO_CONFIG_FILE_EXISTS, cacheFilePath));
+            LOGGER.info(String.format(ConfigurationConstants.NO_CONFIG_FILE_ERROR, cacheFilePath));
             return;
         }
 

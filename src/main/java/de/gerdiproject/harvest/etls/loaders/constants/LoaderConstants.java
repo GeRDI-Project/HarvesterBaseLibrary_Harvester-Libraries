@@ -24,6 +24,7 @@ import de.gerdiproject.harvest.config.parameters.ParameterCategory;
 import de.gerdiproject.harvest.config.parameters.PasswordParameter;
 import de.gerdiproject.harvest.config.parameters.StringParameter;
 import de.gerdiproject.harvest.config.parameters.UrlParameter;
+import de.gerdiproject.harvest.etls.AbstractIteratorETL;
 import de.gerdiproject.harvest.state.impl.ErrorState;
 import de.gerdiproject.harvest.state.impl.HarvestingState;
 import de.gerdiproject.harvest.state.impl.IdleState;
@@ -112,6 +113,7 @@ public class LoaderConstants
         + SUBMIT_INCOMPLETE_PARAM.getCompositeKey()
         + "'-flag in the configuration.";
 
+    public static final String NO_ITER_ETL_ERROR = "%s must be assigned to an " + AbstractIteratorETL.class.getSimpleName() + "!";
     public static final String NO_SUBMITTER_CONFIGURED = "No Submitter was configured! You can change it by sending a PUT request to .../config";
 
 

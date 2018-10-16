@@ -24,25 +24,17 @@ import de.gerdiproject.harvest.etls.loaders.DiskLoader;
  *
  * @author Robin Weiss
  */
-public class SaveConstants
+public class DiskLoaderConstants
 {
     public static final String HARVEST_DATE_JSON = "harvestDate";
-    public static final String DURATION_JSON = "durationInSeconds";
     public static final String SOURCE_HASH_JSON = "sourceHash";
 
-    public static final String SAVE_FOLDER_NAME =  "savedDocuments/";
+    public static final String SAVE_FOLDER_NAME =  "savedDocuments";
     public static final String JSON_EXTENSION =  ".json";
 
-    public static final String SAVE_START = "Saving documents to: %s";
-    public static final String SAVE_OK = "Saving done!";
-    public static final String SAVE_FAILED_EXCEPTION = "Could not download harvest: %s!";
-    public static final String SAVE_FAILED_EMPTY = "Could not download harvest: There are no changes to save!";
-    public static final String SAVE_FAILED_CANNOT_CREATE = "Could not download harvest: Could not create file '%s' on the server!";
+    public static final String SAVE_FAILED_CANNOT_CREATE = "Could not save harvest to disk: Could not create file '%s' on the server!";
 
     public static final String DOCUMENTS_JSON = "documents";
-
-    public static final String CONTENT_HEADER = "Content-Disposition";
-    public static final String CONTENT_HEADER_VALUE = "attachment; filename=\"%s\"";
 
     public static final StringParameter FILE_PATH_PARAM = new StringParameter(
         "saveFolder",
@@ -54,7 +46,7 @@ public class SaveConstants
      * Private constructor, because this class just serves as a place to define
      * constants.
      */
-    private SaveConstants()
+    private DiskLoaderConstants()
     {
     }
 }

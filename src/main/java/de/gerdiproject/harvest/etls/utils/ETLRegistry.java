@@ -37,7 +37,7 @@ import de.gerdiproject.harvest.config.parameters.BooleanParameter;
 import de.gerdiproject.harvest.etls.AbstractETL;
 import de.gerdiproject.harvest.etls.ETLPreconditionException;
 import de.gerdiproject.harvest.etls.constants.ETLConstants;
-import de.gerdiproject.harvest.etls.enums.HarvesterStatus;
+import de.gerdiproject.harvest.etls.enums.ETLStatus;
 import de.gerdiproject.harvest.etls.events.GetETLRegistryEvent;
 import de.gerdiproject.harvest.etls.events.HarvestFinishedEvent;
 import de.gerdiproject.harvest.etls.events.HarvestStartedEvent;
@@ -87,10 +87,10 @@ public class ETLRegistry extends AbstractRestObject<ETLRegistry, ETLDetails>
         for (AbstractETL<?, ?> etl : etls) {
             sb.append(etl.getName()).append(" : ");
 
-            final HarvesterStatus status = etl.getStatus();
+            final ETLStatus status = etl.getStatus();
             sb.append(status.toString().toLowerCase());
 
-            if (status == HarvesterStatus.HARVESTING) {
+            if (status == ETLStatus.HARVESTING) {
                 final int currCount = etl.getHarvestedCount();
                 final int maxCount = etl.getMaxNumberOfDocuments();
 
@@ -112,10 +112,10 @@ public class ETLRegistry extends AbstractRestObject<ETLRegistry, ETLDetails>
 
         sb.append(ETLConstants.NAME_TOTAL);
 
-        final HarvesterStatus status = getStatus();
+        final ETLStatus status = getStatus();
         sb.append(status.toString().toLowerCase());
 
-        if (status == HarvesterStatus.HARVESTING) {
+        if (status == ETLStatus.HARVESTING) {
             if (totalMaxCount != -1)
                 sb.append(String.format(ETLConstants.PROGRESS, Math.round(100f * totalCurrCount / totalMaxCount), totalCurrCount, totalMaxCount));
             else
@@ -214,12 +214,12 @@ public class ETLRegistry extends AbstractRestObject<ETLRegistry, ETLDetails>
             if (preparedCount.get() == 0)
                 throw new IllegalStateException("No harvester could be started.");
 
-            if (getStatus() == HarvesterStatus.HARVESTING)
+            if (getStatus() == ETLStatus.HARVESTING)
                 EventSystem.sendEvent(new HarvestStartedEvent(getHash(), getMaxNumberOfDocuments()));
 
             LOGGER.info("Starting Harvesters");
             processHarvesters((AbstractETL<?, ?> harvester) -> {
-                if (harvester.getStatus() == HarvesterStatus.HARVESTING)
+                if (harvester.getStatus() == ETLStatus.HARVESTING)
                     harvester.harvest();
 
             });
@@ -303,23 +303,23 @@ public class ETLRegistry extends AbstractRestObject<ETLRegistry, ETLDetails>
     }
 
 
-    public HarvesterStatus getStatus()
+    public ETLStatus getStatus()
     {
-        final List<HarvesterStatus> statuses = processHarvesters((AbstractETL<?, ?> harvester) -> harvester.getStatus());
+        final List<ETLStatus> statuses = processHarvesters((AbstractETL<?, ?> harvester) -> harvester.getStatus());
 
-        if (statuses.contains(HarvesterStatus.ABORTING))
-            return HarvesterStatus.ABORTING;
+        if (statuses.contains(ETLStatus.ABORTING))
+            return ETLStatus.ABORTING;
 
-        if (statuses.contains(HarvesterStatus.HARVESTING))
-            return HarvesterStatus.HARVESTING;
+        if (statuses.contains(ETLStatus.HARVESTING))
+            return ETLStatus.HARVESTING;
 
-        if (statuses.contains(HarvesterStatus.QUEUED))
-            return HarvesterStatus.QUEUED;
+        if (statuses.contains(ETLStatus.QUEUED))
+            return ETLStatus.QUEUED;
 
-        if (statuses.contains(HarvesterStatus.BUSY))
-            return HarvesterStatus.BUSY;
+        if (statuses.contains(ETLStatus.BUSY))
+            return ETLStatus.BUSY;
 
-        return HarvesterStatus.IDLE;
+        return ETLStatus.IDLE;
     }
 
 

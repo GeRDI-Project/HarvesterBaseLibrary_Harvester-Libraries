@@ -224,6 +224,18 @@ public class ConfigurationTest extends AbstractFileSystemUnitTest<Configuration>
 
 
     /**
+     * Tests if registering a parameter without having a configuration with event listeners
+     * throws an {@linkplain IllegalStateException}.
+     */
+    @Test(expected = IllegalStateException.class)
+    public void testRegisteringWithoutConfig()
+    {
+        Configuration.registerParameter(testedParam);
+        fail("Registering a parameter while the Configuration has no listeners should throw an IllegalStateException!");
+    }
+
+
+    /**
      * Tests if the value of a {@linkplain StringParameter} can be changed via
      * the setter function of the {@linkplain Configuration}.
      */

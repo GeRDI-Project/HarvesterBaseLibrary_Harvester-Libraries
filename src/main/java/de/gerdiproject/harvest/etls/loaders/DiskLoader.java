@@ -21,6 +21,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.nio.charset.Charset;
+import java.util.Iterator;
 
 import com.google.gson.Gson;
 import com.google.gson.stream.JsonWriter;
@@ -28,7 +29,7 @@ import com.google.gson.stream.JsonWriter;
 import de.gerdiproject.harvest.config.Configuration;
 import de.gerdiproject.harvest.config.parameters.StringParameter;
 import de.gerdiproject.harvest.etls.AbstractETL;
-import de.gerdiproject.harvest.etls.loaders.constants.SaveConstants;
+import de.gerdiproject.harvest.etls.loaders.constants.DiskLoaderConstants;
 import de.gerdiproject.harvest.utils.file.FileUtils;
 import de.gerdiproject.json.GsonUtils;
 import de.gerdiproject.json.datacite.DataCiteJson;
@@ -44,7 +45,7 @@ public class DiskLoader extends AbstractIteratorLoader<DataCiteJson>
     private final StringParameter saveFolderParam;
 
     private JsonWriter writer;
-
+    private File targetFile;
 
     /**
      * Constructor that sets the parser and save folder.
@@ -52,7 +53,7 @@ public class DiskLoader extends AbstractIteratorLoader<DataCiteJson>
     public DiskLoader()
     {
         super();
-        this.saveFolderParam = Configuration.registerParameter(SaveConstants.FILE_PATH_PARAM);
+        this.saveFolderParam = Configuration.registerParameter(DiskLoaderConstants.FILE_PATH_PARAM);
         this.gson = GsonUtils.createGerdiDocumentGsonBuilder().create();
     }
 
@@ -64,42 +65,87 @@ public class DiskLoader extends AbstractIteratorLoader<DataCiteJson>
     }
 
 
-    @Override
-    public <H extends AbstractETL<?, ?>> void init(H harvester)
+    /**
+     * Returns the file to which the documents are saved.
+     *
+     * @return the file to which the documents are saved, or null if init() was not called before
+     */
+    public File getTargetFile()
     {
-        final String sourceHash = harvester.getHash();
-        final Charset charset = harvester.getCharset();
+        return targetFile;
+    }
+
+
+    @Override
+    public void load(Iterator<DataCiteJson> documents, boolean isLastDocument) throws LoaderException
+    {
+        try {
+            super.load(documents, isLastDocument);
+        } catch (Exception e) {
+            finishAndCloseWriter();
+            throw new LoaderException(e.getMessage());
+        }
+
+        if (isLastDocument)
+            finishAndCloseWriter();
+    }
+
+
+    @Override
+    public void init(AbstractETL<?, ?> etl)
+    {
+        super.init(etl);
+
+        final String sourceHash = etl.getHash();
+        final Charset charset = etl.getCharset();
 
         // create empty file
-        final String fileName = harvester.getName() + SaveConstants.JSON_EXTENSION;
-        final File result = new File(saveFolderParam.getStringValue(), fileName);
-        FileUtils.createEmptyFile(result);
+        final String fileName = etl.getName() + DiskLoaderConstants.JSON_EXTENSION;
+        this.targetFile = new File(saveFolderParam.getStringValue(), fileName);
+        FileUtils.createEmptyFile(targetFile);
 
         // abort if the file could not be created or cleaned up
-        if (!result.exists() || !result.isFile() || result.length() != 0)
-            throw new IllegalStateException(String.format(SaveConstants.SAVE_FAILED_CANNOT_CREATE, result));
+        if (!targetFile.exists() || targetFile.length() != 0)
+            throw new IllegalStateException(String.format(DiskLoaderConstants.SAVE_FAILED_CANNOT_CREATE, targetFile));
 
         // create JSON writer
         try {
-            writer = new JsonWriter(new BufferedWriter(new OutputStreamWriter(new FileOutputStream(result), charset)));
+            writer = new JsonWriter(new BufferedWriter(new OutputStreamWriter(new FileOutputStream(targetFile), charset)));
             writer.beginObject();
 
             // write the current timestamp
-            writer.name(SaveConstants.HARVEST_DATE_JSON);
+            writer.name(DiskLoaderConstants.HARVEST_DATE_JSON);
             writer.value(System.currentTimeMillis());
 
             // write the hash
             if (sourceHash != null) {
-                writer.name(SaveConstants.SOURCE_HASH_JSON);
+                writer.name(DiskLoaderConstants.SOURCE_HASH_JSON);
                 writer.value(sourceHash);
             }
 
-            writer.name(SaveConstants.DOCUMENTS_JSON);
+            writer.name(DiskLoaderConstants.DOCUMENTS_JSON);
             writer.beginArray();
         } catch (IOException e) {
             throw new IllegalStateException(e);
         }
+    }
 
+
+    /**
+     * Attempts to close the writer.
+     *
+     * @throws LoaderException thrown if there is an error closing the writer
+     */
+    private void finishAndCloseWriter() throws LoaderException
+    {
+        try {
+            writer.endArray();
+            writer.endObject();
+            writer.close();
+            writer = null;
+        } catch (IOException e) {
+            throw new LoaderException(e.toString());
+        }
     }
 
 
@@ -108,17 +154,5 @@ public class DiskLoader extends AbstractIteratorLoader<DataCiteJson>
     {
         if (document != null)
             gson.toJson(document, document.getClass(), writer);
-
-        if (isLastDocument) {
-            try {
-                writer.endArray();
-                writer.endObject();
-                writer.close();
-            } catch (IOException e) {
-                throw new LoaderException(e.toString());
-            }
-
-            writer = null;
-        }
     }
 }

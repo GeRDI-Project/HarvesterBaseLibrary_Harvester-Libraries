@@ -19,4 +19,4 @@
  *
  * @author Robin Weiss
  */
-package de.gerdiproject.harvester;
+package de.gerdiproject.etls;
