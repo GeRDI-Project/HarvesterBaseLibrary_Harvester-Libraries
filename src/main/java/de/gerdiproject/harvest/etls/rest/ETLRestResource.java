@@ -16,6 +16,7 @@
 package de.gerdiproject.harvest.etls.rest;
 
 
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 
@@ -176,6 +177,29 @@ public class ETLRestResource extends AbstractRestResource<ETLRegistry, GetETLReg
             return HttpResponseFactory.createServerErrorResponse();
         else
             return HttpResponseFactory.createOkResponse(log);
+    }
+
+
+    /**
+    * Retrieves a formatted timestamp of the time at which the harvest started,
+    * or "N/A" if no harvest was started yet.
+    *
+    * @return a formatted timestamp or "N/A" if no harvest was started yet
+    */
+    @GET
+    @Path("harvest-timestamp")
+    @Produces({
+        MediaType.TEXT_PLAIN
+    })
+    public Response getHarvestStartTimestamp()
+    {
+        long timestamp = restObject.getLatestHarvestTimestamp();
+
+        if (timestamp == -1L)
+            return HttpResponseFactory.createBadRequestResponse();
+
+        else
+            return HttpResponseFactory.createOkResponse(Instant.ofEpochMilli(timestamp).toString());
     }
 
 

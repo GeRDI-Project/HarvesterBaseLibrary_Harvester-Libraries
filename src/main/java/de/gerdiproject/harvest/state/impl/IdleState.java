@@ -35,7 +35,6 @@ package de.gerdiproject.harvest.state.impl;
 
 import javax.ws.rs.core.Response;
 
-import de.gerdiproject.harvest.application.MainContext;
 import de.gerdiproject.harvest.application.events.ResetContextEvent;
 import de.gerdiproject.harvest.etls.events.HarvestStartedEvent;
 import de.gerdiproject.harvest.etls.events.StartHarvestEvent;
@@ -44,7 +43,6 @@ import de.gerdiproject.harvest.rest.HttpResponseFactory;
 import de.gerdiproject.harvest.state.IState;
 import de.gerdiproject.harvest.state.constants.StateConstants;
 import de.gerdiproject.harvest.state.constants.StateEventHandlerConstants;
-import de.gerdiproject.harvest.utils.time.HarvestTimeKeeper;
 
 /**
  * This state indicates it is waiting for user input.
@@ -70,10 +68,7 @@ public class IdleState implements IState
     @Override
     public String getStatusString()
     {
-        HarvestTimeKeeper timeKeeper = MainContext.getTimeKeeper();
-        return String.format(
-                   StateConstants.IDLE_STATUS,
-                   timeKeeper.getHarvestMeasure().toString());
+        return "";
     }
 
 

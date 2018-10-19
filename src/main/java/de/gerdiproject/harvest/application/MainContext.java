@@ -38,13 +38,11 @@ import de.gerdiproject.harvest.scheduler.constants.SchedulerConstants;
 import de.gerdiproject.harvest.state.StateMachine;
 import de.gerdiproject.harvest.state.impl.InitializationState;
 import de.gerdiproject.harvest.utils.CancelableFuture;
-import de.gerdiproject.harvest.utils.file.constants.FileConstants;
 import de.gerdiproject.harvest.utils.logger.HarvesterLog;
 import de.gerdiproject.harvest.utils.logger.constants.LoggerConstants;
 import de.gerdiproject.harvest.utils.logger.events.GetMainLogEvent;
 import de.gerdiproject.harvest.utils.maven.MavenUtils;
 import de.gerdiproject.harvest.utils.maven.events.GetMavenUtilsEvent;
-import de.gerdiproject.harvest.utils.time.HarvestTimeKeeper;
 
 
 /**
@@ -60,7 +58,6 @@ public class MainContext
 
     private final HarvesterLog log;
     private final String moduleName;
-    private final HarvestTimeKeeper timeKeeper;
     private final ETLRegistry etlRegistry;
     private final Configuration configuration;
 
@@ -96,7 +93,6 @@ public class MainContext
         EventSystem.addSynchronousListener(GetMainLogEvent.class, this::getMainLog);
 
         this.configuration = createConfiguration(moduleName);
-        this.timeKeeper = createTimeKeeper(moduleName);
 
         this.mavenUtils = createMavenUtils(callerClass);
         EventSystem.addSynchronousListener(GetMavenUtilsEvent.class, this::getMavenUtils);
@@ -163,25 +159,12 @@ public class MainContext
 
 
     /**
-     * Retrieves a timekeeper that measures certain processes.
-     *
-     * @return a timekeeper that measures certain processes
-     * or null, if the main context was not initialized
-     */
-    public static HarvestTimeKeeper getTimeKeeper()
-    {
-        return instance != null ? instance.timeKeeper : null;
-    }
-
-
-    /**
      * Removes all event listeners.
      */
     private void removeEventListeners()
     {
         EventSystem.removeSynchronousListener(GetMainLogEvent.class);
         EventSystem.removeSynchronousListener(GetMavenUtilsEvent.class);
-        timeKeeper.removeEventListeners();
         scheduler.removeEventListeners();
         configuration.removeEventListeners();
         etlRegistry.removeEventListeners();
@@ -336,32 +319,6 @@ public class MainContext
 
         LOGGER.info(String.format(ApplicationConstants.INIT_FIELD_SUCCESS, Scheduler.class.getSimpleName()));
         return sched;
-    }
-
-
-    /**
-     * Creates a {@linkplain HarvestTimeKeeper} and assigns it to this context.
-     *
-     * @param moduleName the name of this service
-     *
-     * @return a new {@linkplain HarvestTimeKeeper} for this context
-     */
-    private HarvestTimeKeeper createTimeKeeper(String moduleName)
-    {
-        LOGGER.info(String.format(ApplicationConstants.INIT_FIELD, HarvestTimeKeeper.class.getSimpleName()));
-
-        final String timeKeeperCachePath =
-            String.format(
-                FileConstants.HARVEST_TIME_KEEPER_CACHE_FILE_PATH,
-                moduleName);
-
-        HarvestTimeKeeper keeper = new HarvestTimeKeeper(timeKeeperCachePath);
-        keeper.loadFromDisk();
-        keeper.addEventListeners();
-
-        LOGGER.info(String.format(ApplicationConstants.INIT_FIELD_SUCCESS, HarvestTimeKeeper.class.getSimpleName()));
-
-        return keeper;
     }
 
 

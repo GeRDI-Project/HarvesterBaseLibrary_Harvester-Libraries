@@ -16,8 +16,6 @@
 package de.gerdiproject.harvest.application.rest;
 
 
-import java.time.Instant;
-
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
@@ -54,29 +52,6 @@ public final class StatusRestResource
     public String getInfo()
     {
         return String.format(StatusConstants.REST_INFO, MainContext.getServiceName());
-    }
-
-
-    /**
-     * Retrieves a formatted timestamp of the time at which the harvest started,
-     * or "N/A" if no harvest was started yet.
-     *
-     * @return a formatted timestamp or "N/A" if no harvest was started yet
-     */
-    @GET
-    @Path("harvest-timestamp")
-    @Produces({
-        MediaType.TEXT_PLAIN
-    })
-    public Response getHarvestStartTimestamp()
-    {
-        long timestamp = MainContext.getTimeKeeper().getHarvestMeasure().getStartTimestamp();
-
-        if (timestamp == -1L)
-            return HttpResponseFactory.createBadRequestResponse();
-
-        else
-            return HttpResponseFactory.createOkResponse(Instant.ofEpochMilli(timestamp).toString());
     }
 
 

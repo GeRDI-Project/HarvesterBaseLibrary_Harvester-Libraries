@@ -17,7 +17,6 @@ package de.gerdiproject.harvest.application.constants;
 
 import de.gerdiproject.harvest.application.rest.StatusRestResource;
 import de.gerdiproject.harvest.state.constants.StateConstants;
-import de.gerdiproject.harvest.utils.time.ProcessTimeMeasure;
 
 /**
  * This static class is a collection of constants that are used by the
@@ -29,7 +28,7 @@ public class StatusConstants
 {
     public static final String FAILED_HARVEST_HEALTH_CHECK = String.format(
                                                                  StateConstants.HARVEST_STATUS,
-                                                                 ProcessTimeMeasure.ProcessStatus.Failed.toString());
+                                                                 "failed");
 
     public static final String REST_INFO = "- %s Extended REST Interface -%n%n"
                                            + "GET          Returns this overview of possible HTTP calls.%n"

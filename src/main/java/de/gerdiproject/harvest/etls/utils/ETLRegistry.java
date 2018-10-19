@@ -19,6 +19,7 @@ package de.gerdiproject.harvest.etls.utils;
 import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -433,6 +434,26 @@ public class ETLRegistry extends AbstractRestObject<ETLRegistry, ETLJson> implem
     public ETLStatus getStatus()
     {
         return combinedStatusHistory.getLatestValue();
+    }
+
+
+    /**
+     * Returns the unix timestamp of the most recent beginning of a harvest.
+     *
+     * @return a unix timestamp or -1 if no harvest was executed
+     */
+    public long getLatestHarvestTimestamp()
+    {
+        final Iterator<TimestampedEntry<ETLStatus>> reverseIter = combinedStatusHistory.descendingIterator();
+
+        while (reverseIter.hasNext()) {
+            final TimestampedEntry<ETLStatus> item = reverseIter.next();
+
+            if (item.getValue() == ETLStatus.HARVESTING)
+                return item.getTimestamp();
+        }
+
+        return -1;
     }
 
 

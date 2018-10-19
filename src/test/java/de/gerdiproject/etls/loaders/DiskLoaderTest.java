@@ -48,8 +48,6 @@ import de.gerdiproject.harvest.etls.loaders.LoaderException;
 import de.gerdiproject.harvest.etls.loaders.constants.DiskLoaderConstants;
 import de.gerdiproject.harvest.utils.data.DiskIO;
 import de.gerdiproject.harvest.utils.file.FileUtils;
-import de.gerdiproject.harvest.utils.time.ProcessTimeMeasure;
-import de.gerdiproject.harvest.utils.time.ProcessTimeMeasure.ProcessStatus;
 import de.gerdiproject.json.datacite.DataCiteJson;
 import de.gerdiproject.utils.examples.harvestercache.MockedETL;
 
@@ -70,12 +68,6 @@ public class DiskLoaderTest extends AbstractFileSystemUnitTest<DiskLoader>
     @Override
     protected DiskLoader setUpTestObjects()
     {
-        final long startTimestamp = random.nextLong();
-        final long endTimestamp = random.longs(startTimestamp + 1, startTimestamp + 99999999).findAny().getAsLong();
-
-        ProcessTimeMeasure measure = new ProcessTimeMeasure();
-        measure.set(startTimestamp, endTimestamp, ProcessStatus.Finished);
-
         // make sure the DiskLoader writes to the 'mocked' folder
         AbstractParameter<?> filePathParam = DiskLoaderConstants.FILE_PATH_PARAM.copy();
         filePathParam.setValue(TEST_FOLDER.toString(), null);
