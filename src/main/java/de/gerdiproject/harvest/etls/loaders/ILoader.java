@@ -40,11 +40,9 @@ public interface ILoader <LOUT>
      * Submits the document to a targeted search index.
      *
      * @param document the document that is to be submitted
-     * @param isLastDocument if true, this is the last document to be submitted
-     *
      * @throws LoaderException when the load did not work properly
      */
-    void load(LOUT document, boolean isLastDocument) throws LoaderException;
+    void load(LOUT document) throws LoaderException;
 
 
     /**
@@ -53,4 +51,11 @@ public interface ILoader <LOUT>
      * when a different Loader is used.
      */
     void unregisterParameters();
+
+
+    /**
+     * Closes potentially open readers/writers and finishes the Load process
+     * if it is still ongoing.
+     */
+    void clear();
 }

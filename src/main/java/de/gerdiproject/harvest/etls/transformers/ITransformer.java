@@ -46,4 +46,11 @@ public interface ITransformer <TRANSIN, TRANSOUT>
      * @return a document that can be loaded
      */
     TRANSOUT transform(TRANSIN source) throws TransformerException;
+
+
+    /**
+     * Closes potentially open readers/writers and finishes the Transformation process
+     * if it is still ongoing.
+     */
+    void clear();
 }

@@ -108,8 +108,6 @@ public class JsonArrayExtractor<EXOUT> extends AbstractIteratorExtractor<EXOUT>
     public void init(AbstractETL<?, ?> etl)
     {
         super.init(etl);
-        this.httpRequester.setCharset(etl.getCharset());
-
         final JsonElement jsonResponse = httpRequester.getObjectFromUrl(url, JsonElement.class);
         this.extractedList = getListFromJson(jsonResponse);
         this.hash = getHashFromJson(jsonResponse);
@@ -181,4 +179,13 @@ public class JsonArrayExtractor<EXOUT> extends AbstractIteratorExtractor<EXOUT>
 
         return list;
     }
+
+
+    @Override
+    public void clear()
+    {
+        // nothing to clear up
+    }
+
+
 }

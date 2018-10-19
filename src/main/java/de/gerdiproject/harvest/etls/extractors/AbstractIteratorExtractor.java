@@ -31,8 +31,8 @@ import de.gerdiproject.harvest.etls.AbstractIteratorETL;
  */
 public abstract class AbstractIteratorExtractor <EXOUT> implements IExtractor<Iterator<EXOUT>>
 {
-    private int startIndex;
-    private int endIndex;
+    protected int startIndex;
+    protected int endIndex;
 
 
     @Override
@@ -67,6 +67,11 @@ public abstract class AbstractIteratorExtractor <EXOUT> implements IExtractor<It
     @Override
     public int size()
     {
+        // Return -1, it is not possible to count the maximum number of
+        // documents before harvesting.
+        if (endIndex == Integer.MAX_VALUE)
+            return -1;
+
         return endIndex - startIndex;
     }
 
@@ -82,17 +87,14 @@ public abstract class AbstractIteratorExtractor <EXOUT> implements IExtractor<It
         final Iterator<EXOUT> completeIterator;
         int index;
 
-
         public RangeRestrictedIterator(Iterator<EXOUT> completeIterator)
         {
             this.completeIterator = completeIterator;
             index = 0;
 
             // skip the first x entries
-            while (index < startIndex && completeIterator.hasNext()) {
+            while (index < startIndex && completeIterator.hasNext())
                 next();
-                index++;
-            }
         }
 
 
@@ -106,7 +108,15 @@ public abstract class AbstractIteratorExtractor <EXOUT> implements IExtractor<It
         @Override
         public EXOUT next()
         {
+            index++;
             return completeIterator.next();
         }
+    }
+
+
+    @Override
+    public void clear()
+    {
+        // nothing to clean up
     }
 }

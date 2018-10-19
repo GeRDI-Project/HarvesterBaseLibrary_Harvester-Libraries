@@ -31,6 +31,7 @@ import de.gerdiproject.harvest.state.IState;
 import de.gerdiproject.harvest.state.impl.ErrorState;
 import de.gerdiproject.harvest.state.impl.IdleState;
 import de.gerdiproject.harvest.state.impl.InitializationState;
+import de.gerdiproject.harvest.utils.file.constants.FileConstants;
 
 /**
  * This static class is a collection of constants that are used by harvesters.
@@ -60,7 +61,6 @@ public class ETLConstants
         PARAMETER_CATEGORY,
         true);
 
-
     public static final BooleanParameter CONCURRENT_PARAM = new BooleanParameter(
         "concurrentHarvest",
         PARAMETER_CATEGORY,
@@ -81,39 +81,36 @@ public class ETLConstants
     public static final String OCTAT_FORMAT = "%02x";
     public static final String SHA_HASH_ALGORITHM = "SHA";
 
-    // ALL HARVESTERS
-    public static final String HARVESTER_START = "Starting %s...";
-    public static final String HARVESTER_END = "%s finished!";
-    public static final String HARVESTER_FAILED = "%s failed!";
-    public static final String HARVESTER_ABORTED = "%s aborted!";
-    public static final String ALL_FAILED = "Harvesting interrupted by unexpected error!";
+    // ALL ETLs
+    public static final String ETL_STARTED = "Starting %s...";
+    public static final String ETL_FINISHED = "%s finished!";
+    public static final String ETL_FAILED = "%s failed!";
+    public static final String ETL_ABORTED = "%s aborted!";
+    public static final String ETL_START_FAILED = "%s could not be started due to an unexpected error!";
 
-    public static final String HARVESTER_SKIPPED_DISABLED = "Skipping %s, because it is disabled!";
-    public static final String HARVESTER_SKIPPED_NO_CHANGES = "Skipping %s, because no changes were detected!";
-    public static final String HARVESTER_SKIPPED_SUBMIT =
+    public static final String ETL_SKIPPED_DISABLED = "Skipping %s, because it is disabled!";
+    public static final String ETL_SKIPPED_NO_CHANGES = "Did not start harvest, because no changes were detected!";
+    public static final String ETL_SKIPPED_SUBMIT =
         "Cannot harvest, because previous changes have not been submitted!%n"
         + "Either /submit the current index or set the '"
         + FORCED_PARAM.getCompositeKey()
         + "' flag to true when harvesting.";
 
-    // LIST HARVESTER
+    // IteratorETL
     public static final String ERROR_NO_ENTRIES =
         "Cannot harvest %s - The source entries are empty or could not be retrieved!";
-    public static final String HARVESTER_SKIPPED_OUT_OF_RANGE = "Skipping %s - Document indices out of range.";
+    public static final String ETL_SKIPPED_OUT_OF_RANGE = "Skipping %s - Document indices out of range.";
 
     // REST
     public static final String ALLOWED_REQUESTS =
         "GET/outdated  Checks if there is unharvested metadata\n"
         + "POST          Starts the harvest\n"
         + "POST/abort    Aborts an ongoing harvest, saving, or submission\n"
-        + "POST/submit   Submits harvested documents to a DataBase\n"
-        + "POST/download Downloads harvested documents to disk\n"
         + "POST/reset    Attempts to re-initialize this service\n"
         + "\n"
         + "GET/config    Displays a table of parameters and a means of\n"
         + "              configuring them\n"
-        + "GET/status    Additional GET requests for retrieving concrete\n"
-        + "              harvester status values\n"
+        + "GET/status    Displays a detailed status report as a JSON object.\n"
         + "GET/schedule  Displays a configurable set of cron jobs that\n"
         + "              can trigger harvests automatically\n"
         + "GET/log       Displays the server log. The query parameters\n"
@@ -122,10 +119,13 @@ public class ETLConstants
         + "              dates, logger classes, and log levels.";
 
     public static final String ETL_INDEX_QUERY = "index";
+    public static final String ETL_INDEX_OUT_OF_RANGE = "The query parameter 'index' must be a number in [0,%d]!";
 
     public static final String UNKNOWN_NUMBER = "???";
-    public static final String PROGRESS = " %d%% (%d / %d)";
-    public static final String NAME_TOTAL = "---\nOVERALL : ";
+    public static final String ETL_PRETTY = "%s : %s%n";
+    public static final String PROGRESS = " % 3d%% (%d / %d)";
+    public static final String PROGRESS_NO_BOUNDS = " (%d / ???)";
+    public static final String NAME_TOTAL = "---\nOVERALL";
 
     public static final String MAX_RANGE_NUMBER = "%d (" + ConfigurationConstants.INTEGER_VALUE_MAX + ")";
 
@@ -141,6 +141,24 @@ public class ETLConstants
     public static final String INVALID_ITER_EXTRACTOR_ERROR = AbstractIteratorETL.class.getSimpleName() + " instances must use subclasses of " + AbstractIteratorExtractor.class.getSimpleName() + " as Extractors!";
     public static final String INVALID_ITER_TRANSFORMER_ERROR = AbstractIteratorETL.class.getSimpleName() + " instances must use subclasses of " + AbstractIteratorTransformer.class.getSimpleName() + " as Transformers!";
     public static final String INVALID_ITER_LOADER_ERROR = AbstractIteratorETL.class.getSimpleName() + " instances must use subclasses of " + AbstractIteratorLoader.class.getSimpleName() + " as Loaders!";
+
+    public static final String INIT_INVALID_STATE = "ETLs must not be initialized more than once!";
+    public static final String ABORT_INVALID_STATE = "Cannot abort a harvest when it is '%s'!";
+
+    public static final String BUSY_HARVESTING = "Cannot start harvest: Please wait for the current harvest to finish, or abort it!";
+    public static final String ETLS_FAILED_UNKNOWN_ERROR = "Harvesting interrupted by unexpected error!";
+    public static final String PREPARE_ETLS = "Preparing ETLs for harvest.";
+    public static final String PREPARE_ETLS_FAILED = "Cannot start harvest: No ETL could be prepared!";
+    public static final String START_ETLS = "Starting ETLs.";
+
+    public static final String ETL_REGISTRY_CACHE_PATH = FileConstants.CACHE_FOLDER_PATH + "state.json";
+    public static final String ETL_REGISTRY_LOADED = "Loaded ETLRegistry from %s.";
+
+    public static final String REMAINING_TIME_UNKNOWN = "Remaining Time : ???";
+    public static final String REMAINING_TIME = "Remaining Time: %1$02d:%2$tM:%2$tS";
+
+    public static final String ETL_DISABLED = "disabled";
+
 
     /**
      * Private constructor, because this class just serves as a place to define

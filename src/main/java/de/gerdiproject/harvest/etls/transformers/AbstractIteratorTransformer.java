@@ -85,6 +85,12 @@ public abstract class AbstractIteratorTransformer <TRANSIN, TRANSOUT> implements
             final TRANSIN in = input.next();
             return in != null ? transformElement(in) : null;
         }
+    }
 
+
+    @Override
+    public void clear()
+    {
+        // nothing to do here
     }
 }

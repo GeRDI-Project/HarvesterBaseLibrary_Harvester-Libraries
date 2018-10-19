@@ -13,31 +13,45 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.gerdiproject.harvest.application.enums;
+package de.gerdiproject.harvest.etls.enums;
+
+import de.gerdiproject.harvest.etls.extractors.ExtractorException;
+import de.gerdiproject.harvest.etls.loaders.LoaderException;
+import de.gerdiproject.harvest.etls.transformers.TransformerException;
 
 /**
  * This enumeration represents a simplified health status of the harvester service.
  *
  * @author Robin Weiss
  */
-public enum HealthStatus {
+public enum ETLHealth {
     /**
      * The service has not experienced any significant failures.
      */
     OK,
 
     /**
-     * The harvest could not be completed, due to an exception.
+     * The harvest could not be completed, due to an  unknown exception.
      */
     HARVEST_FAILED,
 
     /**
-     * The submission could not be completed, due to an exception.
+     * The harvest could not be completed, due to an {@linkplain ExtractorException}.
      */
-    SUBMISSION_FAILED,
+    EXTRACTION_FAILED,
+
+    /**
+     * The harvest could not be completed, due to a {@linkplain TransformerException}.
+     */
+    TRANSFORMATION_FAILED,
+
+    /**
+     * The harvest could not be completed, due to a {@linkplain LoaderException}.
+     */
+    LOADING_FAILED,
 
     /**
      * The harvester service could not be started.
      */
-    FUBAR
+    INITIALIZATION_FAILED
 }

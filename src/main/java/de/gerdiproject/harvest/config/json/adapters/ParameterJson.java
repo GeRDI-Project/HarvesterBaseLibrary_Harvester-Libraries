@@ -14,7 +14,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package de.gerdiproject.harvest.config.adapter;
+package de.gerdiproject.harvest.config.json.adapters;
 
 import java.net.MalformedURLException;
 import java.net.URL;

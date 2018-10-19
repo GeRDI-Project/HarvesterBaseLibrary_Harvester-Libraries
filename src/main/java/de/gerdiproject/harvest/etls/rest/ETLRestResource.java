@@ -28,7 +28,6 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 
-import de.gerdiproject.harvest.etls.ETLPreconditionException;
 import de.gerdiproject.harvest.etls.constants.ETLConstants;
 import de.gerdiproject.harvest.etls.enums.ETLStatus;
 import de.gerdiproject.harvest.etls.events.GetETLRegistryEvent;
@@ -41,6 +40,9 @@ import de.gerdiproject.harvest.state.constants.StateConstants;
 import de.gerdiproject.harvest.state.events.AbortingStartedEvent;
 import de.gerdiproject.harvest.utils.logger.HarvesterLog;
 import de.gerdiproject.harvest.utils.logger.events.GetMainLogEvent;
+import de.gerdiproject.harvest.utils.maven.MavenUtils;
+import de.gerdiproject.harvest.utils.maven.constants.MavenConstants;
+import de.gerdiproject.harvest.utils.maven.events.GetMavenUtilsEvent;
 
 
 /**
@@ -73,7 +75,7 @@ public class ETLRestResource extends AbstractRestResource<ETLRegistry, GetETLReg
             // start a harvest
             restObject.harvest();
             return HttpResponseFactory.createAcceptedResponse(StateConstants.HARVEST_STARTED);
-        } catch (ETLPreconditionException e) {
+        } catch (Exception e) {
             return HttpResponseFactory.createBadRequestResponse(e.getMessage());
         }
     }
@@ -91,10 +93,7 @@ public class ETLRestResource extends AbstractRestResource<ETLRegistry, GetETLReg
     })
     public Response isOutdated()
     {
-        if (restObject.getStatus() == ETLStatus.BUSY)
-            return HttpResponseFactory.createBusyResponse(ETLConstants.BUSY_ERROR_MESSAGE, 10);
-        else
-            return HttpResponseFactory.createOkResponse(restObject.hasOutdatedHarvesters());
+        return HttpResponseFactory.createOkResponse(restObject.hasOutdatedETLs());
     }
 
 
@@ -177,6 +176,83 @@ public class ETLRestResource extends AbstractRestResource<ETLRegistry, GetETLReg
             return HttpResponseFactory.createServerErrorResponse();
         else
             return HttpResponseFactory.createOkResponse(log);
+    }
+
+
+    /**
+     * Displays the artifactIds and versions of GeRDI Maven libraries used in this service.
+     *
+     * @return artifactIds and versions of GeRDI Maven libraries used in this service.
+     */
+    @GET
+    @Path("versions")
+    @Produces({
+        MediaType.TEXT_PLAIN
+    })
+    public Response getVersions()
+    {
+        final String versions = getSpecifiedVersions(MavenConstants.DEFAULT_GERDI_NAMESPACE);
+
+        if (versions == null)
+            return HttpResponseFactory.createUnknownErrorResponse();
+        else
+            return HttpResponseFactory.createOkResponse(versions);
+    }
+
+
+    /**
+     * Displays the artifactIds and versions of all Maven libraries used in this service.
+     *
+     * @return artifactIds and versions of all Maven libraries used in this service.
+     */
+    @GET
+    @Path("versions-all")
+    @Produces({
+        MediaType.TEXT_PLAIN
+    })
+    public Response getAllVersions()
+    {
+        final String versions = getSpecifiedVersions(null);
+
+        if (versions == null)
+            return HttpResponseFactory.createUnknownErrorResponse();
+        else
+            return HttpResponseFactory.createOkResponse(versions);
+    }
+
+
+    /**
+     * Retrieves filtered dependencies and the main jar as a linebreak separated list.
+     * The first entry is always the main jar and is separated by a double linebreak.
+     *
+     * @param filter a groupId that can be used to filter maven dependencies
+     *
+     * @return dependencies and the main jar as a linebreak separated list
+     */
+    private String getSpecifiedVersions(String filter)
+    {
+        final MavenUtils utils = EventSystem.sendSynchronousEvent(new GetMavenUtilsEvent());
+
+        if (utils == null)
+            return null;
+
+        final String mainJar = utils.getHarvesterJarName();
+
+        if (mainJar == null)
+            return null;
+
+        final List<String> dependencyList = utils.getMavenVersionInfo(filter);
+
+        if (dependencyList == null)
+            return null;
+
+        // remove jar from dependencies. it's dealt with in a special manner
+        dependencyList.remove(mainJar);
+
+        return String.format(
+                   MavenConstants.DEPENDENCY_LIST_FORMAT,
+                   mainJar,
+                   String.join("\n", dependencyList));
     }
 
 

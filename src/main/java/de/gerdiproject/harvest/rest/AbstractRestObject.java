@@ -40,6 +40,7 @@ public abstract class AbstractRestObject <T extends AbstractRestObject<T, P>, P>
     private Class<? extends GetRestObjectEvent<T>> getterEventClass;
     protected final String moduleName;
 
+
     /**
      * Constructor that requires the moduleName for pretty printing and the class
      * of the {@linkplain GetRestObjectEvent} that is used to retrieve the singleton instance of this object.

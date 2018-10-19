@@ -90,6 +90,7 @@ public class MainContext
         List<Class<? extends ILoader<?>>> loaderClasses) throws InstantiationException, IllegalAccessException
     {
         this.moduleName = repositoryNameSupplier.get().replaceAll(" ", "") + ApplicationConstants.HARVESTER_SERVICE_NAME_SUFFIX;
+        EventSystem.addSynchronousListener(GetRepositoryNameEvent.class, repositoryNameSupplier);
 
         this.log = createLog(moduleName);
         EventSystem.addSynchronousListener(GetMainLogEvent.class, this::getMainLog);
@@ -99,8 +100,6 @@ public class MainContext
 
         this.mavenUtils = createMavenUtils(callerClass);
         EventSystem.addSynchronousListener(GetMavenUtilsEvent.class, this::getMavenUtils);
-
-        EventSystem.addSynchronousListener(GetRepositoryNameEvent.class, repositoryNameSupplier);
 
         this.submitterManager = createLoaderFactory(loaderClasses);
         this.etlRegistry = createEtlRegistry(moduleName, etlSupplier);
@@ -296,7 +295,7 @@ public class MainContext
 
         // initialize and register harvesters
         for (AbstractETL<?, ?> etl : etlComponents) {
-            LOGGER.info(String.format(ApplicationConstants.INIT_FIELD, etl.getClass().getSimpleName()));
+            LOGGER.info(String.format(ApplicationConstants.INIT_FIELD, etl.getName()));
 
             etl.init(moduleName);
 
@@ -307,9 +306,10 @@ public class MainContext
 
             registry.register(etl);
 
-            LOGGER.info(String.format(ApplicationConstants.INIT_FIELD_SUCCESS, etl.getClass().getSimpleName()));
+            LOGGER.info(String.format(ApplicationConstants.INIT_FIELD_SUCCESS, etl.getName()));
         }
 
+        registry.loadFromDisk();
         registry.addEventListeners();
 
         LOGGER.info(String.format(ApplicationConstants.INIT_FIELD_SUCCESS, ETLRegistry.class.getSimpleName()));

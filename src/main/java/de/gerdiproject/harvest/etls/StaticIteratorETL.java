@@ -41,7 +41,20 @@ public class StaticIteratorETL<EXOUT, TRANSOUT> extends AbstractIteratorETL<EXOU
      */
     public StaticIteratorETL(AbstractIteratorExtractor<EXOUT> extractor, AbstractIteratorTransformer<EXOUT, TRANSOUT> transformer)
     {
-        super();
+        this(null, extractor, transformer);
+    }
+
+
+    /**
+     * Constructor that initializes the extractor and transformer.
+     *
+     * @param name the name of this ETL
+     * @param extractor retrieves an object from the harvested repository
+     * @param transformer transforms the extracted object to a document that can be put to the search index
+     */
+    public StaticIteratorETL(String name, AbstractIteratorExtractor<EXOUT> extractor, AbstractIteratorTransformer<EXOUT, TRANSOUT> transformer)
+    {
+        super(name);
         this.extractor = extractor;
         this.transformer = transformer;
     }

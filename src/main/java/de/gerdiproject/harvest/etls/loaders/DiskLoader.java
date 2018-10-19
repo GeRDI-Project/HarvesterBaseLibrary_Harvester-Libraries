@@ -20,7 +20,6 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
-import java.nio.charset.Charset;
 import java.util.Iterator;
 
 import com.google.gson.Gson;
@@ -77,17 +76,13 @@ public class DiskLoader extends AbstractIteratorLoader<DataCiteJson>
 
 
     @Override
-    public void load(Iterator<DataCiteJson> documents, boolean isLastDocument) throws LoaderException
+    public void load(Iterator<DataCiteJson> documents) throws LoaderException
     {
         try {
-            super.load(documents, isLastDocument);
+            super.load(documents);
         } catch (Exception e) {
-            finishAndCloseWriter();
             throw new LoaderException(e.getMessage());
         }
-
-        if (isLastDocument)
-            finishAndCloseWriter();
     }
 
 
@@ -97,7 +92,6 @@ public class DiskLoader extends AbstractIteratorLoader<DataCiteJson>
         super.init(etl);
 
         final String sourceHash = etl.getHash();
-        final Charset charset = etl.getCharset();
 
         // create empty file
         final String fileName = etl.getName() + DiskLoaderConstants.JSON_EXTENSION;
@@ -110,7 +104,7 @@ public class DiskLoader extends AbstractIteratorLoader<DataCiteJson>
 
         // create JSON writer
         try {
-            writer = new JsonWriter(new BufferedWriter(new OutputStreamWriter(new FileOutputStream(targetFile), charset)));
+            writer = new JsonWriter(new BufferedWriter(new OutputStreamWriter(new FileOutputStream(targetFile), etl.getCharset())));
             writer.beginObject();
 
             // write the current timestamp
@@ -136,8 +130,12 @@ public class DiskLoader extends AbstractIteratorLoader<DataCiteJson>
      *
      * @throws LoaderException thrown if there is an error closing the writer
      */
-    private void finishAndCloseWriter() throws LoaderException
+    @Override
+    public void clear()
     {
+        if (writer == null)
+            return;
+
         try {
             writer.endArray();
             writer.endObject();
@@ -150,7 +148,7 @@ public class DiskLoader extends AbstractIteratorLoader<DataCiteJson>
 
 
     @Override
-    public void loadElement(DataCiteJson document, boolean isLastDocument) throws LoaderException
+    public void loadElement(DataCiteJson document) throws LoaderException
     {
         if (document != null)
             gson.toJson(document, document.getClass(), writer);

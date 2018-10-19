@@ -100,7 +100,7 @@ public class DiskLoaderTest extends AbstractFileSystemUnitTest<DiskLoader>
         etl.setStatus(ETLStatus.HARVESTING);
 
         // write file
-        testedObject.load(docIter, true);
+        testedObject.load(docIter);
 
         // read file
         final DiskIO diskReader = new DiskIO(new Gson(), StandardCharsets.UTF_8);
@@ -129,7 +129,7 @@ public class DiskLoaderTest extends AbstractFileSystemUnitTest<DiskLoader>
         etl.setStatus(ETLStatus.HARVESTING);
 
         // write file
-        testedObject.load(docIter, true);
+        testedObject.load(docIter);
 
         // read file
         final DiskIO diskReader = new DiskIO(new Gson(), StandardCharsets.UTF_8);
@@ -153,7 +153,7 @@ public class DiskLoaderTest extends AbstractFileSystemUnitTest<DiskLoader>
         List<DataCiteJson> emptyList = new LinkedList<>();
         final Iterator<DataCiteJson> docIter = emptyList.iterator();
 
-        testedObject.load(docIter, true);
+        testedObject.load(docIter);
 
         fail("Expected an " + LoaderException.class.getSimpleName() + " to be thrown!");
     }
@@ -183,7 +183,7 @@ public class DiskLoaderTest extends AbstractFileSystemUnitTest<DiskLoader>
             writer.write(HARVESTER_HASH);
             writer.flush();
 
-            testedObject.load(docIter, true);
+            testedObject.load(docIter);
         }
 
         fail("Expected an UncheckedIOException to be thrown!");

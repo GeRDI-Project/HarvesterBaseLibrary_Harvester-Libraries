@@ -100,7 +100,7 @@ public abstract class AbstractURLLoader <OUT extends DataCiteJson> extends Abstr
 
 
     @Override
-    public void loadElement(OUT document, boolean isLastDocument) throws LoaderException
+    public void loadElement(OUT document) throws LoaderException
     {
         if (document == null)
             return;
@@ -127,12 +127,20 @@ public abstract class AbstractURLLoader <OUT extends DataCiteJson> extends Abstr
 
         batchMap.put(documentId, document);
         currentBatchSize += documentSize;
+    }
 
-        if (isLastDocument) {
+
+
+
+    @Override
+    public void clear()
+    {
+        if (!batchMap.isEmpty()) {
             trySubmitBatch();
             batchMap.clear();
-            currentBatchSize = 0;
         }
+
+        currentBatchSize = 0;
     }
 
 

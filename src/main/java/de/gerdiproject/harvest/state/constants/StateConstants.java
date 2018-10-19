@@ -74,11 +74,8 @@ public class StateConstants
                                                            + " because the service is neither in the " + IDLE_PROCESS + "- nor the " + ERROR_PROCESS + " state!";
 
     // PROGRESSING STATES
-    public static final String TIME_UNKNOWN = "unknown";
-    public static final String DAYS_HOURS = "%dd %dh";
-    public static final String HOURS_MINUTES = "%dh %dm";
-    public static final String MINUTES_SECONDS = "%dm %ds";
-    public static final String SECONDS = "%ds";
+    public static final String REMAINING_TIME_UNKNOWN = "Remaining Time : ???";
+    public static final String REMAINING_TIME = "Remaining Time: %1$02d:%2$tM:%2$tS";
 
     public static final String PROGESS_TEXT = "%s: %3d%% (%d / %d)";
     public static final String PROGESS_TEXT_SIMPLE = "%d/%d";

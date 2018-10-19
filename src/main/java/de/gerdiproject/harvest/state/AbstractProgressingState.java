@@ -187,37 +187,17 @@ public abstract class AbstractProgressingState implements IState
     /**
      * Creates a duration string out of a specified number of seconds
      *
-     * @param durationInSeconds the duration in seconds (duh!)
+     * @param milliseconds the time span in milliseconds
      * @return a formatted duration string, or "unknown" if the duration is
      *         negative
      */
-    private String getDurationText(long durationInSeconds)
+    private static String getDurationText(long milliseconds)
     {
-        String durationText;
+        if (milliseconds < 0 || milliseconds == Long.MAX_VALUE)
+            return StateConstants.REMAINING_TIME_UNKNOWN;
 
-        if (durationInSeconds < 0 || durationInSeconds == Long.MAX_VALUE)
-            durationText = StateConstants.TIME_UNKNOWN;
-
-        else if (durationInSeconds <= 60)
-            durationText = String.format(StateConstants.SECONDS, durationInSeconds);
-
-        else if (durationInSeconds <= 3600) {
-            long minutes = durationInSeconds / 60;
-            long seconds = durationInSeconds - minutes * 60;
-            durationText = String.format(StateConstants.MINUTES_SECONDS, minutes, seconds);
-
-        } else if (durationInSeconds <= 86400) {
-            long hours = durationInSeconds / 3600;
-            long minutes = durationInSeconds / 60 - hours * 60;
-            durationText = String.format(StateConstants.HOURS_MINUTES, hours, minutes);
-
-        } else {
-            long days = durationInSeconds / 86400;
-            long hours = durationInSeconds / 3600 - days * 24;
-            durationText = String.format(StateConstants.DAYS_HOURS, days, hours);
-        }
-
-        return durationText;
+        long hours = milliseconds / 3600000;
+        return String.format(StateConstants.REMAINING_TIME_UNKNOWN, hours, milliseconds);
     }
 
 

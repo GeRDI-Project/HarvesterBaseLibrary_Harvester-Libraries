@@ -61,7 +61,8 @@ public class HttpRequester
         this.writeToDisk = Configuration.registerParameter(DataOperationConstants.WRITE_TO_DISK_PARAM);
         this.diskIO = new DiskIO(gson, httpCharset);
         this.webDataRetriever = new WebDataRetriever(gson, httpCharset);
-        this.cacheFolder = null;
+
+        setCacheFolder(DataOperationConstants.CACHE_FOLDER_PATH);
     }
 
 
@@ -72,16 +73,13 @@ public class HttpRequester
      */
     public HttpRequester(HttpRequester other)
     {
-        if (cacheFolder != null && !cacheFolder.endsWith("/"))
-            cacheFolder += '/';
-
-        this.cacheFolder = other.cacheFolder;
-
         this.readFromDisk = other.readFromDisk;
         this.writeToDisk = other.writeToDisk;
 
         this.diskIO = new DiskIO(other.diskIO);
         this.webDataRetriever = new WebDataRetriever(other.webDataRetriever);
+
+        setCacheFolder(other.cacheFolder);
     }
 
 

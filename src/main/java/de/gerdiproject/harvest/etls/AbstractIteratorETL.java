@@ -24,6 +24,7 @@ import de.gerdiproject.harvest.config.parameters.IntegerParameter;
 import de.gerdiproject.harvest.etls.constants.ETLConstants;
 import de.gerdiproject.harvest.etls.events.DocumentsHarvestedEvent;
 import de.gerdiproject.harvest.etls.extractors.AbstractIteratorExtractor;
+import de.gerdiproject.harvest.etls.json.ETLJson;
 import de.gerdiproject.harvest.etls.loaders.AbstractIteratorLoader;
 import de.gerdiproject.harvest.etls.transformers.AbstractIteratorTransformer;
 import de.gerdiproject.harvest.event.EventSystem;
@@ -41,6 +42,25 @@ public abstract class AbstractIteratorETL<EXOUT, TRANSOUT> extends AbstractETL<I
     protected volatile IntegerParameter endIndexParameter;
     private final AtomicInteger harvestedCount = new AtomicInteger(0);
 
+    /**
+     * Forwarding super class constructor.
+     */
+    public AbstractIteratorETL()
+    {
+        super();
+    }
+
+
+    /**
+     * Forwarding super class constructor.
+     *
+     * @param name the name of this ETL
+     */
+    public AbstractIteratorETL(String name)
+    {
+        super(name);
+    }
+
 
     @Override
     protected void registerParameters()
@@ -50,14 +70,24 @@ public abstract class AbstractIteratorETL<EXOUT, TRANSOUT> extends AbstractETL<I
         this.startIndexParameter =
             Configuration.registerParameter(new IntegerParameter(
                                                 ETLConstants.START_INDEX_PARAM.getKey(),
-                                                harvesterCategory,
+                                                etlCategory,
                                                 ETLConstants.START_INDEX_PARAM.getValue()));
 
         this.endIndexParameter =
             Configuration.registerParameter(new IntegerParameter(
                                                 ETLConstants.END_INDEX_PARAM.getKey(),
-                                                harvesterCategory,
+                                                etlCategory,
                                                 ETLConstants.END_INDEX_PARAM.getValue()));
+    }
+
+
+
+
+    @Override
+    public void loadFromJson(ETLJson json)
+    {
+        super.loadFromJson(json);
+        this.harvestedCount.set(json.getHarvestedCount());
     }
 
 
@@ -68,7 +98,7 @@ public abstract class AbstractIteratorETL<EXOUT, TRANSOUT> extends AbstractETL<I
 
         if (getStartIndex() == getEndIndex()) {
             throw new ETLPreconditionException(
-                String.format(ETLConstants.HARVESTER_SKIPPED_OUT_OF_RANGE, getName()));
+                String.format(ETLConstants.ETL_SKIPPED_OUT_OF_RANGE, getName()));
         }
 
         if (!(extractor instanceof AbstractIteratorExtractor))
@@ -79,26 +109,8 @@ public abstract class AbstractIteratorETL<EXOUT, TRANSOUT> extends AbstractETL<I
 
         if (!(loader instanceof AbstractIteratorLoader))
             throw new ETLPreconditionException(ETLConstants.INVALID_ITER_LOADER_ERROR);
-    }
 
-
-    @Override
-    protected void harvestInternal() throws Exception // NOPMD - we want the inheriting class to be able to throw any exception
-    {
-        final AbstractIteratorExtractor<EXOUT> iterExtractor = (AbstractIteratorExtractor<EXOUT>) extractor;
         harvestedCount.set(0);
-
-        // extract entries
-        final Iterator<EXOUT> extracted = iterExtractor.extract();
-
-        if (!extracted.hasNext())
-            throw new IllegalStateException(String.format(ETLConstants.ERROR_NO_ENTRIES, getName()));
-
-        // provide iterator over transformable elements
-        final Iterator<TRANSOUT> transformed = transformer.transform(extracted);
-
-        // load transformed elements
-        loader.load(transformed, true);
     }
 
 

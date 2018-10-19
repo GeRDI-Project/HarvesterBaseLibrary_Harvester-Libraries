@@ -24,40 +24,37 @@ import java.util.function.Consumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonDeserializer;
-import com.google.gson.JsonSerializer;
-
-import de.gerdiproject.harvest.application.enums.HealthStatus;
 import de.gerdiproject.harvest.config.Configuration;
+import de.gerdiproject.harvest.config.constants.ConfigurationConstants;
 import de.gerdiproject.harvest.config.events.ParameterChangedEvent;
 import de.gerdiproject.harvest.config.parameters.AbstractParameter;
 import de.gerdiproject.harvest.config.parameters.BooleanParameter;
 import de.gerdiproject.harvest.config.parameters.ParameterCategory;
 import de.gerdiproject.harvest.etls.constants.ETLConstants;
+import de.gerdiproject.harvest.etls.enums.ETLHealth;
 import de.gerdiproject.harvest.etls.enums.ETLStatus;
 import de.gerdiproject.harvest.etls.events.DocumentsHarvestedEvent;
+import de.gerdiproject.harvest.etls.extractors.ExtractorException;
 import de.gerdiproject.harvest.etls.extractors.IExtractor;
-import de.gerdiproject.harvest.etls.loaders.ElasticSearchLoader;
+import de.gerdiproject.harvest.etls.json.ETLJson;
 import de.gerdiproject.harvest.etls.loaders.ILoader;
+import de.gerdiproject.harvest.etls.loaders.LoaderException;
 import de.gerdiproject.harvest.etls.loaders.constants.LoaderConstants;
 import de.gerdiproject.harvest.etls.loaders.events.CreateLoaderEvent;
 import de.gerdiproject.harvest.etls.rest.ETLRestResource;
 import de.gerdiproject.harvest.etls.transformers.ITransformer;
+import de.gerdiproject.harvest.etls.transformers.TransformerException;
+import de.gerdiproject.harvest.etls.utils.TimestampedList;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.event.IEventListener;
-import de.gerdiproject.harvest.state.events.StartAbortingEvent;
 import de.gerdiproject.harvest.utils.HashGenerator;
-import de.gerdiproject.harvest.utils.data.HttpRequester;
-import de.gerdiproject.harvest.utils.data.constants.DataOperationConstants;
-import de.gerdiproject.json.GsonUtils;
 
 
 /**
- * AbstractHarvesters offer a skeleton for harvesting a data provider to
+ * This class offers a skeleton for harvesting a repository to
  * retrieve all of its metadata. The metadata can subsequently be submitted to
- * ElasticSearch via the {@link ElasticSearchLoader}. This most basic
- * Harvester class offers functions that can be controlled via REST requests
+ * a search index via an {@link ILoader}. This most basic
+ * ETL class offers functions that can be controlled via REST requests
  * from the {@link ETLRestResource}, as well as some utility objects that are
  * required by all harvests. Subclasses must implement the concrete harvesting
  * process.
@@ -70,42 +67,52 @@ public abstract class AbstractETL <EOUT, TOUT> implements IEventListener
     protected ITransformer<EOUT, TOUT> transformer;
     protected ILoader<TOUT> loader;
 
-    protected final ParameterCategory harvesterCategory;
-    protected volatile BooleanParameter forceHarvestParameter;
-    protected volatile BooleanParameter enableHarvesterParameter;
+    protected final ParameterCategory etlCategory;
+    protected volatile BooleanParameter enabledParameter;
 
     private AtomicInteger maxDocumentCount;
 
     protected final Logger logger; // NOPMD - we want to retrieve the type of the inheriting class
-    protected final HttpRequester httpRequester;
-    protected volatile boolean isAborting;
+    protected final String name;
     protected volatile String hash;
 
-    protected volatile HealthStatus health;
-    protected volatile ETLStatus status;
+    protected volatile TimestampedList<ETLHealth> healthHistory;
+    protected volatile TimestampedList<ETLStatus> statusHistory;
 
+
+    /**
+     * Constructor that initializes helper classes and fields.
+     * And uses the class name as ETL name.
+     */
+    public AbstractETL()
+    {
+        this(null);
+    }
 
 
     /**
      * Constructor that initializes helper classes and fields.
      *
+     * @param name the name of this ETL
      */
-    public AbstractETL()
+    public AbstractETL(String name)
     {
-        this.status = ETLStatus.BUSY;
-        this.health = HealthStatus.OK;
+        this.statusHistory = new TimestampedList<>(ETLStatus.INITIALIZING, 10);
+        this.healthHistory = new TimestampedList<>(ETLHealth.OK, 1);
+
+        // set the name to camel case
+        this.name = name != null
+                    ? name.replaceAll(ConfigurationConstants.INVALID_PARAM_NAME_REGEX, "")
+                    : getClass().getSimpleName();
 
         this.logger = LoggerFactory.getLogger(getName());
-
         this.maxDocumentCount = new AtomicInteger(0);
 
-        this.harvesterCategory = new ParameterCategory(
+        this.etlCategory = new ParameterCategory(
             getName(),
             ETLConstants.PARAMETER_CATEGORY.getAllowedStates());
 
         registerParameters();
-
-        this.httpRequester = new HttpRequester(createGsonBuilder().create(), getCharset());
 
         this.extractor = createExtractor();
         this.transformer = createTransformer();
@@ -141,6 +148,7 @@ public abstract class AbstractETL <EOUT, TOUT> implements IEventListener
     @SuppressWarnings("unchecked") // NOPMD the possible ClassCastException is caught
     protected ILoader<TOUT> createLoader()
     {
+
         try {
             return (ILoader<TOUT>) EventSystem.sendSynchronousEvent(new CreateLoaderEvent());
 
@@ -156,14 +164,11 @@ public abstract class AbstractETL <EOUT, TOUT> implements IEventListener
      */
     protected void registerParameters()
     {
-        this.enableHarvesterParameter =
+        this.enabledParameter =
             Configuration.registerParameter(new BooleanParameter(
                                                 ETLConstants.ENABLED_PARAM.getKey(),
-                                                harvesterCategory,
+                                                etlCategory,
                                                 ETLConstants.ENABLED_PARAM.getValue()));
-
-        // all harvesters share the 'forced' parameter
-        this.forceHarvestParameter = Configuration.registerParameter(ETLConstants.FORCED_PARAM);
     }
 
 
@@ -178,34 +183,78 @@ public abstract class AbstractETL <EOUT, TOUT> implements IEventListener
     public void removeEventListeners()
     {
         EventSystem.removeListener(ParameterChangedEvent.class, onParameterChangedCallback);
-        EventSystem.removeListener(StartAbortingEvent.class, onStartAborting);
     }
 
 
     /**
-     * Aborts the harvesting process, allowing a new harvest to be started.
+     * Loads the state from a JSON representation of this ETL.
+     *
+     * @param json a simplified JSON representation of the ETL
      */
-    public void abortHarvest()
+    public void loadFromJson(ETLJson json)
     {
-        if (status == ETLStatus.HARVESTING) {
-            this.status = ETLStatus.ABORTING;
-            isAborting = true;
+        this.statusHistory.addAllSorted(json.getStatusHistory());
+
+        // if the loaded health indicates a harvesting failure, make sure to persist it
+        if (getHealth() == ETLHealth.OK && json.getHealthHistory().get(0).getValue() != ETLHealth.INITIALIZATION_FAILED) {
+            this.healthHistory.clear();
+            this.healthHistory.addAllSorted(json.getHealthHistory());
         }
     }
 
 
     /**
-     * Initializes the Harvester, calculating the hash and maximum number of
+     * Returns a simplified JSON representation of the ETL.
+     *
+     * @return a simplified JSON representation of the ETL
+     */
+    public ETLJson getAsJson()
+    {
+        return new ETLJson(
+                   getName(),
+                   statusHistory,
+                   healthHistory,
+                   getHarvestedCount(),
+                   getMaxNumberOfDocuments(),
+                   getHash());
+    }
+
+
+    /**
+     * Aborts the harvesting process, allowing a new harvest to be started.
+     *
+     * @throws IllegalStateException if the current process cannot be aborted
+     */
+    public void abortHarvest() throws IllegalStateException
+    {
+        switch (getStatus()) {
+            case HARVESTING:
+                setStatus(ETLStatus.ABORTING);
+                break;
+
+            case QUEUED:
+                setStatus(ETLStatus.DONE);
+                break;
+
+            default:
+                // nothing to abort
+        }
+    }
+
+
+    /**
+     * Initializes the ETL, calculating the hash and maximum number of
      * harvestable documents.
      *
      * @param moduleName the name of the harvester service
+     * @throws IllegalStateException thrown if init is called after the ETL is initialized
      */
-    public void init(final String moduleName)
+    public void init(final String moduleName) throws IllegalStateException
     {
-        this.httpRequester.setCacheFolder(
-            String.format(DataOperationConstants.CACHE_FOLDER_PATH, moduleName)
-        );
-        status = ETLStatus.IDLE;
+        if (getStatus() != ETLStatus.INITIALIZING)
+            throw new IllegalStateException(ETLConstants.INIT_INVALID_STATE);
+
+        setStatus(ETLStatus.IDLE);
     }
 
 
@@ -231,14 +280,12 @@ public abstract class AbstractETL <EOUT, TOUT> implements IEventListener
         final String versionString = extractor.getUniqueVersionString();
 
         if (versionString != null) {
-            final HashGenerator generator = new HashGenerator(getCharset());
+            final HashGenerator generator = new HashGenerator(StandardCharsets.UTF_8);
             return generator.getShaHash(versionString);
         }
 
         return null;
     }
-
-
 
 
     /**
@@ -248,19 +295,12 @@ public abstract class AbstractETL <EOUT, TOUT> implements IEventListener
     public void update() throws ETLPreconditionException
     {
         // the extractor may need to retrieve information about the repository, initialize it early
-        try {
-            extractor = createExtractor();
+        extractor = createExtractor();
 
-            if (extractor == null)
-                throw new ETLPreconditionException(String.format(ETLConstants.EXTRACTOR_CREATE_ERROR, getName()));
+        if (extractor == null)
+            throw new ETLPreconditionException(String.format(ETLConstants.EXTRACTOR_CREATE_ERROR, getName()));
 
-            extractor.init(this);
-        } catch (IllegalStateException e) {
-            throw new ETLPreconditionException(e.getMessage());
-        }
-
-        final ETLStatus previousStatus = status;
-        this.status = ETLStatus.BUSY;
+        extractor.init(this);
 
         // calculate hash
         try {
@@ -272,8 +312,6 @@ public abstract class AbstractETL <EOUT, TOUT> implements IEventListener
 
         // calculate number of documents
         maxDocumentCount.set(initMaxNumberOfDocuments());
-
-        this.status = previousStatus;
     }
 
 
@@ -296,20 +334,21 @@ public abstract class AbstractETL <EOUT, TOUT> implements IEventListener
      */
     public void prepareHarvest() throws ETLPreconditionException
     {
-        this.status = ETLStatus.BUSY;
+        setStatus(ETLStatus.QUEUED);
+        setHealth(ETLHealth.OK);
 
-        if (!enableHarvesterParameter.getValue()) {
+        if (!enabledParameter.getValue()) {
             skipHarvest();
 
             throw new ETLPreconditionException(
-                String.format(ETLConstants.HARVESTER_SKIPPED_DISABLED, getName()));
+                String.format(ETLConstants.ETL_SKIPPED_DISABLED, getName()));
         }
 
-        // update to check if source data has changed
-        update();
-
-        // loader and transformer only become relevant when the harvest is about to start, load them now
         try {
+            // update to check if source data has changed
+            update();
+
+            // loader and transformer only become relevant when the harvest is about to start, load them now
             if (transformer == null)
                 throw new ETLPreconditionException(String.format(ETLConstants.TRANSFORMER_CREATE_ERROR, getName()));
 
@@ -319,18 +358,34 @@ public abstract class AbstractETL <EOUT, TOUT> implements IEventListener
             transformer.init(this);
             loader.init(this);
 
-        } catch (IllegalStateException e) {
+        } catch (ETLPreconditionException e) {
+            setStatus(ETLStatus.DONE);
+            setHealth(ETLHealth.HARVEST_FAILED);
+            throw e;
+
+        } catch (Exception e) {
+            setStatus(ETLStatus.DONE);
+            setHealth(ETLHealth.HARVEST_FAILED);
+
+            logger.error(String.format(ETLConstants.ETL_START_FAILED, getName()), e);
             throw new ETLPreconditionException(e.getMessage());
         }
+    }
 
-        // cancel harvest if the checksum has not changed since the last harvest
-        if (!forceHarvestParameter.getValue() && !isOutdated()) {
-            skipHarvest();
-            throw new ETLPreconditionException(
-                String.format(ETLConstants.HARVESTER_SKIPPED_NO_CHANGES, getName()));
+
+    /**
+     * Cancels the ETL if it is queued to harvest,
+     * cleaning up readers and writers if necessary.
+     */
+    public void cancelHarvest()
+    {
+        if (getStatus() != ETLStatus.DONE) {
+            setStatus(ETLStatus.CANCELLING);
+            loader.clear();
+            transformer.clear();
+            extractor.clear();
+            setStatus(ETLStatus.DONE);
         }
-
-        this.status = ETLStatus.HARVESTING;
     }
 
 
@@ -339,8 +394,8 @@ public abstract class AbstractETL <EOUT, TOUT> implements IEventListener
      */
     protected void skipHarvest()
     {
-        this.health = HealthStatus.OK;
-        this.status = ETLStatus.DONE;
+        setHealth(ETLHealth.OK);
+        setStatus(ETLStatus.DONE);
         EventSystem.sendEvent(new DocumentsHarvestedEvent(getMaxNumberOfDocuments()));
     }
 
@@ -350,15 +405,25 @@ public abstract class AbstractETL <EOUT, TOUT> implements IEventListener
      */
     public final void harvest()
     {
-        EventSystem.addListener(StartAbortingEvent.class, onStartAborting);
-        this.status = ETLStatus.HARVESTING;
-
-        logger.info(String.format(ETLConstants.HARVESTER_START, getName()));
-
-        // start harvest
         try {
-            harvestInternal();
-            finishHarvestSuccessfully();
+            logger.info(String.format(ETLConstants.ETL_STARTED, getName()));
+            setStatus(ETLStatus.HARVESTING);
+
+            final EOUT exOut = extractor.extract();
+            final TOUT transOut = transformer.transform(exOut);
+            loader.load(transOut);
+
+            // clear up temporary variables and readers
+            loader.clear();
+            transformer.clear();
+            extractor.clear();
+
+            if (getStatus() == ETLStatus.ABORTING)
+                logger.info(String.format(ETLConstants.ETL_ABORTED, getName()));
+            else
+                logger.info(String.format(ETLConstants.ETL_FINISHED, getName()));
+
+            setStatus(ETLStatus.DONE);
         } catch (Exception e) {
             finishHarvestExceptionally(e);
         }
@@ -366,102 +431,37 @@ public abstract class AbstractETL <EOUT, TOUT> implements IEventListener
 
 
     /**
-     * The main harvesting method. The overridden implementation should add
-     * documents to the search index by calling addDocumentToIndex().
-     *
-     * @throws Exception any kind of exception that can occur during the
-     *             harvesting process
-     */
-    protected void harvestInternal() throws Exception // NOPMD - we want the inheriting class to be able to throw any exception
-    {
-        final EOUT exOut = extractor.extract();
-        final TOUT transOut = transformer.transform(exOut);
-        loader.load(transOut, true);
-        EventSystem.sendEvent(new DocumentsHarvestedEvent(getMaxNumberOfDocuments()));
-    }
-
-
-    /**
-     * Finishes the harvesting process, allowing a new harvest to be started.
-     */
-    protected void finishHarvestSuccessfully()
-    {
-        this.health = HealthStatus.OK;
-        this.status = ETLStatus.BUSY;
-        EventSystem.removeListener(StartAbortingEvent.class, onStartAborting);
-
-        logger.info(String.format(ETLConstants.HARVESTER_END, getName()));
-
-        // dead-lock fix: clear aborting status
-        if (isAborting) {
-            isAborting = false;
-
-            // TODO EventSystem.sendEvent(new AbortingFinishedEvent(isMainHarvester));
-        }
-
-        this.status = ETLStatus.DONE;
-    }
-
-
-    /**
-     * This function is called when an exception occurs during the harvest.
-     * Cleans up a failed harvesting process, allowing a new harvest to be
-     * started. Also calls a function depending on why the harvest failed.
-     *
-     * @param reason the exception that caused the harvest to fail
-     */
+    * This method is called after an ongoing harvest failed due to an
+    * exception.
+    *
+    * @param reason the exception that caused the harvest to fail
+    */
     protected void finishHarvestExceptionally(Throwable reason)
     {
-        EventSystem.removeListener(StartAbortingEvent.class, onStartAborting);
+        if (getStatus() == ETLStatus.ABORTING)
+            logger.info(String.format(ETLConstants.ETL_ABORTED, getName()));
+        else {
+            if (reason instanceof ExtractorException)
+                setHealth(ETLHealth.EXTRACTION_FAILED);
 
-        // check if the harvest was aborted
-        if (isAborting)
-            onHarvestAborted();
-        else
-            onHarvestFailed(reason);
+            else if (reason instanceof TransformerException)
+                setHealth(ETLHealth.TRANSFORMATION_FAILED);
+
+            else if (reason instanceof LoaderException)
+                setHealth(ETLHealth.LOADING_FAILED);
+
+            else
+                setHealth(ETLHealth.HARVEST_FAILED);
+
+            // log the error
+            logger.error(reason.getMessage(), reason);
+
+            // log failure
+            logger.warn(String.format(ETLConstants.ETL_FAILED, getName()));
+        }
+
+        setStatus(ETLStatus.DONE);
     }
-
-
-    /**
-     *
-     * This method is called after an ongoing harvest failed due to an
-     * exception.
-     *
-     * @param reason the exception that caused the harvest to fail
-     */
-    protected void onHarvestFailed(Throwable reason)
-    {
-        this.health = HealthStatus.HARVEST_FAILED;
-        this.status = ETLStatus.BUSY;
-
-        // log the error
-        logger.error(reason.getMessage(), reason);
-
-        // log failure
-        logger.warn(String.format(ETLConstants.HARVESTER_FAILED, getName()));
-
-        this.status = ETLStatus.DONE;
-    }
-
-
-    /**
-     * This function is called after the harvesting process was stopped due to
-     * being aborted.
-     */
-    protected void onHarvestAborted()
-    {
-        this.health = HealthStatus.HARVEST_FAILED;
-        this.status = ETLStatus.ABORTING;
-
-        // TODO EventSystem.sendEvent(new AbortingFinishedEvent(isMainHarvester));
-
-        isAborting = false;
-
-        logger.warn(String.format(ETLConstants.HARVESTER_ABORTED, getName()));
-
-        this.status = ETLStatus.DONE;
-    }
-
 
 
     /**
@@ -476,37 +476,44 @@ public abstract class AbstractETL <EOUT, TOUT> implements IEventListener
 
 
     /**
-     * Checks if the data provider has new data.
+     * Returns an enum that represents what the ETL is currently doing.
      *
-     * @return true if the previously harvested documents are outdated or the
-     *         harvesting range changed
-     */
-    public boolean isOutdated()
-    {
-        //TODO return documentsCache.getVersionsCache().isOutdated();
-        return true;
-    }
-
-
-    /**
-     * Returns an enum that represents what the harvester is currently doing.
-     *
-     * @return an enum that represents the state of the harvester
+     * @return an enum that represents the state of the ETL
      */
     public ETLStatus getStatus()
     {
-        return status;
+        return statusHistory.getLatestValue();
     }
 
 
     /**
-     * Returns an enum that represents the health status of the harvester.
-     *
-     * @return an enum that represents the health status of the harvester
+     * Changes the status that represents what the ETL is currently doing.
+     * @param status a new status
      */
-    public HealthStatus getHealth()
+    public void setStatus(ETLStatus status)
     {
-        return health;
+        this.statusHistory.addValue(status);
+    }
+
+
+    /**
+     * Returns an enum that represents the health status of the ETL.
+     *
+     * @return an enum that represents the health status of the ETL
+     */
+    public ETLHealth getHealth()
+    {
+        return healthHistory.getLatestValue();
+    }
+
+
+    /**
+     * Changes the health status.
+     * @param health the new health status value
+     */
+    public void setHealth(ETLHealth health)
+    {
+        this.healthHistory.addValue(health);
     }
 
 
@@ -519,29 +526,13 @@ public abstract class AbstractETL <EOUT, TOUT> implements IEventListener
 
 
     /**
-     * Creates a GsonBuilder for parsing harvested source data. If you
-     * have custom JSON (de-)serialization adapters, you can register them to
-     * the GsonBuilder when overriding this method.
+     * Returns the name of the ETL.
      *
-     * @see JsonDeserializer
-     * @see JsonSerializer
-     *
-     * @return a GsonBuilder that will be used to parse source data
+     * @return the name of the ETL
      */
-    protected GsonBuilder createGsonBuilder()
+    public final String getName()
     {
-        return GsonUtils.createGerdiDocumentGsonBuilder();
-    }
-
-
-    /**
-     * Returns the name of the harvester.
-     *
-     * @return the name of the harvester
-     */
-    public String getName()
-    {
-        return getClass().getSimpleName();
+        return name;
     }
 
 
@@ -556,24 +547,49 @@ public abstract class AbstractETL <EOUT, TOUT> implements IEventListener
     }
 
 
+    /**
+     * Returns true if this ETL is enabled and initialized.
+     *
+     * @return true if this ETL is enabled and initialized
+     */
+    public boolean isEnabled()
+    {
+        return enabledParameter.getValue() && getHealth() != ETLHealth.INITIALIZATION_FAILED;
+    }
+
+
+
     //////////////////////////////
     // Event Callback Functions //
     //////////////////////////////
 
-    /**
-     * Event callback for aborting the harvester.
-     */
-    private final Consumer<StartAbortingEvent> onStartAborting = (StartAbortingEvent e) -> {
-        EventSystem.removeListener(StartAbortingEvent.class, this.onStartAborting);
-        abortHarvest();
-    };
+    @Override
+    public String toString()
+    {
+        String etlStatus = getStatus().toString().toLowerCase();
+
+        if (!enabledParameter.getValue())
+            etlStatus = ETLConstants.ETL_DISABLED;
+        else if (getStatus() == ETLStatus.HARVESTING) {
+            final int currCount = getHarvestedCount();
+            final int maxCount = getMaxNumberOfDocuments();
+
+            if (maxCount != -1)
+                etlStatus += String.format(ETLConstants.PROGRESS, Math.round(100f * currCount / maxCount), currCount, maxCount);
+            else
+                etlStatus += String.format(ETLConstants.PROGRESS_NO_BOUNDS, currCount);
+        }
+
+        return String.format(ETLConstants.ETL_PRETTY, getName(), etlStatus);
+    }
+
 
 
     /**
      * Event callback for changing the loader.
      */
-    private final Consumer<ParameterChangedEvent> onParameterChangedCallback = (ParameterChangedEvent event) ->
-                                                                               onParameterChanged(event.getParameter());
+    private final Consumer<ParameterChangedEvent> onParameterChangedCallback =
+        (ParameterChangedEvent event) -> onParameterChanged(event.getParameter());
 
 
     /**
@@ -583,9 +599,6 @@ public abstract class AbstractETL <EOUT, TOUT> implements IEventListener
      */
     protected void onParameterChanged(AbstractParameter<?> param)
     {
-        if (status != ETLStatus.IDLE)
-            return;
-
         if (param.getCompositeKey().equals(LoaderConstants.LOADER_TYPE_PARAM.getCompositeKey())) {
             if (this.loader != null)
                 this.loader.unregisterParameters();

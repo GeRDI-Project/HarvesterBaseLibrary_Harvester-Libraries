@@ -14,20 +14,8 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package de.gerdiproject.harvest.etls.enums;
-
 /**
  * @author Robin Weiss
  *
  */
-public enum ETLStatus {
-    INITIALIZING,
-    FUBAR,
-    IDLE,
-    QUEUED,
-    HARVESTING,
-    DONE,
-    ABORTING,
-    CANCELLING
-}
-
+package de.gerdiproject.harvest.etls.adapters;

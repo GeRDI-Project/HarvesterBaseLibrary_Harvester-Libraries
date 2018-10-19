@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 /**
- * This package contains enumerations that concern the entire
- * application.
+ * This package contains GSON {@linkplain com.google.gson.JsonSerializer}s and {@linkplain com.google.gson.JsonDeserializer}s
+ * for parsing and writing JSON objects that are related to
+ * the configuration and parameters.
  *
  * @author Robin Weiss
  */
-package de.gerdiproject.harvest.application.enums;
+package de.gerdiproject.harvest.config.json.adapters;

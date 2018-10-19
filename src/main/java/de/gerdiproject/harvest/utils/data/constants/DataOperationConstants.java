@@ -31,7 +31,7 @@ public class DataOperationConstants
     public static final String SAVE_FAILED_NO_FOLDERS = "Could not write to file '%s': Failed to create directories!";
     public static final String LOAD_FAILED = "Could not load file: %s";
 
-    public static final String CACHE_FOLDER_PATH = "savedHttpResponses/%s";
+    public static final String CACHE_FOLDER_PATH = "savedHttpResponses";
     public static final String FILE_PATH = "%s/%sresponse.%s";
     public static final String FILE_ENDING_JSON = "json";
     public static final String FILE_ENDING_HTML = "html";

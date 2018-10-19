@@ -48,15 +48,11 @@ public abstract class AbstractIteratorLoader <LOUT> implements ILoader<Iterator<
 
 
     @Override
-    public void load(Iterator<LOUT> documents, boolean isLastDocument) throws LoaderException
+    public void load(Iterator<LOUT> documents) throws LoaderException
     {
         // only load documents while the harvester is running
         while (documents.hasNext() && dedicatedEtl.getStatus() == ETLStatus.HARVESTING)
-            loadElementAndIncrement(documents.next(), isLastDocument && !documents.hasNext());
-
-        // if nothing was loaded, throw an exception
-        if (isLastDocument && !hasLoadedDocuments)
-            throw new LoaderException(LoaderConstants.NO_DOCS_ERROR);
+            loadElementAndIncrement(documents.next());
     }
 
 
@@ -66,11 +62,10 @@ public abstract class AbstractIteratorLoader <LOUT> implements ILoader<Iterator<
      * of whether the loading succeeded or not.
      *
      * @param document a document that is to be loaded
-     * @param isLastDocument if true, this is the last document that is to be loaded
      *
      * @throws LoaderException when the load failed
      */
-    protected void loadElementAndIncrement(LOUT document, boolean isLastDocument) throws LoaderException
+    protected void loadElementAndIncrement(LOUT document) throws LoaderException
     {
         // even if nothing was harvested, one source was processed, so we increment the counter
         if (document == null) {
@@ -79,7 +74,7 @@ public abstract class AbstractIteratorLoader <LOUT> implements ILoader<Iterator<
         }
 
         try {
-            loadElement(document, isLastDocument);
+            loadElement(document);
             hasLoadedDocuments = true;
         } finally {
             // even if the loading failed, we processed something, so we increment the counter
@@ -92,9 +87,8 @@ public abstract class AbstractIteratorLoader <LOUT> implements ILoader<Iterator<
      * Loads a single element of the {@linkplain Iterator}.
      *
      * @param document a document that is to be loaded
-     * @param isLastDocument if true, this is the last document that is to be loaded
      *
      * @throws LoaderException when the load failed
      */
-    protected abstract void loadElement(LOUT document, boolean isLastDocument) throws LoaderException;
+    protected abstract void loadElement(LOUT document) throws LoaderException;
 }

@@ -79,7 +79,6 @@ public abstract class ContextListener implements ServletContextListener
     }
 
 
-
     /**
      * Creates a list of {@linkplain AbstractETL} implementations that can be chosen to extract, transform and load
      * data from the targeted repository.

@@ -14,20 +14,21 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package de.gerdiproject.harvest.etls.enums;
+package de.gerdiproject.harvest.etls.utils;
+
+import java.util.Comparator;
 
 /**
- * @author Robin Weiss
+ * This class is a comparator for {@linkplain TimestampedEntry}s.
  *
+ * @author Robin Weiss
  */
-public enum ETLStatus {
-    INITIALIZING,
-    FUBAR,
-    IDLE,
-    QUEUED,
-    HARVESTING,
-    DONE,
-    ABORTING,
-    CANCELLING
-}
+public class TimestampedEntryComparator implements Comparator<TimestampedEntry<?>>
+{
+    @Override
+    public int compare(TimestampedEntry<?> o1, TimestampedEntry<?> o2)
+    {
+        return Long.compare(o1.getTimestamp(), o2.getTimestamp());
+    }
 
+}

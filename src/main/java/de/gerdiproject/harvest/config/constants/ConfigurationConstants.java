@@ -67,6 +67,7 @@ public class ConfigurationConstants
     public static final String LOAD_OK = "Loaded configuration from '%s'.";
     public static final String LOAD_ERROR = "Could not load configuration from '%s': %s";
     public static final String NO_CONFIG_FILE_ERROR = "Did not load configuration, because it is not cached at '%s'!";
+    public static final String OUTDATED_CONFIG_FILE_ERROR = "Did not load configuration, because it is outdated!";
     public static final String NO_PATH = "You must set a path first!";
 
     public static final String QUERY_KEY = "key";
@@ -100,6 +101,7 @@ public class ConfigurationConstants
 
     public static final String KEY_FORMAT = "%s.%s";
     public static final String VALID_PARAM_NAME_REGEX = "[a-zA-Z0-9]+";
+    public static final String INVALID_PARAM_NAME_REGEX = "[^a-zA-Z0-9]";
     public static final String INVALID_PARAMETER_KEY = "Invalid Parameter-Key: %s%nKeys must only consist of letters!";
     public static final String INVALID_CATEGORY_NAME = "Invalid Category-Name: %s%nNames must only consist of letters!";
 

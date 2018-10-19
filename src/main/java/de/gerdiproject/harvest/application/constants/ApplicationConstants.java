@@ -25,7 +25,7 @@ public class ApplicationConstants
 {
     public static final String INIT_SERVICE = "Initializing Harvester Service...";
     public static final String INIT_SERVICE_FAILED = "Initialization of the Harvester Service failed!";
-    public static final String INIT_SERVICE_SUCCESS = "Initialization of %s completed successfully!";
+    public static final String INIT_SERVICE_SUCCESS = "%s is now ready!";
 
     public static final String CONTEXT_DESTROYED = "%s undeployed!";
     public static final String CONTEXT_RESET = "Resetting %s...";

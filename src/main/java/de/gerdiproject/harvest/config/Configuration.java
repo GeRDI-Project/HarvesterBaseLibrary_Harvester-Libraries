@@ -31,12 +31,12 @@ import org.slf4j.LoggerFactory;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
-import de.gerdiproject.harvest.config.adapter.ConfigurationAdapter;
 import de.gerdiproject.harvest.config.constants.ConfigurationConstants;
 import de.gerdiproject.harvest.config.events.GetConfigurationEvent;
 import de.gerdiproject.harvest.config.events.ParameterChangedEvent;
 import de.gerdiproject.harvest.config.events.RegisterParameterEvent;
 import de.gerdiproject.harvest.config.events.UnregisterParameterEvent;
+import de.gerdiproject.harvest.config.json.adapters.ConfigurationAdapter;
 import de.gerdiproject.harvest.config.parameters.AbstractParameter;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.rest.AbstractRestObject;
@@ -195,7 +195,14 @@ public class Configuration extends AbstractRestObject<Configuration, String> imp
         }
 
         // read JSON from disk
-        final Configuration loadedConfig = diskIo.getObject(cacheFilePath, Configuration.class);
+        final Configuration loadedConfig;
+
+        try {
+            loadedConfig = diskIo.getObject(cacheFilePath, Configuration.class);
+        } catch (NullPointerException e) {
+            LOGGER.info(ConfigurationConstants.OUTDATED_CONFIG_FILE_ERROR);
+            return;
+        }
 
         if (loadedConfig == null) {
             LOGGER.info(String.format(ConfigurationConstants.NO_CONFIG_FILE_ERROR, cacheFilePath));
@@ -268,10 +275,15 @@ public class Configuration extends AbstractRestObject<Configuration, String> imp
         if (param == null || !param.isRegistered())
             return String.format(ConfigurationConstants.UNKNOWN_PARAM, compositeKey);
 
-        final String retValue = param.setValue(value, StateMachine.getCurrentState());
-        EventSystem.sendEvent(new ParameterChangedEvent(param));
+        final Object oldValue = param.getValue();
+        final String paramChangeMessage = param.setValue(value, StateMachine.getCurrentState());
 
-        return retValue;
+        if (oldValue == null && param.getValue() != null || oldValue != null && !oldValue.equals(param.getValue())) {
+            EventSystem.sendEvent(new ParameterChangedEvent(param, oldValue));
+            LOGGER.debug(paramChangeMessage);
+        }
+
+        return paramChangeMessage;
     }
 
 

@@ -174,13 +174,13 @@ public abstract class AbstractParameter<T>
         String returnMessage;
 
         if (currentState != null && !category.getAllowedStates().contains(currentState.getClass()))
-            returnMessage = String.format(ConfigurationConstants.CANNOT_CHANGE_PARAM_INVALID_STATE, key, currentState.getName());
+            returnMessage = String.format(ConfigurationConstants.CANNOT_CHANGE_PARAM_INVALID_STATE, getCompositeKey(), currentState.getName());
         else {
             try {
                 this.value = stringToValue(value);
-                returnMessage = String.format(ConfigurationConstants.CHANGED_PARAM, key, getStringValue());
+                returnMessage = String.format(ConfigurationConstants.CHANGED_PARAM, getCompositeKey(), getStringValue());
             } catch (ClassCastException e) {
-                returnMessage = String.format(ConfigurationConstants.CANNOT_CHANGE_PARAM_INVALID_VALUE, key, value, getAllowedValues());
+                returnMessage = String.format(ConfigurationConstants.CANNOT_CHANGE_PARAM_INVALID_VALUE, getCompositeKey(), value, getAllowedValues());
             } catch (ParseException e) {
                 returnMessage = e.getMessage();
             }

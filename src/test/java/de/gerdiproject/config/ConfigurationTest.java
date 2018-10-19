@@ -38,7 +38,7 @@ import com.google.gson.GsonBuilder;
 
 import de.gerdiproject.AbstractFileSystemUnitTest;
 import de.gerdiproject.harvest.config.Configuration;
-import de.gerdiproject.harvest.config.adapter.ConfigurationAdapter;
+import de.gerdiproject.harvest.config.json.adapters.ConfigurationAdapter;
 import de.gerdiproject.harvest.config.parameters.AbstractParameter;
 import de.gerdiproject.harvest.config.parameters.BooleanParameter;
 import de.gerdiproject.harvest.config.parameters.IntegerParameter;

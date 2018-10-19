@@ -27,16 +27,19 @@ import de.gerdiproject.harvest.event.IEvent;
 public class ParameterChangedEvent implements IEvent
 {
     private final AbstractParameter<?> param;
+    private final Object oldValue;
 
 
     /**
      * Constructor that requires the signal payload.
      *
      * @param param the parameter that has changed
+     * @param oldValue the previous value of the parameter
      */
-    public ParameterChangedEvent(AbstractParameter<?> param)
+    public ParameterChangedEvent(AbstractParameter<?> param, Object oldValue)
     {
         this.param = param;
+        this.oldValue = oldValue;
     }
 
 
@@ -49,4 +52,17 @@ public class ParameterChangedEvent implements IEvent
     {
         return param;
     }
+
+
+    /**
+     * Retrieves the value of the parameter prior to its change.
+     *
+     * @return the value of the parameter prior to its change
+     */
+    public Object getOldValue()
+    {
+        return oldValue;
+    }
+
+
 }

@@ -25,7 +25,6 @@ import de.gerdiproject.AbstractFileSystemUnitTest;
 import de.gerdiproject.application.ContextListenerTest;
 import de.gerdiproject.harvest.application.ContextListener;
 import de.gerdiproject.harvest.etls.StaticIteratorETL;
-import de.gerdiproject.harvest.etls.enums.ETLStatus;
 import de.gerdiproject.harvest.etls.extractors.AbstractIteratorExtractor;
 import de.gerdiproject.harvest.etls.transformers.AbstractIteratorTransformer;
 import de.gerdiproject.json.datacite.DataCiteJson;
@@ -156,11 +155,5 @@ public class MockedETL extends StaticIteratorETL<String, DataCiteJson>
     public void setHash(String sourceHash)
     {
         this.hash = sourceHash;
-    }
-
-
-    public void setStatus(ETLStatus status)
-    {
-        this.status = status;
     }
 }

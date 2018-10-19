@@ -61,4 +61,11 @@ public interface IExtractor <EXOUT>
      * @return the number of extractable documents, or -1
      */
     int size();
+
+
+    /**
+     * Closes potentially open readers/writers and finishes the Extraction process
+     * if it is still ongoing.
+     */
+    void clear();
 }

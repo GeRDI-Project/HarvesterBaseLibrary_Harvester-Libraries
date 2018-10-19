@@ -17,7 +17,6 @@ package de.gerdiproject.harvest.application.rest;
 
 
 import java.time.Instant;
-import java.util.List;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -28,17 +27,11 @@ import javax.ws.rs.core.Response.Status;
 
 import de.gerdiproject.harvest.application.MainContext;
 import de.gerdiproject.harvest.application.constants.StatusConstants;
-import de.gerdiproject.harvest.application.enums.HealthStatus;
-import de.gerdiproject.harvest.etls.events.GetETLRegistryEvent;
-import de.gerdiproject.harvest.etls.events.GetRepositoryNameEvent;
-import de.gerdiproject.harvest.event.EventSystem;
+import de.gerdiproject.harvest.etls.enums.ETLHealth;
 import de.gerdiproject.harvest.rest.HttpResponseFactory;
 import de.gerdiproject.harvest.state.IState;
 import de.gerdiproject.harvest.state.StateMachine;
 import de.gerdiproject.harvest.state.impl.ErrorState;
-import de.gerdiproject.harvest.utils.maven.MavenUtils;
-import de.gerdiproject.harvest.utils.maven.constants.MavenConstants;
-import de.gerdiproject.harvest.utils.maven.events.GetMavenUtilsEvent;
 
 
 /**
@@ -61,79 +54,6 @@ public final class StatusRestResource
     public String getInfo()
     {
         return String.format(StatusConstants.REST_INFO, MainContext.getServiceName());
-    }
-
-
-    /**
-     * Displays the name of the current state of the harvester.
-     *
-     * @return the name of the current state of the harvester
-     */
-    @GET
-    @Path("state")
-    @Produces({
-        MediaType.TEXT_PLAIN
-    })
-    public String getStateName()
-    {
-        return StateMachine.getCurrentState().getName();
-    }
-
-
-    /**
-     * Returns the name of the data provider that is harvested.
-     *
-     * @return the name of the data provider that is harvested
-     */
-    @GET
-    @Path("data-provider")
-    @Produces({
-        MediaType.TEXT_PLAIN
-    })
-    public Response getDataProvider()
-    {
-        return HttpResponseFactory.createSynchronousEventResponse(new GetRepositoryNameEvent());
-    }
-
-
-    /**
-     * Calculates the maximum number of documents that can possibly be harvested.
-     * If this number cannot be calculated, "N/A" is returned instead.
-     *
-     * @return the maximum number of documents that can possibly be harvested
-     */
-    @GET
-    @Path("max-documents")
-    @Produces({
-        MediaType.TEXT_PLAIN
-    })
-    public Response getMaxDocumentCount()
-    {
-        // TODO remove
-        int maxDocs = EventSystem.sendSynchronousEvent(new GetETLRegistryEvent()).getMaxNumberOfDocuments();
-
-
-        if (maxDocs == -1)
-            return HttpResponseFactory.createBadRequestResponse();
-        else
-            return HttpResponseFactory.createOkResponse(maxDocs);
-    }
-
-
-    /**
-     * Returns the progress of the current state.
-     * If the current state has no progress, "N/A" is returned instead.
-     *
-     * @return the maximum number of documents that can possibly be harvested
-     */
-    @GET
-    @Path("progress")
-    @Produces({
-        MediaType.TEXT_PLAIN
-    })
-    public Response getProgress()
-    {
-        return StateMachine.getCurrentState().getProgress();
     }
 
 
@@ -173,100 +93,23 @@ public final class StatusRestResource
     public Response getHealth()
     {
         final IState currentState = StateMachine.getCurrentState();
-        HealthStatus health = HealthStatus.OK;
+        ETLHealth health = ETLHealth.OK;
 
         if (currentState instanceof ErrorState)
-            health = HealthStatus.FUBAR;
+            health = ETLHealth.INITIALIZATION_FAILED;
         else {
             final String status = currentState.getStatusString();
 
             final boolean hasHarvestFailed = status.contains(StatusConstants.FAILED_HARVEST_HEALTH_CHECK);
 
             if (hasHarvestFailed)
-                health = HealthStatus.HARVEST_FAILED;
+                health = ETLHealth.HARVEST_FAILED;
         }
 
-        final Status status =  health == HealthStatus.OK
+        final Status status =  health == ETLHealth.OK
                                ? Status.OK
                                : Status.INTERNAL_SERVER_ERROR;
 
         return HttpResponseFactory.createResponse(status, health);
-    }
-
-
-    /**
-     * Displays the artifactIds and versions of GeRDI Maven libraries used in this service.
-     *
-     * @return artifactIds and versions of GeRDI Maven libraries used in this service.
-     */
-    @GET
-    @Path("versions")
-    @Produces({
-        MediaType.TEXT_PLAIN
-    })
-    public Response getVersions()
-    {
-        final String versions = getSpecifiedVersions(MavenConstants.DEFAULT_GERDI_NAMESPACE);
-
-        if (versions == null)
-            return HttpResponseFactory.createUnknownErrorResponse();
-        else
-            return HttpResponseFactory.createOkResponse(versions);
-    }
-
-
-    /**
-     * Displays the artifactIds and versions of all Maven libraries used in this service.
-     *
-     * @return artifactIds and versions of all Maven libraries used in this service.
-     */
-    @GET
-    @Path("versions-all")
-    @Produces({
-        MediaType.TEXT_PLAIN
-    })
-    public Response getAllVersions()
-    {
-        final String versions = getSpecifiedVersions(null);
-
-        if (versions == null)
-            return HttpResponseFactory.createUnknownErrorResponse();
-        else
-            return HttpResponseFactory.createOkResponse(versions);
-    }
-
-
-    /**
-     * Retrieves filtered dependencies and the main jar as a linebreak separated list.
-     * The first entry is always the main jar and is separated by a double linebreak.
-     *
-     * @param filter a groupId that can be used to filter maven dependencies
-     *
-     * @return dependencies and the main jar as a linebreak separated list
-     */
-    private String getSpecifiedVersions(String filter)
-    {
-        final MavenUtils utils = EventSystem.sendSynchronousEvent(new GetMavenUtilsEvent());
-
-        if (utils == null)
-            return null;
-
-        final String mainJar = utils.getHarvesterJarName();
-
-        if (mainJar == null)
-            return null;
-
-        final List<String> dependencyList = utils.getMavenVersionInfo(filter);
-
-        if (dependencyList == null)
-            return null;
-
-        // remove jar from dependencies. it's dealt with in a special manner
-        dependencyList.remove(mainJar);
-
-        return String.format(
-                   MavenConstants.DEPENDENCY_LIST_FORMAT,
-                   mainJar,
-                   String.join("\n", dependencyList));
     }
 }

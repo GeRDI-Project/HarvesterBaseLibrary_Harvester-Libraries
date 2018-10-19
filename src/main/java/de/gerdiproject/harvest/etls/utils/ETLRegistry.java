@@ -16,6 +16,7 @@
 package de.gerdiproject.harvest.etls.utils;
 
 
+import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -31,21 +32,26 @@ import javax.ws.rs.core.MultivaluedMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import de.gerdiproject.harvest.application.enums.HealthStatus;
+import com.google.gson.Gson;
+
 import de.gerdiproject.harvest.config.Configuration;
 import de.gerdiproject.harvest.config.parameters.BooleanParameter;
 import de.gerdiproject.harvest.etls.AbstractETL;
 import de.gerdiproject.harvest.etls.ETLPreconditionException;
 import de.gerdiproject.harvest.etls.constants.ETLConstants;
+import de.gerdiproject.harvest.etls.enums.ETLHealth;
 import de.gerdiproject.harvest.etls.enums.ETLStatus;
 import de.gerdiproject.harvest.etls.events.GetETLRegistryEvent;
 import de.gerdiproject.harvest.etls.events.HarvestFinishedEvent;
 import de.gerdiproject.harvest.etls.events.HarvestStartedEvent;
-import de.gerdiproject.harvest.etls.json.ETLDetails;
+import de.gerdiproject.harvest.etls.json.ETLJson;
+import de.gerdiproject.harvest.etls.json.ETLRegistryJson;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.event.IEventListener;
 import de.gerdiproject.harvest.rest.AbstractRestObject;
 import de.gerdiproject.harvest.utils.HashGenerator;
+import de.gerdiproject.harvest.utils.data.DiskIO;
+import de.gerdiproject.harvest.utils.file.ICachedObject;
 
 
 /**
@@ -54,26 +60,67 @@ import de.gerdiproject.harvest.utils.HashGenerator;
  *
  * @author Robin Weiss
  */
-public class ETLRegistry extends AbstractRestObject<ETLRegistry, ETLDetails>
+public class ETLRegistry extends AbstractRestObject<ETLRegistry, ETLJson> implements ICachedObject
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(ETLRegistry.class);
 
     // fields and members
+    private final DiskIO diskIo;
+    private final File cacheFile;
     private final List<AbstractETL<?, ?>> etls;
     private final BooleanParameter concurrentParam;
+    private final BooleanParameter forceHarvestParameter;
+    private final TimestampedList<ETLStatus> combinedStatusHistory;
+    private String lastHarvestHash;
 
 
     /**
-     * Constructor
+     * Constructor.
      *
      * @param moduleName the name of the harvester service
      */
     public ETLRegistry(String moduleName)
     {
         super(moduleName, GetETLRegistryEvent.class);
+        this.combinedStatusHistory = new TimestampedList<>(ETLStatus.INITIALIZING, 10);
 
         this.etls = new LinkedList<>();
         this.concurrentParam = Configuration.registerParameter(ETLConstants.CONCURRENT_PARAM);
+        this.forceHarvestParameter = Configuration.registerParameter(ETLConstants.FORCED_PARAM);
+        this.cacheFile = new File(String.format(ETLConstants.ETL_REGISTRY_CACHE_PATH, moduleName));
+        this.diskIo = new DiskIO(new Gson(), StandardCharsets.UTF_8);
+
+        setStatus(ETLStatus.IDLE);
+    }
+
+
+    @Override
+    public void loadFromDisk()
+    {
+        final ETLRegistryJson loadedState = diskIo.getObject(cacheFile, ETLRegistryJson.class);
+
+        if (loadedState != null) {
+            // load the overall hash
+            this.lastHarvestHash = loadedState.getOverallInfo().getVersionHash();
+
+            // load status history
+            this.combinedStatusHistory.addAllSorted(loadedState.getOverallInfo().getStatusHistory());
+
+            // load ETL states
+            for (AbstractETL<?, ?> etl : etls) {
+                final ETLJson etlInfo = loadedState.getEtlInfos().get(etl.getName());
+                etl.loadFromJson(etlInfo);
+            }
+
+            LOGGER.debug(String.format(ETLConstants.ETL_REGISTRY_LOADED, cacheFile));
+        }
+    }
+
+
+    @Override
+    public void saveToDisk()
+    {
+        diskIo.writeObjectToFile(cacheFile, new ETLRegistryJson(this, etls));
     }
 
 
@@ -85,87 +132,99 @@ public class ETLRegistry extends AbstractRestObject<ETLRegistry, ETLDetails>
         int totalMaxCount = 0;
 
         for (AbstractETL<?, ?> etl : etls) {
-            sb.append(etl.getName()).append(" : ");
+            sb.append(etl.toString());
 
-            final ETLStatus status = etl.getStatus();
-            sb.append(status.toString().toLowerCase());
+            totalCurrCount += etl.getHarvestedCount();
+            final int maxCount = etl.getMaxNumberOfDocuments();
 
-            if (status == ETLStatus.HARVESTING) {
-                final int currCount = etl.getHarvestedCount();
-                final int maxCount = etl.getMaxNumberOfDocuments();
-
-                totalCurrCount += currCount;
-
-                if (maxCount != -1) {
-                    sb.append(String.format(ETLConstants.PROGRESS, Math.round(100f * currCount / maxCount), currCount, maxCount));
-
-                    if (totalMaxCount != -1)
-                        totalMaxCount += maxCount;
-                } else {
-                    sb.append(currCount);
-                    totalMaxCount = -1;
-                }
-            }
-
-            sb.append('\n');
+            if (maxCount != -1 && totalMaxCount != -1)
+                totalMaxCount += maxCount;
+            else
+                totalMaxCount = -1;
         }
 
-        sb.append(ETLConstants.NAME_TOTAL);
-
         final ETLStatus status = getStatus();
-        sb.append(status.toString().toLowerCase());
+        String statusString = status.toString().toLowerCase();
 
         if (status == ETLStatus.HARVESTING) {
             if (totalMaxCount != -1)
-                sb.append(String.format(ETLConstants.PROGRESS, Math.round(100f * totalCurrCount / totalMaxCount), totalCurrCount, totalMaxCount));
+                statusString += String.format(ETLConstants.PROGRESS, Math.round(100f * totalCurrCount / totalMaxCount), totalCurrCount, totalMaxCount);
             else
-                sb.append(totalCurrCount);
+                statusString += String.format(ETLConstants.PROGRESS_NO_BOUNDS, totalCurrCount);
         }
 
-        sb.append('\n');
+        sb.append(String.format(ETLConstants.ETL_PRETTY, ETLConstants.NAME_TOTAL, statusString));
+
+        if (status == ETLStatus.HARVESTING) {
+            final long remainingMilliSeconds = estimateRemainingHarvestTime(totalCurrCount, totalMaxCount);
+            sb.append(getDurationText(remainingMilliSeconds));
+        }
+
         return sb.toString();
     }
 
 
     @Override
-    public ETLDetails getAsJson(MultivaluedMap<String, String> query)
+    public ETLJson getAsJson(MultivaluedMap<String, String> query)
     {
-        List<String> etlIndexList = query.get(ETLConstants.ETL_INDEX_QUERY);
+        final List<String> etlIndexList = query != null
+                                          ? query.get(ETLConstants.ETL_INDEX_QUERY)
+                                          : null;
 
         if (etlIndexList == null || etlIndexList.size() == 0)
-            return new ETLDetails(this);
+            return new ETLJson(
+                       getClass().getSimpleName(),
+                       combinedStatusHistory,
+                       null,
+                       getHarvestedCount(),
+                       getMaxNumberOfDocuments(),
+                       getHash());
 
         int index;
 
         try {
             index = Integer.parseInt(etlIndexList.get(0));
         } catch (NumberFormatException e) {
-            throw new IllegalArgumentException(String.format("The query parameter 'index' must be a number in [0,%d]!", etls.size() - 1));
+            throw new IllegalArgumentException(String.format(ETLConstants.ETL_INDEX_OUT_OF_RANGE, etls.size() - 1));
         }
 
         if (index < 0 || index >= etls.size())
-            throw new IllegalArgumentException(String.format("The query parameter 'index' must be a number in [0,%d]!", etls.size() - 1));
+            throw new IllegalArgumentException(String.format(ETLConstants.ETL_INDEX_OUT_OF_RANGE, etls.size() - 1));
 
-        return new ETLDetails(etls.get(index));
+        return etls.get(index).getAsJson();
     }
 
 
-    public void register(AbstractETL<?, ?> harvester)
+    /**
+     * Registers an {@linkplain AbstractETL}, adding it to the list of ETLs
+     * that can be controlled via REST.
+     *
+     * @param etl the {@linkplain AbstractETL} to be registered
+     */
+    public void register(AbstractETL<?, ?> etl)
     {
-        if (etls.contains(harvester))
-            LOGGER.info(String.format(ETLConstants.DUPLICATE_ETL_REGISTERED_ERROR, harvester.getClass().getSimpleName()));
+        if (etls.contains(etl))
+            LOGGER.info(String.format(ETLConstants.DUPLICATE_ETL_REGISTERED_ERROR, etl.getClass().getSimpleName()));
         else
-            etls.add(harvester);
+            etls.add(etl);
     }
 
 
-    public boolean hasOutdatedHarvesters()
+    /**
+     * Updates all registered ETLs and checks if they are outdated.
+     *
+     * @return true if at least one ETL is outdated
+     */
+    public boolean hasOutdatedETLs()
     {
-        final List<Boolean> outDatedValues = processHarvesters((AbstractETL<?, ?> harvester) -> {
-            harvester.update();
-            return harvester.isOutdated();
-        });
-        return outDatedValues.contains(Boolean.TRUE);
+        // if a harvest is ongoing or just finished, do not update the ETLs
+        final ETLStatus currentStatus = getStatus();
+
+        if (currentStatus == ETLStatus.IDLE || currentStatus == ETLStatus.DONE)
+            processETLs((AbstractETL<?, ?> harvester) -> harvester.update());
+
+        String currentHash = getHash();
+        return currentHash == null || !currentHash.equals(lastHarvestHash);
     }
 
 
@@ -174,7 +233,7 @@ public class ETLRegistry extends AbstractRestObject<ETLRegistry, ETLDetails>
     {
         super.addEventListeners();
 
-        processHarvesters((AbstractETL<?, ?> harvester) -> {
+        processETLs((AbstractETL<?, ?> harvester) -> {
             if (harvester instanceof IEventListener)
                 ((IEventListener)harvester).addEventListeners();
         });
@@ -186,59 +245,72 @@ public class ETLRegistry extends AbstractRestObject<ETLRegistry, ETLDetails>
     {
         super.removeEventListeners();
 
-        processHarvesters((AbstractETL<?, ?> harvester) -> {
+        processETLs((AbstractETL<?, ?> harvester) -> {
             if (harvester instanceof IEventListener)
                 ((IEventListener)harvester).removeEventListeners();
         });
     }
 
 
-    public void harvest() throws ETLPreconditionException
+    /**
+     * Attempts to start a harvest, signalling all registered ETLs to start
+     *
+     * @throws IllegalStateException thrown if another ongoing harvest is blocking this process
+     */
+    public void harvest() throws IllegalStateException
     {
+        if (getStatus() != ETLStatus.IDLE)
+            throw new IllegalStateException(ETLConstants.BUSY_HARVESTING);
+
+
+        // cancel harvest if the checksum has not changed since the last harvest
+        if (!forceHarvestParameter.getValue() && !hasOutdatedETLs())
+            throw new ETLPreconditionException(ETLConstants.ETL_SKIPPED_NO_CHANGES);
+
         // do it asynchronously, so we can immediately return
         CompletableFuture.runAsync(()-> {
 
-            LOGGER.info("Preparing Harvesters");
-            final AtomicInteger preparedCount = new AtomicInteger(0);
-            processHarvesters((AbstractETL<?, ?> harvester) -> {
-                try
-                {
-                    harvester.prepareHarvest();
-                    preparedCount.incrementAndGet();
-                } catch (ETLPreconditionException e)
-                {
-                    LOGGER.info(e.getMessage());
-                }
-            });
+            boolean isPrepared = prepareETLsForHarvest();
 
-            if (preparedCount.get() == 0)
-                throw new IllegalStateException("No harvester could be started.");
-
-            if (getStatus() == ETLStatus.HARVESTING)
-                EventSystem.sendEvent(new HarvestStartedEvent(getHash(), getMaxNumberOfDocuments()));
-
-            LOGGER.info("Starting Harvesters");
-            processHarvesters((AbstractETL<?, ?> harvester) -> {
-                if (harvester.getStatus() == ETLStatus.HARVESTING)
-                    harvester.harvest();
-
-            });
+            if (isPrepared)
+                harvestETLs();
+            else
+                throw new ETLPreconditionException(ETLConstants.PREPARE_ETLS_FAILED);
         })
         .thenAccept((Void v) -> {
-            EventSystem.sendEvent(new HarvestFinishedEvent(true, getHash()));
+            // save to disk only if we were successful
+            this.lastHarvestHash = getHash();
+
+            saveToDisk();
+
+            EventSystem.sendEvent(new HarvestFinishedEvent(true, lastHarvestHash));
+            setStatus(ETLStatus.IDLE);
+
         })
         .exceptionally((Throwable reason) -> {
-            LOGGER.error(ETLConstants.ALL_FAILED, reason);
+            LOGGER.error(ETLConstants.ETLS_FAILED_UNKNOWN_ERROR, reason);
+
+            // clean up all ETLs
+            processETLs((AbstractETL<?, ?> harvester) -> harvester.cancelHarvest());
+            saveToDisk();
+
             EventSystem.sendEvent(new HarvestFinishedEvent(false, getHash()));
+            setStatus(ETLStatus.IDLE);
+
             return null;
         });
     }
 
 
+    /**
+     * Sums up the expected number of harvestable documents of all registered ETLs.
+     *
+     * @return the expected total number of harvestable documents
+     */
     public int getMaxNumberOfDocuments()
     {
-        final List<Integer> sizes = processHarvesters((AbstractETL<?, ?> harvester) ->
-                                                      harvester.getMaxNumberOfDocuments());
+        final List<Integer> sizes = processETLs((AbstractETL<?, ?> harvester) ->
+                                                harvester.getMaxNumberOfDocuments());
         int total = 0;
 
         for (int size : sizes) {
@@ -253,19 +325,55 @@ public class ETLRegistry extends AbstractRestObject<ETLRegistry, ETLDetails>
     }
 
 
+    /**
+     * Attempts to abort an ongoing harvest.
+     *
+     * @throws IllegalStateException if no harvest is in progress
+     */
     public void abortHarvest()
     {
-        processHarvesters((AbstractETL<?, ?> harvester) -> harvester.abortHarvest());
-        // TODO EventSystem.sendEvent(new AbortingFinishedEvent());
+        final ETLStatus currentStatus = getStatus();
+
+        if (currentStatus == ETLStatus.QUEUED || currentStatus == ETLStatus.HARVESTING) {
+            setStatus(ETLStatus.ABORTING);
+
+            processETLs((AbstractETL<?, ?> harvester) -> {
+                if (harvester.getStatus() == ETLStatus.HARVESTING || harvester.getStatus() == ETLStatus.QUEUED)
+                    harvester.abortHarvest();
+            });
+            // TODO EventSystem.sendEvent(new AbortingFinishedEvent());
+        } else
+            throw new IllegalStateException(String.format(ETLConstants.ABORT_INVALID_STATE, combinedStatusHistory.toString()));
     }
 
 
+    /**
+     * Generates a combined hash over the concatenated hashes of all registered ETLs.
+     *
+     * @return a combined hash over the concatenated hashes of all registered ETLs
+     */
     public String getHash()
     {
-        // for now, concatenate all hashes
+        // concatenate all hashes
         final StringBuffer hashBuilder = new StringBuffer();
 
-        etls.forEach((AbstractETL<?, ?> subHarvester) -> hashBuilder.append(subHarvester.getHash()));
+        for (AbstractETL<?, ?> etl : etls) {
+            // skip disabled ETLs
+            if (!etl.isEnabled())
+                continue;
+
+            final String subHash = etl.getHash();
+
+            // if a single hash value is unknown, we cannot generate a combined version hash
+            if (subHash == null)
+                return null;
+
+            hashBuilder.append(subHash);
+        }
+
+        // rare case when no enabled ETLs exist
+        if (hashBuilder.length() == 0)
+            return null;
 
         final HashGenerator generator = new HashGenerator(StandardCharsets.UTF_8);
         return generator.getShaHash(hashBuilder.toString());
@@ -279,77 +387,174 @@ public class ETLRegistry extends AbstractRestObject<ETLRegistry, ETLDetails>
      */
     public int getHarvestedCount()
     {
-        return sumUpHarvesterValues(
+        return sumUpETLValues(
                    (AbstractETL<?, ?> harvester) -> harvester.getHarvestedCount()
                );
     }
 
 
-    public HealthStatus getHealth()
+    /**
+     * Retrieves an overall health status.
+     *
+     * @return a health status representing the combined health of all registered ETLs
+     */
+    public ETLHealth getHealth()
     {
-        final List<HealthStatus> healthStatuses = processHarvesters((AbstractETL<?, ?> harvester) ->
-                                                                    harvester.getHealth());
+        final List<ETLHealth> healthStatuses = processETLs((AbstractETL<?, ?> harvester) ->
+                                                           harvester.getHealth());
+        boolean hasHarvestFailed = false;
 
-        if (healthStatuses.contains(HealthStatus.FUBAR))
-            return HealthStatus.FUBAR;
+        for (ETLHealth subStatus : healthStatuses) {
+            switch (subStatus) {
+                case INITIALIZATION_FAILED:
+                    return subStatus;
 
-        if (healthStatuses.contains(HealthStatus.HARVEST_FAILED))
-            return HealthStatus.HARVEST_FAILED;
+                case HARVEST_FAILED:
+                case EXTRACTION_FAILED:
+                case TRANSFORMATION_FAILED:
+                case LOADING_FAILED:
+                    hasHarvestFailed = true;
+                    break;
 
-        if (healthStatuses.contains(HealthStatus.SUBMISSION_FAILED))
-            return HealthStatus.SUBMISSION_FAILED;
+                default:
+                    // do nothing
+            }
+        }
 
-        return HealthStatus.OK;
+        return hasHarvestFailed ? ETLHealth.HARVEST_FAILED : ETLHealth.OK;
     }
 
 
+    /**
+     * Returns a status representing the entirety of all registered ETL statuses.
+     *
+     * @return a status representing the entirety of all registered ETL statuses
+     */
     public ETLStatus getStatus()
     {
-        final List<ETLStatus> statuses = processHarvesters((AbstractETL<?, ?> harvester) -> harvester.getStatus());
-
-        if (statuses.contains(ETLStatus.ABORTING))
-            return ETLStatus.ABORTING;
-
-        if (statuses.contains(ETLStatus.HARVESTING))
-            return ETLStatus.HARVESTING;
-
-        if (statuses.contains(ETLStatus.QUEUED))
-            return ETLStatus.QUEUED;
-
-        if (statuses.contains(ETLStatus.BUSY))
-            return ETLStatus.BUSY;
-
-        return ETLStatus.IDLE;
+        return combinedStatusHistory.getLatestValue();
     }
 
 
-    private void processHarvesters(Consumer<AbstractETL<?, ?>> consumer)
+    /**
+     * Prepares all registered ETLs for a subsequent harvest.
+     *
+     * @return true if all ETLs were sucessfully prepared
+     */
+    private boolean prepareETLsForHarvest()
     {
+        LOGGER.info(ETLConstants.PREPARE_ETLS);
+        setStatus(ETLStatus.QUEUED);
+
+        final AtomicInteger preparedCount = new AtomicInteger(0);
+
+        processETLs((AbstractETL<?, ?> harvester) -> {
+            try
+            {
+                // prepareHarvest() can take time, abort as early as possible
+                if (getStatus() != ETLStatus.ABORTING) {
+                    harvester.prepareHarvest();
+                    preparedCount.incrementAndGet();
+                }
+            } catch (ETLPreconditionException e)
+            {
+                LOGGER.info(e.getMessage());
+            }
+        });
+
+        if (preparedCount.get() == 0 || getStatus() == ETLStatus.ABORTING) {
+            setStatus(ETLStatus.IDLE);
+            return false;
+        }
+
+        return true;
+    }
+
+
+    /**
+     * Harvests prepared and queued ETLs.
+     */
+    private void harvestETLs()
+    {
+        LOGGER.info(ETLConstants.START_ETLS);
+        setStatus(ETLStatus.HARVESTING);
+
+        EventSystem.sendEvent(new HarvestStartedEvent(getHash(), getMaxNumberOfDocuments()));
+
+        processETLs((AbstractETL<?, ?> harvester) -> {
+            if (getStatus() != ETLStatus.ABORTING && harvester.getStatus() == ETLStatus.QUEUED)
+                harvester.harvest();
+        });
+    }
+
+
+    /**
+     * Iterates all registered ETLs either sequentially or concurrently,
+     * depending on the value of the corresponding parameter,
+     * and stores the return values of a common function in a list.
+     *
+     * @param function a function that is called on each ETL
+     *
+     * @return a list containing the return values of each ETL
+     */
+    private <T> List<T> processETLs(Function<AbstractETL<?, ?>, T> function)
+    {
+        final int len = etls.size();
+        final List<T> returnValues = new ArrayList<>(len);
+
         if (concurrentParam.getValue()) {
-            final int len = etls.size();
-            CompletableFuture<?>[] subProcesses = new CompletableFuture[len];
+            final List<CompletableFuture<?>> subProcesseList = new LinkedList<>();
 
             for (int i = 0; i < len; i++) {
                 final int j = i;
-                subProcesses[i] = CompletableFuture.runAsync(() -> consumer.accept(etls.get(j)));
+
+                if (etls.get(j).isEnabled())
+                    subProcesseList.add(CompletableFuture.runAsync(() -> returnValues.add(function.apply(etls.get(j)))));
             }
+
+            // convert list to array
+            final CompletableFuture<?>[] subProcessArray = subProcesseList.toArray(new CompletableFuture<?>[subProcesseList.size()]);
 
             // wait for all sub-processes to complete
             try {
-                CompletableFuture.allOf(subProcesses).get();
+                CompletableFuture.allOf(subProcessArray).get();
             } catch (InterruptedException | ExecutionException e) {
                 LOGGER.error(ETLConstants.ETL_PROCESSING_ERROR, e);
             }
         } else {
-            for (AbstractETL<?, ?> harvester : etls)
-                consumer.accept(harvester);
+            for (AbstractETL<?, ?> etl : etls)
+                if (etl.isEnabled())
+                    returnValues.add(function.apply(etl));
         }
+
+        return returnValues;
     }
 
 
-    private int sumUpHarvesterValues(Function<AbstractETL<?, ?>, Integer> function)
+    /**
+     * Iterates all registered and enabled ETLs either sequentially or concurrently,
+     * depending on the value of the corresponding parameter.
+     *
+     * @param consumer the function that is called on each ETL
+     */
+    private void processETLs(Consumer<AbstractETL<?, ?>> consumer)
     {
-        final List<Integer> processedData = processHarvesters(function);
+        processETLs((AbstractETL<?, ?> etl) -> {consumer.accept(etl); return null;});
+    }
+
+
+    /**
+     * Iterates all registered and enabled ETLs either sequentially or concurrently,
+     * depending on the value of the corresponding parameter,
+     * and sums up the return value of a common function.
+     *
+     * @param intFunction a function that is called on each ETL that returns an integer value
+     *
+     * @return the sum of all return values of the functions
+     */
+    private int sumUpETLValues(Function<AbstractETL<?, ?>, Integer> intFunction)
+    {
+        final List<Integer> processedData = processETLs(intFunction);
 
         int total = 0;
 
@@ -360,31 +565,71 @@ public class ETLRegistry extends AbstractRestObject<ETLRegistry, ETLDetails>
     }
 
 
-    private <T> List<T> processHarvesters(Function<AbstractETL<?, ?>, T> function)
+    /**
+     * Changes the overall status of the registry.
+     *
+     * @param status the new status
+     */
+    private void setStatus(ETLStatus status)
     {
-        final int len = etls.size();
-        final List<T> returnValues = new ArrayList<>(len);
+        combinedStatusHistory.addValue(status);
+    }
 
-        if (concurrentParam.getValue()) {
-            CompletableFuture<?>[] subProcesses = new CompletableFuture[len];
 
-            for (int i = 0; i < len; i++) {
-                final int j = i;
-                subProcesses[i] = CompletableFuture.runAsync(() -> returnValues.add(function.apply(etls.get(j))));
-            }
+    /**
+     * Estimates the remaining harvesting duration in milliseconds.
+     *
+     * @param harvestedDocuments the number of documents that were harvested
+     * @param maxDocuments the total number of harvestable documents, or -1
+     * if unknown
+     *
+     * @return the remaining harvesting duration in milliseconds,
+     * or -1 if it cannot be estimated
+     */
+    private long estimateRemainingHarvestTime(final int harvestedDocuments, final int maxDocuments)
+    {
+        final ETLStatus currentStatus = combinedStatusHistory.getLatestValue();
 
-            // wait for all sub-processes to complete
-            try {
-                CompletableFuture.allOf(subProcesses).get();
-            } catch (InterruptedException | ExecutionException e) {
-                LOGGER.error(ETLConstants.ETL_PROCESSING_ERROR, e);
-            }
-        } else {
-            for (int i = 0; i < len; i++)
-                returnValues.add(function.apply(etls.get(i)));
-        }
+        // if there is no ongoing harvest, we cannot estimate the time
+        if (currentStatus != ETLStatus.HARVESTING)
+            return -1;
 
-        return returnValues;
+        // if we do not now how many documents there are, we cannot estimate the time
+        if (maxDocuments == -1)
+            return -1;
+
+        // if nothing was harvested yet, we cannot estimate the time
+        if (harvestedDocuments == 0)
+            return -1;
+
+        // check when the harvest started
+        final long harvestStartTimestamp = combinedStatusHistory.getLatestTimestamp();
+
+        // calculate for how many milliseconds the harvest has been going on
+        final long millisSinceHarvestStarted = System.currentTimeMillis() - harvestStartTimestamp;
+
+        // calculate the average milliseconds for harvesting a single document
+        final long averageMillisPerDocument = millisSinceHarvestStarted / harvestedDocuments;
+
+        // estimate how many milliseconds it will take to harvest the remaining documents
+        return averageMillisPerDocument * (maxDocuments - harvestedDocuments);
+    }
+
+
+    /**
+     * Creates a duration string out of a specified number of seconds
+     *
+     * @param milliseconds the time span in milliseconds
+     * @return a formatted duration string, or "unknown" if the duration is
+     *         negative
+     */
+    private static String getDurationText(long milliseconds)
+    {
+        if (milliseconds < 0 || milliseconds == Long.MAX_VALUE)
+            return ETLConstants.REMAINING_TIME_UNKNOWN;
+
+        long hours = milliseconds / 3600000;
+        return String.format(ETLConstants.REMAINING_TIME, hours, milliseconds);
     }
 
 
