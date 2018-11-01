@@ -224,6 +224,13 @@ public class ETLRegistry extends AbstractRestObject<ETLRegistry, ETLJson> implem
         if (currentStatus == ETLStatus.IDLE || currentStatus == ETLStatus.DONE)
             processETLs((AbstractETL<?, ?> harvester) -> harvester.update());
 
+        final int maxDocs = getMaxNumberOfDocuments();
+        final int currentDocs = getHarvestedCount();
+
+        // it's outdated if not all documents have been harvested
+        if (maxDocs == -1 && currentDocs == 0 || currentDocs < maxDocs)
+            return true;
+
         String currentHash = getHash();
         return currentHash == null || !currentHash.equals(lastHarvestHash);
     }
