@@ -34,8 +34,8 @@ import de.gerdiproject.harvest.application.events.ResetContextEvent;
 import de.gerdiproject.harvest.etls.constants.ETLConstants;
 import de.gerdiproject.harvest.etls.enums.ETLHealth;
 import de.gerdiproject.harvest.etls.enums.ETLStatus;
-import de.gerdiproject.harvest.etls.events.GetETLRegistryEvent;
-import de.gerdiproject.harvest.etls.utils.ETLRegistry;
+import de.gerdiproject.harvest.etls.events.GetETLManagerEvent;
+import de.gerdiproject.harvest.etls.utils.ETLManager;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.rest.AbstractRestResource;
 import de.gerdiproject.harvest.rest.HttpResponseFactory;
@@ -56,7 +56,7 @@ import de.gerdiproject.harvest.utils.maven.events.GetMavenUtilsEvent;
  * @author Robin Weiss
  */
 @Path("")
-public class ETLRestResource extends AbstractRestResource<ETLRegistry, GetETLRegistryEvent>
+public class ETLRestResource extends AbstractRestResource<ETLManager, GetETLManagerEvent>
 {
     /**
      * Starts a harvest using the harvester that is registered in the

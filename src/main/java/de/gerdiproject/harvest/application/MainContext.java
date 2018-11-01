@@ -31,7 +31,7 @@ import de.gerdiproject.harvest.etls.events.GetRepositoryNameEvent;
 import de.gerdiproject.harvest.etls.events.HarvesterInitializedEvent;
 import de.gerdiproject.harvest.etls.loaders.ILoader;
 import de.gerdiproject.harvest.etls.loaders.utils.LoaderRegistry;
-import de.gerdiproject.harvest.etls.utils.ETLRegistry;
+import de.gerdiproject.harvest.etls.utils.ETLManager;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.scheduler.Scheduler;
 import de.gerdiproject.harvest.scheduler.constants.SchedulerConstants;
@@ -56,7 +56,7 @@ public class MainContext
 
     private final HarvesterLog log;
     private final String moduleName;
-    private final ETLRegistry etlRegistry;
+    private final ETLManager etlManager;
     private final Configuration configuration;
 
     @SuppressWarnings("unused") // the submitter is connected via the event system
@@ -96,7 +96,7 @@ public class MainContext
         EventSystem.addSynchronousListener(GetMavenUtilsEvent.class, this::getMavenUtils);
 
         this.submitterManager = createLoaderFactory(loaderClasses);
-        this.etlRegistry = createEtlRegistry(moduleName, etlSupplier);
+        this.etlManager = createEtlManager(moduleName, etlSupplier);
         this.scheduler = createScheduler(moduleName);
     }
 
@@ -164,7 +164,7 @@ public class MainContext
         EventSystem.removeSynchronousListener(GetMavenUtilsEvent.class);
         scheduler.removeEventListeners();
         configuration.removeEventListeners();
-        etlRegistry.removeEventListeners();
+        etlManager.removeEventListeners();
     }
 
 
@@ -256,19 +256,19 @@ public class MainContext
 
 
     /**
-     * Creates the {@linkplain ETLRegistry} with all {@linkplain AbstractETL}s and assigns it to this context.
+     * Creates the {@linkplain ETLManager} with all {@linkplain AbstractETL}s and assigns it to this context.
      *
      * @param moduleName the name of this service
      * @param etlSupplier all {@linkplain AbstractETL}s required for harvesting
      *
-     * @return a new {@linkplain ETLRegistry} for this context
+     * @return a new {@linkplain ETLManager} for this context
      */
-    private ETLRegistry createEtlRegistry(String moduleName, Supplier<List<? extends AbstractETL<?, ?>>> etlSupplier)
+    private ETLManager createEtlManager(String moduleName, Supplier<List<? extends AbstractETL<?, ?>>> etlSupplier)
     throws InstantiationException, IllegalAccessException
     {
-        LOGGER.info(String.format(ApplicationConstants.INIT_FIELD, ETLRegistry.class.getSimpleName()));
+        LOGGER.info(String.format(ApplicationConstants.INIT_FIELD, ETLManager.class.getSimpleName()));
 
-        final ETLRegistry registry = new ETLRegistry(moduleName);
+        final ETLManager registry = new ETLManager(moduleName);
 
         // construct harvesters
         final List<? extends AbstractETL<?, ?>> etlComponents = etlSupplier.get();
@@ -292,7 +292,7 @@ public class MainContext
         registry.loadFromDisk();
         registry.addEventListeners();
 
-        LOGGER.info(String.format(ApplicationConstants.INIT_FIELD_SUCCESS, ETLRegistry.class.getSimpleName()));
+        LOGGER.info(String.format(ApplicationConstants.INIT_FIELD_SUCCESS, ETLManager.class.getSimpleName()));
 
         return registry;
     }

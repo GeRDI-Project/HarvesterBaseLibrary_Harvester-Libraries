@@ -21,12 +21,12 @@ import java.util.List;
 import de.gerdiproject.harvest.etls.AbstractETL;
 import de.gerdiproject.harvest.etls.enums.ETLHealth;
 import de.gerdiproject.harvest.etls.enums.ETLStatus;
-import de.gerdiproject.harvest.etls.utils.ETLRegistry;
+import de.gerdiproject.harvest.etls.utils.ETLManager;
 import de.gerdiproject.harvest.etls.utils.TimestampedEntry;
 
 /**
  * This class represents a JSON object containing details
- * of an {@linkplain AbstractETL} or the {@linkplain ETLRegistry}.
+ * of an {@linkplain AbstractETL} or the {@linkplain ETLManager}.
  *
  * @author Robin Weiss
  */

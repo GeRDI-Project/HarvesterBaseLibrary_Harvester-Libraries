@@ -41,7 +41,7 @@ public class DiskLoaderConstants
         "saveFolder",
         LoaderConstants.PARAMETER_CATEGORY,
         SAVE_FOLDER_NAME,
-        ParameterMappingFunctions.createMapperForETLRegistry(ParameterMappingFunctions::mapToString));
+        ParameterMappingFunctions.createMapperForETLs(ParameterMappingFunctions::mapToString));
 
 
     /**

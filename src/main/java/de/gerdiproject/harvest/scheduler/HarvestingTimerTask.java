@@ -23,8 +23,8 @@ import org.slf4j.LoggerFactory;
 
 import de.gerdiproject.harvest.etls.ETLPreconditionException;
 import de.gerdiproject.harvest.etls.constants.ETLConstants;
-import de.gerdiproject.harvest.etls.events.GetETLRegistryEvent;
-import de.gerdiproject.harvest.etls.utils.ETLRegistry;
+import de.gerdiproject.harvest.etls.events.GetETLManagerEvent;
+import de.gerdiproject.harvest.etls.utils.ETLManager;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.scheduler.constants.SchedulerConstants;
 import de.gerdiproject.harvest.scheduler.events.ScheduledTaskExecutedEvent;
@@ -43,13 +43,13 @@ public class HarvestingTimerTask extends TimerTask
     @Override
     public void run()
     {
-        final ETLRegistry etlRegistry = EventSystem.sendSynchronousEvent(new GetETLRegistryEvent());
+        final ETLManager etlManager = EventSystem.sendSynchronousEvent(new GetETLManagerEvent());
 
         String status;
 
         try {
             // start a harvest
-            etlRegistry.harvest();
+            etlManager.harvest();
             status = ETLConstants.HARVEST_STARTED;
         } catch (ETLPreconditionException e) {
             status = e.getMessage();

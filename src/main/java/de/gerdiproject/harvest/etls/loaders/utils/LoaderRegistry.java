@@ -50,7 +50,7 @@ public class LoaderRegistry implements IEventListener
 
         // the loader parameter may only be changed while no ETL is running, and only to registered loader classes
         final Function<String, String> paramChangeGuard =
-            ParameterMappingFunctions.createMapperForETLRegistry(
+            ParameterMappingFunctions.createMapperForETLs(
                 ParameterMappingFunctions.createStringListMapper(loaderMap.keySet()));
 
         this.loaderParam = new StringParameter(

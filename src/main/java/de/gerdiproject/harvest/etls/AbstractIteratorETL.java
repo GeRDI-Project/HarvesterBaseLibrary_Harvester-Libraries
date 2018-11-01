@@ -74,14 +74,14 @@ public abstract class AbstractIteratorETL<EXOUT, TRANSOUT> extends AbstractETL<I
                                                 ETLConstants.START_INDEX_PARAM_KEY,
                                                 getName(),
                                                 ETLConstants.START_INDEX_PARAM_DEFAULT_VALUE,
-                                                ParameterMappingFunctions.createMapperForETLs(ParameterMappingFunctions::mapToUnsignedInteger, this)));
+                                                ParameterMappingFunctions.createMapperForETL(ParameterMappingFunctions::mapToUnsignedInteger, this)));
 
         this.endIndexParameter =
             Configuration.registerParameter(new IntegerParameter(
                                                 ETLConstants.END_INDEX_PARAM_KEY,
                                                 getName(),
                                                 ETLConstants.END_INDEX_PARAM_DEFAULT_VALUE,
-                                                ParameterMappingFunctions.createMapperForETLs(ParameterMappingFunctions::mapToUnsignedInteger, this)));
+                                                ParameterMappingFunctions.createMapperForETL(ParameterMappingFunctions::mapToUnsignedInteger, this)));
     }
 
 

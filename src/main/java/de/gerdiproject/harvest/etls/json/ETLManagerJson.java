@@ -22,16 +22,16 @@ import java.util.Map;
 
 import de.gerdiproject.harvest.etls.AbstractETL;
 import de.gerdiproject.harvest.etls.events.GetRepositoryNameEvent;
-import de.gerdiproject.harvest.etls.utils.ETLRegistry;
+import de.gerdiproject.harvest.etls.utils.ETLManager;
 import de.gerdiproject.harvest.event.EventSystem;
 
 /**
- * This class serves as the JSON representation of the {@linkplain ETLRegistry}.
+ * This class serves as the JSON representation of the {@linkplain ETLManager}.
  * It is used for persisting certain values through sessions.
  *
  * @author Robin Weiss
  */
-public class ETLRegistryJson
+public class ETLManagerJson
 {
     private final ETLJson overallInfo;
     private final Map<String, ETLJson> etlInfos;
@@ -40,10 +40,10 @@ public class ETLRegistryJson
 
     /**
      * Constructor that requires all fields.
-     * @param registry the {@linkplain ETLRegistry} represented by the constructed object
+     * @param registry the {@linkplain ETLManager} represented by the constructed object
      * @param registeredEtls all {@linkplain AbstractETL}s registered at the registry
      */
-    public ETLRegistryJson(ETLRegistry registry, List<AbstractETL<?, ?>> registeredEtls)
+    public ETLManagerJson(ETLManager registry, List<AbstractETL<?, ?>> registeredEtls)
     {
         this.overallInfo = registry.getAsJson(null);
         this.etlInfos = new HashMap<>();

@@ -22,6 +22,7 @@ import de.gerdiproject.harvest.etls.AbstractIteratorETL;
 import de.gerdiproject.harvest.etls.extractors.AbstractIteratorExtractor;
 import de.gerdiproject.harvest.etls.loaders.AbstractIteratorLoader;
 import de.gerdiproject.harvest.etls.transformers.AbstractIteratorTransformer;
+import de.gerdiproject.harvest.etls.utils.ETLManager;
 import de.gerdiproject.harvest.utils.file.constants.FileConstants;
 
 /**
@@ -39,21 +40,21 @@ public class ETLConstants
         "forced",
         PARAMETER_CATEGORY,
         true,
-        ParameterMappingFunctions.createMapperForETLRegistry(ParameterMappingFunctions::mapToBoolean));
+        ParameterMappingFunctions.createMapperForETLs(ParameterMappingFunctions::mapToBoolean));
 
     public static final BooleanParameter ENABLED_PARAM =
         new BooleanParameter(
         "enabled",
         PARAMETER_CATEGORY,
         true,
-        ParameterMappingFunctions.createMapperForETLRegistry(ParameterMappingFunctions::mapToBoolean));
+        ParameterMappingFunctions.createMapperForETLs(ParameterMappingFunctions::mapToBoolean));
 
     public static final BooleanParameter CONCURRENT_PARAM =
         new BooleanParameter(
         "concurrentHarvest",
         PARAMETER_CATEGORY,
         false,
-        ParameterMappingFunctions.createMapperForETLRegistry(ParameterMappingFunctions::mapToBoolean));
+        ParameterMappingFunctions.createMapperForETLs(ParameterMappingFunctions::mapToBoolean));
 
 
     public static final String START_INDEX_PARAM_KEY = "rangeFrom";
@@ -138,8 +139,8 @@ public class ETLConstants
     public static final String PREPARE_ETLS_FAILED = "Cannot start harvest: No ETL could be prepared!";
     public static final String START_ETLS = "Starting ETLs.";
 
-    public static final String ETL_REGISTRY_CACHE_PATH = FileConstants.CACHE_FOLDER_PATH + "state.json";
-    public static final String ETL_REGISTRY_LOADED = "Loaded ETLRegistry from %s.";
+    public static final String ETL_MANAGER_CACHE_PATH = FileConstants.CACHE_FOLDER_PATH + "state.json";
+    public static final String ETL_MANAGER_LOADED = "Loaded " + ETLManager.class.getSimpleName() + " from %s.";
 
     public static final String REMAINING_TIME_UNKNOWN = "Remaining Time : ???";
     public static final String REMAINING_TIME = "Remaining Time: %1$02d:%2$tM:%2$tS";

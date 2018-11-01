@@ -16,14 +16,14 @@
  */
 package de.gerdiproject.harvest.etls.events;
 
-import de.gerdiproject.harvest.etls.utils.ETLRegistry;
+import de.gerdiproject.harvest.etls.utils.ETLManager;
 import de.gerdiproject.harvest.rest.events.GetRestObjectEvent;
 
 /**
  * @author Robin Weiss
  *
  */
-public class GetETLRegistryEvent extends GetRestObjectEvent<ETLRegistry>
+public class GetETLManagerEvent extends GetRestObjectEvent<ETLManager>
 {
 
 }

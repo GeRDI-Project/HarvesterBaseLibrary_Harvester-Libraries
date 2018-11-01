@@ -42,11 +42,11 @@ import de.gerdiproject.harvest.etls.ETLPreconditionException;
 import de.gerdiproject.harvest.etls.constants.ETLConstants;
 import de.gerdiproject.harvest.etls.enums.ETLHealth;
 import de.gerdiproject.harvest.etls.enums.ETLStatus;
-import de.gerdiproject.harvest.etls.events.GetETLRegistryEvent;
+import de.gerdiproject.harvest.etls.events.GetETLManagerEvent;
 import de.gerdiproject.harvest.etls.events.HarvestFinishedEvent;
 import de.gerdiproject.harvest.etls.events.HarvestStartedEvent;
 import de.gerdiproject.harvest.etls.json.ETLJson;
-import de.gerdiproject.harvest.etls.json.ETLRegistryJson;
+import de.gerdiproject.harvest.etls.json.ETLManagerJson;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.event.IEventListener;
 import de.gerdiproject.harvest.rest.AbstractRestObject;
@@ -61,9 +61,9 @@ import de.gerdiproject.harvest.utils.file.ICachedObject;
  *
  * @author Robin Weiss
  */
-public class ETLRegistry extends AbstractRestObject<ETLRegistry, ETLJson> implements ICachedObject
+public class ETLManager extends AbstractRestObject<ETLManager, ETLJson> implements ICachedObject
 {
-    private static final Logger LOGGER = LoggerFactory.getLogger(ETLRegistry.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(ETLManager.class);
 
     // fields and members
     private final DiskIO diskIo;
@@ -80,15 +80,15 @@ public class ETLRegistry extends AbstractRestObject<ETLRegistry, ETLJson> implem
      *
      * @param moduleName the name of the harvester service
      */
-    public ETLRegistry(String moduleName)
+    public ETLManager(String moduleName)
     {
-        super(moduleName, GetETLRegistryEvent.class);
+        super(moduleName, GetETLManagerEvent.class);
         this.combinedStatusHistory = new TimestampedList<>(ETLStatus.INITIALIZING, 10);
 
         this.etls = new LinkedList<>();
         this.concurrentParam = Configuration.registerParameter(ETLConstants.CONCURRENT_PARAM);
         this.forceHarvestParameter = Configuration.registerParameter(ETLConstants.FORCED_PARAM);
-        this.cacheFile = new File(String.format(ETLConstants.ETL_REGISTRY_CACHE_PATH, moduleName));
+        this.cacheFile = new File(String.format(ETLConstants.ETL_MANAGER_CACHE_PATH, moduleName));
         this.diskIo = new DiskIO(new Gson(), StandardCharsets.UTF_8);
 
         setStatus(ETLStatus.IDLE);
@@ -98,7 +98,7 @@ public class ETLRegistry extends AbstractRestObject<ETLRegistry, ETLJson> implem
     @Override
     public void loadFromDisk()
     {
-        final ETLRegistryJson loadedState = diskIo.getObject(cacheFile, ETLRegistryJson.class);
+        final ETLManagerJson loadedState = diskIo.getObject(cacheFile, ETLManagerJson.class);
 
         if (loadedState != null) {
             // load the overall hash
@@ -113,7 +113,7 @@ public class ETLRegistry extends AbstractRestObject<ETLRegistry, ETLJson> implem
                 etl.loadFromJson(etlInfo);
             }
 
-            LOGGER.debug(String.format(ETLConstants.ETL_REGISTRY_LOADED, cacheFile));
+            LOGGER.debug(String.format(ETLConstants.ETL_MANAGER_LOADED, cacheFile));
         }
     }
 
@@ -121,7 +121,7 @@ public class ETLRegistry extends AbstractRestObject<ETLRegistry, ETLJson> implem
     @Override
     public void saveToDisk()
     {
-        diskIo.writeObjectToFile(cacheFile, new ETLRegistryJson(this, etls));
+        diskIo.writeObjectToFile(cacheFile, new ETLManagerJson(this, etls));
     }
 
 

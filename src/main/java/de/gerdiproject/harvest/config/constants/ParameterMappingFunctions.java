@@ -24,8 +24,8 @@ import java.util.function.Function;
 import de.gerdiproject.harvest.config.parameters.AbstractParameter;
 import de.gerdiproject.harvest.etls.AbstractETL;
 import de.gerdiproject.harvest.etls.enums.ETLStatus;
-import de.gerdiproject.harvest.etls.events.GetETLRegistryEvent;
-import de.gerdiproject.harvest.etls.utils.ETLRegistry;
+import de.gerdiproject.harvest.etls.events.GetETLManagerEvent;
+import de.gerdiproject.harvest.etls.utils.ETLManager;
 import de.gerdiproject.harvest.event.EventSystem;
 
 /**
@@ -189,7 +189,7 @@ public class ParameterMappingFunctions
      *
      * @return a mapping function
      */
-    public static <VAL> Function<String, VAL> createMapperForETLs(Function<String, VAL> originalMappingFunction, AbstractETL<?, ?> etl)
+    public static <VAL> Function<String, VAL> createMapperForETL(Function<String, VAL> originalMappingFunction, AbstractETL<?, ?> etl)
     {
         return (String value) -> {
             final ETLStatus etlStatus = etl.getStatus();
@@ -222,10 +222,10 @@ public class ParameterMappingFunctions
      *
      * @return a mapping function
      */
-    public static <VAL> Function<String, VAL> createMapperForETLRegistry(Function<String, VAL> originalMappingFunction)
+    public static <VAL> Function<String, VAL> createMapperForETLs(Function<String, VAL> originalMappingFunction)
     {
         return (String value) -> {
-            final ETLRegistry registry = EventSystem.sendSynchronousEvent(new GetETLRegistryEvent());
+            final ETLManager registry = EventSystem.sendSynchronousEvent(new GetETLManagerEvent());
             final ETLStatus overallEtlStatus = registry == null ? ETLStatus.INITIALIZING : registry.getStatus();
 
             switch (overallEtlStatus)

@@ -42,7 +42,7 @@ public class LoaderConstants
         "url",
         PARAMETER_CATEGORY,
         null,
-        ParameterMappingFunctions.createMapperForETLRegistry(ParameterMappingFunctions::mapToUrlString));
+        ParameterMappingFunctions.createMapperForETLs(ParameterMappingFunctions::mapToUrlString));
 
 
     public static final StringParameter USER_NAME_PARAM =
@@ -50,21 +50,21 @@ public class LoaderConstants
         "userName",
         PARAMETER_CATEGORY,
         null,
-        ParameterMappingFunctions.createMapperForETLRegistry(ParameterMappingFunctions::mapToString));
+        ParameterMappingFunctions.createMapperForETLs(ParameterMappingFunctions::mapToString));
 
     public static final PasswordParameter PASSWORD_PARAM =
         new PasswordParameter(
         "password",
         PARAMETER_CATEGORY,
         null,
-        ParameterMappingFunctions.createMapperForETLRegistry(ParameterMappingFunctions::mapToString));
+        ParameterMappingFunctions.createMapperForETLs(ParameterMappingFunctions::mapToString));
 
     public static final IntegerParameter MAX_BATCH_SIZE_PARAM =
         new IntegerParameter(
         "size",
         PARAMETER_CATEGORY,
         1048576,
-        ParameterMappingFunctions.createMapperForETLRegistry(ParameterMappingFunctions::mapToUnsignedInteger));
+        ParameterMappingFunctions.createMapperForETLs(ParameterMappingFunctions::mapToUnsignedInteger));
 
     public static final String LOADER_TYPE_PARAM_KEY = "loader";
 
