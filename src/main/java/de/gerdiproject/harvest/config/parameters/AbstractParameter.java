@@ -42,7 +42,7 @@ public abstract class AbstractParameter<T>
     /**
      * This function maps a String value to the parameter value type.
      */
-    protected final Function<String, T> mappingFunction;
+    protected Function<String, T> mappingFunction;
 
     private boolean isRegistered;
 
@@ -163,6 +163,28 @@ public abstract class AbstractParameter<T>
     public String getStringValue()
     {
         return value != null ? value.toString() : "";
+    }
+
+
+    /**
+     * Retrieves the function that maps strings to parameter values.
+     *
+     * @return the function that maps strings to parameter values
+     */
+    public Function<String, T> getMappingFunction()
+    {
+        return mappingFunction;
+    }
+
+
+    /**
+     * Changes the function that maps strings to the parameter values.
+     *
+     * @param mappingFunction a function that maps strings to parameter values
+     */
+    public void setMappingFunction(Function<String, T> mappingFunction)
+    {
+        this.mappingFunction = mappingFunction;
     }
 
 

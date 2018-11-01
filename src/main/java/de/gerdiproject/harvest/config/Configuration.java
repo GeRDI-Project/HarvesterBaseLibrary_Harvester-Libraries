@@ -364,17 +364,21 @@ public class Configuration extends AbstractRestObject<Configuration, String> imp
     /**
      * Synchronous Event callback:<br>
      * Registers a parameter in the configuration. If a parameter with the same key already exists
-     * in the configuration, the value will not be overwritten. A newly registered parameter
-     * checks if it is defined via environment variables, and will retrieve a value from there.
+     * in the configuration, the value itself will not be overwritten, whereas the mapping function
+     * is overwritten if the parameter was not properly registered before.<br>
+     * A newly registered parameter checks if it is defined via environment variables,
+     * and will retrieve a value from there.
      *
      * @param event the event that triggered the callback
+     *
      * @return the registered parameter as it appears in the configuration
      */
-    private AbstractParameter<?> onRegisterParameter(RegisterParameterEvent event)
+    @SuppressWarnings("unchecked") // the cast must succeed, because the parameter must be the same
+    private <T> AbstractParameter<T> onRegisterParameter(RegisterParameterEvent event)
     {
-        AbstractParameter<?> registeredParameter = event.getParameter();
+        AbstractParameter<T> registeredParameter = (AbstractParameter<T>) event.getParameter();
         final String compositeKey = registeredParameter.getCompositeKey();
-        final AbstractParameter<?> retrievedParameter = parameterMap.get(compositeKey);
+        final AbstractParameter<T> retrievedParameter = (AbstractParameter<T>) parameterMap.get(compositeKey);
 
         if (retrievedParameter == null) {
             // clone parameter in order to not override constant parameters
@@ -387,10 +391,14 @@ public class Configuration extends AbstractRestObject<Configuration, String> imp
                                        registeredParameter.getClass().getSimpleName(),
                                        registeredParameter.getCompositeKey(),
                                        registeredParameter.getStringValue()));
-
             saveToDisk();
-        } else
+        } else {
+            // make sure to overwrite the default mapping function of parameters loaded from disk
+            if (!retrievedParameter.isRegistered())
+                retrievedParameter.setMappingFunction(registeredParameter.getMappingFunction());
+
             registeredParameter = retrievedParameter;
+        }
 
         registeredParameter.setRegistered(true);
         return registeredParameter;
