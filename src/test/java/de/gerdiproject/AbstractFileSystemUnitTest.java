@@ -30,7 +30,7 @@ import de.gerdiproject.harvest.utils.file.FileUtils;
 public abstract class AbstractFileSystemUnitTest<T> extends AbstractObjectUnitTest<T>
 {
     public static final File TEST_FOLDER = new File("mocked");
-    private static final String CLEANUP_ERROR = "Could not delete temporary test diectory: " + TEST_FOLDER;
+    private static final String CLEANUP_ERROR = "Could not delete temporary test directory: " + TEST_FOLDER;
 
     protected final File testFolder = new File(TEST_FOLDER, getTestedClass().getSimpleName());
 
@@ -45,11 +45,22 @@ public abstract class AbstractFileSystemUnitTest<T> extends AbstractObjectUnitTe
     @Override
     public void before() throws InstantiationException
     {
+        // clean up temp files before tests to prevent wrong preconditions
         FileUtils.deleteFile(TEST_FOLDER);
 
         if (TEST_FOLDER.exists())
             throw new InstantiationException(CLEANUP_ERROR);
 
         super.before();
+    }
+
+
+    @Override
+    public void after()
+    {
+        super.after();
+
+        // clean up temp files after tests to free up some space
+        FileUtils.deleteFile(TEST_FOLDER);
     }
 }

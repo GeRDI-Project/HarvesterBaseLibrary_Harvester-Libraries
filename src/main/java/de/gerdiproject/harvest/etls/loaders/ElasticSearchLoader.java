@@ -16,6 +16,8 @@
 package de.gerdiproject.harvest.etls.loaders;
 
 
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.rmi.ServerException;
 import java.util.List;
 import java.util.Map;
@@ -167,7 +169,16 @@ public class ElasticSearchLoader extends AbstractURLLoader<DataCiteJson>
     protected String getUrl()
     {
         if (urlParam.getValue() != null) {
-            String rawPath = urlParam.getValue().getPath() + '/';
+
+            final String rawPath;
+
+            try {
+                rawPath = new URL(urlParam.getValue()).getPath() + '/';
+            } catch (MalformedURLException e) {
+                logger.error(String.format(ElasticSearchConstants.INVALID_URL_ERROR, urlParam.getValue()));
+                return null;
+            }
+
             String[] path = rawPath.substring(1).split("/");
             String bulkSubmitUrl = urlParam.getStringValue();
 

@@ -15,7 +15,7 @@
  */
 package de.gerdiproject.harvest.config.parameters;
 
-import java.text.ParseException;
+import java.util.function.Function;
 
 import de.gerdiproject.harvest.config.constants.ConfigurationConstants;
 
@@ -27,30 +27,31 @@ import de.gerdiproject.harvest.config.constants.ConfigurationConstants;
 public class IntegerParameter extends AbstractParameter<Integer>
 {
     /**
-     * Constructor that assigns a category and a key that must be unique within the category.
+     * Constructor that uses a custom mapping function.
      *
      * @param key the unique key of the parameter, which is used to change it via REST
      * @param category the category of the parameter
+     * @param defaultValue the default value
+     * @param customMappingFunction a function that maps strings to the parameter values
      *
-     * @see AbstractParameter#AbstractParameter(String, ParameterCategory)
+     * @throws IllegalArgumentException thrown if the key contains invalid characters
      */
-    public IntegerParameter(String key, ParameterCategory category)
+    public IntegerParameter(String key, String category, int defaultValue, Function<String, Integer> customMappingFunction) throws IllegalArgumentException
     {
-        super(key, category);
-        value = 0;
+        super(key, category, defaultValue, customMappingFunction);
     }
 
 
     /**
-     * Constructor that assigns all fields.
+     * Constructor that uses the default mapping function.
      *
      * @param key the unique key of the parameter, which is used to change it via REST
      * @param category the category of the parameter
      * @param defaultValue the default value
      *
-     * @see AbstractParameter#AbstractParameter(String, ParameterCategory, Object)
+     * @see AbstractParameter#AbstractParameter(String, String, Object)
      */
-    public IntegerParameter(String key, ParameterCategory category, int defaultValue)
+    public IntegerParameter(String key, String category, int defaultValue)
     {
         super(key, category, defaultValue);
     }
@@ -59,14 +60,7 @@ public class IntegerParameter extends AbstractParameter<Integer>
     @Override
     public IntegerParameter copy()
     {
-        return new IntegerParameter(key, category, value);
-    }
-
-
-    @Override
-    protected String getAllowedValues()
-    {
-        return ConfigurationConstants.INTEGER_VALID_VALUES_TEXT;
+        return new IntegerParameter(key, category, value, mappingFunction);
     }
 
 
@@ -85,7 +79,7 @@ public class IntegerParameter extends AbstractParameter<Integer>
 
 
     @Override
-    public Integer stringToValue(String value) throws ParseException, ClassCastException
+    public Integer stringToValue(String value) throws RuntimeException
     {
         if (value == null)
             return 0;
@@ -99,17 +93,10 @@ public class IntegerParameter extends AbstractParameter<Integer>
         else {
             try {
                 // try to parse the integer
-                int intValue = Integer.parseInt(value);
-
-                // do not accept negative numbers
-                if (intValue < 0)
-                    throw new ClassCastException();
-
-                return intValue;
+                return Integer.parseInt(value);
             } catch (NumberFormatException e) {
-                throw new ClassCastException();
+                throw new ClassCastException(ConfigurationConstants.INTEGER_ALLOWED_VALUES);
             }
         }
     }
-
 }

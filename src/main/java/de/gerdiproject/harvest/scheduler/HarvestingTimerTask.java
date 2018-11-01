@@ -22,12 +22,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import de.gerdiproject.harvest.etls.ETLPreconditionException;
+import de.gerdiproject.harvest.etls.constants.ETLConstants;
 import de.gerdiproject.harvest.etls.events.GetETLRegistryEvent;
 import de.gerdiproject.harvest.etls.utils.ETLRegistry;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.scheduler.constants.SchedulerConstants;
 import de.gerdiproject.harvest.scheduler.events.ScheduledTaskExecutedEvent;
-import de.gerdiproject.harvest.state.constants.StateConstants;
 
 /**
  * This task is used by the {@linkplain Scheduler} in order to run a harvest in
@@ -50,7 +50,7 @@ public class HarvestingTimerTask extends TimerTask
         try {
             // start a harvest
             etlRegistry.harvest();
-            status = StateConstants.HARVEST_STARTED;
+            status = ETLConstants.HARVEST_STARTED;
         } catch (ETLPreconditionException e) {
             status = e.getMessage();
         }

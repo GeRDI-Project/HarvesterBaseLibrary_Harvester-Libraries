@@ -29,7 +29,6 @@ import de.gerdiproject.harvest.config.constants.ConfigurationConstants;
 import de.gerdiproject.harvest.config.events.ParameterChangedEvent;
 import de.gerdiproject.harvest.config.parameters.AbstractParameter;
 import de.gerdiproject.harvest.config.parameters.BooleanParameter;
-import de.gerdiproject.harvest.config.parameters.ParameterCategory;
 import de.gerdiproject.harvest.etls.constants.ETLConstants;
 import de.gerdiproject.harvest.etls.enums.ETLHealth;
 import de.gerdiproject.harvest.etls.enums.ETLStatus;
@@ -67,7 +66,6 @@ public abstract class AbstractETL <EOUT, TOUT> implements IEventListener
     protected ITransformer<EOUT, TOUT> transformer;
     protected ILoader<TOUT> loader;
 
-    protected final ParameterCategory etlCategory;
     protected volatile BooleanParameter enabledParameter;
 
     private AtomicInteger maxDocumentCount;
@@ -108,10 +106,6 @@ public abstract class AbstractETL <EOUT, TOUT> implements IEventListener
         this.logger = LoggerFactory.getLogger(getName());
         this.maxDocumentCount = new AtomicInteger(0);
 
-        this.etlCategory = new ParameterCategory(
-            getName(),
-            ETLConstants.PARAMETER_CATEGORY.getAllowedStates());
-
         registerParameters();
 
         this.extractor = createExtractor();
@@ -148,7 +142,6 @@ public abstract class AbstractETL <EOUT, TOUT> implements IEventListener
     @SuppressWarnings("unchecked") // NOPMD the possible ClassCastException is caught
     protected ILoader<TOUT> createLoader()
     {
-
         try {
             return (ILoader<TOUT>) EventSystem.sendSynchronousEvent(new CreateLoaderEvent());
 
@@ -167,7 +160,7 @@ public abstract class AbstractETL <EOUT, TOUT> implements IEventListener
         this.enabledParameter =
             Configuration.registerParameter(new BooleanParameter(
                                                 ETLConstants.ENABLED_PARAM.getKey(),
-                                                etlCategory,
+                                                getName(),
                                                 ETLConstants.ENABLED_PARAM.getValue()));
     }
 
@@ -599,7 +592,9 @@ public abstract class AbstractETL <EOUT, TOUT> implements IEventListener
      */
     protected void onParameterChanged(AbstractParameter<?> param)
     {
-        if (param.getCompositeKey().equals(LoaderConstants.LOADER_TYPE_PARAM.getCompositeKey())) {
+        if (param.getKey().equals(LoaderConstants.LOADER_TYPE_PARAM_KEY)
+            && param.getCategory().equals(LoaderConstants.PARAMETER_CATEGORY)) {
+
             if (this.loader != null)
                 this.loader.unregisterParameters();
 

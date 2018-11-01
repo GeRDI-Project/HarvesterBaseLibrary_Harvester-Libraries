@@ -16,14 +16,11 @@
  */
 package de.gerdiproject.utils.examples.harvestercache;
 
-import java.io.File;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 
-import de.gerdiproject.AbstractFileSystemUnitTest;
 import de.gerdiproject.application.ContextListenerTest;
-import de.gerdiproject.harvest.application.ContextListener;
 import de.gerdiproject.harvest.etls.StaticIteratorETL;
 import de.gerdiproject.harvest.etls.extractors.AbstractIteratorExtractor;
 import de.gerdiproject.harvest.etls.transformers.AbstractIteratorTransformer;
@@ -39,9 +36,6 @@ import de.gerdiproject.json.datacite.Title;
 public class MockedETL extends StaticIteratorETL<String, DataCiteJson>
 {
     protected final List<String> mockedEntries;
-    private final String cacheFolder;
-
-
 
     /**
      * This constructor is used by {@linkplain ContextListenerTest}.
@@ -49,7 +43,7 @@ public class MockedETL extends StaticIteratorETL<String, DataCiteJson>
      */
     public MockedETL()
     {
-        this(new File(AbstractFileSystemUnitTest.TEST_FOLDER, ContextListener.class.getSimpleName()));
+        this(Arrays.asList("mockedEntry1", "mockedEntry2", "mockedEntry3"));
     }
 
 
@@ -57,25 +51,14 @@ public class MockedETL extends StaticIteratorETL<String, DataCiteJson>
      * This constructor accepts a list of harvestable strings.
      *
      * @param mockedEntries a list of strings to be harvested
-     * @param cacheFolder the folder where documents are cached
      */
-    public MockedETL(final List<String> mockedEntries, final File cacheFolder)
+    public MockedETL(final List<String> mockedEntries)
     {
         super(new MockedExtractor(), new MockedTransformer());
 
         this.mockedEntries = mockedEntries;
-        this.cacheFolder = cacheFolder + "/";
     }
 
-
-    /**
-     * This constructor generates a short list to be used as entries.
-     * @param cacheFolder the folder where documents are cached
-     */
-    public MockedETL(final File cacheFolder)
-    {
-        this(Arrays.asList("mockedEntry1", "mockedEntry2", "mockedEntry3"), cacheFolder);
-    }
 
     /**
      * Returns a unique identifier, used for Unit Tests of caching classes.
@@ -85,26 +68,6 @@ public class MockedETL extends StaticIteratorETL<String, DataCiteJson>
     public String getId()
     {
         return getName();
-    }
-
-
-    /**
-     * Returns a temporary cache folder path, used for Unit Tests of caching classes.
-     * @return a temporary cache folder path
-     */
-    public String getTemporaryCacheFolder()
-    {
-        return cacheFolder + "documents_temp/";
-    }
-
-
-    /**
-     * Returns a permanent cache folder path, used for Unit Tests of caching classes.
-     * @return a permanent cache folder path
-     */
-    public String getStableCacheFolder()
-    {
-        return cacheFolder + "documents/";
     }
 
 

@@ -20,6 +20,7 @@ import java.util.Iterator;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import de.gerdiproject.harvest.config.Configuration;
+import de.gerdiproject.harvest.config.constants.ParameterMappingFunctions;
 import de.gerdiproject.harvest.config.parameters.IntegerParameter;
 import de.gerdiproject.harvest.etls.constants.ETLConstants;
 import de.gerdiproject.harvest.etls.events.DocumentsHarvestedEvent;
@@ -69,15 +70,17 @@ public abstract class AbstractIteratorETL<EXOUT, TRANSOUT> extends AbstractETL<I
 
         this.startIndexParameter =
             Configuration.registerParameter(new IntegerParameter(
-                                                ETLConstants.START_INDEX_PARAM.getKey(),
-                                                etlCategory,
-                                                ETLConstants.START_INDEX_PARAM.getValue()));
+                                                ETLConstants.START_INDEX_PARAM_KEY,
+                                                getName(),
+                                                ETLConstants.START_INDEX_PARAM_DEFAULT_VALUE,
+                                                ParameterMappingFunctions::mapToSignedInteger));
 
         this.endIndexParameter =
             Configuration.registerParameter(new IntegerParameter(
-                                                ETLConstants.END_INDEX_PARAM.getKey(),
-                                                etlCategory,
-                                                ETLConstants.END_INDEX_PARAM.getValue()));
+                                                ETLConstants.END_INDEX_PARAM_KEY,
+                                                getName(),
+                                                ETLConstants.END_INDEX_PARAM_DEFAULT_VALUE,
+                                                ParameterMappingFunctions::mapToSignedInteger));
     }
 
 

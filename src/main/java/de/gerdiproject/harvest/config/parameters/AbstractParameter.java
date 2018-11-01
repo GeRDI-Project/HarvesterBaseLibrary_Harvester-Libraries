@@ -15,15 +15,14 @@
  */
 package de.gerdiproject.harvest.config.parameters;
 
-import java.text.ParseException;
 import java.util.Map;
+import java.util.function.Function;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import de.gerdiproject.harvest.config.Configuration;
 import de.gerdiproject.harvest.config.constants.ConfigurationConstants;
-import de.gerdiproject.harvest.state.IState;
 
 /**
  * Parameters are part of the {@linkplain Configuration}. Each parameter holds some information about how and when it can be changed.
@@ -38,41 +37,57 @@ public abstract class AbstractParameter<T>
 
     protected T value;
     protected final String key;
-    protected final ParameterCategory category;
+    protected final String category;
+
+    /**
+     * This function maps a String value to the parameter value type.
+     */
+    protected final Function<String, T> mappingFunction;
 
     private boolean isRegistered;
 
 
     /**
-     * Constructor that assigns a category and a key that must be unique within the category.
+     * Constructor that uses a custom mapping function.
      *
      * @param key the unique key of the parameter, which is used to change it via REST
      * @param category the category of the parameter
+     * @param defaultValue the default value
+     * @param customMappingFunction a function that maps strings to the parameter values
      *
      * @throws IllegalArgumentException thrown if the key contains invalid characters
      */
-    public AbstractParameter(String key, ParameterCategory category) throws IllegalArgumentException
+    public AbstractParameter(String key, String category, T defaultValue, Function<String, T> customMappingFunction) throws IllegalArgumentException
     {
         if (!key.matches(ConfigurationConstants.VALID_PARAM_NAME_REGEX))
             throw new IllegalArgumentException(String.format(ConfigurationConstants.INVALID_PARAMETER_KEY, key));
 
         this.key = key;
         this.category = category;
+        this.value = defaultValue;
+        this.mappingFunction = customMappingFunction;
     }
 
-
     /**
-     * Constructor that assigns all fields.
+     * Constructor that uses the default mapping function.
      *
      * @param key the unique key of the parameter, which is used to change it via REST
      * @param category the category of the parameter
      * @param defaultValue the default value
+     *
+     * @throws IllegalArgumentException thrown if the key contains invalid characters
      */
-    public AbstractParameter(String key, ParameterCategory category, T defaultValue)
+    public AbstractParameter(String key, String category, T defaultValue) throws IllegalArgumentException
     {
-        this(key, category);
+        if (!key.matches(ConfigurationConstants.VALID_PARAM_NAME_REGEX))
+            throw new IllegalArgumentException(String.format(ConfigurationConstants.INVALID_PARAMETER_KEY, key));
+
+        this.key = key;
+        this.category = category;
         this.value = defaultValue;
+        this.mappingFunction = this::stringToValue;
     }
+
 
     /**
      * Creates an unregistered copy of this parameter.
@@ -83,23 +98,14 @@ public abstract class AbstractParameter<T>
 
 
     /**
-     * Returns a String explaining which values are allowed to be set.
-     *
-     * @return a String explaining which values are allowed to be set
-     */
-    protected abstract String getAllowedValues();
-
-
-    /**
      * This function attempts to convert a String value to the actual Type of the parameter.
      * @param value a String representation of the new value
      *
      * @return a converted value
      *
-     * @throws ClassCastException this exception is thrown when the String value cannot be cast to the target value
-     * @throws ParseException this exception is thrown when the conversion failed for a different reason
+     * @throws RuntimeException this exception is thrown when the String value cannot be mapped to the target value
      */
-    public abstract T stringToValue(String value) throws ParseException, ClassCastException;
+    protected abstract T stringToValue(String value) throws RuntimeException;
 
 
     /**
@@ -122,17 +128,17 @@ public abstract class AbstractParameter<T>
     {
         return String.format(
                    ConfigurationConstants.COMPOSITE_KEY,
-                   category.getName().toLowerCase(),
+                   category.toLowerCase(),
                    key.toLowerCase());
     }
 
 
     /**
-     * Returns the {@linkplain ParameterCategory} to which the parameter belongs.
+     * Returns the category to which the parameter belongs.
      *
-     * @return the {@linkplain ParameterCategory} to which the parameter belongs
+     * @return the category to which the parameter belongs
      */
-    public ParameterCategory getCategory()
+    public String getCategory()
     {
         return category;
     }
@@ -165,28 +171,22 @@ public abstract class AbstractParameter<T>
      * whether the value change was successful, or if not, why it failed.
      *
      * @param value a String representation of the new value
-     * @param currentState the current state of the state machine
      *
      * @return a message that describes whether the value change was successful, or if not, why it failed
      */
-    public final String setValue(String value, IState currentState)
+    public final String setValue(String value)
     {
-        String returnMessage;
+        final T newValue;
 
-        if (currentState != null && !category.getAllowedStates().contains(currentState.getClass()))
-            returnMessage = String.format(ConfigurationConstants.CANNOT_CHANGE_PARAM_INVALID_STATE, getCompositeKey(), currentState.getName());
-        else {
-            try {
-                this.value = stringToValue(value);
-                returnMessage = String.format(ConfigurationConstants.CHANGED_PARAM, getCompositeKey(), getStringValue());
-            } catch (ClassCastException e) {
-                returnMessage = String.format(ConfigurationConstants.CANNOT_CHANGE_PARAM_INVALID_VALUE, getCompositeKey(), value, getAllowedValues());
-            } catch (ParseException e) {
-                returnMessage = e.getMessage();
-            }
+        // try to map the string value to
+        try {
+            newValue = mappingFunction.apply(value);
+        } catch (RuntimeException e) {
+            return String.format(ConfigurationConstants.CANNOT_CHANGE_PARAM, getCompositeKey(), value, e.getMessage());
         }
 
-        return returnMessage;
+        this.value = newValue;
+        return String.format(ConfigurationConstants.CHANGED_PARAM, getCompositeKey(), getStringValue());
     }
 
 
@@ -196,12 +196,12 @@ public abstract class AbstractParameter<T>
      */
     public void loadFromEnvironmentVariables()
     {
-        String envVarName = String.format(ConfigurationConstants.ENVIRONMENT_VARIABLE, category.getName(), key);
+        String envVarName = String.format(ConfigurationConstants.ENVIRONMENT_VARIABLE, category, key);
 
         final Map<String, String> environmentVariables = System.getenv();
 
         if (environmentVariables.containsKey(envVarName))
-            LOGGER.info(setValue(environmentVariables.get(envVarName), null));
+            LOGGER.info(setValue(environmentVariables.get(envVarName)));
     }
 
 

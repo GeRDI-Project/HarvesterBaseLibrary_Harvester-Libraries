@@ -15,22 +15,12 @@
  */
 package de.gerdiproject.harvest.etls.constants;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-
 import de.gerdiproject.harvest.config.constants.ConfigurationConstants;
 import de.gerdiproject.harvest.config.parameters.BooleanParameter;
-import de.gerdiproject.harvest.config.parameters.IntegerParameter;
-import de.gerdiproject.harvest.config.parameters.ParameterCategory;
 import de.gerdiproject.harvest.etls.AbstractIteratorETL;
 import de.gerdiproject.harvest.etls.extractors.AbstractIteratorExtractor;
 import de.gerdiproject.harvest.etls.loaders.AbstractIteratorLoader;
 import de.gerdiproject.harvest.etls.transformers.AbstractIteratorTransformer;
-import de.gerdiproject.harvest.state.IState;
-import de.gerdiproject.harvest.state.impl.ErrorState;
-import de.gerdiproject.harvest.state.impl.IdleState;
-import de.gerdiproject.harvest.state.impl.InitializationState;
 import de.gerdiproject.harvest.utils.file.constants.FileConstants;
 
 /**
@@ -41,15 +31,7 @@ import de.gerdiproject.harvest.utils.file.constants.FileConstants;
 public class ETLConstants
 {
     // PARAMETERS
-    public static final List<Class<? extends IState>> HARVESTER_PARAMETER_ALLOWED_STATES =
-        Collections.unmodifiableList(
-            Arrays.asList(
-                InitializationState.class,
-                ErrorState.class,
-                IdleState.class));
-
-    public static final ParameterCategory PARAMETER_CATEGORY = new ParameterCategory(
-        "Harvester", HARVESTER_PARAMETER_ALLOWED_STATES);
+    public static final String PARAMETER_CATEGORY = "Harvester";
 
     public static final BooleanParameter FORCED_PARAM = new BooleanParameter(
         "forced",
@@ -66,15 +48,12 @@ public class ETLConstants
         PARAMETER_CATEGORY,
         false);
 
-    public static final IntegerParameter START_INDEX_PARAM = new IntegerParameter(
-        "rangeFrom",
-        PARAMETER_CATEGORY,
-        0);
+    public static final String START_INDEX_PARAM_KEY = "rangeFrom";
+    public static final int START_INDEX_PARAM_DEFAULT_VALUE = 0;
 
-    public static final IntegerParameter END_INDEX_PARAM = new IntegerParameter(
-        "rangeTo",
-        PARAMETER_CATEGORY,
-        Integer.MAX_VALUE);
+    public static final String END_INDEX_PARAM_KEY = "rangeTo";
+    public static final int END_INDEX_PARAM_DEFAULT_VALUE = Integer.MAX_VALUE;
+
 
     // HASH GENERATION
     public static final String HASH_CREATION_FAILED = "Failed to create hash for %s!";
@@ -158,6 +137,14 @@ public class ETLConstants
     public static final String REMAINING_TIME = "Remaining Time: %1$02d:%2$tM:%2$tS";
 
     public static final String ETL_DISABLED = "disabled";
+
+    public static final String ABORT_START = "Aborting harvest...";
+    public static final String ABORT_HARVEST_FAILED_NO_HARVEST = "Cannot abort harvest: No harvest is currently running!";
+
+    public static final String HARVEST_STARTED = "Harvest started!";
+    public static final String HARVEST_IN_PROGRESS = "Please wait for the harvest to finish!";
+    public static final String HARVEST_DONE = "Harvest finished!";
+    public static final String HARVEST_FAILED = "Harvest failed!";
 
 
     /**

@@ -21,13 +21,6 @@ import java.util.List;
 
 import de.gerdiproject.harvest.config.Configuration;
 import de.gerdiproject.harvest.config.parameters.AbstractParameter;
-import de.gerdiproject.harvest.config.parameters.ParameterCategory;
-import de.gerdiproject.harvest.state.IState;
-import de.gerdiproject.harvest.state.impl.AbortingState;
-import de.gerdiproject.harvest.state.impl.ErrorState;
-import de.gerdiproject.harvest.state.impl.HarvestingState;
-import de.gerdiproject.harvest.state.impl.IdleState;
-import de.gerdiproject.harvest.state.impl.InitializationState;
 
 /**
  * This class serves as a convenient JSON representation of {@linkplain ParameterCategory}s.
@@ -38,22 +31,15 @@ import de.gerdiproject.harvest.state.impl.InitializationState;
 class ParameterCategoryJson
 {
     private final List<ParameterJson> parameters;
-    private final List<String> allowedStates;
 
 
     /**
      * Constructor that requires the {@linkplain ParameterCategory} that is
      * to be represented by this class.
-     *
-     * @param category the {@linkplain ParameterCategory} that is
-     * to be represented by this class.
      */
-    public ParameterCategoryJson(ParameterCategory category)
+    public ParameterCategoryJson()
     {
         this.parameters = new LinkedList<>();
-        this.allowedStates = new LinkedList<>();
-
-        category.getAllowedStates().forEach((Class<? extends IState>state) -> allowedStates.add(state.getSimpleName()));
     }
 
 
@@ -72,14 +58,12 @@ class ParameterCategoryJson
     /**
      * Retrieves all {@linkplain AbstractParameter}s that belong to this category.
      *
-     * @param categoryName the name of the category of which the parameters are retrieved
+     * @param category the name of the category of which the parameters are retrieved
      *
      * @return all {@linkplain AbstractParameter}s that belong to this category
      */
-    public List<AbstractParameter<?>> getParameters(String categoryName)
+    public List<AbstractParameter<?>> getParameters(String category)
     {
-        final ParameterCategory category = getCategory(categoryName);
-
         final List<AbstractParameter<?>> deserializedParameters = new LinkedList<>();
 
         for (ParameterJson jsonParam : parameters) {
@@ -90,37 +74,5 @@ class ParameterCategoryJson
         }
 
         return deserializedParameters;
-    }
-
-
-    /**
-     * Retrieves the {@linkplain ParameterCategory} that is represented by this class.
-     *
-     * @param categoryName the name of the retrieved category
-     *
-     * @return the {@linkplain ParameterCategory} that is represented by this class
-     */
-    private ParameterCategory getCategory(String categoryName)
-    {
-        final List<Class<? extends IState>> stateClasses = new LinkedList<>();
-
-        for (String stateClassSimpleName : allowedStates) {
-            if (stateClassSimpleName.equals(AbortingState.class.getSimpleName()))
-                stateClasses.add(AbortingState.class);
-
-            else if (stateClassSimpleName.equals(ErrorState.class.getSimpleName()))
-                stateClasses.add(ErrorState.class);
-
-            else if (stateClassSimpleName.equals(HarvestingState.class.getSimpleName()))
-                stateClasses.add(HarvestingState.class);
-
-            else if (stateClassSimpleName.equals(IdleState.class.getSimpleName()))
-                stateClasses.add(IdleState.class);
-
-            else if (stateClassSimpleName.equals(InitializationState.class.getSimpleName()))
-                stateClasses.add(InitializationState.class);
-        }
-
-        return new ParameterCategory(categoryName, stateClasses);
     }
 }

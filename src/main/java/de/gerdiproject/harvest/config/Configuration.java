@@ -40,7 +40,6 @@ import de.gerdiproject.harvest.config.json.adapters.ConfigurationAdapter;
 import de.gerdiproject.harvest.config.parameters.AbstractParameter;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.rest.AbstractRestObject;
-import de.gerdiproject.harvest.state.StateMachine;
 import de.gerdiproject.harvest.utils.data.DiskIO;
 import de.gerdiproject.harvest.utils.file.ICachedObject;
 
@@ -276,7 +275,7 @@ public class Configuration extends AbstractRestObject<Configuration, String> imp
             return String.format(ConfigurationConstants.UNKNOWN_PARAM, compositeKey);
 
         final Object oldValue = param.getValue();
-        final String paramChangeMessage = param.setValue(value, StateMachine.getCurrentState());
+        final String paramChangeMessage = param.setValue(value);
 
         if (oldValue == null && param.getValue() != null || oldValue != null && !oldValue.equals(param.getValue())) {
             EventSystem.sendEvent(new ParameterChangedEvent(param, oldValue));
@@ -329,7 +328,7 @@ public class Configuration extends AbstractRestObject<Configuration, String> imp
             if (!param.isRegistered())
                 continue;
 
-            final String categoryName = param.getCategory().getName();
+            final String categoryName = param.getCategory();
 
             if (!categoryStringBuilders.containsKey(categoryName)) {
                 final StringBuilder catBuilder = new StringBuilder();

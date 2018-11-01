@@ -28,7 +28,6 @@ import de.gerdiproject.harvest.IDocument;
 import de.gerdiproject.harvest.config.Configuration;
 import de.gerdiproject.harvest.config.parameters.IntegerParameter;
 import de.gerdiproject.harvest.config.parameters.StringParameter;
-import de.gerdiproject.harvest.config.parameters.UrlParameter;
 import de.gerdiproject.harvest.etls.AbstractETL;
 import de.gerdiproject.harvest.etls.loaders.constants.LoaderConstants;
 import de.gerdiproject.harvest.utils.HashGenerator;
@@ -49,7 +48,7 @@ public abstract class AbstractURLLoader <OUT extends DataCiteJson> extends Abstr
     protected final Logger logger; // NOPMD - we want to retrieve the type of the inheriting class
     protected final Map<String, IDocument> batchMap;
     protected final IntegerParameter maxBatchSizeParam;
-    protected final UrlParameter urlParam;
+    protected final StringParameter urlParam;
     protected Charset charset;
 
     private int currentBatchSize = 0;

@@ -18,14 +18,13 @@ package de.gerdiproject.harvest.etls.loaders.utils;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 
 import de.gerdiproject.harvest.config.Configuration;
-import de.gerdiproject.harvest.config.parameters.LoaderParameter;
+import de.gerdiproject.harvest.config.constants.ParameterMappingFunctions;
+import de.gerdiproject.harvest.config.parameters.StringParameter;
 import de.gerdiproject.harvest.etls.loaders.ILoader;
 import de.gerdiproject.harvest.etls.loaders.constants.LoaderConstants;
 import de.gerdiproject.harvest.etls.loaders.events.CreateLoaderEvent;
-import de.gerdiproject.harvest.etls.loaders.events.GetLoaderNamesEvent;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.event.IEventListener;
 
@@ -38,7 +37,7 @@ import de.gerdiproject.harvest.event.IEventListener;
 public class LoaderFactory implements IEventListener
 {
     private final Map<String, Class<? extends ILoader<?>>> loaderMap;
-    private LoaderParameter loaderParam;
+    private StringParameter loaderParam;
 
 
     /**
@@ -47,7 +46,11 @@ public class LoaderFactory implements IEventListener
     public LoaderFactory()
     {
         this.loaderMap = new HashMap<>();
-        this.loaderParam = LoaderConstants.LOADER_TYPE_PARAM.copy();
+        this.loaderParam = new StringParameter(
+            LoaderConstants.LOADER_TYPE_PARAM_KEY,
+            LoaderConstants.PARAMETER_CATEGORY,
+            null,
+            ParameterMappingFunctions.createStringListMapper(loaderMap.keySet()));
     }
 
 
@@ -63,7 +66,7 @@ public class LoaderFactory implements IEventListener
 
         // register submitter in configuration if none was set before
         if (!loaderParam.isRegistered() && loaderParam.getValue() == null) {
-            loaderParam.setValue(loaderName, null);
+            loaderParam.setValue(loaderName);
             this.loaderParam = Configuration.registerParameter(loaderParam);
         }
     }
@@ -73,7 +76,6 @@ public class LoaderFactory implements IEventListener
     public void addEventListeners()
     {
         EventSystem.addSynchronousListener(CreateLoaderEvent.class, this::createLoader);
-        EventSystem.addSynchronousListener(GetLoaderNamesEvent.class, this::getLoaderNames);
     }
 
 
@@ -81,7 +83,6 @@ public class LoaderFactory implements IEventListener
     public void removeEventListeners()
     {
         EventSystem.removeSynchronousListener(CreateLoaderEvent.class);
-        EventSystem.removeSynchronousListener(GetLoaderNamesEvent.class);
     }
 
 
@@ -105,16 +106,5 @@ public class LoaderFactory implements IEventListener
         } catch (InstantiationException | IllegalAccessException e) {
             return null;
         }
-    }
-
-
-    /**
-     * Returns all registered loader names.
-     *
-     * @return a set of registered loader names
-     */
-    private Set<String> getLoaderNames()
-    {
-        return loaderMap.keySet();
     }
 }

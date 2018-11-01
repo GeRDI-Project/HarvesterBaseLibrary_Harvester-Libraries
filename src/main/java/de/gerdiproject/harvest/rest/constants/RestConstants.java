@@ -23,12 +23,13 @@ package de.gerdiproject.harvest.rest.constants;
  */
 public class RestConstants
 {
+    public static final String WAIT_FOR_INIT = "Please wait for the service to be initialized!";
     public static final String CANNOT_PROCESS_PREFIX = "Cannot process request: ";
     public static final String UNKNOWN_ERROR = "Cannot process request due to an unknown error!";
     public static final String INIT_ERROR_DETAILED = "Cannot process request, because the Harvester could not be initialized! Look at the logs for details.";
 
     public static final String RETRY_AFTER_HEADER = "Retry-After";
-
+    public static final String RESET_STARTED = "Resetting the Harvester Service!";
 
     public static final String JSON_INVALID_FORMAT_ERROR = "Invalid JSON object:%n%s";
     public static final String INVALID_REQUEST_ERROR = "Unsupported HTTP request method!";

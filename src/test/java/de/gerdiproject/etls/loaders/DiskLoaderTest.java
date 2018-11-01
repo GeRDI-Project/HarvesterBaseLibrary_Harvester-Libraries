@@ -70,7 +70,7 @@ public class DiskLoaderTest extends AbstractFileSystemUnitTest<DiskLoader>
     {
         // make sure the DiskLoader writes to the 'mocked' folder
         AbstractParameter<?> filePathParam = DiskLoaderConstants.FILE_PATH_PARAM.copy();
-        filePathParam.setValue(TEST_FOLDER.toString(), null);
+        filePathParam.setValue(TEST_FOLDER.toString());
 
         this.config = new Configuration(MODULE_NAME, filePathParam);
         this.config.addEventListeners();
@@ -93,6 +93,7 @@ public class DiskLoaderTest extends AbstractFileSystemUnitTest<DiskLoader>
 
         // write file
         testedObject.load(docIter);
+        testedObject.clear();
 
         // read file
         final DiskIO diskReader = new DiskIO(new Gson(), StandardCharsets.UTF_8);
@@ -122,6 +123,7 @@ public class DiskLoaderTest extends AbstractFileSystemUnitTest<DiskLoader>
 
         // write file
         testedObject.load(docIter);
+        testedObject.clear();
 
         // read file
         final DiskIO diskReader = new DiskIO(new Gson(), StandardCharsets.UTF_8);
@@ -146,6 +148,9 @@ public class DiskLoaderTest extends AbstractFileSystemUnitTest<DiskLoader>
         final Iterator<DataCiteJson> docIter = emptyList.iterator();
 
         testedObject.load(docIter);
+        testedObject.clear();
+
+
 
         fail("Expected an " + LoaderException.class.getSimpleName() + " to be thrown!");
     }
@@ -176,6 +181,7 @@ public class DiskLoaderTest extends AbstractFileSystemUnitTest<DiskLoader>
             writer.flush();
 
             testedObject.load(docIter);
+            testedObject.clear();
         }
 
         fail("Expected an UncheckedIOException to be thrown!");

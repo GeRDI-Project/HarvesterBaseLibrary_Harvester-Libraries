@@ -28,17 +28,18 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
 
+import de.gerdiproject.harvest.application.events.ResetContextEvent;
 import de.gerdiproject.harvest.etls.constants.ETLConstants;
+import de.gerdiproject.harvest.etls.enums.ETLHealth;
 import de.gerdiproject.harvest.etls.enums.ETLStatus;
 import de.gerdiproject.harvest.etls.events.GetETLRegistryEvent;
 import de.gerdiproject.harvest.etls.utils.ETLRegistry;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.rest.AbstractRestResource;
 import de.gerdiproject.harvest.rest.HttpResponseFactory;
-import de.gerdiproject.harvest.state.StateMachine;
-import de.gerdiproject.harvest.state.constants.StateConstants;
-import de.gerdiproject.harvest.state.events.AbortingStartedEvent;
+import de.gerdiproject.harvest.rest.constants.RestConstants;
 import de.gerdiproject.harvest.utils.logger.HarvesterLog;
 import de.gerdiproject.harvest.utils.logger.events.GetMainLogEvent;
 import de.gerdiproject.harvest.utils.maven.MavenUtils;
@@ -75,7 +76,7 @@ public class ETLRestResource extends AbstractRestResource<ETLRegistry, GetETLReg
         try {
             // start a harvest
             restObject.harvest();
-            return HttpResponseFactory.createAcceptedResponse(StateConstants.HARVEST_STARTED);
+            return HttpResponseFactory.createAcceptedResponse(ETLConstants.HARVEST_STARTED);
         } catch (Exception e) {
             return HttpResponseFactory.createBadRequestResponse(e.getMessage());
         }
@@ -111,19 +112,11 @@ public class ETLRestResource extends AbstractRestResource<ETLRegistry, GetETLReg
     public Response abort()
     {
         if (restObject.getStatus() == ETLStatus.HARVESTING) {
-            EventSystem.sendEvent(new AbortingStartedEvent());
             restObject.abortHarvest();
 
-
-            return HttpResponseFactory.createAcceptedResponse(
-                       String.format(StateConstants.ABORT_STATUS, ETLStatus.HARVESTING.toString()));
-        } else {
-            final String message = String.format(
-                                       StateConstants.CANNOT_ABORT_PREFIX
-                                       + StateConstants.NO_HARVEST_IN_PROGRESS,
-                                       StateConstants.HARVESTING_PROCESS);
-            return HttpResponseFactory.createBadRequestResponse(message);
-        }
+            return HttpResponseFactory.createAcceptedResponse(ETLConstants.ABORT_START);
+        } else
+            return HttpResponseFactory.createBadRequestResponse(ETLConstants.ABORT_HARVEST_FAILED_NO_HARVEST);
     }
 
 
@@ -139,7 +132,9 @@ public class ETLRestResource extends AbstractRestResource<ETLRegistry, GetETLReg
     })
     public Response reset()
     {
-        return StateMachine.getCurrentState().reset();
+        EventSystem.sendEvent(new ResetContextEvent());
+        return HttpResponseFactory.createAcceptedResponse(
+                   RestConstants.RESET_STARTED);
     }
 
 
@@ -200,6 +195,27 @@ public class ETLRestResource extends AbstractRestResource<ETLRegistry, GetETLReg
 
         else
             return HttpResponseFactory.createOkResponse(Instant.ofEpochMilli(timestamp).toString());
+    }
+
+
+    /**
+     * Checks the health of the harvester.
+     *
+     * @return the health of the harvester
+     */
+    @GET
+    @Path("health")
+    @Produces({
+        MediaType.TEXT_PLAIN
+    })
+    public Response getHealth()
+    {
+        final ETLHealth health = restObject.getHealth();
+        final Status status =  health == ETLHealth.OK
+                               ? Status.OK
+                               : Status.INTERNAL_SERVER_ERROR;
+
+        return HttpResponseFactory.createResponse(status, health);
     }
 
 

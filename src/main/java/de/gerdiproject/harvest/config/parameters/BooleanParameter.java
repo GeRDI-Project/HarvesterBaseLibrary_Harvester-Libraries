@@ -15,7 +15,7 @@
  */
 package de.gerdiproject.harvest.config.parameters;
 
-import java.text.ParseException;
+import java.util.function.Function;
 
 import de.gerdiproject.harvest.config.constants.ConfigurationConstants;
 
@@ -27,30 +27,31 @@ import de.gerdiproject.harvest.config.constants.ConfigurationConstants;
 public class BooleanParameter extends AbstractParameter<Boolean>
 {
     /**
-     * Constructor that assigns a category and a key that must be unique within the category.
+     * Constructor that uses a custom mapping function.
      *
      * @param key the unique key of the parameter, which is used to change it via REST
      * @param category the category of the parameter
+     * @param defaultValue the default value
+     * @param customMappingFunction a function that maps strings to the parameter values
      *
-     * @see AbstractParameter#AbstractParameter(String, ParameterCategory)
+     * @throws IllegalArgumentException thrown if the key contains invalid characters
      */
-    public BooleanParameter(String key, ParameterCategory category)
+    public BooleanParameter(String key, String category, boolean defaultValue, Function<String, Boolean> customMappingFunction) throws IllegalArgumentException
     {
-        super(key, category);
-        value = false;
+        super(key, category, defaultValue, customMappingFunction);
     }
 
 
     /**
-     * Constructor that assigns all fields.
+     * Constructor that uses the default mapping function.
      *
      * @param key the unique key of the parameter, which is used to change it via REST
      * @param category the category of the parameter
      * @param defaultValue the default value
      *
-     * @see AbstractParameter#AbstractParameter(String, ParameterCategory, Object)
+     * @see AbstractParameter#AbstractParameter(String, String, Object)
      */
-    public BooleanParameter(String key, ParameterCategory category, boolean defaultValue)
+    public BooleanParameter(String key, String category, boolean defaultValue)
     {
         super(key, category, defaultValue);
     }
@@ -59,19 +60,12 @@ public class BooleanParameter extends AbstractParameter<Boolean>
     @Override
     public BooleanParameter copy()
     {
-        return new BooleanParameter(key, category, value);
+        return new BooleanParameter(key, category, value, mappingFunction);
     }
 
 
     @Override
-    protected String getAllowedValues()
-    {
-        return ConfigurationConstants.BOOLEAN_VALID_VALUES_TEXT;
-    }
-
-
-    @Override
-    public Boolean stringToValue(String value) throws ParseException, ClassCastException
+    protected Boolean stringToValue(String value) throws RuntimeException
     {
         if (value == null)
             return false;
@@ -80,7 +74,7 @@ public class BooleanParameter extends AbstractParameter<Boolean>
             return value.equals(ConfigurationConstants.BOOLEAN_VALID_VALUES_LIST.get(0)) || Boolean.parseBoolean(value);
 
         else
-            throw new ClassCastException();
+            throw new ClassCastException(ConfigurationConstants.BOOLEAN_ALLOWED_VALUES);
     }
 
 }

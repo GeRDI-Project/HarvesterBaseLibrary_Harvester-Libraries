@@ -31,7 +31,6 @@ import ch.qos.logback.classic.Level;
 import de.gerdiproject.harvest.application.MainContext;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.event.IEvent;
-import de.gerdiproject.harvest.state.StateMachine;
 import de.gerdiproject.harvest.utils.CancelableFuture;
 import de.gerdiproject.harvest.utils.Procedure;
 import de.gerdiproject.harvest.utils.logger.constants.LoggerConstants;
@@ -73,7 +72,6 @@ public abstract class AbstractUnitTest
     {
         EventSystem.reset();
         MainContext.destroy();
-        StateMachine.setState(null);
 
         setLoggerEnabled(true);
     }

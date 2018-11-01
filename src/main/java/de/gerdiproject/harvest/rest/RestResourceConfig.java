@@ -48,7 +48,6 @@ public class RestResourceConfig extends Application
     {
         resources.add(de.gerdiproject.harvest.etls.rest.ETLRestResource.class);
         resources.add(de.gerdiproject.harvest.config.rest.ConfigurationRestResource.class);
-        resources.add(de.gerdiproject.harvest.application.rest.StatusRestResource.class);
         resources.add(de.gerdiproject.harvest.scheduler.rest.SchedulerRestResource.class);
     }
 

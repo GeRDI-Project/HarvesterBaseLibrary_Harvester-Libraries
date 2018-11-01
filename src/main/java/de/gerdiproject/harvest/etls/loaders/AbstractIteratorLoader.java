@@ -51,8 +51,10 @@ public abstract class AbstractIteratorLoader <LOUT> implements ILoader<Iterator<
     public void load(Iterator<LOUT> documents) throws LoaderException
     {
         // only load documents while the harvester is running
-        while (documents.hasNext() && dedicatedEtl.getStatus() == ETLStatus.HARVESTING)
-            loadElementAndIncrement(documents.next());
+        while (documents.hasNext() && dedicatedEtl.getStatus() == ETLStatus.HARVESTING) {
+            final LOUT next = documents.next();
+            loadElementAndIncrement(next);
+        }
     }
 
 

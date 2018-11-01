@@ -16,18 +16,12 @@
  */
 package de.gerdiproject.harvest.config.json.adapters;
 
-import java.net.MalformedURLException;
-import java.net.URL;
-
 import de.gerdiproject.harvest.config.Configuration;
 import de.gerdiproject.harvest.config.parameters.AbstractParameter;
 import de.gerdiproject.harvest.config.parameters.BooleanParameter;
 import de.gerdiproject.harvest.config.parameters.IntegerParameter;
-import de.gerdiproject.harvest.config.parameters.ParameterCategory;
 import de.gerdiproject.harvest.config.parameters.PasswordParameter;
 import de.gerdiproject.harvest.config.parameters.StringParameter;
-import de.gerdiproject.harvest.config.parameters.LoaderParameter;
-import de.gerdiproject.harvest.config.parameters.UrlParameter;
 
 /**
  * This class serves as a convenient JSON representation of {@linkplain AbstractParameter}s.
@@ -61,7 +55,7 @@ class ParameterJson
      *
      * @return an {@linkplain AbstractParameter} that mirrors this class
      */
-    public AbstractParameter<?> toAbstractParameter(ParameterCategory category)
+    public AbstractParameter<?> toAbstractParameter(String category)
     {
         AbstractParameter<?> param = null;
 
@@ -76,17 +70,6 @@ class ParameterJson
 
         else if (type.equals(PasswordParameter.class.getSimpleName()))
             param = new PasswordParameter(key, category, value);
-
-        else if (type.equals(LoaderParameter.class.getSimpleName()))
-            param = new LoaderParameter(key, category, value);
-
-        else if (type.equals(UrlParameter.class.getSimpleName())) {
-            try {
-                param = new UrlParameter(key, category, value == null ? null : new URL(value));
-            } catch (MalformedURLException e) {
-                param = null;
-            }
-        }
 
         return param;
     }

@@ -15,20 +15,12 @@
  */
 package de.gerdiproject.harvest.etls.loaders.constants;
 
-import java.util.Arrays;
-
+import de.gerdiproject.harvest.config.constants.ParameterMappingFunctions;
 import de.gerdiproject.harvest.config.parameters.BooleanParameter;
 import de.gerdiproject.harvest.config.parameters.IntegerParameter;
-import de.gerdiproject.harvest.config.parameters.LoaderParameter;
-import de.gerdiproject.harvest.config.parameters.ParameterCategory;
 import de.gerdiproject.harvest.config.parameters.PasswordParameter;
 import de.gerdiproject.harvest.config.parameters.StringParameter;
-import de.gerdiproject.harvest.config.parameters.UrlParameter;
 import de.gerdiproject.harvest.etls.AbstractIteratorETL;
-import de.gerdiproject.harvest.state.impl.ErrorState;
-import de.gerdiproject.harvest.state.impl.HarvestingState;
-import de.gerdiproject.harvest.state.impl.IdleState;
-import de.gerdiproject.harvest.state.impl.InitializationState;
 
 /**
  * This static class is a collection of constants that relate to the submission
@@ -45,28 +37,27 @@ public class LoaderConstants
     public static final String SUBMISSION_INTERRUPTED = "Submission interrupted unexpectedly!";
 
 
-    public static final ParameterCategory PARAMETER_CATEGORY = new ParameterCategory(
-        "Submission",
-        Arrays.asList(
-            InitializationState.class,
-            ErrorState.class,
-            IdleState.class,
-            HarvestingState.class));
+    public static final String PARAMETER_CATEGORY = "Submission";
 
-    public static final UrlParameter URL_PARAM =
-        new UrlParameter(
+    public static final StringParameter URL_PARAM =
+        new StringParameter(
         "url",
-        PARAMETER_CATEGORY);
+        PARAMETER_CATEGORY,
+        null,
+        ParameterMappingFunctions::mapToUrlString);
+
 
     public static final StringParameter USER_NAME_PARAM =
         new StringParameter(
         "userName",
-        PARAMETER_CATEGORY);
+        PARAMETER_CATEGORY,
+        null);
 
     public static final PasswordParameter PASSWORD_PARAM =
         new PasswordParameter(
         "password",
-        PARAMETER_CATEGORY);
+        PARAMETER_CATEGORY,
+        null);
 
     public static final BooleanParameter SUBMIT_OUTDATED_PARAM =
         new BooleanParameter(
@@ -84,13 +75,10 @@ public class LoaderConstants
         new IntegerParameter(
         "size",
         PARAMETER_CATEGORY,
-        1048576);
+        1048576,
+        ParameterMappingFunctions::mapToSignedInteger);
 
-    public static final LoaderParameter LOADER_TYPE_PARAM =
-        new LoaderParameter(
-        "loader",
-        PARAMETER_CATEGORY);
-
+    public static final String LOADER_TYPE_PARAM_KEY = "loader";
 
     public static final String SUBMIT_PARTIAL_OK = " Submitted %d documents.";
     public static final String SUBMIT_PARTIAL_FAILED = "Error submitting documents %s to %s.";

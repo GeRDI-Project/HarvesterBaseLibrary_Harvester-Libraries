@@ -1,5 +1,5 @@
 /**
- * Copyright © 2017 Robin Weiss (http://www.gerdi-project.de)
+# * Copyright © 2017 Robin Weiss (http://www.gerdi-project.de)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,8 +35,6 @@ import de.gerdiproject.harvest.etls.utils.ETLRegistry;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.scheduler.Scheduler;
 import de.gerdiproject.harvest.scheduler.constants.SchedulerConstants;
-import de.gerdiproject.harvest.state.StateMachine;
-import de.gerdiproject.harvest.state.impl.InitializationState;
 import de.gerdiproject.harvest.utils.CancelableFuture;
 import de.gerdiproject.harvest.utils.logger.HarvesterLog;
 import de.gerdiproject.harvest.utils.logger.constants.LoggerConstants;
@@ -118,7 +116,6 @@ public class MainContext
         List<Class<? extends ILoader<?>>> loaderClasses)
     {
         LOGGER.info(ApplicationConstants.INIT_SERVICE);
-        StateMachine.setState(new InitializationState());
 
         CancelableFuture<Boolean> initProcess = new CancelableFuture<>(() -> {
             // clear old instance if necessary

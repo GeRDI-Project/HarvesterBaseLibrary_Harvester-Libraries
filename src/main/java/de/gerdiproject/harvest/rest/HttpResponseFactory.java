@@ -24,11 +24,6 @@ import javax.ws.rs.core.Response.Status;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.event.ISynchronousEvent;
 import de.gerdiproject.harvest.rest.constants.RestConstants;
-import de.gerdiproject.harvest.state.IState;
-import de.gerdiproject.harvest.state.StateMachine;
-import de.gerdiproject.harvest.state.constants.StateConstants;
-import de.gerdiproject.harvest.state.impl.ErrorState;
-import de.gerdiproject.harvest.state.impl.InitializationState;
 
 /**
  * This factory creates common server responses to HTTP requests.
@@ -55,7 +50,7 @@ public class HttpResponseFactory
     {
         return Response
                .status(Status.SERVICE_UNAVAILABLE)
-               .entity(RestConstants.CANNOT_PROCESS_PREFIX + StateConstants.INIT_IN_PROGRESS)
+               .entity(RestConstants.CANNOT_PROCESS_PREFIX + RestConstants.WAIT_FOR_INIT)
                .type(MediaType.TEXT_PLAIN)
                .build();
     }
@@ -233,7 +228,7 @@ public class HttpResponseFactory
      */
     public static Response createServerErrorResponse()
     {
-        final IState currentState = StateMachine.getCurrentState();
+        /* TODO final IState currentState = StateMachine.getCurrentState();
 
         if (currentState instanceof InitializationState)
             return createInitResponse();
@@ -241,8 +236,8 @@ public class HttpResponseFactory
         else if (currentState instanceof ErrorState)
             return createFubarResponse();
 
-        else
-            return createUnknownErrorResponse();
+        else */
+        return createUnknownErrorResponse();
     }
 
 

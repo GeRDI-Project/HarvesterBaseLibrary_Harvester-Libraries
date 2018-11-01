@@ -16,6 +16,7 @@
  */
 package de.gerdiproject.harvest.etls.utils;
 
+import java.io.Serializable;
 import java.util.Comparator;
 
 /**
@@ -23,12 +24,14 @@ import java.util.Comparator;
  *
  * @author Robin Weiss
  */
-public class TimestampedEntryComparator implements Comparator<TimestampedEntry<?>>
+public class TimestampedEntryComparator implements Comparator<TimestampedEntry<?>>, Serializable
 {
+    private static final long serialVersionUID = 3061759464473807787L;
+
+
     @Override
     public int compare(TimestampedEntry<?> o1, TimestampedEntry<?> o2)
     {
         return Long.compare(o1.getTimestamp(), o2.getTimestamp());
     }
-
 }

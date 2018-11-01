@@ -37,9 +37,8 @@ import de.gerdiproject.harvest.event.IEventListener;
  */
 public abstract class AbstractObjectUnitTest<T> extends AbstractUnitTest
 {
-    private static final String CLEANUP_ERROR = "Could not instantiate object: ";
     private static final String SKIP_EVENT_TESTS_MESSAGE = "Skipping event listener tests, because %s does not implement " + IEventListener.class.getSimpleName() + ".";
-
+    protected static final String INSTANTIATION_ERROR = "Could not instantiate object: ";
 
     protected Configuration config;
     protected T testedObject;
@@ -52,7 +51,7 @@ public abstract class AbstractObjectUnitTest<T> extends AbstractUnitTest
         testedObject = setUpTestObjects();
 
         if (testedObject == null)
-            throw new InstantiationException(CLEANUP_ERROR + getTestedClass().getName());
+            throw new InstantiationException(INSTANTIATION_ERROR + getTestedClass().getName());
     }
 
 

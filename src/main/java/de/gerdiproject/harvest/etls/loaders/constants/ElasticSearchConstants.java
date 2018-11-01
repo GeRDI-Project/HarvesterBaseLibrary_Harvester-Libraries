@@ -27,6 +27,8 @@ public class ElasticSearchConstants
     public static final String BATCH_DELETE_INSTRUCTION = "{\"delete\":{\"_id\":\"%s\"}}%n";
     public static final String BULK_SUBMISSION_URL_SUFFIX = "_bulk";
 
+    public static final String INVALID_URL_ERROR = "Invalid Elasticsearch API URL: %s";
+
     // DATE RANGE FIX
     public static final String DATE_REGEX = "\"value\":(\"\\d\\d\\d\\d-\\d\\d-\\d\\dT\\d\\d:\\d\\d[^\"/]*Z\")";
     public static final String DATE_REPLACEMENT = "\"value\":\\{\"gte\":$1,\"lte\":$1\\}";

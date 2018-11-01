@@ -24,12 +24,8 @@ import static org.junit.Assert.fail;
 
 import java.io.File;
 import java.net.MalformedURLException;
-import java.net.URL;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashSet;
-import java.util.Set;
 
 import org.junit.Test;
 
@@ -42,18 +38,8 @@ import de.gerdiproject.harvest.config.json.adapters.ConfigurationAdapter;
 import de.gerdiproject.harvest.config.parameters.AbstractParameter;
 import de.gerdiproject.harvest.config.parameters.BooleanParameter;
 import de.gerdiproject.harvest.config.parameters.IntegerParameter;
-import de.gerdiproject.harvest.config.parameters.LoaderParameter;
-import de.gerdiproject.harvest.config.parameters.ParameterCategory;
 import de.gerdiproject.harvest.config.parameters.PasswordParameter;
 import de.gerdiproject.harvest.config.parameters.StringParameter;
-import de.gerdiproject.harvest.config.parameters.UrlParameter;
-import de.gerdiproject.harvest.etls.loaders.events.GetLoaderNamesEvent;
-import de.gerdiproject.harvest.etls.loaders.utils.LoaderFactory;
-import de.gerdiproject.harvest.event.EventSystem;
-import de.gerdiproject.harvest.state.IState;
-import de.gerdiproject.harvest.state.StateMachine;
-import de.gerdiproject.harvest.state.impl.HarvestingState;
-import de.gerdiproject.harvest.state.impl.InitializationState;
 import de.gerdiproject.harvest.utils.data.DiskIO;
 
 /**
@@ -69,15 +55,13 @@ public class ConfigurationTest extends AbstractFileSystemUnitTest<Configuration>
     private static final String MODULE_NAME = "mocked";
     private static final String PARAM_KEY = "customParam";
     private static final String STRING_VALUE = "customValue";
-    private static final String URL_VALUE_1 = "http://www.gerdi-project.de";
-    private static final String URL_VALUE_2 = "http://www.google.com";
     private static final String PASSWORD_VALUE_1 = "top secret";
     private static final String PASSWORD_VALUE_2 = "no one must know";
     private static final int INT_VALUE_1 = 42;
     private static final int INT_VALUE_2 = 1337;
     private static final boolean BOOL_VALUE_1 = false;
     private static final boolean BOOL_VALUE_2 = true;
-    private static final ParameterCategory TEST_CATEGORY = new ParameterCategory("TestCategory", Arrays.asList());
+    private static final String TEST_CATEGORY = "TestCategory";
     private static final String ERROR_ARGUMENTS_MUST_DIFFER = "The old and new value of parameter change tests must differ!";
     private static final String ERROR_MISSING_LOADED_PARAM  = "Expected parameter '%s' to be loaded after being saved!";
 
@@ -192,7 +176,7 @@ public class ConfigurationTest extends AbstractFileSystemUnitTest<Configuration>
     public void testRegisteringCopyParameter()
     {
         testedObject.addEventListeners();
-        final AbstractParameter<?> unknownParam = new IntegerParameter(PARAM_KEY + 2, TEST_CATEGORY);
+        final AbstractParameter<?> unknownParam = new IntegerParameter(PARAM_KEY + 2, TEST_CATEGORY, 0);
         final AbstractParameter<?> registeredParam = Configuration.registerParameter(unknownParam);
 
         assertNotEquals("Registering a parameter object for the first time should register a copy instead of the original reference!",
@@ -272,69 +256,6 @@ public class ConfigurationTest extends AbstractFileSystemUnitTest<Configuration>
 
 
     /**
-     * Tests if the value of an {@linkplain UrlParameter} can be changed via
-     * the setter function of the {@linkplain Configuration}.
-     *
-     * @throws MalformedURLException thrown when one of the test URLs is not well-formed
-     */
-    @Test
-    public void testUrlParameterChange() throws MalformedURLException
-    {
-        final URL valueBefore = new URL(URL_VALUE_1);
-        final URL valueAfter = new URL(URL_VALUE_2);
-
-        final UrlParameter param = new UrlParameter(PARAM_KEY, TEST_CATEGORY, valueBefore);
-        assertThatParmeterValueCanChange(param, valueAfter);
-    }
-
-
-    /**
-     * Tests if the value of a {@linkplain LoaderParameter} can be changed via
-     * the setter function of the {@linkplain Configuration} if the SubmitterID
-     * is registered at the {@linkplain LoaderFactory}.
-     */
-    @Test
-    public void testSubmitterParameterChange()
-    {
-        final String valueBefore = STRING_VALUE + 1;
-        final String valueAfter = STRING_VALUE + 2;
-
-        // mock the registration of the submitter IDs
-        EventSystem.addSynchronousListener(GetLoaderNamesEvent.class, (event) -> {
-            Set<String> validValues = new HashSet<String>();
-            validValues.add(valueBefore);
-            validValues.add(valueAfter);
-            return validValues;
-        });
-
-        final LoaderParameter param = new LoaderParameter(PARAM_KEY, TEST_CATEGORY, valueBefore);
-        assertThatParmeterValueCanChange(param, valueAfter);
-    }
-
-
-    /**
-     * Tests if the value of a {@linkplain LoaderParameter} cannot be changed via
-     * the setter function of the {@linkplain Configuration} if the the SubmitterID
-     * is NOT registered at the {@linkplain LoaderFactory}.
-     */
-    @Test
-    public void testSubmitterParameterChangeUnregistered()
-    {
-        final String valueBefore = STRING_VALUE + 1;
-        final String valueAfter = STRING_VALUE + 2;
-
-        final LoaderParameter param = new LoaderParameter(PARAM_KEY, TEST_CATEGORY, valueBefore);
-
-        testedObject = createConfigWithCustomParameters(param);
-        testedObject.setParameter(param.getCompositeKey(), valueAfter);
-
-        assertNotEquals("SubmitterParmeter values can only be assigned to balues that were registered in the SubmitterManager!",
-                        valueAfter,
-                        testedObject.getParameterValue(param.getCompositeKey()));
-    }
-
-
-    /**
      * Tests if the value of a {@linkplain PasswordParameter} can be changed via
      * the setter function of the {@linkplain Configuration}.
      */
@@ -355,46 +276,6 @@ public class ConfigurationTest extends AbstractFileSystemUnitTest<Configuration>
         final PasswordParameter param = new PasswordParameter(PARAM_KEY, TEST_CATEGORY, PASSWORD_VALUE_1);
         assertFalse("The value of a PasswordParameter must not be readable via getStringValue()!",
                     param.getStringValue().contains(param.getValue().toString()));
-    }
-
-
-    /**
-     * Tests if parameter values do not change when being set in a state that is not allowed
-     * by the parameter.
-     */
-    @Test
-    public void testSettingInForbiddenState()
-    {
-        final Class<? extends IState> stateThatAllowsChanges = HarvestingState.class;
-        final IState stateThatForbidsChanges = new InitializationState();
-
-        assertFalse("Parameters must only be changeable while the StateMachine is in an allowed state!",
-                    canParameterBeSetInState(stateThatForbidsChanges, stateThatAllowsChanges));
-    }
-
-
-    /**
-     * Tests if parameter values change when being set in a state that allows
-     * parameter changes.
-     */
-    @Test
-    public void testSettingInAllowedState()
-    {
-        final IState stateThatAllowsChanges = new InitializationState();
-        assertTrue("Parameter values must be changeable while the StateMachine is in an allowed state!",
-                   canParameterBeSetInState(stateThatAllowsChanges, stateThatAllowsChanges.getClass()));
-    }
-
-
-    /**
-     * Tests if parameter values change when being set in a null-state.
-     */
-    @Test
-    public void testSettingInNullState()
-    {
-        final Class<? extends IState> stateThatAllowsChanges = HarvestingState.class;
-        assertTrue("Parameter values must be changeable while the StateMachine is not intialized!",
-                   canParameterBeSetInState(null, stateThatAllowsChanges));
     }
 
 
@@ -532,7 +413,7 @@ public class ConfigurationTest extends AbstractFileSystemUnitTest<Configuration>
 
         // create config with the same custom parameter, but a different value
         final String valueToBeOverridden = "override me";
-        testedParam.setValue(valueToBeOverridden, null);
+        testedParam.setValue(valueToBeOverridden);
 
         // attempt to load without setting a path
         setLoggerEnabled(false);
@@ -595,12 +476,8 @@ public class ConfigurationTest extends AbstractFileSystemUnitTest<Configuration>
     public void testJsonSerializationOfNullValues() throws MalformedURLException
     {
         final Configuration savedConfig = createConfigWithCustomParameters(
-                                              new StringParameter(PARAM_KEY + 1, TEST_CATEGORY),
-                                              new IntegerParameter(PARAM_KEY + 2, TEST_CATEGORY),
-                                              new BooleanParameter(PARAM_KEY + 3, TEST_CATEGORY),
-                                              new UrlParameter(PARAM_KEY + 4, TEST_CATEGORY),
-                                              new PasswordParameter(PARAM_KEY + 5, TEST_CATEGORY),
-                                              new LoaderParameter(PARAM_KEY + 6, TEST_CATEGORY));
+                                              new StringParameter(PARAM_KEY + 1, TEST_CATEGORY, null),
+                                              new PasswordParameter(PARAM_KEY + 5, TEST_CATEGORY, null));
 
         // register parameters to mark them for serialization
         savedConfig.getParameters().forEach((AbstractParameter<?> param) -> param.setRegistered(true));
@@ -864,9 +741,7 @@ public class ConfigurationTest extends AbstractFileSystemUnitTest<Configuration>
                    new IntegerParameter(PARAM_KEY + 4, TEST_CATEGORY, INT_VALUE_1),
                    new BooleanParameter(PARAM_KEY + 5, TEST_CATEGORY, BOOL_VALUE_1),
                    new BooleanParameter(PARAM_KEY + 6, TEST_CATEGORY, BOOL_VALUE_2),
-                   new UrlParameter(PARAM_KEY + 7, TEST_CATEGORY, new URL(URL_VALUE_1)),
-                   new PasswordParameter(PARAM_KEY + 8, TEST_CATEGORY, PASSWORD_VALUE_1),
-                   new LoaderParameter(PARAM_KEY + 9, TEST_CATEGORY, STRING_VALUE)
+                   new PasswordParameter(PARAM_KEY + 8, TEST_CATEGORY, PASSWORD_VALUE_1)
                );
     }
 
@@ -890,34 +765,5 @@ public class ConfigurationTest extends AbstractFileSystemUnitTest<Configuration>
         .create();
         final DiskIO diskIo = new DiskIO(gson, StandardCharsets.UTF_8);
         return diskIo.getObject(configFile, Configuration.class);
-    }
-
-
-
-    /**
-     * Tests if parameter values can change when being set in a specified state.
-     *
-     * @param testedState the state in which the parameter change is attempted
-     * @param allowedState a state in which a parameter change is allowed
-     *
-     * @return true if the parameter value can change
-     */
-    private boolean canParameterBeSetInState(IState testedState, Class<? extends IState> allowedState)
-    {
-        final String valueBefore = STRING_VALUE + 1;
-        final String valueAfter = STRING_VALUE + 2;
-        final String key = PARAM_KEY;
-        ParameterCategory category = new ParameterCategory("customCategory", Arrays.asList(allowedState));
-
-        testedParam = new StringParameter(key, category, valueBefore);
-        testedObject = createConfigWithCustomParameters(testedParam);
-        testedParam.setRegistered(true);
-
-        // explicitly test a state that is not among the valid states of the parameter
-        StateMachine.setState(testedState);
-        testedObject.setParameter(testedParam.getCompositeKey(), valueAfter);
-        StateMachine.setState(null);
-
-        return testedParam.getValue().equals(valueAfter);
     }
 }
