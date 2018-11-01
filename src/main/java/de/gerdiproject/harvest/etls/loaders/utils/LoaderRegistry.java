@@ -18,6 +18,7 @@ package de.gerdiproject.harvest.etls.loaders.utils;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Function;
 
 import de.gerdiproject.harvest.config.Configuration;
 import de.gerdiproject.harvest.config.constants.ParameterMappingFunctions;
@@ -34,7 +35,7 @@ import de.gerdiproject.harvest.event.IEventListener;
  *
  * @author Robin Weiss
  */
-public class LoaderFactory implements IEventListener
+public class LoaderRegistry implements IEventListener
 {
     private final Map<String, Class<? extends ILoader<?>>> loaderMap;
     private StringParameter loaderParam;
@@ -43,14 +44,20 @@ public class LoaderFactory implements IEventListener
     /**
      * Constructor that defined a default active submitter.
      */
-    public LoaderFactory()
+    public LoaderRegistry()
     {
         this.loaderMap = new HashMap<>();
+
+        // the loader parameter may only be changed while no ETL is running, and only to registered loader classes
+        final Function<String, String> paramChangeGuard =
+            ParameterMappingFunctions.createMapperForETLRegistry(
+                ParameterMappingFunctions.createStringListMapper(loaderMap.keySet()));
+
         this.loaderParam = new StringParameter(
             LoaderConstants.LOADER_TYPE_PARAM_KEY,
             LoaderConstants.PARAMETER_CATEGORY,
             null,
-            ParameterMappingFunctions.createStringListMapper(loaderMap.keySet()));
+            paramChangeGuard);
     }
 
 

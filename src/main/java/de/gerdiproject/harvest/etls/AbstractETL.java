@@ -161,7 +161,8 @@ public abstract class AbstractETL <EOUT, TOUT> implements IEventListener
             Configuration.registerParameter(new BooleanParameter(
                                                 ETLConstants.ENABLED_PARAM.getKey(),
                                                 getName(),
-                                                ETLConstants.ENABLED_PARAM.getValue()));
+                                                ETLConstants.ENABLED_PARAM.getValue(),
+                                                ETLConstants.ENABLED_PARAM.getMappingFunction()));
     }
 
 
@@ -549,7 +550,6 @@ public abstract class AbstractETL <EOUT, TOUT> implements IEventListener
     {
         return enabledParameter.getValue() && getHealth() != ETLHealth.INITIALIZATION_FAILED;
     }
-
 
 
     //////////////////////////////

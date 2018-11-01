@@ -18,6 +18,7 @@ package de.gerdiproject.harvest.config.parameters;
 import java.util.function.Function;
 
 import de.gerdiproject.harvest.config.constants.ConfigurationConstants;
+import de.gerdiproject.harvest.config.constants.ParameterMappingFunctions;
 
 /**
  * This parameter holds an integer value.
@@ -48,12 +49,10 @@ public class IntegerParameter extends AbstractParameter<Integer>
      * @param key the unique key of the parameter, which is used to change it via REST
      * @param category the category of the parameter
      * @param defaultValue the default value
-     *
-     * @see AbstractParameter#AbstractParameter(String, String, Object)
      */
     public IntegerParameter(String key, String category, int defaultValue)
     {
-        super(key, category, defaultValue);
+        super(key, category, defaultValue, ParameterMappingFunctions::mapToInteger);
     }
 
 
@@ -75,28 +74,5 @@ public class IntegerParameter extends AbstractParameter<Integer>
 
         else
             return String.valueOf(value);
-    }
-
-
-    @Override
-    public Integer stringToValue(String value) throws RuntimeException
-    {
-        if (value == null)
-            return 0;
-
-        else if (value.equals(ConfigurationConstants.INTEGER_VALUE_MAX))
-            return Integer.MAX_VALUE;
-
-        else if (value.equals(ConfigurationConstants.INTEGER_VALUE_MIN))
-            return Integer.MIN_VALUE;
-
-        else {
-            try {
-                // try to parse the integer
-                return Integer.parseInt(value);
-            } catch (NumberFormatException e) {
-                throw new ClassCastException(ConfigurationConstants.INTEGER_ALLOWED_VALUES);
-            }
-        }
     }
 }

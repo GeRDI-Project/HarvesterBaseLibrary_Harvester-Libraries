@@ -30,7 +30,7 @@ import de.gerdiproject.harvest.etls.ETLPreconditionException;
 import de.gerdiproject.harvest.etls.events.GetRepositoryNameEvent;
 import de.gerdiproject.harvest.etls.events.HarvesterInitializedEvent;
 import de.gerdiproject.harvest.etls.loaders.ILoader;
-import de.gerdiproject.harvest.etls.loaders.utils.LoaderFactory;
+import de.gerdiproject.harvest.etls.loaders.utils.LoaderRegistry;
 import de.gerdiproject.harvest.etls.utils.ETLRegistry;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.scheduler.Scheduler;
@@ -60,7 +60,7 @@ public class MainContext
     private final Configuration configuration;
 
     @SuppressWarnings("unused") // the submitter is connected via the event system
-    private final LoaderFactory submitterManager;
+    private final LoaderRegistry submitterManager;
     private final Scheduler scheduler;
     private final MavenUtils mavenUtils;
 
@@ -193,24 +193,24 @@ public class MainContext
 
 
     /**
-     * Creates a {@linkplain LoaderFactory}, and registers all loader classes.
+     * Creates a {@linkplain LoaderRegistry}, and registers all loader classes.
      *
      * @param loaderClasses a list of {@linkplain ILoader} classes for
      *         loading documents to a search index
      *
-     * @return a new {@linkplain LoaderFactory}
+     * @return a new {@linkplain LoaderRegistry}
      */
-    private LoaderFactory createLoaderFactory(List<Class<? extends ILoader<?>>> loaderClasses)
+    private LoaderRegistry createLoaderFactory(List<Class<? extends ILoader<?>>> loaderClasses)
     {
-        LOGGER.info(String.format(ApplicationConstants.INIT_FIELD, LoaderFactory.class.getSimpleName()));
+        LOGGER.info(String.format(ApplicationConstants.INIT_FIELD, LoaderRegistry.class.getSimpleName()));
 
-        final LoaderFactory manager = new LoaderFactory();
+        final LoaderRegistry manager = new LoaderRegistry();
         manager.addEventListeners();
 
         for (Class<? extends ILoader<?>> s : loaderClasses)
             manager.registerLoader(s);
 
-        LOGGER.info(String.format(ApplicationConstants.INIT_FIELD_SUCCESS, LoaderFactory.class.getSimpleName()));
+        LOGGER.info(String.format(ApplicationConstants.INIT_FIELD_SUCCESS, LoaderRegistry.class.getSimpleName()));
 
         return manager;
     }

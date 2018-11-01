@@ -15,6 +15,7 @@
  */
 package de.gerdiproject.harvest.etls.loaders.constants;
 
+import de.gerdiproject.harvest.config.constants.ParameterMappingFunctions;
 import de.gerdiproject.harvest.config.parameters.StringParameter;
 import de.gerdiproject.harvest.etls.loaders.DiskLoader;
 
@@ -39,7 +40,8 @@ public class DiskLoaderConstants
     public static final StringParameter FILE_PATH_PARAM = new StringParameter(
         "saveFolder",
         LoaderConstants.PARAMETER_CATEGORY,
-        SAVE_FOLDER_NAME);
+        SAVE_FOLDER_NAME,
+        ParameterMappingFunctions.createMapperForETLRegistry(ParameterMappingFunctions::mapToString));
 
 
     /**

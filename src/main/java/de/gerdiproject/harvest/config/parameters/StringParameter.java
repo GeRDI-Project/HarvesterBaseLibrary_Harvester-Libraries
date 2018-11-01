@@ -17,6 +17,8 @@ package de.gerdiproject.harvest.config.parameters;
 
 import java.util.function.Function;
 
+import de.gerdiproject.harvest.config.constants.ParameterMappingFunctions;
+
 /**
  * This parameter holds a String value.
  *
@@ -46,12 +48,10 @@ public class StringParameter extends AbstractParameter<String>
      * @param key the unique key of the parameter, which is used to change it via REST
      * @param category the category of the parameter
      * @param defaultValue the default value
-     *
-     * @see AbstractParameter#AbstractParameter(String, String, Object)
      */
     public StringParameter(String key, String category, String defaultValue)
     {
-        super(key, category, defaultValue, (String value) -> value);
+        super(key, category, defaultValue, ParameterMappingFunctions::mapToString);
     }
 
 
@@ -59,12 +59,5 @@ public class StringParameter extends AbstractParameter<String>
     public StringParameter copy()
     {
         return new StringParameter(key, category, value, mappingFunction);
-    }
-
-
-    @Override
-    public String stringToValue(String value) throws RuntimeException
-    {
-        return value;
     }
 }

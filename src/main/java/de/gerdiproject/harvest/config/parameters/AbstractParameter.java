@@ -68,26 +68,6 @@ public abstract class AbstractParameter<T>
         this.mappingFunction = customMappingFunction;
     }
 
-    /**
-     * Constructor that uses the default mapping function.
-     *
-     * @param key the unique key of the parameter, which is used to change it via REST
-     * @param category the category of the parameter
-     * @param defaultValue the default value
-     *
-     * @throws IllegalArgumentException thrown if the key contains invalid characters
-     */
-    public AbstractParameter(String key, String category, T defaultValue) throws IllegalArgumentException
-    {
-        if (!key.matches(ConfigurationConstants.VALID_PARAM_NAME_REGEX))
-            throw new IllegalArgumentException(String.format(ConfigurationConstants.INVALID_PARAMETER_KEY, key));
-
-        this.key = key;
-        this.category = category;
-        this.value = defaultValue;
-        this.mappingFunction = this::stringToValue;
-    }
-
 
     /**
      * Creates an unregistered copy of this parameter.
@@ -95,17 +75,6 @@ public abstract class AbstractParameter<T>
      * @return a copy of this parameter
      */
     public abstract AbstractParameter<T> copy();
-
-
-    /**
-     * This function attempts to convert a String value to the actual Type of the parameter.
-     * @param value a String representation of the new value
-     *
-     * @return a converted value
-     *
-     * @throws RuntimeException this exception is thrown when the String value cannot be mapped to the target value
-     */
-    protected abstract T stringToValue(String value) throws RuntimeException;
 
 
     /**

@@ -17,7 +17,7 @@ package de.gerdiproject.harvest.config.parameters;
 
 import java.util.function.Function;
 
-import de.gerdiproject.harvest.config.constants.ConfigurationConstants;
+import de.gerdiproject.harvest.config.constants.ParameterMappingFunctions;
 
 /**
  * This parameter represents a boolean flag.
@@ -48,12 +48,10 @@ public class BooleanParameter extends AbstractParameter<Boolean>
      * @param key the unique key of the parameter, which is used to change it via REST
      * @param category the category of the parameter
      * @param defaultValue the default value
-     *
-     * @see AbstractParameter#AbstractParameter(String, String, Object)
      */
     public BooleanParameter(String key, String category, boolean defaultValue)
     {
-        super(key, category, defaultValue);
+        super(key, category, defaultValue, ParameterMappingFunctions::mapToBoolean);
     }
 
 
@@ -62,19 +60,4 @@ public class BooleanParameter extends AbstractParameter<Boolean>
     {
         return new BooleanParameter(key, category, value, mappingFunction);
     }
-
-
-    @Override
-    protected Boolean stringToValue(String value) throws RuntimeException
-    {
-        if (value == null)
-            return false;
-
-        else if (ConfigurationConstants.BOOLEAN_VALID_VALUES_LIST.contains(value))
-            return value.equals(ConfigurationConstants.BOOLEAN_VALID_VALUES_LIST.get(0)) || Boolean.parseBoolean(value);
-
-        else
-            throw new ClassCastException(ConfigurationConstants.BOOLEAN_ALLOWED_VALUES);
-    }
-
 }

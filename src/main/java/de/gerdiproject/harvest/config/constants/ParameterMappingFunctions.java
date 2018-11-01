@@ -22,6 +22,11 @@ import java.util.Collection;
 import java.util.function.Function;
 
 import de.gerdiproject.harvest.config.parameters.AbstractParameter;
+import de.gerdiproject.harvest.etls.AbstractETL;
+import de.gerdiproject.harvest.etls.enums.ETLStatus;
+import de.gerdiproject.harvest.etls.events.GetETLRegistryEvent;
+import de.gerdiproject.harvest.etls.utils.ETLRegistry;
+import de.gerdiproject.harvest.event.EventSystem;
 
 /**
  * This class provides functions for mapping string values
@@ -41,8 +46,46 @@ public class ParameterMappingFunctions
 
 
     /**
-     * This function checks if a string represents a positive Integer value and throws an
-     * exception if it is not
+     * This function simply forwards the string parameter that was passed to it.
+     * If any useful checks should come up in the future, they can be implemented here
+     * to be used by all string parameters.
+     *
+     * @param value a string value
+     *
+     * @return a string value
+     */
+    public static  String mapToString(String value)
+    {
+        return value;
+    }
+
+
+    /**
+     * This function checks if a string represents a boolean value and throws an
+     * exception if it does not.
+     *
+     * @param value a string representation of a parameter value
+     *
+     * @return a boolean value
+     *
+     * @throws RuntimeException this exception is thrown when the String value cannot be mapped to the target value
+     */
+    public static  Boolean mapToBoolean(String value) throws RuntimeException
+    {
+        if (value == null)
+            return false;
+
+        else if (ConfigurationConstants.BOOLEAN_VALID_VALUES_LIST.contains(value))
+            return value.equals(ConfigurationConstants.BOOLEAN_VALID_VALUES_LIST.get(0)) || Boolean.parseBoolean(value);
+
+        else
+            throw new ClassCastException(ConfigurationConstants.BOOLEAN_ALLOWED_VALUES);
+    }
+
+
+    /**
+     * This function checks if a string represents an Integer value and throws an
+     * exception if it does not.
      *
      * @param value a string representation of a parameter value
      *
@@ -50,7 +93,39 @@ public class ParameterMappingFunctions
      *
      * @throws RuntimeException this exception is thrown when the String value cannot be mapped to the target value
      */
-    public static Integer mapToSignedInteger(String value) throws RuntimeException
+    public static Integer mapToInteger(String value) throws RuntimeException
+    {
+        if (value == null)
+            return 0;
+
+        else if (value.equals(ConfigurationConstants.INTEGER_VALUE_MAX))
+            return Integer.MAX_VALUE;
+
+        else if (value.equals(ConfigurationConstants.INTEGER_VALUE_MIN))
+            return Integer.MIN_VALUE;
+
+        else {
+            try {
+                // try to parse the integer
+                return Integer.parseInt(value);
+            } catch (NumberFormatException e) {
+                throw new ClassCastException(ConfigurationConstants.INTEGER_ALLOWED_VALUES);
+            }
+        }
+    }
+
+
+    /**
+     * This function checks if a string represents a positive Integer value and throws an
+     * exception if it does not.
+     *
+     * @param value a string representation of a parameter value
+     *
+     * @return the integer value represented by the string
+     *
+     * @throws RuntimeException this exception is thrown when the String value cannot be mapped to the target value
+     */
+    public static Integer mapToUnsignedInteger(String value) throws RuntimeException
     {
         if (value == null)
             return 0;
@@ -79,7 +154,7 @@ public class ParameterMappingFunctions
 
 
     /**
-     * This function checks if a string represents a valid URL and returns it if it is.
+     * This function checks if a string represents a valid URL and returns the value if it does.
      *
      * @param value a string representation of a parameter value
      *
@@ -95,10 +170,78 @@ public class ParameterMappingFunctions
         try {
             new URL(value);
         } catch (MalformedURLException e) {
-            throw new IllegalArgumentException(ConfigurationConstants.URL_ALLOWED_VALUES);
+            throw new IllegalArgumentException(ConfigurationConstants.URL_PARAM_INVALID);
         }
 
         return value;
+    }
+
+
+    /**
+     * Creates a mapping function that executes another mapping function while throwing an exception if a specified ETL
+     * is currently busy.
+     * The case is ignored when comparing the list values.
+     *
+     * @param originalMappingFunction the mapping function that is to be extended
+     * @param etl the {@linkplain AbstractETL} of which the status is to be checked
+     *
+     * @param <VAL> the type of the parameter value
+     *
+     * @return a mapping function
+     */
+    public static <VAL> Function<String, VAL> createMapperForETLs(Function<String, VAL> originalMappingFunction, AbstractETL<?, ?> etl)
+    {
+        return (String value) -> {
+            final ETLStatus etlStatus = etl.getStatus();
+
+            switch (etlStatus)
+            {
+                case QUEUED:
+                case HARVESTING:
+                case ABORTING:
+                case CANCELLING:
+                    throw new IllegalStateException(String.format(
+                                                        ConfigurationConstants.ETL_PARAM_INVALID_STATE,
+                                                        etl.getName(),
+                                                        etlStatus.toString().toLowerCase()));
+
+                default:
+                    return originalMappingFunction.apply(value);
+            }
+        };
+    }
+
+    /**
+     * Creates a mapping function that executes another mapping function while throwing an exception if any ETL
+     * is currently busy.
+     * The case is ignored when comparing the list values.
+     *
+     * @param originalMappingFunction the mapping function that is to be extended
+     *
+     * @param <VAL> the type of the parameter value
+     *
+     * @return a mapping function
+     */
+    public static <VAL> Function<String, VAL> createMapperForETLRegistry(Function<String, VAL> originalMappingFunction)
+    {
+        return (String value) -> {
+            final ETLRegistry registry = EventSystem.sendSynchronousEvent(new GetETLRegistryEvent());
+            final ETLStatus overallEtlStatus = registry == null ? ETLStatus.INITIALIZING : registry.getStatus();
+
+            switch (overallEtlStatus)
+            {
+                case QUEUED:
+                case HARVESTING:
+                case ABORTING:
+                case CANCELLING:
+                    throw new IllegalStateException(String.format(
+                                                        ConfigurationConstants.ETL_REGISTRY_PARAM_INVALID_STATE,
+                                                        overallEtlStatus.toString().toLowerCase()));
+
+                default:
+                    return originalMappingFunction.apply(value);
+            }
+        };
     }
 
 

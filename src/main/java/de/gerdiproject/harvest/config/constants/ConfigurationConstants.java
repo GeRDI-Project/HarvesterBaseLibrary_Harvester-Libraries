@@ -50,11 +50,10 @@ public class ConfigurationConstants
     public static final String BOOLEAN_ALLOWED_VALUES = ALLOWED_VALUES + "0, 1, true, false";
     public static final String INTEGER_RANGE_ALLOWED_VALUES = ALLOWED_VALUES + INTEGER_VALUE_MAX + ", " + INTEGER_VALUE_MIN + ", 0, 1, ...";
     public static final String INTEGER_ALLOWED_VALUES = ALLOWED_VALUES + String.format("[%d, %d]", Integer.MIN_VALUE, Integer.MAX_VALUE);
-    public static final String STRING_ALLOWED_VALUES = ALLOWED_VALUES + "<anything>";
-    public static final String URL_ALLOWED_VALUES = ALLOWED_VALUES + "<a valid URL>";
 
-    public static final String CANNOT_CHANGE_PARAM_INVALID_URL =
-        CANNOT_CHANGE_PARAM + "It must be a valid URL!";
+    public static final String URL_PARAM_INVALID = "It must be a valid URL!";
+    public static final String ETL_PARAM_INVALID_STATE = "The '%s' must be idle, but it is currently %s!";
+    public static final String ETL_REGISTRY_PARAM_INVALID_STATE = "All ETLs must be idle, but they are currently %s!";
 
     public static final String NO_CHANGES = "No parameters were changed!";
     public static final String UNKNOWN_PARAM = "Cannot change parameter '%s'. Unknown parameter!";

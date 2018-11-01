@@ -49,8 +49,6 @@ public class PasswordParameter extends StringParameter
      * @param key the unique key of the parameter, which is used to change it via REST
      * @param category the category of the parameter
      * @param defaultValue the default value
-     *
-     * @see AbstractParameter#AbstractParameter(String, String, Object)
      */
     public PasswordParameter(String key, String category, String defaultValue)
     {

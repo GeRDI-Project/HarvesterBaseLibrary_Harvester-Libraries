@@ -16,6 +16,7 @@
 package de.gerdiproject.harvest.etls.constants;
 
 import de.gerdiproject.harvest.config.constants.ConfigurationConstants;
+import de.gerdiproject.harvest.config.constants.ParameterMappingFunctions;
 import de.gerdiproject.harvest.config.parameters.BooleanParameter;
 import de.gerdiproject.harvest.etls.AbstractIteratorETL;
 import de.gerdiproject.harvest.etls.extractors.AbstractIteratorExtractor;
@@ -31,22 +32,29 @@ import de.gerdiproject.harvest.utils.file.constants.FileConstants;
 public class ETLConstants
 {
     // PARAMETERS
-    public static final String PARAMETER_CATEGORY = "Harvester";
+    public static final String PARAMETER_CATEGORY = "AllETLs";
 
-    public static final BooleanParameter FORCED_PARAM = new BooleanParameter(
+    public static final BooleanParameter FORCED_PARAM =
+        new BooleanParameter(
         "forced",
         PARAMETER_CATEGORY,
-        false);
+        true,
+        ParameterMappingFunctions.createMapperForETLRegistry(ParameterMappingFunctions::mapToBoolean));
 
-    public static final BooleanParameter ENABLED_PARAM = new BooleanParameter(
+    public static final BooleanParameter ENABLED_PARAM =
+        new BooleanParameter(
         "enabled",
         PARAMETER_CATEGORY,
-        true);
+        true,
+        ParameterMappingFunctions.createMapperForETLRegistry(ParameterMappingFunctions::mapToBoolean));
 
-    public static final BooleanParameter CONCURRENT_PARAM = new BooleanParameter(
+    public static final BooleanParameter CONCURRENT_PARAM =
+        new BooleanParameter(
         "concurrentHarvest",
         PARAMETER_CATEGORY,
-        false);
+        false,
+        ParameterMappingFunctions.createMapperForETLRegistry(ParameterMappingFunctions::mapToBoolean));
+
 
     public static final String START_INDEX_PARAM_KEY = "rangeFrom";
     public static final int START_INDEX_PARAM_DEFAULT_VALUE = 0;

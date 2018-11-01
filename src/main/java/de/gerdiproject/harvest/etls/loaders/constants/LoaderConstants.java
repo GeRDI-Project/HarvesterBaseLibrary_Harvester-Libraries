@@ -16,7 +16,6 @@
 package de.gerdiproject.harvest.etls.loaders.constants;
 
 import de.gerdiproject.harvest.config.constants.ParameterMappingFunctions;
-import de.gerdiproject.harvest.config.parameters.BooleanParameter;
 import de.gerdiproject.harvest.config.parameters.IntegerParameter;
 import de.gerdiproject.harvest.config.parameters.PasswordParameter;
 import de.gerdiproject.harvest.config.parameters.StringParameter;
@@ -36,7 +35,6 @@ public class LoaderConstants
     public static final String SUBMISSION_DONE_ALL_FAILED = "Submission failed!";
     public static final String SUBMISSION_INTERRUPTED = "Submission interrupted unexpectedly!";
 
-
     public static final String PARAMETER_CATEGORY = "Submission";
 
     public static final StringParameter URL_PARAM =
@@ -44,39 +42,29 @@ public class LoaderConstants
         "url",
         PARAMETER_CATEGORY,
         null,
-        ParameterMappingFunctions::mapToUrlString);
+        ParameterMappingFunctions.createMapperForETLRegistry(ParameterMappingFunctions::mapToUrlString));
 
 
     public static final StringParameter USER_NAME_PARAM =
         new StringParameter(
         "userName",
         PARAMETER_CATEGORY,
-        null);
+        null,
+        ParameterMappingFunctions.createMapperForETLRegistry(ParameterMappingFunctions::mapToString));
 
     public static final PasswordParameter PASSWORD_PARAM =
         new PasswordParameter(
         "password",
         PARAMETER_CATEGORY,
-        null);
-
-    public static final BooleanParameter SUBMIT_OUTDATED_PARAM =
-        new BooleanParameter(
-        "canBeOutdated",
-        PARAMETER_CATEGORY,
-        false);
-
-    public static final BooleanParameter SUBMIT_INCOMPLETE_PARAM =
-        new BooleanParameter(
-        "canBeIncomplete",
-        PARAMETER_CATEGORY,
-        false);
+        null,
+        ParameterMappingFunctions.createMapperForETLRegistry(ParameterMappingFunctions::mapToString));
 
     public static final IntegerParameter MAX_BATCH_SIZE_PARAM =
         new IntegerParameter(
         "size",
         PARAMETER_CATEGORY,
         1048576,
-        ParameterMappingFunctions::mapToSignedInteger);
+        ParameterMappingFunctions.createMapperForETLRegistry(ParameterMappingFunctions::mapToUnsignedInteger));
 
     public static final String LOADER_TYPE_PARAM_KEY = "loader";
 
@@ -90,16 +78,6 @@ public class LoaderConstants
     public static final String DOCUMENT_TOO_LARGE =
         "Cannot submit document %s, because its submission size is %d bytes,"
         + " which is larger than the maximum permitted size of %d bytes.";
-    public static final String OUTDATED_ERROR =
-        "Cannot submit documents: There are no changes since the last submission!\n"
-        + "If you want to submit anyway, set the '"
-        + SUBMIT_OUTDATED_PARAM.getCompositeKey()
-        + "'-flag in the configuration.";
-    public static final String FAILED_HARVEST_ERROR =
-        "Cannot submit documents: The harvest was not completed successfully!\n"
-        + "If you want to submit anyway, set the '"
-        + SUBMIT_INCOMPLETE_PARAM.getCompositeKey()
-        + "'-flag in the configuration.";
 
     public static final String NO_ITER_ETL_ERROR = "%s must be assigned to an " + AbstractIteratorETL.class.getSimpleName() + "!";
     public static final String NO_SUBMITTER_CONFIGURED = "No Submitter was configured! You can change it by sending a PUT request to .../config";
