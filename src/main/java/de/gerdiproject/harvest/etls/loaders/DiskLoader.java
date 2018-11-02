@@ -29,7 +29,6 @@ import de.gerdiproject.harvest.config.Configuration;
 import de.gerdiproject.harvest.config.parameters.StringParameter;
 import de.gerdiproject.harvest.etls.AbstractETL;
 import de.gerdiproject.harvest.etls.loaders.constants.DiskLoaderConstants;
-import de.gerdiproject.harvest.etls.loaders.constants.LoaderConstants;
 import de.gerdiproject.harvest.utils.file.FileUtils;
 import de.gerdiproject.json.GsonUtils;
 import de.gerdiproject.json.datacite.DataCiteJson;
@@ -120,6 +119,8 @@ public class DiskLoader extends AbstractIteratorLoader<DataCiteJson>
 
             writer.name(DiskLoaderConstants.DOCUMENTS_JSON);
             writer.beginArray();
+
+            System.out.println("OPEN: " + targetFile.getName());
         } catch (IOException e) {
             throw new IllegalStateException(e);
         }
@@ -142,14 +143,13 @@ public class DiskLoader extends AbstractIteratorLoader<DataCiteJson>
             writer.endObject();
             writer.close();
             writer = null;
+            System.out.println("CLOSE: " + targetFile.getName());
         } catch (IOException e) {
             throw new LoaderException(e.toString());
         }
 
-        if (!hasLoadedDocuments) {
+        if (!hasLoadedDocuments)
             FileUtils.deleteFile(getTargetFile());
-            throw new LoaderException(LoaderConstants.NO_DOCS_ERROR);
-        }
     }
 
 

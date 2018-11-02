@@ -83,8 +83,10 @@ public class TimestampedList <T> extends LinkedList<TimestampedEntry<T>>
      */
     public void addAllSorted(Collection<TimestampedEntry<T>> other)
     {
-        addAll(other);
-        sort(new TimestampedEntryComparator());
+        if (other != null && !other.isEmpty()) {
+            addAll(other);
+            sort(new TimestampedEntryComparator());
+        }
     }
 
 

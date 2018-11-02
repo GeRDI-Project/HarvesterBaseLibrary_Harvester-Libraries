@@ -18,6 +18,7 @@ package de.gerdiproject.harvest.etls;
 
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
@@ -32,7 +33,7 @@ import de.gerdiproject.harvest.config.parameters.BooleanParameter;
 import de.gerdiproject.harvest.etls.constants.ETLConstants;
 import de.gerdiproject.harvest.etls.enums.ETLHealth;
 import de.gerdiproject.harvest.etls.enums.ETLStatus;
-import de.gerdiproject.harvest.etls.events.DocumentsHarvestedEvent;
+import de.gerdiproject.harvest.etls.events.HarvestFinishedEvent;
 import de.gerdiproject.harvest.etls.extractors.ExtractorException;
 import de.gerdiproject.harvest.etls.extractors.IExtractor;
 import de.gerdiproject.harvest.etls.json.ETLJson;
@@ -43,6 +44,7 @@ import de.gerdiproject.harvest.etls.loaders.events.CreateLoaderEvent;
 import de.gerdiproject.harvest.etls.rest.ETLRestResource;
 import de.gerdiproject.harvest.etls.transformers.ITransformer;
 import de.gerdiproject.harvest.etls.transformers.TransformerException;
+import de.gerdiproject.harvest.etls.utils.TimestampedEntry;
 import de.gerdiproject.harvest.etls.utils.TimestampedList;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.event.IEventListener;
@@ -74,8 +76,8 @@ public abstract class AbstractETL <EOUT, TOUT> implements IEventListener
     protected final String name;
     protected volatile String hash;
 
-    protected volatile TimestampedList<ETLHealth> healthHistory;
-    protected volatile TimestampedList<ETLStatus> statusHistory;
+    protected final TimestampedList<ETLHealth> healthHistory;
+    protected final TimestampedList<ETLStatus> statusHistory;
 
 
     /**
@@ -170,6 +172,7 @@ public abstract class AbstractETL <EOUT, TOUT> implements IEventListener
     public void addEventListeners()
     {
         EventSystem.addListener(ParameterChangedEvent.class, onParameterChangedCallback);
+        EventSystem.addListener(HarvestFinishedEvent.class, onHarvestFinishedCallback);
     }
 
 
@@ -177,6 +180,7 @@ public abstract class AbstractETL <EOUT, TOUT> implements IEventListener
     public void removeEventListeners()
     {
         EventSystem.removeListener(ParameterChangedEvent.class, onParameterChangedCallback);
+        EventSystem.removeListener(HarvestFinishedEvent.class, onHarvestFinishedCallback);
     }
 
 
@@ -190,9 +194,13 @@ public abstract class AbstractETL <EOUT, TOUT> implements IEventListener
         this.statusHistory.addAllSorted(json.getStatusHistory());
 
         // if the loaded health indicates a harvesting failure, make sure to persist it
-        if (getHealth() == ETLHealth.OK && json.getHealthHistory().get(0).getValue() != ETLHealth.INITIALIZATION_FAILED) {
+        final List<TimestampedEntry<ETLHealth>> loadedHealthHistory = json.getHealthHistory();
+
+        if (loadedHealthHistory != null
+            && getHealth() == ETLHealth.OK
+            && loadedHealthHistory.get(0).getValue() != ETLHealth.INITIALIZATION_FAILED) {
             this.healthHistory.clear();
-            this.healthHistory.addAllSorted(json.getHealthHistory());
+            this.healthHistory.addAllSorted(loadedHealthHistory);
         }
     }
 
@@ -227,6 +235,7 @@ public abstract class AbstractETL <EOUT, TOUT> implements IEventListener
                 break;
 
             case QUEUED:
+                cancelHarvest();
                 setStatus(ETLStatus.DONE);
                 break;
 
@@ -390,7 +399,6 @@ public abstract class AbstractETL <EOUT, TOUT> implements IEventListener
     {
         setHealth(ETLHealth.OK);
         setStatus(ETLStatus.DONE);
-        EventSystem.sendEvent(new DocumentsHarvestedEvent(getMaxNumberOfDocuments()));
     }
 
 
@@ -552,10 +560,6 @@ public abstract class AbstractETL <EOUT, TOUT> implements IEventListener
     }
 
 
-    //////////////////////////////
-    // Event Callback Functions //
-    //////////////////////////////
-
     @Override
     public String toString()
     {
@@ -577,9 +581,36 @@ public abstract class AbstractETL <EOUT, TOUT> implements IEventListener
     }
 
 
+    //////////////////////////////
+    // Event Callback Functions //
+    //////////////////////////////
+
+    /**
+     * Event callback that is called when all ETLs finished harvesting.
+     *
+     * @see AbstractETL#onHarvestFinished(boolean)
+     */
+    private final Consumer<HarvestFinishedEvent> onHarvestFinishedCallback =
+        (HarvestFinishedEvent event) -> onHarvestFinished(event.isSuccessful());
+
+
+    /**
+     * The implementation of the harvest finished callback.
+     * Sets the status to IDLE if it is DONE.
+     *
+     * @param wasSuccessful if true, the harvest was a success
+     */
+    protected void onHarvestFinished(boolean wasSuccessful)
+    {
+        if (getStatus() == ETLStatus.DONE)
+            setStatus(ETLStatus.IDLE);
+    }
+
 
     /**
      * Event callback for changing the loader.
+     *
+     * @see AbstractETL#onParameterChanged(AbstractParameter)
      */
     private final Consumer<ParameterChangedEvent> onParameterChangedCallback =
         (ParameterChangedEvent event) -> onParameterChanged(event.getParameter());

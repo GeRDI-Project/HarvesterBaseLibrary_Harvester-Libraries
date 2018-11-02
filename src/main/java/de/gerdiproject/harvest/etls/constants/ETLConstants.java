@@ -140,7 +140,8 @@ public class ETLConstants
     public static final String START_ETLS = "Starting ETLs.";
 
     public static final String ETL_MANAGER_CACHE_PATH = FileConstants.CACHE_FOLDER_PATH + "state.json";
-    public static final String ETL_MANAGER_LOADED = "Loaded " + ETLManager.class.getSimpleName() + " from %s.";
+    public static final String ETL_MANAGER_LOADED = "Loaded " + ETLManager.class.getSimpleName() + " from cache file: %s.";
+    public static final String ETL_LOADING_FAILED = "Could not load %s state from cache!";
 
     public static final String REMAINING_TIME_UNKNOWN = "Remaining Time : ???";
     public static final String REMAINING_TIME = "Remaining Time: %1$02d:%2$tM:%2$tS";
@@ -148,11 +149,12 @@ public class ETLConstants
     public static final String ETL_DISABLED = "disabled";
 
     public static final String ABORT_START = "Aborting harvest...";
+    public static final String ABORT_FINISHED = "All ETLs have been aborted!";
     public static final String ABORT_HARVEST_FAILED_NO_HARVEST = "Cannot abort harvest: No harvest is currently running!";
 
     public static final String HARVEST_STARTED = "Harvest started!";
     public static final String HARVEST_IN_PROGRESS = "Please wait for the harvest to finish!";
-    public static final String HARVEST_DONE = "Harvest finished!";
+    public static final String HARVEST_FINISHED = "Harvest finished!";
     public static final String HARVEST_FAILED = "Harvest failed!";
 
 

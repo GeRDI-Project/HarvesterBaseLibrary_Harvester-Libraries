@@ -23,12 +23,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import de.gerdiproject.harvest.application.constants.ApplicationConstants;
+import de.gerdiproject.harvest.application.events.ServiceInitializedEvent;
 import de.gerdiproject.harvest.config.Configuration;
 import de.gerdiproject.harvest.config.constants.ConfigurationConstants;
 import de.gerdiproject.harvest.etls.AbstractETL;
 import de.gerdiproject.harvest.etls.ETLPreconditionException;
 import de.gerdiproject.harvest.etls.events.GetRepositoryNameEvent;
-import de.gerdiproject.harvest.etls.events.HarvesterInitializedEvent;
 import de.gerdiproject.harvest.etls.loaders.ILoader;
 import de.gerdiproject.harvest.etls.loaders.utils.LoaderRegistry;
 import de.gerdiproject.harvest.etls.utils.ETLManager;
@@ -353,7 +353,7 @@ public class MainContext
     private static Boolean onHarvesterInitializedSuccess(Boolean state)
     {
         // change state
-        EventSystem.sendEvent(new HarvesterInitializedEvent(state));
+        EventSystem.sendEvent(new ServiceInitializedEvent(state));
 
         // log success
         LOGGER.info(String.format(ApplicationConstants.INIT_SERVICE_SUCCESS, instance.moduleName));
@@ -377,7 +377,7 @@ public class MainContext
         LOGGER.error(ApplicationConstants.INIT_SERVICE_FAILED, reason.getCause());
 
         // change stage
-        EventSystem.sendEvent(new HarvesterInitializedEvent(false));
+        EventSystem.sendEvent(new ServiceInitializedEvent(false));
 
         return false;
     };

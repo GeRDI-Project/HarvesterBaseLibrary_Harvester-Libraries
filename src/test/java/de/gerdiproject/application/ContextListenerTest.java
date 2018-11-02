@@ -30,7 +30,7 @@ import de.gerdiproject.application.examples.MockedContextListener;
 import de.gerdiproject.harvest.application.ContextListener;
 import de.gerdiproject.harvest.application.MainContext;
 import de.gerdiproject.harvest.application.events.ContextDestroyedEvent;
-import de.gerdiproject.harvest.etls.events.HarvesterInitializedEvent;
+import de.gerdiproject.harvest.application.events.ServiceInitializedEvent;
 import de.gerdiproject.harvest.etls.loaders.AbstractURLLoader;
 import de.gerdiproject.harvest.utils.file.FileUtils;
 
@@ -83,14 +83,14 @@ public class ContextListenerTest extends AbstractObjectUnitTest<ContextListener>
 
     /**
      * Tests if the contextInitialized() method ultimately triggers a
-     * {@linkplain HarvesterInitializedEvent} to be sent that signifies that
+     * {@linkplain ServiceInitializedEvent} to be sent that signifies that
      * the {@linkplain MainContext} was initialized successfully.
      */
     @Test
     public void testServiceDeployment()
     {
-        HarvesterInitializedEvent initializationDoneEvent =
-            waitForEvent(HarvesterInitializedEvent.class,
+        ServiceInitializedEvent initializationDoneEvent =
+            waitForEvent(ServiceInitializedEvent.class,
                          INIT_TIMEOUT,
                          () -> testedObject.contextInitialized(null));
 
@@ -106,7 +106,7 @@ public class ContextListenerTest extends AbstractObjectUnitTest<ContextListener>
     public void testServiceUndeployment()
     {
         // init service
-        waitForEvent(HarvesterInitializedEvent.class,
+        waitForEvent(ServiceInitializedEvent.class,
                      INIT_TIMEOUT,
                      () -> testedObject.contextInitialized(null));
 
@@ -142,7 +142,7 @@ public class ContextListenerTest extends AbstractObjectUnitTest<ContextListener>
     public void testServiceNameInMainContext()
     {
         // init service
-        waitForEvent(HarvesterInitializedEvent.class,
+        waitForEvent(ServiceInitializedEvent.class,
                      INIT_TIMEOUT,
                      () -> testedObject.contextInitialized(null));
 

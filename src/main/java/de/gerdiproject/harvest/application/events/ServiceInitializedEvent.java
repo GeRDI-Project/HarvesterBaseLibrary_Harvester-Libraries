@@ -13,23 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.gerdiproject.harvest.etls.events;
+package de.gerdiproject.harvest.application.events;
 
 import de.gerdiproject.harvest.event.AbstractSucceededOrFailedEvent;
 
 /**
- * This event signifies that the harvester initialization process is over.
+ * This event signifies that the harvester service initialization process is over.
  *
  * @author Robin Weiss
  */
-public class HarvesterInitializedEvent extends AbstractSucceededOrFailedEvent
+public class ServiceInitializedEvent extends AbstractSucceededOrFailedEvent
 {
     /**
      * Simple Constructor.
      *
-     * @param isSuccessful if true, the harvester was initialized and is ready to go
+     * @param isSuccessful if true, the harvester service was initialized and is ready to go
      */
-    public HarvesterInitializedEvent(boolean isSuccessful)
+    public ServiceInitializedEvent(boolean isSuccessful)
     {
         super(isSuccessful);
     }

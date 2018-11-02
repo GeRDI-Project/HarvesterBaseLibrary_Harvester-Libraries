@@ -25,7 +25,7 @@ import org.junit.Test;
 import de.gerdiproject.AbstractUnitTest;
 import de.gerdiproject.application.examples.MockedContextListener;
 import de.gerdiproject.harvest.application.MainContext;
-import de.gerdiproject.harvest.etls.events.HarvesterInitializedEvent;
+import de.gerdiproject.harvest.application.events.ServiceInitializedEvent;
 import de.gerdiproject.harvest.utils.file.FileUtils;
 
 /**
@@ -64,7 +64,7 @@ public class MainContextTest extends AbstractUnitTest
 
 
     /**
-     * Tests if the init() method ultimately sends a {@linkplain HarvesterInitializedEvent}
+     * Tests if the init() method ultimately sends a {@linkplain ServiceInitializedEvent}
      * that marks the initialization as successful.
      */
     @Test
@@ -72,10 +72,10 @@ public class MainContextTest extends AbstractUnitTest
     {
         final MockedContextListener mockedContextListener = new MockedContextListener();
 
-        HarvesterInitializedEvent initDoneEvent = waitForEvent(
-                                                      HarvesterInitializedEvent.class,
-                                                      INIT_TIMEOUT,
-                                                      () -> mockedContextListener.contextInitialized(null));
+        ServiceInitializedEvent initDoneEvent = waitForEvent(
+                                                    ServiceInitializedEvent.class,
+                                                    INIT_TIMEOUT,
+                                                    () -> mockedContextListener.contextInitialized(null));
 
         assertTrue("Expected the method init() to send an event marking the initialization as successful!",
                    initDoneEvent.isSuccessful());

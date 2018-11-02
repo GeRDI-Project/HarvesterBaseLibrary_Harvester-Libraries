@@ -109,8 +109,13 @@ public class ETLManager extends AbstractRestObject<ETLManager, ETLJson> implemen
 
             // load ETL states
             for (AbstractETL<?, ?> etl : etls) {
-                final ETLJson etlInfo = loadedState.getEtlInfos().get(etl.getName());
-                etl.loadFromJson(etlInfo);
+                final String etlName = etl.getName();
+                final ETLJson etlInfo = loadedState.getEtlInfos().get(etlName);
+
+                if (etlInfo != null)
+                    etl.loadFromJson(etlInfo);
+                else
+                    LOGGER.warn(String.format(ETLConstants.ETL_LOADING_FAILED, etlName));
             }
 
             LOGGER.debug(String.format(ETLConstants.ETL_MANAGER_LOADED, cacheFile));
@@ -291,9 +296,16 @@ public class ETLManager extends AbstractRestObject<ETLManager, ETLJson> implemen
 
             saveToDisk();
 
+            final ETLStatus status = getStatus();
+
+            if (status == ETLStatus.ABORTING)
+                LOGGER.info(ETLConstants.ABORT_FINISHED);
+
+            else if (status == ETLStatus.HARVESTING)
+                LOGGER.info(ETLConstants.HARVEST_FINISHED);
+
             EventSystem.sendEvent(new HarvestFinishedEvent(true, lastHarvestHash));
             setStatus(ETLStatus.IDLE);
-
         })
         .exceptionally((Throwable reason) -> {
             LOGGER.error(ETLConstants.ETLS_FAILED_UNKNOWN_ERROR, reason);
@@ -301,6 +313,8 @@ public class ETLManager extends AbstractRestObject<ETLManager, ETLJson> implemen
             // clean up all ETLs
             processETLs((AbstractETL<?, ?> harvester) -> harvester.cancelHarvest());
             saveToDisk();
+
+            LOGGER.info(ETLConstants.HARVEST_FAILED);
 
             EventSystem.sendEvent(new HarvestFinishedEvent(false, getHash()));
             setStatus(ETLStatus.IDLE);
@@ -349,7 +363,6 @@ public class ETLManager extends AbstractRestObject<ETLManager, ETLJson> implemen
                 if (harvester.getStatus() == ETLStatus.HARVESTING || harvester.getStatus() == ETLStatus.QUEUED)
                     harvester.abortHarvest();
             });
-            // TODO EventSystem.sendEvent(new AbortingFinishedEvent());
         } else
             throw new IllegalStateException(String.format(ETLConstants.ABORT_INVALID_STATE, combinedStatusHistory.toString()));
     }
