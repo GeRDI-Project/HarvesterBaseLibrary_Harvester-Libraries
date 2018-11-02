@@ -86,6 +86,9 @@ public class TimestampedList <T> extends LinkedList<TimestampedEntry<T>>
         if (other != null && !other.isEmpty()) {
             addAll(other);
             sort(new TimestampedEntryComparator());
+
+            while (size() > capacity)
+                removeFirst();
         }
     }
 

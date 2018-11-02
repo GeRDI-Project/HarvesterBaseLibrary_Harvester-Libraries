@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -61,7 +62,7 @@ import de.gerdiproject.harvest.utils.file.ICachedObject;
  *
  * @author Robin Weiss
  */
-public class ETLManager extends AbstractRestObject<ETLManager, ETLJson> implements ICachedObject
+public class ETLManager extends AbstractRestObject<ETLManager, ETLManagerJson> implements ICachedObject
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(ETLManager.class);
 
@@ -126,7 +127,7 @@ public class ETLManager extends AbstractRestObject<ETLManager, ETLJson> implemen
     @Override
     public void saveToDisk()
     {
-        diskIo.writeObjectToFile(cacheFile, new ETLManagerJson(this, etls));
+        diskIo.writeObjectToFile(cacheFile, getAsJson(null));
     }
 
 
@@ -171,33 +172,49 @@ public class ETLManager extends AbstractRestObject<ETLManager, ETLJson> implemen
 
 
     @Override
-    public ETLJson getAsJson(MultivaluedMap<String, String> query)
+    public ETLManagerJson getAsJson(MultivaluedMap<String, String> query)
     {
-        final List<String> etlIndexList = query != null
-                                          ? query.get(ETLConstants.ETL_INDEX_QUERY)
-                                          : null;
-
-        if (etlIndexList == null || etlIndexList.size() == 0)
-            return new ETLJson(
+        return new ETLManagerJson(
+                   new ETLJson(
                        getClass().getSimpleName(),
                        combinedStatusHistory,
-                       null,
+                       new TimestampedList<>(getHealth(), 1),
                        getHarvestedCount(),
                        getMaxNumberOfDocuments(),
-                       getHash());
+                       getHash()),
+                   etls);
+    }
 
-        int index;
 
-        try {
-            index = Integer.parseInt(etlIndexList.get(0));
-        } catch (NumberFormatException e) {
-            throw new IllegalArgumentException(String.format(ETLConstants.ETL_INDEX_OUT_OF_RANGE, etls.size() - 1));
-        }
+    /**
+     * Returns a specified ETL as JSON object.
+     *
+     * @param query query parameters that should contain 'name'
+     *
+     * @throws IllegalArgumentException if no name was specified or the
+     * ETL with that name could not be found
+     *
+     * @return the ETL specified by the name-query-parameter
+     */
+    public ETLJson getETLAsJson(MultivaluedMap<String, String> query)
+    {
+        final List<String> nameList = query != null
+                                      ? query.get(ETLConstants.ETL_NAME_QUERY)
+                                      : null;
 
-        if (index < 0 || index >= etls.size())
-            throw new IllegalArgumentException(String.format(ETLConstants.ETL_INDEX_OUT_OF_RANGE, etls.size() - 1));
+        if (nameList == null || nameList.isEmpty())
+            throw new IllegalArgumentException(ETLConstants.ETL_NAME_QUERY_ERROR_EMPTY);
 
-        return etls.get(index).getAsJson();
+        final String etlName = nameList.get(0);
+        final Optional<AbstractETL<?, ?>> etl =
+            etls.stream()
+            .filter((AbstractETL<?, ?>  e) -> e.getName().equalsIgnoreCase(etlName))
+            .findFirst();
+
+        if (!etl.isPresent())
+            throw new IllegalArgumentException(String.format(ETLConstants.ETL_NAME_QUERY_ERROR_UNKNOWN, etlName));
+
+        return etl.get().getAsJson();
     }
 
 

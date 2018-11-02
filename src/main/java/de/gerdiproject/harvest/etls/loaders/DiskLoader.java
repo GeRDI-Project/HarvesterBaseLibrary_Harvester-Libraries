@@ -23,6 +23,7 @@ import java.io.OutputStreamWriter;
 import java.util.Iterator;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonIOException;
 import com.google.gson.stream.JsonWriter;
 
 import de.gerdiproject.harvest.config.Configuration;
@@ -119,8 +120,6 @@ public class DiskLoader extends AbstractIteratorLoader<DataCiteJson>
 
             writer.name(DiskLoaderConstants.DOCUMENTS_JSON);
             writer.beginArray();
-
-            System.out.println("OPEN: " + targetFile.getName());
         } catch (IOException e) {
             throw new IllegalStateException(e);
         }
@@ -143,7 +142,6 @@ public class DiskLoader extends AbstractIteratorLoader<DataCiteJson>
             writer.endObject();
             writer.close();
             writer = null;
-            System.out.println("CLOSE: " + targetFile.getName());
         } catch (IOException e) {
             throw new LoaderException(e.toString());
         }
@@ -156,7 +154,12 @@ public class DiskLoader extends AbstractIteratorLoader<DataCiteJson>
     @Override
     public void loadElement(DataCiteJson document) throws LoaderException
     {
-        if (document != null)
-            gson.toJson(document, document.getClass(), writer);
+        if (document != null) {
+            try {
+                gson.toJson(document, document.getClass(), writer);
+            } catch (JsonIOException e) {
+                throw new LoaderException(e.getMessage());
+            }
+        }
     }
 }

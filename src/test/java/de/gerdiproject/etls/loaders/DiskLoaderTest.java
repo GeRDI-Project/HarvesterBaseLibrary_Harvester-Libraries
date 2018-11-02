@@ -17,16 +17,9 @@
 package de.gerdiproject.etls.loaders;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStreamWriter;
-import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -44,10 +37,8 @@ import de.gerdiproject.harvest.config.parameters.AbstractParameter;
 import de.gerdiproject.harvest.etls.enums.ETLStatus;
 import de.gerdiproject.harvest.etls.events.HarvestStartedEvent;
 import de.gerdiproject.harvest.etls.loaders.DiskLoader;
-import de.gerdiproject.harvest.etls.loaders.LoaderException;
 import de.gerdiproject.harvest.etls.loaders.constants.DiskLoaderConstants;
 import de.gerdiproject.harvest.utils.data.DiskIO;
-import de.gerdiproject.harvest.utils.file.FileUtils;
 import de.gerdiproject.json.datacite.DataCiteJson;
 import de.gerdiproject.utils.examples.harvestercache.MockedETL;
 
@@ -139,7 +130,7 @@ public class DiskLoaderTest extends AbstractFileSystemUnitTest<DiskLoader>
      * Tests if an {@linkplain IllegalStateException} is thrown if a save is attempted when there
      * are no documents to save.
      */
-    @Test(expected = LoaderException.class)
+    @Test
     public void testSaveFailedNoDocuments()
     {
         testedObject.init(etl);
@@ -150,41 +141,8 @@ public class DiskLoaderTest extends AbstractFileSystemUnitTest<DiskLoader>
         testedObject.load(docIter);
         testedObject.clear();
 
-
-
-        fail("Expected an " + LoaderException.class.getSimpleName() + " to be thrown!");
-    }
-
-
-    /**
-     * Tests if an {@linkplain UncheckedIOException} is thrown if a save is attempted
-     * while the target file exists and cannot be overwritten.
-     *
-     * @throws IOException thrown if the file cannot be written to prior to saving it
-     * @throws FileNotFoundException thrown if the file cannot be created
-     */
-    @Test(expected = LoaderException.class)
-    public void testSaveFailedCannotWriteToFile() throws FileNotFoundException, IOException
-    {
-        testedObject.init(etl);
-        final Iterator<DataCiteJson> docIter = createRandomNumberOfSaveableDocuments();
-
-        // create the save file
-        final File savedFile = testedObject.getTargetFile();
-        FileUtils.createEmptyFile(savedFile);
-
-        // open the save file, blocking the DiskLoader from writing to it
-        try
-            (BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(savedFile), StandardCharsets.UTF_8))) {
-            // write something to the file, causing it to be not-empty
-            writer.write(HARVESTER_HASH);
-            writer.flush();
-
-            testedObject.load(docIter);
-            testedObject.clear();
-        }
-
-        fail("Expected an UncheckedIOException to be thrown!");
+        assertFalse("Expected that no file was to be created when no documents were harvested!",
+                    testedObject.getTargetFile().exists());
     }
 
 

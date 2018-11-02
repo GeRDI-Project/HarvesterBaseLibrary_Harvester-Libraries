@@ -91,23 +91,30 @@ public class ETLConstants
 
     // REST
     public static final String ALLOWED_REQUESTS =
-        "GET/outdated  Checks if there is unharvested metadata\n"
-        + "POST          Starts the harvest\n"
-        + "POST/abort    Aborts an ongoing harvest, saving, or submission\n"
-        + "POST/reset    Attempts to re-initialize this service\n"
-        + "\n"
+        "GET/.json     Returns detailed information about all ETLs."
+        + "GET/etl       Returns detailed information about an ETL.\n"
+        + "              The query parameter 'name' must be the name of the ETL.\n"
+        + "GET/health    Returns plain text that serves as a health check.\n"
+        + "GET/outdated  Checks if there is unharvested metadata.\n"
         + "GET/config    Displays a table of parameters and a means of\n"
-        + "              configuring them\n"
-        + "GET/status    Displays a detailed status report as a JSON object.\n"
+        + "              configuring them.\n"
         + "GET/schedule  Displays a configurable set of cron jobs that\n"
-        + "              can trigger harvests automatically\n"
+        + "              can trigger harvests automatically.\n"
         + "GET/log       Displays the server log. The query parameters\n"
         + "              'date', 'class', and 'level' can be used to\n"
         + "              filter the log with comma-separated values of\n"
-        + "              dates, logger classes, and log levels.";
+        + "              dates, logger classes, and log levels."
+        + "GET/versions     Returns a list of GeRDI Maven dependencies.\n"
+        + "GET/versions-all Returns a list of all Maven dependencies.\n"
+        + "\n"
+        + "POST          Starts the harvest.\n"
+        + "POST/abort    Aborts an ongoing harvest, saving, or submission.\n"
+        + "POST/reset    Attempts to re-initialize this service.";
 
-    public static final String ETL_INDEX_QUERY = "index";
-    public static final String ETL_INDEX_OUT_OF_RANGE = "The query parameter 'index' must be a number in [0,%d]!";
+
+    public static final String ETL_NAME_QUERY = "name";
+    public static final String ETL_NAME_QUERY_ERROR_EMPTY = "Missing query parameter 'name'!";
+    public static final String ETL_NAME_QUERY_ERROR_UNKNOWN = "Unknown ETL name '%s'!";
 
     public static final String UNKNOWN_NUMBER = "???";
     public static final String ETL_PRETTY = "%s : %s%n";

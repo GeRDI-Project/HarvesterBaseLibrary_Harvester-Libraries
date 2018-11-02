@@ -25,16 +25,19 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
+import javax.ws.rs.core.UriInfo;
 
 import de.gerdiproject.harvest.application.events.ResetContextEvent;
 import de.gerdiproject.harvest.etls.constants.ETLConstants;
 import de.gerdiproject.harvest.etls.enums.ETLHealth;
 import de.gerdiproject.harvest.etls.enums.ETLStatus;
 import de.gerdiproject.harvest.etls.events.GetETLManagerEvent;
+import de.gerdiproject.harvest.etls.json.ETLJson;
 import de.gerdiproject.harvest.etls.utils.ETLManager;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.rest.AbstractRestResource;
@@ -59,6 +62,34 @@ import de.gerdiproject.harvest.utils.maven.events.GetMavenUtilsEvent;
 public class ETLRestResource extends AbstractRestResource<ETLManager, GetETLManagerEvent>
 {
     /**
+     * A HTTP GET request that returns a JSON representation of a single ETL.
+     *
+     * @param uriInfo an object that can be used to retrieve the path and possible query parameters.
+     *
+     * @return a JSON object that represents the ETL or an error response describing what went wrong
+     */
+    @GET
+    @Path("etl")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getETLInfo(@Context UriInfo uriInfo)
+    {
+        // abort if object is not initialized, yet
+        if (restObject == null)
+            return HttpResponseFactory.createInitResponse();
+
+        // forward GET request to the object
+        try {
+            final ETLJson responseObject = restObject.getETLAsJson(uriInfo.getQueryParameters());
+            final String responseText =  gson.toJson(responseObject);
+
+            return HttpResponseFactory.createOkResponse(responseText);
+        } catch (Exception e) {
+            return HttpResponseFactory.createBadRequestResponse(e.getMessage());
+        }
+    }
+
+
+    /**
      * Starts a harvest using the harvester that is registered in the
      * MainContext.
      *
@@ -73,6 +104,10 @@ public class ETLRestResource extends AbstractRestResource<ETLManager, GetETLMana
     })
     public Response startHarvest(final MultivaluedMap<String, String> formParams)
     {
+        // abort if object is not initialized, yet
+        if (restObject == null)
+            return HttpResponseFactory.createInitResponse();
+
         try {
             // start a harvest
             restObject.harvest();
@@ -95,6 +130,10 @@ public class ETLRestResource extends AbstractRestResource<ETLManager, GetETLMana
     })
     public Response isOutdated()
     {
+        // abort if object is not initialized, yet
+        if (restObject == null)
+            return HttpResponseFactory.createInitResponse();
+
         return HttpResponseFactory.createOkResponse(restObject.hasOutdatedETLs());
     }
 
@@ -111,6 +150,10 @@ public class ETLRestResource extends AbstractRestResource<ETLManager, GetETLMana
     })
     public Response abort()
     {
+        // abort if object is not initialized, yet
+        if (restObject == null)
+            return HttpResponseFactory.createInitResponse();
+
         if (restObject.getStatus() == ETLStatus.HARVESTING) {
             restObject.abortHarvest();
 
@@ -188,6 +231,10 @@ public class ETLRestResource extends AbstractRestResource<ETLManager, GetETLMana
     })
     public Response getHarvestStartTimestamp()
     {
+        // abort if object is not initialized, yet
+        if (restObject == null)
+            return HttpResponseFactory.createInitResponse();
+
         long timestamp = restObject.getLatestHarvestTimestamp();
 
         if (timestamp == -1L)
@@ -210,6 +257,10 @@ public class ETLRestResource extends AbstractRestResource<ETLManager, GetETLMana
     })
     public Response getHealth()
     {
+        // abort if object is not initialized, yet
+        if (restObject == null)
+            return HttpResponseFactory.createInitResponse();
+
         final ETLHealth health = restObject.getHealth();
         final Status status =  health == ETLHealth.OK
                                ? Status.OK

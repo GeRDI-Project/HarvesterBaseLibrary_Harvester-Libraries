@@ -40,12 +40,12 @@ public class ETLManagerJson
 
     /**
      * Constructor that requires all fields.
-     * @param registry the {@linkplain ETLManager} represented by the constructed object
+     * @param overallInfo the {@linkplain ETLManager} details summarized
      * @param registeredEtls all {@linkplain AbstractETL}s registered at the registry
      */
-    public ETLManagerJson(ETLManager registry, List<AbstractETL<?, ?>> registeredEtls)
+    public ETLManagerJson(ETLJson overallInfo, List<AbstractETL<?, ?>> registeredEtls)
     {
-        this.overallInfo = registry.getAsJson(null);
+        this.overallInfo = overallInfo;
         this.etlInfos = new HashMap<>();
 
         for (AbstractETL<?, ?> etl : registeredEtls)
