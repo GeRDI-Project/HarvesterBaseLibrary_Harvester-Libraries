@@ -25,11 +25,12 @@ import java.util.function.Consumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import de.gerdiproject.harvest.application.events.ResetContextEvent;
 import de.gerdiproject.harvest.config.Configuration;
-import de.gerdiproject.harvest.config.constants.ConfigurationConstants;
 import de.gerdiproject.harvest.config.events.ParameterChangedEvent;
 import de.gerdiproject.harvest.config.parameters.AbstractParameter;
 import de.gerdiproject.harvest.config.parameters.BooleanParameter;
+import de.gerdiproject.harvest.config.parameters.constants.ParameterConstants;
 import de.gerdiproject.harvest.etls.constants.ETLConstants;
 import de.gerdiproject.harvest.etls.enums.ETLHealth;
 import de.gerdiproject.harvest.etls.enums.ETLStatus;
@@ -102,7 +103,7 @@ public abstract class AbstractETL <EOUT, TOUT> implements IEventListener
 
         // set the name to camel case
         this.name = name != null
-                    ? name.replaceAll(ConfigurationConstants.INVALID_PARAM_NAME_REGEX, "")
+                    ? name.replaceAll(ParameterConstants.INVALID_PARAM_NAME_REGEX, "")
                     : getClass().getSimpleName();
 
         this.logger = LoggerFactory.getLogger(getName());
@@ -171,6 +172,7 @@ public abstract class AbstractETL <EOUT, TOUT> implements IEventListener
     @Override
     public void addEventListeners()
     {
+        EventSystem.addListener(ResetContextEvent.class, onResetContextCallback);
         EventSystem.addListener(ParameterChangedEvent.class, onParameterChangedCallback);
         EventSystem.addListener(HarvestFinishedEvent.class, onHarvestFinishedCallback);
     }
@@ -179,6 +181,7 @@ public abstract class AbstractETL <EOUT, TOUT> implements IEventListener
     @Override
     public void removeEventListeners()
     {
+        EventSystem.removeListener(ResetContextEvent.class, onResetContextCallback);
         EventSystem.removeListener(ParameterChangedEvent.class, onParameterChangedCallback);
         EventSystem.removeListener(HarvestFinishedEvent.class, onHarvestFinishedCallback);
     }
@@ -382,12 +385,18 @@ public abstract class AbstractETL <EOUT, TOUT> implements IEventListener
      */
     public void cancelHarvest()
     {
-        if (getStatus() != ETLStatus.DONE) {
-            setStatus(ETLStatus.CANCELLING);
-            loader.clear();
-            transformer.clear();
-            extractor.clear();
-            setStatus(ETLStatus.DONE);
+        switch (getStatus()) {
+            case HARVESTING:
+            case QUEUED:
+                setStatus(ETLStatus.CANCELLING);
+                loader.clear();
+                transformer.clear();
+                extractor.clear();
+                setStatus(ETLStatus.DONE);
+                break;
+
+            default:
+                // do nothing
         }
     }
 
@@ -584,6 +593,25 @@ public abstract class AbstractETL <EOUT, TOUT> implements IEventListener
     //////////////////////////////
     // Event Callback Functions //
     //////////////////////////////
+
+    /**
+     * Event callback that is called when all the service is reset.
+     *
+     * @see AbstractETL#onResetContext()
+     */
+    private final Consumer<ResetContextEvent> onResetContextCallback =
+        (ResetContextEvent event) -> onResetContext();
+
+
+    /**
+     * The implementation of the service reset callback.
+     * Attempts to cancel ongoing harvests.
+     */
+    protected void onResetContext()
+    {
+        cancelHarvest();
+    }
+
 
     /**
      * Event callback that is called when all ETLs finished harvesting.

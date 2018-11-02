@@ -15,8 +15,8 @@
  */
 package de.gerdiproject.harvest.etls.loaders.constants;
 
-import de.gerdiproject.harvest.config.constants.ParameterMappingFunctions;
 import de.gerdiproject.harvest.config.parameters.StringParameter;
+import de.gerdiproject.harvest.config.parameters.constants.ParameterMappingFunctions;
 import de.gerdiproject.harvest.etls.loaders.DiskLoader;
 
 /**

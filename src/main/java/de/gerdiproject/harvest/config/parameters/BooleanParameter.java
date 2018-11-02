@@ -17,7 +17,7 @@ package de.gerdiproject.harvest.config.parameters;
 
 import java.util.function.Function;
 
-import de.gerdiproject.harvest.config.constants.ParameterMappingFunctions;
+import de.gerdiproject.harvest.config.parameters.constants.ParameterMappingFunctions;
 
 /**
  * This parameter represents a boolean flag.

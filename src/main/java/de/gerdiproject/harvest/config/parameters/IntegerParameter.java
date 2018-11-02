@@ -17,8 +17,8 @@ package de.gerdiproject.harvest.config.parameters;
 
 import java.util.function.Function;
 
-import de.gerdiproject.harvest.config.constants.ConfigurationConstants;
-import de.gerdiproject.harvest.config.constants.ParameterMappingFunctions;
+import de.gerdiproject.harvest.config.parameters.constants.ParameterConstants;
+import de.gerdiproject.harvest.config.parameters.constants.ParameterMappingFunctions;
 
 /**
  * This parameter holds an integer value.
@@ -67,10 +67,10 @@ public class IntegerParameter extends AbstractParameter<Integer>
     public String getStringValue()
     {
         if (value == Integer.MAX_VALUE)
-            return ConfigurationConstants.INTEGER_VALUE_MAX;
+            return ParameterConstants.INTEGER_VALUE_MAX;
 
         else if (value == Integer.MIN_VALUE)
-            return ConfigurationConstants.INTEGER_VALUE_MIN;
+            return ParameterConstants.INTEGER_VALUE_MIN;
 
         else
             return String.valueOf(value);

@@ -20,8 +20,8 @@ import java.util.Iterator;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import de.gerdiproject.harvest.config.Configuration;
-import de.gerdiproject.harvest.config.constants.ParameterMappingFunctions;
 import de.gerdiproject.harvest.config.parameters.IntegerParameter;
+import de.gerdiproject.harvest.config.parameters.constants.ParameterMappingFunctions;
 import de.gerdiproject.harvest.etls.constants.ETLConstants;
 import de.gerdiproject.harvest.etls.extractors.AbstractIteratorExtractor;
 import de.gerdiproject.harvest.etls.json.ETLJson;

@@ -14,7 +14,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package de.gerdiproject.harvest.config.constants;
+package de.gerdiproject.harvest.config.parameters.constants;
 
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -75,11 +75,11 @@ public class ParameterMappingFunctions
         if (value == null)
             return false;
 
-        else if (ConfigurationConstants.BOOLEAN_VALID_VALUES_LIST.contains(value))
-            return value.equals(ConfigurationConstants.BOOLEAN_VALID_VALUES_LIST.get(0)) || Boolean.parseBoolean(value);
+        else if (ParameterConstants.BOOLEAN_VALID_VALUES_LIST.contains(value))
+            return value.equals(ParameterConstants.BOOLEAN_VALID_VALUES_LIST.get(0)) || Boolean.parseBoolean(value);
 
         else
-            throw new ClassCastException(ConfigurationConstants.BOOLEAN_ALLOWED_VALUES);
+            throw new ClassCastException(ParameterConstants.BOOLEAN_ALLOWED_VALUES);
     }
 
 
@@ -98,10 +98,10 @@ public class ParameterMappingFunctions
         if (value == null)
             return 0;
 
-        else if (value.equals(ConfigurationConstants.INTEGER_VALUE_MAX))
+        else if (value.equals(ParameterConstants.INTEGER_VALUE_MAX))
             return Integer.MAX_VALUE;
 
-        else if (value.equals(ConfigurationConstants.INTEGER_VALUE_MIN))
+        else if (value.equals(ParameterConstants.INTEGER_VALUE_MIN))
             return Integer.MIN_VALUE;
 
         else {
@@ -109,7 +109,7 @@ public class ParameterMappingFunctions
                 // try to parse the integer
                 return Integer.parseInt(value);
             } catch (NumberFormatException e) {
-                throw new ClassCastException(ConfigurationConstants.INTEGER_ALLOWED_VALUES);
+                throw new ClassCastException(ParameterConstants.INTEGER_ALLOWED_VALUES);
             }
         }
     }
@@ -130,10 +130,10 @@ public class ParameterMappingFunctions
         if (value == null)
             return 0;
 
-        else if (value.equals(ConfigurationConstants.INTEGER_VALUE_MAX))
+        else if (value.equals(ParameterConstants.INTEGER_VALUE_MAX))
             return Integer.MAX_VALUE;
 
-        else if (value.equals(ConfigurationConstants.INTEGER_VALUE_MIN))
+        else if (value.equals(ParameterConstants.INTEGER_VALUE_MIN))
             return 0;
 
         else {
@@ -143,11 +143,11 @@ public class ParameterMappingFunctions
 
                 // do not accept negative numbers
                 if (intValue < 0)
-                    throw new IllegalArgumentException(ConfigurationConstants.INTEGER_RANGE_ALLOWED_VALUES);
+                    throw new IllegalArgumentException(ParameterConstants.INTEGER_RANGE_ALLOWED_VALUES);
 
                 return intValue;
             } catch (NumberFormatException e) {
-                throw new ClassCastException(ConfigurationConstants.INTEGER_RANGE_ALLOWED_VALUES);
+                throw new ClassCastException(ParameterConstants.INTEGER_RANGE_ALLOWED_VALUES);
             }
         }
     }
@@ -170,7 +170,7 @@ public class ParameterMappingFunctions
         try {
             new URL(value);
         } catch (MalformedURLException e) {
-            throw new IllegalArgumentException(ConfigurationConstants.URL_PARAM_INVALID);
+            throw new IllegalArgumentException(ParameterConstants.URL_PARAM_INVALID);
         }
 
         return value;
@@ -201,7 +201,7 @@ public class ParameterMappingFunctions
                 case ABORTING:
                 case CANCELLING:
                     throw new IllegalStateException(String.format(
-                                                        ConfigurationConstants.ETL_PARAM_INVALID_STATE,
+                                                        ParameterConstants.ETL_PARAM_INVALID_STATE,
                                                         etl.getName(),
                                                         etlStatus.toString().toLowerCase()));
 
@@ -235,7 +235,7 @@ public class ParameterMappingFunctions
                 case ABORTING:
                 case CANCELLING:
                     throw new IllegalStateException(String.format(
-                                                        ConfigurationConstants.ETL_REGISTRY_PARAM_INVALID_STATE,
+                                                        ParameterConstants.ETL_REGISTRY_PARAM_INVALID_STATE,
                                                         overallEtlStatus.toString().toLowerCase()));
 
                 default:
@@ -272,7 +272,7 @@ public class ParameterMappingFunctions
             String allowedValuesText = validValues.toString();
             allowedValuesText = allowedValuesText.substring(1, allowedValuesText.length() - 1);
 
-            throw new IllegalArgumentException(ConfigurationConstants.ALLOWED_VALUES + allowedValuesText);
+            throw new IllegalArgumentException(ParameterConstants.ALLOWED_VALUES + allowedValuesText);
         };
     }
 
@@ -310,7 +310,7 @@ public class ParameterMappingFunctions
             }
 
             // if the value is not in the list, throw exception
-            throw new IllegalArgumentException(ConfigurationConstants.ALLOWED_VALUES + allowedValuesStringBuilder.toString());
+            throw new IllegalArgumentException(ParameterConstants.ALLOWED_VALUES + allowedValuesStringBuilder.toString());
         };
     }
 }

@@ -22,7 +22,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import de.gerdiproject.harvest.config.Configuration;
-import de.gerdiproject.harvest.config.constants.ConfigurationConstants;
+import de.gerdiproject.harvest.config.parameters.constants.ParameterConstants;
 
 /**
  * Parameters are part of the {@linkplain Configuration}. Each parameter holds some information about how and when it can be changed.
@@ -59,8 +59,11 @@ public abstract class AbstractParameter<T>
      */
     public AbstractParameter(String key, String category, T defaultValue, Function<String, T> customMappingFunction) throws IllegalArgumentException
     {
-        if (!key.matches(ConfigurationConstants.VALID_PARAM_NAME_REGEX))
-            throw new IllegalArgumentException(String.format(ConfigurationConstants.INVALID_PARAMETER_KEY, key));
+        if (!key.matches(ParameterConstants.VALID_PARAM_NAME_REGEX))
+            throw new IllegalArgumentException(String.format(ParameterConstants.INVALID_PARAMETER_KEY, key));
+
+        if (!category.matches(ParameterConstants.VALID_PARAM_NAME_REGEX))
+            throw new IllegalArgumentException(String.format(ParameterConstants.INVALID_CATEGORY_NAME, key));
 
         this.key = key;
         this.category = category;
@@ -96,7 +99,7 @@ public abstract class AbstractParameter<T>
     public String getCompositeKey()
     {
         return String.format(
-                   ConfigurationConstants.COMPOSITE_KEY,
+                   ParameterConstants.COMPOSITE_KEY,
                    category.toLowerCase(),
                    key.toLowerCase());
     }
@@ -173,11 +176,11 @@ public abstract class AbstractParameter<T>
         try {
             newValue = mappingFunction.apply(value);
         } catch (RuntimeException e) {
-            return String.format(ConfigurationConstants.CANNOT_CHANGE_PARAM, getCompositeKey(), value, e.getMessage());
+            return String.format(ParameterConstants.CANNOT_CHANGE_PARAM, getCompositeKey(), value, e.getMessage());
         }
 
         this.value = newValue;
-        return String.format(ConfigurationConstants.CHANGED_PARAM, getCompositeKey(), getStringValue());
+        return String.format(ParameterConstants.CHANGED_PARAM, getCompositeKey(), getStringValue());
     }
 
 
@@ -187,7 +190,7 @@ public abstract class AbstractParameter<T>
      */
     public void loadFromEnvironmentVariables()
     {
-        String envVarName = String.format(ConfigurationConstants.ENVIRONMENT_VARIABLE, category, key);
+        String envVarName = String.format(ParameterConstants.ENVIRONMENT_VARIABLE, category, key);
 
         final Map<String, String> environmentVariables = System.getenv();
 

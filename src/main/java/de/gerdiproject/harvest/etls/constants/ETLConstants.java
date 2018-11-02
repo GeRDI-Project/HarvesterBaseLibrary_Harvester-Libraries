@@ -15,9 +15,9 @@
  */
 package de.gerdiproject.harvest.etls.constants;
 
-import de.gerdiproject.harvest.config.constants.ConfigurationConstants;
-import de.gerdiproject.harvest.config.constants.ParameterMappingFunctions;
 import de.gerdiproject.harvest.config.parameters.BooleanParameter;
+import de.gerdiproject.harvest.config.parameters.constants.ParameterConstants;
+import de.gerdiproject.harvest.config.parameters.constants.ParameterMappingFunctions;
 import de.gerdiproject.harvest.etls.AbstractIteratorETL;
 import de.gerdiproject.harvest.etls.extractors.AbstractIteratorExtractor;
 import de.gerdiproject.harvest.etls.loaders.AbstractIteratorLoader;
@@ -115,7 +115,7 @@ public class ETLConstants
     public static final String PROGRESS_NO_BOUNDS = " (%d / ???)";
     public static final String NAME_TOTAL = "---\nOVERALL";
 
-    public static final String MAX_RANGE_NUMBER = "%d (" + ConfigurationConstants.INTEGER_VALUE_MAX + ")";
+    public static final String MAX_RANGE_NUMBER = "%d (" + ParameterConstants.INTEGER_VALUE_MAX + ")";
 
     public static final String BUSY_ERROR_MESSAGE = "The harvesters are currently processing another request!";
 

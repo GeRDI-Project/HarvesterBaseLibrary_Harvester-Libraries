@@ -21,8 +21,8 @@ import java.util.Map;
 import java.util.function.Function;
 
 import de.gerdiproject.harvest.config.Configuration;
-import de.gerdiproject.harvest.config.constants.ParameterMappingFunctions;
 import de.gerdiproject.harvest.config.parameters.StringParameter;
+import de.gerdiproject.harvest.config.parameters.constants.ParameterMappingFunctions;
 import de.gerdiproject.harvest.etls.loaders.ILoader;
 import de.gerdiproject.harvest.etls.loaders.constants.LoaderConstants;
 import de.gerdiproject.harvest.etls.loaders.events.CreateLoaderEvent;

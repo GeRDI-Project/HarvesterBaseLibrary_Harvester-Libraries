@@ -17,7 +17,7 @@ package de.gerdiproject.harvest.config.parameters;
 
 import java.util.function.Function;
 
-import de.gerdiproject.harvest.config.constants.ConfigurationConstants;
+import de.gerdiproject.harvest.config.parameters.constants.ParameterConstants;
 
 /**
  * This parameter holds a String value used for passwords.
@@ -67,6 +67,6 @@ public class PasswordParameter extends StringParameter
     public String getStringValue()
     {
         // always return ***** as a string value
-        return ConfigurationConstants.PASSWORD_STRING_TEXT;
+        return ParameterConstants.PASSWORD_STRING_TEXT;
     }
 }
