@@ -18,6 +18,7 @@ package de.gerdiproject.harvest.utils.data;
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.lang.reflect.Type;
 import java.net.HttpURLConnection;
@@ -163,7 +164,7 @@ public class WebDataRetriever implements IDataRetriever
                     return getHtml(redirectedUrl);
 
                 default:
-                    return Jsoup.parse(connection.getInputStream(), MainContext.getCharset().displayName(), url);
+                    return Jsoup.parse(connection.getInputStream(), charset.displayName(), url);
             }
         } catch (Exception e) {
             LOGGER.warn(String.format(DataOperationConstants.WEB_ERROR_JSON, url), e);
@@ -352,7 +353,7 @@ public class WebDataRetriever implements IDataRetriever
                 return createWebReader(redirectedUrl);
 
             default:
-                return new InputStreamReader(connection.getInputStream(), MainContext.getCharset());
+                return new InputStreamReader(connection.getInputStream(), charset);
         }
     }
 }

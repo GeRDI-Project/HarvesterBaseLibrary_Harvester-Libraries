@@ -265,7 +265,7 @@ public class FileUtils
         // make sure the source directory exists
         if (!sourceDirectory.exists()) {
             LOGGER.error(String.format(
-                             CacheConstants.DIR_MERGE_FAILED_NO_TARGET_DIR,
+                             FileConstants.DIR_MERGE_FAILED_NO_SOURCE_DIR,
                              sourceDirectory.getPath(),
                              targetDirectory.getPath()));
             return;
