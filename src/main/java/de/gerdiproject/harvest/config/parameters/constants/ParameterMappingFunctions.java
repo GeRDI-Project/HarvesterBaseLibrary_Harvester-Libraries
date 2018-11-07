@@ -61,6 +61,23 @@ public class ParameterMappingFunctions
 
 
     /**
+     * This function checks if the string value is neither null nor empty and throws
+     * an exception if this check fails.
+     *
+     * @param value a string value
+     *
+     * @return a non-empty, non-null string value
+     */
+    public static  String mapToNonEmptyString(String value) throws RuntimeException
+    {
+        if (value == null || value.isEmpty())
+            throw new IllegalArgumentException(ParameterConstants.NON_EMPTY_STRING_PARAM_INVALID);
+
+        return value;
+    }
+
+
+    /**
      * This function checks if a string represents a boolean value and throws an
      * exception if it does not.
      *

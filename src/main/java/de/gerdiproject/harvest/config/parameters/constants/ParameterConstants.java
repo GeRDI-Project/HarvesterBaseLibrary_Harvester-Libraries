@@ -47,6 +47,7 @@ public class ParameterConstants
     public static final String INTEGER_RANGE_ALLOWED_VALUES = ALLOWED_VALUES + INTEGER_VALUE_MAX + ", " + INTEGER_VALUE_MIN + ", 0, 1, ...";
     public static final String INTEGER_ALLOWED_VALUES = ALLOWED_VALUES + String.format("[%d, %d]", Integer.MIN_VALUE, Integer.MAX_VALUE);
 
+    public static final String NON_EMPTY_STRING_PARAM_INVALID = "It must be a non-empty string!";
     public static final String URL_PARAM_INVALID = "It must be a valid URL!";
     public static final String ETL_PARAM_INVALID_STATE = "The '%s' must be idle, but it is currently %s!";
     public static final String ETL_REGISTRY_PARAM_INVALID_STATE = "All ETLs must be idle, but they are currently %s!";
@@ -58,6 +59,7 @@ public class ParameterConstants
     public static final String INVALID_CATEGORY_NAME = "Invalid Category-Name: %s%nNames must only consist of letters!";
 
     public static final String ENVIRONMENT_VARIABLE = "GERDI_HARVESTER_%S_%S";
+
 
 
     /**
