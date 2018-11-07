@@ -20,6 +20,7 @@ import java.util.Iterator;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import de.gerdiproject.harvest.config.Configuration;
+import de.gerdiproject.harvest.config.parameters.AbstractParameter;
 import de.gerdiproject.harvest.config.parameters.IntegerParameter;
 import de.gerdiproject.harvest.config.parameters.constants.ParameterMappingFunctions;
 import de.gerdiproject.harvest.etls.constants.ETLConstants;
@@ -39,7 +40,7 @@ public abstract class AbstractIteratorETL<EXOUT, TRANSOUT> extends AbstractETL<I
 {
     protected volatile IntegerParameter startIndexParameter;
     protected volatile IntegerParameter endIndexParameter;
-    private final AtomicInteger harvestedCount = new AtomicInteger(0);
+    protected final AtomicInteger harvestedCount = new AtomicInteger(0);
 
 
     /**
@@ -81,8 +82,6 @@ public abstract class AbstractIteratorETL<EXOUT, TRANSOUT> extends AbstractETL<I
                                                 ETLConstants.END_INDEX_PARAM_DEFAULT_VALUE,
                                                 ParameterMappingFunctions.createMapperForETL(ParameterMappingFunctions::mapToUnsignedInteger, this)));
     }
-
-
 
 
     @Override
@@ -162,5 +161,25 @@ public abstract class AbstractIteratorETL<EXOUT, TRANSOUT> extends AbstractETL<I
     public void incrementHarvestedDocuments()
     {
         harvestedCount.incrementAndGet();
+    }
+
+
+    //////////////////////////////
+    // Event Callback Functions //
+    //////////////////////////////
+
+    @Override
+    protected void onParameterChanged(AbstractParameter<?> param)
+    {
+        super.onParameterChanged(param);
+
+        final String paramKey = param.getCompositeKey();
+
+        // if the range changed, re-init the extractor to recalculate the max
+        // number of harvestable documents
+        if (this.extractor != null &&
+            (paramKey.equals(startIndexParameter.getCompositeKey())
+             || paramKey.equals(endIndexParameter.getCompositeKey())))
+            this.extractor.init(this);
     }
 }
