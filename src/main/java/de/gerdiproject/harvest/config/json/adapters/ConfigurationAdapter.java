@@ -27,10 +27,10 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
-import com.google.gson.reflect.TypeToken;
 
 import de.gerdiproject.harvest.config.Configuration;
 import de.gerdiproject.harvest.config.parameters.AbstractParameter;
+import de.gerdiproject.json.GsonUtils;
 
 /**
  * This adapter defines the (de-)serialization behavior of
@@ -40,6 +40,7 @@ import de.gerdiproject.harvest.config.parameters.AbstractParameter;
  */
 public class ConfigurationAdapter implements JsonDeserializer<Configuration>, JsonSerializer<Configuration>
 {
+    private static final Type PARAM_MAP_TYPE = GsonUtils.<Map<String, ParameterCategoryJson>>createType();
     private final String moduleName;
 
 
@@ -57,8 +58,7 @@ public class ConfigurationAdapter implements JsonDeserializer<Configuration>, Js
     @Override
     public Configuration deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context) throws JsonParseException
     {
-        final Type mapType = new TypeToken<Map<String, ParameterCategoryJson>>() {} .getType();
-        final Map<String, ParameterCategoryJson> jsonCategories = context.deserialize(json, mapType);
+        final Map<String, ParameterCategoryJson> jsonCategories = context.deserialize(json, PARAM_MAP_TYPE);
 
         // add all parameters to a single list
         final List<AbstractParameter<?>> parameters = new LinkedList<>();
