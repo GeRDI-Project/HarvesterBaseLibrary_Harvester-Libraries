@@ -25,6 +25,7 @@ import java.util.function.Consumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import de.gerdiproject.harvest.application.events.ContextDestroyedEvent;
 import de.gerdiproject.harvest.application.events.ResetContextEvent;
 import de.gerdiproject.harvest.config.Configuration;
 import de.gerdiproject.harvest.config.events.ParameterChangedEvent;
@@ -173,6 +174,7 @@ public abstract class AbstractETL <EOUT, TOUT> implements IEventListener
     public void addEventListeners()
     {
         EventSystem.addListener(ResetContextEvent.class, onResetContextCallback);
+        EventSystem.addListener(ContextDestroyedEvent.class, onContextDestroyedCallback);
         EventSystem.addListener(ParameterChangedEvent.class, onParameterChangedCallback);
         EventSystem.addListener(HarvestFinishedEvent.class, onHarvestFinishedCallback);
     }
@@ -182,6 +184,7 @@ public abstract class AbstractETL <EOUT, TOUT> implements IEventListener
     public void removeEventListeners()
     {
         EventSystem.removeListener(ResetContextEvent.class, onResetContextCallback);
+        EventSystem.removeListener(ContextDestroyedEvent.class, onContextDestroyedCallback);
         EventSystem.removeListener(ParameterChangedEvent.class, onParameterChangedCallback);
         EventSystem.removeListener(HarvestFinishedEvent.class, onHarvestFinishedCallback);
     }
@@ -660,4 +663,23 @@ public abstract class AbstractETL <EOUT, TOUT> implements IEventListener
             this.loader = createLoader();
         }
     }
+
+
+    /**
+     * Event callback that is called when the service is shut down.
+     *
+     * @see AbstractETL#onContextDestroyed()
+     */
+    private final Consumer<ContextDestroyedEvent> onContextDestroyedCallback =
+        (ContextDestroyedEvent event) -> onContextDestroyed();
+
+
+    /**
+     * The implementation of the context destroyed callback.
+     */
+    protected void onContextDestroyed()
+    {
+        cancelHarvest();
+    }
+
 }
