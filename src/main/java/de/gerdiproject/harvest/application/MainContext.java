@@ -169,7 +169,7 @@ public class MainContext
 
 
     /**
-     * Synchronous Callback function:<br>
+     * Callback function for the {@linkplain GetMainLogEvent}.
      * Returns the main log of the service.
      *
      * @return the main log of the service
@@ -181,7 +181,7 @@ public class MainContext
 
 
     /**
-     * Synchronous Callback function:<br>
+     * Callback function for the {@linkplain GetMavenUtilsEvent}.
      * Returns Maven utilities.
      *
      * @return Maven utilities
@@ -204,15 +204,15 @@ public class MainContext
     {
         LOGGER.info(String.format(ApplicationConstants.INIT_FIELD, LoaderRegistry.class.getSimpleName()));
 
-        final LoaderRegistry manager = new LoaderRegistry();
-        manager.addEventListeners();
+        final LoaderRegistry registry = new LoaderRegistry();
+        registry.addEventListeners();
 
         for (Class<? extends ILoader<?>> s : loaderClasses)
-            manager.registerLoader(s);
+            registry.registerLoader(s);
 
         LOGGER.info(String.format(ApplicationConstants.INIT_FIELD_SUCCESS, LoaderRegistry.class.getSimpleName()));
 
-        return manager;
+        return registry;
     }
 
 
@@ -268,7 +268,7 @@ public class MainContext
     {
         LOGGER.info(String.format(ApplicationConstants.INIT_FIELD, ETLManager.class.getSimpleName()));
 
-        final ETLManager registry = new ETLManager(moduleName);
+        final ETLManager manager = new ETLManager(moduleName);
 
         // construct harvesters
         final List<? extends AbstractETL<?, ?>> etlComponents = etlSupplier.get();
@@ -284,17 +284,17 @@ public class MainContext
             } catch (ETLPreconditionException e) { // NOPMD - Ignore exceptions, because we do not need to harvest yet
             }
 
-            registry.register(etl);
+            manager.register(etl);
 
             LOGGER.info(String.format(ApplicationConstants.INIT_FIELD_SUCCESS, etl.getName()));
         }
 
-        registry.loadFromDisk();
-        registry.addEventListeners();
+        manager.loadFromDisk();
+        manager.addEventListeners();
 
         LOGGER.info(String.format(ApplicationConstants.INIT_FIELD_SUCCESS, ETLManager.class.getSimpleName()));
 
-        return registry;
+        return manager;
     }
 
 

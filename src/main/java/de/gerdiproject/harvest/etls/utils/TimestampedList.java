@@ -32,6 +32,8 @@ import java.util.LinkedList;
 public class TimestampedList <T> extends LinkedList<TimestampedEntry<T>>
 {
     private static final long serialVersionUID = 6315549009940523304L;
+    private static final TimestampedEntryComparator COMPARATOR = new TimestampedEntryComparator();
+
     private final transient int capacity;
 
     /**
@@ -85,7 +87,7 @@ public class TimestampedList <T> extends LinkedList<TimestampedEntry<T>>
     {
         if (other != null && !other.isEmpty()) {
             addAll(other);
-            sort(new TimestampedEntryComparator());
+            sort(COMPARATOR);
 
             while (size() > capacity)
                 removeFirst();
@@ -105,9 +107,9 @@ public class TimestampedList <T> extends LinkedList<TimestampedEntry<T>>
 
 
     /**
-     * Returns the latest value of the list.
+     * Returns the timestamp of the latest value of the list.
      *
-     * @return the latest value of the list
+     * @return the timestamp of the latest value of the list
      */
     public long getLatestTimestamp()
     {

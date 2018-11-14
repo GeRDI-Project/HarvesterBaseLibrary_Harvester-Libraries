@@ -34,8 +34,10 @@ import de.gerdiproject.harvest.utils.HashGenerator;
 import de.gerdiproject.json.datacite.DataCiteJson;
 
 /**
- * This abstract class offers a basis for sending documents to a DataBase any
- * WebService.
+ * This abstract class offers a basis for sending documents to a search index
+ * via a REST request.
+ * 
+ * @param <OUT> The type of the sent documents
  *
  * @author Robin Weiss
  */
@@ -156,7 +158,8 @@ public abstract class AbstractURLLoader <OUT extends DataCiteJson> extends Abstr
 
     /**
      * The core of the submission function which is to be implemented by
-     * subclasses.
+     * subclasses. This method should submit each document of the map to the destination URL
+     * via a REST request.
      *
      * @param documents a map of documentIDs to documents that are to be
      *            submitted, the values may also be null, in which case the

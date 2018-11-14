@@ -15,8 +15,7 @@
  *  under the License.
  */
 /**
- * This package contains static classes of constants concerning
- * the loaders of {@linkplain de.gerdiproject.harvest.etls.AbstractETL} components.
+ * This package contains constants concerning {@linkplain de.gerdiproject.harvest.etls.loaders.ILoader} components.
  *
  * @author Robin Weiss
  */

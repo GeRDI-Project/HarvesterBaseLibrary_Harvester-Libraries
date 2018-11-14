@@ -20,6 +20,7 @@ import java.time.Instant;
 
 /**
  * This class serves as an entry in the {@linkplain TimestampedList}.
+ *
  * @param <T> the type of the value that is stored
  *
  * @author Robin Weiss

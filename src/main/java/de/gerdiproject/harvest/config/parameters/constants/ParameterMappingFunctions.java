@@ -54,7 +54,7 @@ public class ParameterMappingFunctions
      *
      * @return a string value
      */
-    public static  String mapToString(String value)
+    public static String mapToString(String value)
     {
         return value;
     }
@@ -65,10 +65,12 @@ public class ParameterMappingFunctions
      * an exception if this check fails.
      *
      * @param value a string value
+     * 
+     * @throws IllegalArgumentException if the value is null or empty
      *
      * @return a non-empty, non-null string value
      */
-    public static  String mapToNonEmptyString(String value) throws RuntimeException
+    public static String mapToNonEmptyString(String value) throws IllegalArgumentException
     {
         if (value == null || value.isEmpty())
             throw new IllegalArgumentException(ParameterConstants.NON_EMPTY_STRING_PARAM_INVALID);
@@ -83,11 +85,11 @@ public class ParameterMappingFunctions
      *
      * @param value a string representation of a parameter value
      *
+     * @throws ClassCastException this exception is thrown when the String value cannot be mapped to the target value
+     * 
      * @return a boolean value
-     *
-     * @throws RuntimeException this exception is thrown when the String value cannot be mapped to the target value
      */
-    public static  Boolean mapToBoolean(String value) throws RuntimeException
+    public static Boolean mapToBoolean(String value) throws ClassCastException
     {
         if (value == null)
             return false;
@@ -106,11 +108,11 @@ public class ParameterMappingFunctions
      *
      * @param value a string representation of a parameter value
      *
-     * @return a valid URL string
-     *
-     * @throws RuntimeException this exception is thrown when the String value cannot be mapped to the target value
+     * @throws ClassCastException this exception is thrown when the String value cannot be mapped to the target value
+     * 
+     * @return an integer value
      */
-    public static Integer mapToInteger(String value) throws RuntimeException
+    public static Integer mapToInteger(String value) throws ClassCastException
     {
         if (value == null)
             return 0;
@@ -138,11 +140,11 @@ public class ParameterMappingFunctions
      *
      * @param value a string representation of a parameter value
      *
-     * @return the integer value represented by the string
-     *
-     * @throws RuntimeException this exception is thrown when the String value cannot be mapped to the target value
+     * @throws ClassCastException this exception is thrown when the String value cannot be mapped to the target value
+     * 
+     * @return a positive integer value represented by the string
      */
-    public static Integer mapToUnsignedInteger(String value) throws RuntimeException
+    public static Integer mapToUnsignedInteger(String value) throws ClassCastException
     {
         if (value == null)
             return 0;
@@ -171,15 +173,15 @@ public class ParameterMappingFunctions
 
 
     /**
-     * This function checks if a string represents a valid URL and returns the value if it does.
+     * This function checks if a string represents a valid {@linkplain URL} and returns the value if it does.
      *
      * @param value a string representation of a parameter value
      *
+     * @throws IllegalArgumentException this exception is thrown when the string does not represent a valid {@linkplain URL}
+     * 
      * @return a valid URL string
-     *
-     * @throws RuntimeException this exception is thrown when the String value cannot be mapped to the target value
      */
-    public static String mapToUrlString(String value) throws RuntimeException
+    public static String mapToUrlString(String value) throws IllegalArgumentException
     {
         if (value == null)
             return null;
@@ -202,11 +204,11 @@ public class ParameterMappingFunctions
      * @param originalMappingFunction the mapping function that is to be extended
      * @param etl the {@linkplain AbstractETL} of which the status is to be checked
      *
-     * @param <VAL> the type of the parameter value
+     * @param <V> the type of the parameter value
      *
      * @return a mapping function
      */
-    public static <VAL> Function<String, VAL> createMapperForETL(Function<String, VAL> originalMappingFunction, AbstractETL<?, ?> etl)
+    public static <V> Function<String, V> createMapperForETL(Function<String, V> originalMappingFunction, AbstractETL<?, ?> etl)
     {
         return (String value) -> {
             final ETLStatus etlStatus = etl.getStatus();
@@ -235,11 +237,11 @@ public class ParameterMappingFunctions
      *
      * @param originalMappingFunction the mapping function that is to be extended
      *
-     * @param <VAL> the type of the parameter value
+     * @param <V> the type of the parameter value
      *
      * @return a mapping function
      */
-    public static <VAL> Function<String, VAL> createMapperForETLs(Function<String, VAL> originalMappingFunction)
+    public static <V> Function<String, V> createMapperForETLs(Function<String, V> originalMappingFunction)
     {
         return (String value) -> {
             final ETLManager registry = EventSystem.sendSynchronousEvent(new GetETLManagerEvent());

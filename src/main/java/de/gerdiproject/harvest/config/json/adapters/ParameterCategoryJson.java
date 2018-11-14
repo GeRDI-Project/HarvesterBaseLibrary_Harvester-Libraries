@@ -34,8 +34,7 @@ class ParameterCategoryJson
 
 
     /**
-     * Constructor that requires the {@linkplain ParameterCategory} that is
-     * to be represented by this class.
+     * Constructor that sets up a new parameter list.
      */
     public ParameterCategoryJson()
     {

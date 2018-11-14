@@ -41,9 +41,9 @@ public abstract class AbstractIteratorTransformer <TRANSIN, TRANSOUT> implements
 
 
     /**
-     * Transforms a single element from the input iterator.
+     * Transforms a single element.
      *
-     * @param source a single element from the input iterator
+     * @param source a single element
      *
      * @throws TransformerException thrown when an element cannot be transformed
      *

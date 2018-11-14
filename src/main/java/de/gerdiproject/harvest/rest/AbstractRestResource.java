@@ -160,6 +160,7 @@ public abstract class AbstractRestResource<T1 extends AbstractRestObject<T1, ?>,
 
     /**
      * This method returns a string that offers a description of viable HTTP requests.
+     *
      * @return a string that offers a description of viable HTTP requests
      */
     protected abstract String getAllowedRequests();

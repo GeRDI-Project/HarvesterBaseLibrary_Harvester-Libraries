@@ -15,7 +15,8 @@
  *  under the License.
  */
 /**
+ * This package contains constants concerning {@linkplain de.gerdiproject.harvest.etls.extractors.IExtractor} components.
+ * 
  * @author Robin Weiss
- *
  */
 package de.gerdiproject.harvest.etls.extractors;

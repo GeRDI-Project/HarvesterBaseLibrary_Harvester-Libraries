@@ -29,20 +29,20 @@ import de.gerdiproject.harvest.config.parameters.constants.ParameterConstants;
  *
  * @author Robin Weiss
  *
- * @param <T> The underlying type of the parameter value
+ * @param <V> The underlying type of the parameter value
  */
-public abstract class AbstractParameter<T>
+public abstract class AbstractParameter<V>
 {
     protected static final Logger LOGGER = LoggerFactory.getLogger(AbstractParameter.class);
 
-    protected T value;
+    protected V value;
     protected final String key;
     protected final String category;
 
     /**
      * This function maps a String value to the parameter value type.
      */
-    protected Function<String, T> mappingFunction;
+    protected Function<String, V> mappingFunction;
 
     private boolean isRegistered;
 
@@ -57,7 +57,7 @@ public abstract class AbstractParameter<T>
      *
      * @throws IllegalArgumentException thrown if the key contains invalid characters
      */
-    public AbstractParameter(String key, String category, T defaultValue, Function<String, T> customMappingFunction) throws IllegalArgumentException
+    public AbstractParameter(String key, String category, V defaultValue, Function<String, V> customMappingFunction) throws IllegalArgumentException
     {
         if (!key.matches(ParameterConstants.VALID_PARAM_NAME_REGEX))
             throw new IllegalArgumentException(String.format(ParameterConstants.INVALID_PARAMETER_KEY, key));
@@ -77,7 +77,7 @@ public abstract class AbstractParameter<T>
      *
      * @return a copy of this parameter
      */
-    public abstract AbstractParameter<T> copy();
+    public abstract AbstractParameter<V> copy();
 
 
     /**
@@ -121,7 +121,7 @@ public abstract class AbstractParameter<T>
      *
      * @return the parameter value
      */
-    public final T getValue()
+    public final V getValue()
     {
         return value;
     }
@@ -143,7 +143,7 @@ public abstract class AbstractParameter<T>
      *
      * @return the function that maps strings to parameter values
      */
-    public Function<String, T> getMappingFunction()
+    public Function<String, V> getMappingFunction()
     {
         return mappingFunction;
     }
@@ -154,7 +154,7 @@ public abstract class AbstractParameter<T>
      *
      * @param mappingFunction a function that maps strings to parameter values
      */
-    public void setMappingFunction(Function<String, T> mappingFunction)
+    public void setMappingFunction(Function<String, V> mappingFunction)
     {
         this.mappingFunction = mappingFunction;
     }
@@ -170,9 +170,9 @@ public abstract class AbstractParameter<T>
      */
     public final String setValue(String value)
     {
-        final T newValue;
+        final V newValue;
 
-        // try to map the string value to
+        // try to map the input string to the expected parameter value
         try {
             newValue = mappingFunction.apply(value);
         } catch (RuntimeException e) {

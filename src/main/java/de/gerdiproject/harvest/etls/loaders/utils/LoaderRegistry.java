@@ -42,7 +42,7 @@ public class LoaderRegistry implements IEventListener
 
 
     /**
-     * Constructor that defined a default active submitter.
+     * Constructor that defines a default active submitter.
      */
     public LoaderRegistry()
     {

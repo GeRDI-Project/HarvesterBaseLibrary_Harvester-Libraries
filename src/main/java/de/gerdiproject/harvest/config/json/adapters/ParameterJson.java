@@ -38,6 +38,7 @@ class ParameterJson
 
     /**
      * Constructs a JSON representation using an {@linkplain AbstractParameter}.
+     * 
      * @param parameter the {@linkplain AbstractParameter} of which a JSON object is to be created
      */
     public ParameterJson(AbstractParameter<?> parameter)
@@ -62,7 +63,7 @@ class ParameterJson
         if (type.equals(BooleanParameter.class.getSimpleName()))
             param = new BooleanParameter(key, category, Boolean.valueOf(value));
 
-        if (type.equals(IntegerParameter.class.getSimpleName()))
+        else if (type.equals(IntegerParameter.class.getSimpleName()))
             param = new IntegerParameter(key, category, value == null ? 0 : Integer.parseInt(value));
 
         else if (type.equals(StringParameter.class.getSimpleName()))
