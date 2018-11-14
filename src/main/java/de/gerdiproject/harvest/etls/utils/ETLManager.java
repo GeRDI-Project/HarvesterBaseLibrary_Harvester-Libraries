@@ -49,7 +49,6 @@ import de.gerdiproject.harvest.etls.events.HarvestStartedEvent;
 import de.gerdiproject.harvest.etls.json.ETLJson;
 import de.gerdiproject.harvest.etls.json.ETLManagerJson;
 import de.gerdiproject.harvest.event.EventSystem;
-import de.gerdiproject.harvest.event.IEventListener;
 import de.gerdiproject.harvest.rest.AbstractRestObject;
 import de.gerdiproject.harvest.utils.HashGenerator;
 import de.gerdiproject.harvest.utils.data.DiskIO;
@@ -141,13 +140,15 @@ public class ETLManager extends AbstractRestObject<ETLManager, ETLManagerJson> i
         for (AbstractETL<?, ?> etl : etls) {
             sb.append(etl.toString());
 
-            totalCurrCount += etl.getHarvestedCount();
-            final int maxCount = etl.getMaxNumberOfDocuments();
+            if (etl.isEnabled()) {
+                totalCurrCount += etl.getHarvestedCount();
+                final int maxCount = etl.getMaxNumberOfDocuments();
 
-            if (maxCount != -1 && totalMaxCount != -1)
-                totalMaxCount += maxCount;
-            else
-                totalMaxCount = -1;
+                if (maxCount != -1 && totalMaxCount != -1)
+                    totalMaxCount += maxCount;
+                else
+                    totalMaxCount = -1;
+            }
         }
 
         final ETLStatus status = getStatus();
@@ -263,10 +264,9 @@ public class ETLManager extends AbstractRestObject<ETLManager, ETLManagerJson> i
     {
         super.addEventListeners();
 
-        processETLs((AbstractETL<?, ?> harvester) -> {
-            if (harvester instanceof IEventListener)
-                ((IEventListener)harvester).addEventListeners();
-        });
+        // event listeners must be added even if the ETL is disabled
+        for (AbstractETL<?, ?> etl : etls)
+            etl.addEventListeners();
     }
 
 
@@ -275,10 +275,9 @@ public class ETLManager extends AbstractRestObject<ETLManager, ETLManagerJson> i
     {
         super.removeEventListeners();
 
-        processETLs((AbstractETL<?, ?> harvester) -> {
-            if (harvester instanceof IEventListener)
-                ((IEventListener)harvester).removeEventListeners();
-        });
+        // event listeners must be removed even if the ETL is disabled
+        for (AbstractETL<?, ?> etl : etls)
+            etl.removeEventListeners();
     }
 
 
@@ -561,17 +560,17 @@ public class ETLManager extends AbstractRestObject<ETLManager, ETLManagerJson> i
         final List<T> returnValues = new ArrayList<>(len);
 
         if (concurrentParam.getValue()) {
-            final List<CompletableFuture<?>> subProcesseList = new LinkedList<>();
+            final List<CompletableFuture<?>> subProcessList = new LinkedList<>();
 
             for (int i = 0; i < len; i++) {
                 final int j = i;
 
                 if (etls.get(j).isEnabled())
-                    subProcesseList.add(CompletableFuture.runAsync(() -> returnValues.add(function.apply(etls.get(j)))));
+                    subProcessList.add(CompletableFuture.runAsync(() -> returnValues.add(function.apply(etls.get(j)))));
             }
 
             // convert list to array
-            final CompletableFuture<?>[] subProcessArray = subProcesseList.toArray(new CompletableFuture<?>[subProcesseList.size()]);
+            final CompletableFuture<?>[] subProcessArray = subProcessList.toArray(new CompletableFuture<?>[subProcessList.size()]);
 
             // wait for all sub-processes to complete
             try {
@@ -597,7 +596,11 @@ public class ETLManager extends AbstractRestObject<ETLManager, ETLManagerJson> i
      */
     private void processETLs(Consumer<AbstractETL<?, ?>> consumer)
     {
-        processETLs((AbstractETL<?, ?> etl) -> {consumer.accept(etl); return null;});
+        processETLs((AbstractETL<?, ?> etl) -> {
+            if (etl.isEnabled())
+                consumer.accept(etl);
+            return null;
+        });
     }
 
 
@@ -689,41 +692,4 @@ public class ETLManager extends AbstractRestObject<ETLManager, ETLManagerJson> i
         long hours = milliseconds / 3600000;
         return String.format(ETLConstants.REMAINING_TIME, hours, milliseconds);
     }
-
-
-    /**
-     * Removes a sub-harvester from the list of ongoing harvests and
-     * checks if it was successful. It the last running harvester is removed,
-     * another {@linkplain HarvestFinishedEvent} ist dispatched.
-     *
-    private void finishHarvester(HarvestFinishedEvent event)
-    {
-        if(harvestingSubHarvesters.remove(event.getHarvester()))
-        {
-            isFailing |= !event.isSuccessful();
-
-            if(harvestingSubHarvesters.isEmpty())
-            {
-                EventSystem.sendEvent(new HarvestFinishedEvent(!isFailing, getHash(), this));
-            }
-        }
-
-    }
-
-
-    //////////////////////////////
-    // Event Callback Functions //
-    //////////////////////////////
-
-
-    private final Consumer<HarvestFinishedEvent> onHarvesterFinished = (HarvestFinishedEvent event) -> {
-            finishHarvester(event);
-    };
-
-
-    private final Consumer<AbortingFinishedEvent> onAbortingFinished = (AbortingFinishedEvent event) -> {
-            finishHarvester(event);
-    };
-    */
-
 }
