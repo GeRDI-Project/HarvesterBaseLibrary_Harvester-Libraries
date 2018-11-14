@@ -204,7 +204,7 @@ public abstract class AbstractURLLoader <OUT extends DataCiteJson> extends Abstr
                         LoaderConstants.SUBMIT_PARTIAL_OK, numberOfDocs));
             }
         } catch (Exception e) {
-            throw new LoaderException(e.toString());
+            throw new LoaderException(e);
         }
     }
 

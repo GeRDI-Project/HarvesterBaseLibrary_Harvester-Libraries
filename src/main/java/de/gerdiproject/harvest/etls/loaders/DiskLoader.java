@@ -29,7 +29,9 @@ import com.google.gson.stream.JsonWriter;
 import de.gerdiproject.harvest.config.Configuration;
 import de.gerdiproject.harvest.config.parameters.StringParameter;
 import de.gerdiproject.harvest.etls.AbstractETL;
+import de.gerdiproject.harvest.etls.extractors.ExtractorException;
 import de.gerdiproject.harvest.etls.loaders.constants.DiskLoaderConstants;
+import de.gerdiproject.harvest.etls.transformers.TransformerException;
 import de.gerdiproject.harvest.utils.file.FileUtils;
 import de.gerdiproject.json.GsonUtils;
 import de.gerdiproject.json.datacite.DataCiteJson;
@@ -81,8 +83,10 @@ public class DiskLoader extends AbstractIteratorLoader<DataCiteJson>
     {
         try {
             super.load(documents);
+        } catch (ExtractorException | TransformerException | LoaderException e) {
+            throw e;
         } catch (Exception e) {
-            throw new LoaderException(e.getMessage());
+            throw new LoaderException(e);
         }
     }
 
@@ -143,7 +147,7 @@ public class DiskLoader extends AbstractIteratorLoader<DataCiteJson>
             writer.close();
             writer = null;
         } catch (IOException e) {
-            throw new LoaderException(e.toString());
+            throw new LoaderException(e);
         }
 
         if (!hasLoadedDocuments)
@@ -158,7 +162,7 @@ public class DiskLoader extends AbstractIteratorLoader<DataCiteJson>
             try {
                 gson.toJson(document, document.getClass(), writer);
             } catch (JsonIOException e) {
-                throw new LoaderException(e.getMessage());
+                throw new LoaderException(e);
             }
         }
     }

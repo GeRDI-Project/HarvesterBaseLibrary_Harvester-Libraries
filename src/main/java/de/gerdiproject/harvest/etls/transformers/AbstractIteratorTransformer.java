@@ -20,6 +20,7 @@ import java.util.Iterator;
 
 import de.gerdiproject.harvest.etls.AbstractETL;
 import de.gerdiproject.harvest.etls.extractors.AbstractIteratorExtractor;
+import de.gerdiproject.harvest.etls.extractors.ExtractorException;
 
 /**
  * This transformer can transform multiple documents.
@@ -82,8 +83,21 @@ public abstract class AbstractIteratorTransformer <TRANSIN, TRANSOUT> implements
         @Override
         public TRANSOUT next()
         {
-            final TRANSIN in = input.next();
-            return in != null ? transformElement(in) : null;
+            final TRANSIN in;
+
+            try {
+                in = input.next();
+            } catch (ExtractorException e) {
+                throw e;
+            } catch (Exception e) {
+                throw new ExtractorException(e);
+            }
+
+            try {
+                return in != null ? transformElement(in) : null;
+            } catch (Exception e) {
+                throw new TransformerException(e);
+            }
         }
     }
 

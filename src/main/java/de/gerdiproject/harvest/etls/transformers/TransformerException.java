@@ -36,4 +36,15 @@ public class TransformerException extends RuntimeException
     {
         super(message);
     }
+
+
+    /**
+     * Constructor that forwards a super class constructor.
+     *
+     * @param e the exception that caused the failure
+     */
+    public TransformerException(Throwable e)
+    {
+        super(e);
+    }
 }

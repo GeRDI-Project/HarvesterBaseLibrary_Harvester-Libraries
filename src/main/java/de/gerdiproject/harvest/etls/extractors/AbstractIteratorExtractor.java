@@ -109,7 +109,12 @@ public abstract class AbstractIteratorExtractor <EXOUT> implements IExtractor<It
         public EXOUT next()
         {
             index++;
-            return completeIterator.next();
+
+            try {
+                return completeIterator.next();
+            } catch (Exception e) {
+                throw new ExtractorException(e);
+            }
         }
     }
 

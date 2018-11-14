@@ -21,7 +21,9 @@ import java.util.Iterator;
 import de.gerdiproject.harvest.etls.AbstractETL;
 import de.gerdiproject.harvest.etls.AbstractIteratorETL;
 import de.gerdiproject.harvest.etls.enums.ETLStatus;
+import de.gerdiproject.harvest.etls.extractors.ExtractorException;
 import de.gerdiproject.harvest.etls.loaders.constants.LoaderConstants;
+import de.gerdiproject.harvest.etls.transformers.TransformerException;
 
 /**
  * This loader can load multiple documents.
@@ -78,6 +80,10 @@ public abstract class AbstractIteratorLoader <LOUT> implements ILoader<Iterator<
         try {
             loadElement(document);
             hasLoadedDocuments = true;
+        } catch (ExtractorException | TransformerException | LoaderException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new LoaderException(e);
         } finally {
             // even if the loading failed, we processed something, so we increment the counter
             dedicatedEtl.incrementHarvestedDocuments();

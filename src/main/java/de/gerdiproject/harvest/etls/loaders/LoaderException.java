@@ -27,12 +27,23 @@ public class LoaderException extends RuntimeException
     private static final long serialVersionUID = -3315557273151442217L;
 
     /**
-     * Constructor that forwards the super class constructor.
+     * Constructor that forwards a super class constructor.
      *
      * @param message a message describing the exception
      */
     public LoaderException(String message)
     {
         super(message);
+    }
+
+
+    /**
+     * Constructor that forwards a super class constructor.
+     *
+     * @param e the exception that caused the failure
+     */
+    public LoaderException(Throwable e)
+    {
+        super(e);
     }
 }
