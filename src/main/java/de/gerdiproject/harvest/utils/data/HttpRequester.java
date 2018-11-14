@@ -57,8 +57,14 @@ public class HttpRequester
      */
     public HttpRequester(Gson gson, Charset httpCharset)
     {
-        this.readFromDisk = Configuration.registerParameter(DataOperationConstants.READ_FROM_DISK_PARAM);
-        this.writeToDisk = Configuration.registerParameter(DataOperationConstants.WRITE_TO_DISK_PARAM);
+        try {
+            this.readFromDisk = Configuration.registerParameter(DataOperationConstants.READ_FROM_DISK_PARAM);
+            this.writeToDisk = Configuration.registerParameter(DataOperationConstants.WRITE_TO_DISK_PARAM);
+        } catch (IllegalStateException e) {
+            this.readFromDisk = DataOperationConstants.READ_FROM_DISK_PARAM;
+            this.writeToDisk = DataOperationConstants.WRITE_TO_DISK_PARAM;
+        }
+
         this.diskIO = new DiskIO(gson, httpCharset);
         this.webDataRetriever = new WebDataRetriever(gson, httpCharset);
 
