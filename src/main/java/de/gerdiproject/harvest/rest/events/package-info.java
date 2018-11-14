@@ -15,7 +15,8 @@
  *  under the License.
  */
 /**
- * @author Robin Weiss
+ * This package contains Events concerning HTTP requests.
  *
+ * @author Robin Weiss
  */
 package de.gerdiproject.harvest.rest.events;

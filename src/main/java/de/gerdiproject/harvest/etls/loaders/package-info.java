@@ -15,7 +15,8 @@
  *  under the License.
  */
 /**
- * @author Robin Weiss
+ * This package contains classes concerning {@linkplain de.gerdiproject.harvest.etls.loaders.ILoader}s.
  *
+ * @author Robin Weiss
  */
 package de.gerdiproject.harvest.etls.loaders;

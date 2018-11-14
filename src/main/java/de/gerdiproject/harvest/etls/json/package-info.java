@@ -15,7 +15,8 @@
  *  under the License.
  */
 /**
- * @author Robin Weiss
+ * This package contains JSON objects of {@linkplain de.gerdiproject.harvest.etls.AbstractETL}s and related classes.
  *
+ * @author Robin Weiss
  */
 package de.gerdiproject.harvest.etls.json;

@@ -16,7 +16,7 @@
  */
 
 /**
- * This package contains Loader JSON responses.
+ * This package contains JSON objects concerning {@linkplain de.gerdiproject.harvest.etls.loaders.ILoader}s.
  *
  * @author Robin Weiss
  */

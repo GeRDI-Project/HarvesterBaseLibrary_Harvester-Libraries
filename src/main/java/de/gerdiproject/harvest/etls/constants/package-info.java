@@ -15,7 +15,7 @@
  */
 /**
  * This package contains static classes of constants concerning
- * the harvesting process.
+ * {@linkplain de.gerdiproject.harvest.etls.AbstractETL}s.
  *
  * @author Robin Weiss
  */

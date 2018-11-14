@@ -61,7 +61,7 @@ import de.gerdiproject.harvest.utils.HashGenerator;
  * from the {@link ETLRestResource}, as well as some utility objects that are
  * required by all harvests. Subclasses must implement the concrete harvesting
  * process.
- * 
+ *
  * @param <T> the type of the extracted source data
  * @param <S> the type of the transformed documents
  *

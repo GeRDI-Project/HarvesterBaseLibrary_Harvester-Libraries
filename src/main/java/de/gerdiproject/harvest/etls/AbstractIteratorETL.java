@@ -36,7 +36,7 @@ import de.gerdiproject.harvest.etls.transformers.AbstractIteratorTransformer;
  *
  * @param <T> the type of the extracted source data
  * @param <S> the type of the transformed documents
- * 
+ *
  * @author Robin Weiss
  */
 public abstract class AbstractIteratorETL<T, S> extends AbstractETL<Iterator<T>, Iterator<S>>

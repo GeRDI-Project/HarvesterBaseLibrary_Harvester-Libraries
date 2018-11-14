@@ -15,7 +15,8 @@
  *  under the License.
  */
 /**
- * @author Robin Weiss
+ * This package contains utility classes concerning {@linkplain de.gerdiproject.harvest.etls.AbstractETL}s.
  *
+ * @author Robin Weiss
  */
 package de.gerdiproject.harvest.etls.utils;
