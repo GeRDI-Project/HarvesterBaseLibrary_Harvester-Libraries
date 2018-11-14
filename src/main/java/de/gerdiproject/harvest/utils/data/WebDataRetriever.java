@@ -31,6 +31,7 @@ import java.util.Map;
 import javax.ws.rs.core.HttpHeaders;
 import javax.xml.ws.http.HTTPException;
 
+import org.jsoup.HttpStatusException;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.slf4j.Logger;
@@ -198,43 +199,37 @@ public class WebDataRetriever implements IDataRetriever
      */
     public String getRestResponse(RestRequestType method, String url, String body, String authorization, String contentType) throws HTTPException, IOException
     {
-        try {
-            HttpURLConnection connection = sendRestRequest(method, url, body, authorization, contentType);
+        HttpURLConnection connection = sendRestRequest(method, url, body, authorization, contentType);
 
-            // create a reader for the HTTP response
-            InputStream response = connection.getInputStream();
-            BufferedReader reader = new BufferedReader(new InputStreamReader(response, charset));
+        // create a reader for the HTTP response
+        InputStream response = connection.getInputStream();
+        BufferedReader reader = new BufferedReader(new InputStreamReader(response, charset));
 
-            // read the first line of the response
-            String line = reader.readLine();
-            String responseText = null;
+        // read the first line of the response
+        String line = reader.readLine();
+        String responseText = null;
 
-            // make sure we got a response
-            if (line != null) {
-                StringBuilder responseBuilder = new StringBuilder(line);
+        // make sure we got a response
+        if (line != null) {
+            StringBuilder responseBuilder = new StringBuilder(line);
 
-                // read subsequent lines of the response
+            // read subsequent lines of the response
+            line = reader.readLine();
+
+            while (line != null) {
+                // add linebreak before appending the next line
+                responseBuilder.append('\n').append(line);
                 line = reader.readLine();
-
-                while (line != null) {
-                    // add linebreak before appending the next line
-                    responseBuilder.append('\n').append(line);
-                    line = reader.readLine();
-                }
-
-                responseText = responseBuilder.toString();
             }
 
-            // close the response reader
-            reader.close();
-
-            // combine the read lines to a single string
-            return responseText;
-        } catch (IOException e) {
-
-
-            throw e;
+            responseText = responseBuilder.toString();
         }
+
+        // close the response reader
+        reader.close();
+
+        // combine the read lines to a single string
+        return responseText;
     }
 
 
@@ -315,15 +310,8 @@ public class WebDataRetriever implements IDataRetriever
         int responseCode = connection.getResponseCode();
 
         if (responseCode < 200 || responseCode >= 300) {
-            LOGGER.info(String.format(
-                            DataOperationConstants.WEB_ERROR_REST_HTTP,
-                            method.toString(),
-                            url,
-                            body,
-                            responseCode
-                        ));
-
-            throw new HTTPException(connection.getResponseCode());
+            final String message = String.format(DataOperationConstants.WEB_ERROR_REST_HTTP, method.toString(), url, body, responseCode);
+            throw new HttpStatusException(message, responseCode, url);
         }
 
         return connection;
