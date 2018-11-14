@@ -29,9 +29,12 @@ import de.gerdiproject.harvest.etls.transformers.ITransformer;
  * document for each iterated element. The Extractor and Transformer are
  * static and will not be created anew in this implementation.
  *
+ * @param <T> the type of the extracted source data
+ * @param <S> the type of the transformed documents
+ * 
  * @author Robin Weiss
  */
-public class StaticIteratorETL<EXOUT, TRANSOUT> extends AbstractIteratorETL<EXOUT, TRANSOUT>
+public class StaticIteratorETL<T, S> extends AbstractIteratorETL<T, S>
 {
     /**
      * Constructor that initializes the extractor and transformer.
@@ -39,7 +42,7 @@ public class StaticIteratorETL<EXOUT, TRANSOUT> extends AbstractIteratorETL<EXOU
      * @param extractor retrieves an object from the harvested repository
      * @param transformer transforms the extracted object to a document that can be put to the search index
      */
-    public StaticIteratorETL(AbstractIteratorExtractor<EXOUT> extractor, AbstractIteratorTransformer<EXOUT, TRANSOUT> transformer)
+    public StaticIteratorETL(AbstractIteratorExtractor<T> extractor, AbstractIteratorTransformer<T, S> transformer)
     {
         this(null, extractor, transformer);
     }
@@ -52,7 +55,7 @@ public class StaticIteratorETL<EXOUT, TRANSOUT> extends AbstractIteratorETL<EXOU
      * @param extractor retrieves an object from the harvested repository
      * @param transformer transforms the extracted object to a document that can be put to the search index
      */
-    public StaticIteratorETL(String name, AbstractIteratorExtractor<EXOUT> extractor, AbstractIteratorTransformer<EXOUT, TRANSOUT> transformer)
+    public StaticIteratorETL(String name, AbstractIteratorExtractor<T> extractor, AbstractIteratorTransformer<T, S> transformer)
     {
         super(name);
         this.extractor = extractor;
@@ -61,14 +64,14 @@ public class StaticIteratorETL<EXOUT, TRANSOUT> extends AbstractIteratorETL<EXOU
 
 
     @Override
-    protected IExtractor<Iterator<EXOUT>> createExtractor()
+    protected IExtractor<Iterator<T>> createExtractor()
     {
         return extractor;
     }
 
 
     @Override
-    protected ITransformer<Iterator<EXOUT>, Iterator<TRANSOUT>> createTransformer()
+    protected ITransformer<Iterator<T>, Iterator<S>> createTransformer()
     {
         return transformer;
     }

@@ -40,14 +40,14 @@ import de.gerdiproject.harvest.rest.events.GetRestObjectEvent;
  * It offers a standard plain-text and JSON getter, as well
  * as a helper function for manipulating the singleton object.
  *
- * @param T1 the type of the singleton object that is represented by the {@linkplain AbstractRestResource}
- * @param T2 the type of a {@linkplain GetRestObjectEvent} that is used to retrieve the singleton object
+ * @param <T> the type of the singleton object that is represented by the {@linkplain AbstractRestResource}
+ * @param <S> the type of a {@linkplain GetRestObjectEvent} that is used to retrieve the singleton object
  *
  * @author Robin Weiss
  */
-public abstract class AbstractRestResource<T1 extends AbstractRestObject<T1, ?>, T2 extends GetRestObjectEvent<T1>>
+public abstract class AbstractRestResource<T extends AbstractRestObject<T, ?>, S extends GetRestObjectEvent<T>>
 {
-    protected final T1 restObject;
+    protected final T restObject;
     protected final Gson gson;
 
 
@@ -60,11 +60,11 @@ public abstract class AbstractRestResource<T1 extends AbstractRestObject<T1, ?>,
     @SuppressWarnings("unchecked") // this warning is suppressed, because the only generic Superclass MUST be T2. The cast will always succeed.
     public AbstractRestResource(Gson gson)
     {
-        final Class<T2> getEventClass =
-            (Class<T2>)((ParameterizedType) getClass().getGenericSuperclass()).getActualTypeArguments()[1];
+        final Class<S> getEventClass =
+            (Class<S>)((ParameterizedType) getClass().getGenericSuperclass()).getActualTypeArguments()[1];
 
         // try to retrieve the object
-        T1 retrievedObject;
+        T retrievedObject;
 
         try {
             retrievedObject = EventSystem.sendSynchronousEvent(getEventClass.newInstance());

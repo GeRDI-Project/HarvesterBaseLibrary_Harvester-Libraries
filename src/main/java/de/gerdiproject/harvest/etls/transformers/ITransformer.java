@@ -21,12 +21,12 @@ import de.gerdiproject.harvest.etls.AbstractETL;
 /**
  * This class represents the Transformer of an ETL process.
  *
- * @param <TRANSIN> the type of objects that are to be transformed
- * @param <TRANSOUT> the resulting type of the transformed objects
+ * @param <T> the type of objects that are to be transformed
+ * @param <S> the resulting type of the transformed objects
  *
  * @author Robin Weiss
  */
-public interface ITransformer <TRANSIN, TRANSOUT>
+public interface ITransformer <T, S>
 {
     /**
      * Initializes the transformer for a new harvest.
@@ -45,7 +45,7 @@ public interface ITransformer <TRANSIN, TRANSOUT>
      *
      * @return a document that can be loaded
      */
-    TRANSOUT transform(TRANSIN source) throws TransformerException;
+    S transform(T source) throws TransformerException;
 
 
     /**

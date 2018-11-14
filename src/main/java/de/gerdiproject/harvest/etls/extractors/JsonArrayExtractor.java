@@ -35,16 +35,16 @@ import de.gerdiproject.harvest.utils.data.HttpRequester;
  * This class represents the Extractor of an ETL process that
  * parses a JSON array from a HTTP response.
  *
- * @param <EXOUT> the type of elements of the JSON array
+ * @param <T> the type of elements of the JSON array
  *
  * @author Robin Weiss
  */
-public class JsonArrayExtractor<EXOUT> extends AbstractIteratorExtractor<EXOUT>
+public class JsonArrayExtractor<T> extends AbstractIteratorExtractor<T>
 {
     // this warning is suppressed, because the only generic Superclass MUST be T. The cast will always succeed.
     @SuppressWarnings("unchecked")
-    private final Class<EXOUT> outputClass =
-        (Class<EXOUT>)((ParameterizedType) getClass().getGenericSuperclass()).getActualTypeArguments()[0];
+    private final Class<T> outputClass =
+        (Class<T>)((ParameterizedType) getClass().getGenericSuperclass()).getActualTypeArguments()[0];
 
     private final Gson gson;
     private final String jsonQuery;
@@ -52,7 +52,7 @@ public class JsonArrayExtractor<EXOUT> extends AbstractIteratorExtractor<EXOUT>
     private String url;
 
     private String hash;
-    private List<EXOUT> extractedList;
+    private List<T> extractedList;
 
 
     /**
@@ -115,7 +115,7 @@ public class JsonArrayExtractor<EXOUT> extends AbstractIteratorExtractor<EXOUT>
 
 
     @Override
-    public Iterator<EXOUT> extractAll()
+    public Iterator<T> extractAll()
     {
         return extractedList.listIterator();
     }
@@ -159,7 +159,7 @@ public class JsonArrayExtractor<EXOUT> extends AbstractIteratorExtractor<EXOUT>
      *
      * @return a list containing the elements of a JSON array
      */
-    protected List<EXOUT> getListFromJson(JsonElement json) throws ExtractorException
+    protected List<T> getListFromJson(JsonElement json) throws ExtractorException
     {
         // retrieve the JsonArray from the JsonObject via the provided query
         if (jsonQuery != null) {
@@ -170,7 +170,7 @@ public class JsonArrayExtractor<EXOUT> extends AbstractIteratorExtractor<EXOUT>
         if (!json.isJsonArray())
             throw new ExtractorException("%s did not yield a JSON-Array at '%s'!");
 
-        final List<EXOUT> list = new LinkedList<>();
+        final List<T> list = new LinkedList<>();
 
         final JsonArray sourceArray = json.getAsJsonArray();
 

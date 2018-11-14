@@ -22,11 +22,11 @@ import de.gerdiproject.harvest.etls.AbstractETL;
 /**
  * This class represents the Loader of an ETL process.
  *
- * @param <LOUT> the type of the document that is to be loaded
+ * @param <S> the type of the document that is to be loaded
  *
  * @author Robin Weiss
  */
-public interface ILoader <LOUT>
+public interface ILoader <S>
 {
     /**
      * Initializes the loader for a new harvest.
@@ -42,7 +42,7 @@ public interface ILoader <LOUT>
      * @param document the document that is to be submitted
      * @throws LoaderException when the load did not work properly
      */
-    void load(LOUT document) throws LoaderException;
+    void load(S document) throws LoaderException;
 
 
     /**

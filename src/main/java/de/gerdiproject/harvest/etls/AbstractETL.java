@@ -61,14 +61,17 @@ import de.gerdiproject.harvest.utils.HashGenerator;
  * from the {@link ETLRestResource}, as well as some utility objects that are
  * required by all harvests. Subclasses must implement the concrete harvesting
  * process.
+ * 
+ * @param <T> the type of the extracted source data
+ * @param <S> the type of the transformed documents
  *
  * @author Robin Weiss
  */
-public abstract class AbstractETL <EOUT, TOUT> implements IEventListener
+public abstract class AbstractETL <T, S> implements IEventListener
 {
-    protected IExtractor<EOUT> extractor;
-    protected ITransformer<EOUT, TOUT> transformer;
-    protected ILoader<TOUT> loader;
+    protected IExtractor<T> extractor;
+    protected ITransformer<T, S> transformer;
+    protected ILoader<S> loader;
 
     protected volatile BooleanParameter enabledParameter;
 
@@ -125,7 +128,7 @@ public abstract class AbstractETL <EOUT, TOUT> implements IEventListener
      * @return an {@linkplain IExtractor} for retrieving elements from
      * the harvested repository
      */
-    protected abstract IExtractor<EOUT> createExtractor();
+    protected abstract IExtractor<T> createExtractor();
 
 
     /**
@@ -134,7 +137,7 @@ public abstract class AbstractETL <EOUT, TOUT> implements IEventListener
      *
      * @return {@linkplain ITransformer} for transforming source elements
      */
-    protected abstract ITransformer<EOUT, TOUT> createTransformer();
+    protected abstract ITransformer<T, S> createTransformer();
 
 
     /**
@@ -144,10 +147,10 @@ public abstract class AbstractETL <EOUT, TOUT> implements IEventListener
      * @return an {@linkplain ILoader} for submitting the harvested documents
      */
     @SuppressWarnings("unchecked") // NOPMD the possible ClassCastException is caught
-    protected ILoader<TOUT> createLoader()
+    protected ILoader<S> createLoader()
     {
         try {
-            return (ILoader<TOUT>) EventSystem.sendSynchronousEvent(new CreateLoaderEvent());
+            return (ILoader<S>) EventSystem.sendSynchronousEvent(new CreateLoaderEvent());
 
         } catch (ClassCastException e) {
             logger.error(e.getMessage());
@@ -423,8 +426,8 @@ public abstract class AbstractETL <EOUT, TOUT> implements IEventListener
             logger.info(String.format(ETLConstants.ETL_STARTED, getName()));
             setStatus(ETLStatus.HARVESTING);
 
-            final EOUT exOut = extractor.extract();
-            final TOUT transOut = transformer.transform(exOut);
+            final T exOut = extractor.extract();
+            final S transOut = transformer.transform(exOut);
             loader.load(transOut);
 
             // clear up temporary variables and readers

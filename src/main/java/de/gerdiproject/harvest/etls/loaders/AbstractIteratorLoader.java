@@ -28,11 +28,11 @@ import de.gerdiproject.harvest.etls.transformers.TransformerException;
 /**
  * This loader can load multiple documents.
  *
- * @param <LOUT> the type of the documents to be loaded
+ * @param <S> the type of the documents to be loaded
  *
  * @author Robin Weiss
  */
-public abstract class AbstractIteratorLoader <LOUT> implements ILoader<Iterator<LOUT>>
+public abstract class AbstractIteratorLoader <S> implements ILoader<Iterator<S>>
 {
     protected AbstractIteratorETL<?, ?> dedicatedEtl;
     protected boolean hasLoadedDocuments;
@@ -50,11 +50,11 @@ public abstract class AbstractIteratorLoader <LOUT> implements ILoader<Iterator<
 
 
     @Override
-    public void load(Iterator<LOUT> documents) throws LoaderException
+    public void load(Iterator<S> documents) throws LoaderException
     {
         // only load documents while the harvester is running
         while (documents.hasNext() && dedicatedEtl.getStatus() == ETLStatus.HARVESTING) {
-            final LOUT next = documents.next();
+            final S next = documents.next();
             loadElementAndIncrement(next);
         }
     }
@@ -69,7 +69,7 @@ public abstract class AbstractIteratorLoader <LOUT> implements ILoader<Iterator<
      *
      * @throws LoaderException when the load failed
      */
-    protected void loadElementAndIncrement(LOUT document) throws LoaderException
+    protected void loadElementAndIncrement(S document) throws LoaderException
     {
         // even if nothing was harvested, one source was processed, so we increment the counter
         if (document == null) {
@@ -98,5 +98,5 @@ public abstract class AbstractIteratorLoader <LOUT> implements ILoader<Iterator<
      *
      * @throws LoaderException when the load failed
      */
-    protected abstract void loadElement(LOUT document) throws LoaderException;
+    protected abstract void loadElement(S document) throws LoaderException;
 }

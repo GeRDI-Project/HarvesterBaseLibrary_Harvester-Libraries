@@ -25,12 +25,12 @@ import de.gerdiproject.harvest.etls.extractors.ExtractorException;
 /**
  * This transformer can transform multiple documents.
  *
- * @param <TRANSIN> the type of objects that are to be transformed
- * @param <TRANSOUT> the resulting type of the transformed objects
+ * @param <T> the type of objects that are to be transformed
+ * @param <S> the resulting type of the transformed objects
  *
  * @author Robin Weiss
  */
-public abstract class AbstractIteratorTransformer <TRANSIN, TRANSOUT> implements ITransformer<Iterator<TRANSIN>, Iterator<TRANSOUT>>
+public abstract class AbstractIteratorTransformer <T, S> implements ITransformer<Iterator<T>, Iterator<S>>
 {
 
     @Override
@@ -49,11 +49,11 @@ public abstract class AbstractIteratorTransformer <TRANSIN, TRANSOUT> implements
      *
      * @return a transformed document
      */
-    protected abstract TRANSOUT transformElement(TRANSIN source) throws TransformerException;
+    protected abstract S transformElement(T source) throws TransformerException;
 
 
     @Override
-    public Iterator<TRANSOUT> transform(Iterator<TRANSIN> elements) throws TransformerException
+    public Iterator<S> transform(Iterator<T> elements) throws TransformerException
     {
         return new PassThroughIterator(elements);
     }
@@ -65,11 +65,11 @@ public abstract class AbstractIteratorTransformer <TRANSIN, TRANSOUT> implements
      *
      * @author Robin Weiss
      */
-    private class PassThroughIterator implements Iterator<TRANSOUT>
+    private class PassThroughIterator implements Iterator<S>
     {
-        private final Iterator<TRANSIN> input;
+        private final Iterator<T> input;
 
-        public PassThroughIterator(Iterator<TRANSIN> input)
+        public PassThroughIterator(Iterator<T> input)
         {
             this.input = input;
         }
@@ -81,9 +81,9 @@ public abstract class AbstractIteratorTransformer <TRANSIN, TRANSOUT> implements
         }
 
         @Override
-        public TRANSOUT next()
+        public S next()
         {
-            final TRANSIN in;
+            final T in;
 
             try {
                 in = input.next();

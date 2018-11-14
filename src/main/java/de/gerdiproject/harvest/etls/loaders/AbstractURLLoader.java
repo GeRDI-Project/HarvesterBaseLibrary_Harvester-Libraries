@@ -37,11 +37,11 @@ import de.gerdiproject.json.datacite.DataCiteJson;
  * This abstract class offers a basis for sending documents to a search index
  * via a REST request.
  * 
- * @param <OUT> The type of the sent documents
+ * @param <S> The type of the sent documents
  *
  * @author Robin Weiss
  */
-public abstract class AbstractURLLoader <OUT extends DataCiteJson> extends AbstractIteratorLoader<OUT>
+public abstract class AbstractURLLoader <S extends DataCiteJson> extends AbstractIteratorLoader<S>
 {
     private volatile HashGenerator hashGenerator;
     private final StringParameter userNameParam;
@@ -101,7 +101,7 @@ public abstract class AbstractURLLoader <OUT extends DataCiteJson> extends Abstr
 
 
     @Override
-    public void loadElement(OUT document) throws LoaderException
+    public void loadElement(S document) throws LoaderException
     {
         if (document == null)
             return;

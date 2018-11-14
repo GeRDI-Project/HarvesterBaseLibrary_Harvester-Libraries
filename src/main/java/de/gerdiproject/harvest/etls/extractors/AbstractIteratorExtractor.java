@@ -25,11 +25,11 @@ import de.gerdiproject.harvest.etls.AbstractIteratorETL;
  * This {@linkplain IExtractor} can extract an {@linkplain Iterator} in order
  * to be able to iterate lists or similar constructs.
  *
- * @param <EXOUT> the type of objects that are extracted
+ * @param <T> the type of objects that are extracted
  *
  * @author Robin Weiss
  */
-public abstract class AbstractIteratorExtractor <EXOUT> implements IExtractor<Iterator<EXOUT>>
+public abstract class AbstractIteratorExtractor <T> implements IExtractor<Iterator<T>>
 {
     protected int startIndex;
     protected int endIndex;
@@ -54,11 +54,11 @@ public abstract class AbstractIteratorExtractor <EXOUT> implements IExtractor<It
      *
      * @throws ExtractorException thrown when the extraction fails
      */
-    protected abstract Iterator<EXOUT> extractAll()  throws ExtractorException;
+    protected abstract Iterator<T> extractAll()  throws ExtractorException;
 
 
     @Override
-    public Iterator<EXOUT> extract() throws ExtractorException
+    public Iterator<T> extract() throws ExtractorException
     {
         return new RangeRestrictedIterator(extractAll());
     }
@@ -82,12 +82,12 @@ public abstract class AbstractIteratorExtractor <EXOUT> implements IExtractor<It
      *
      * @author Robin Weiss
      */
-    private class RangeRestrictedIterator implements Iterator<EXOUT>
+    private class RangeRestrictedIterator implements Iterator<T>
     {
-        final Iterator<EXOUT> completeIterator;
+        final Iterator<T> completeIterator;
         int index;
 
-        public RangeRestrictedIterator(Iterator<EXOUT> completeIterator)
+        public RangeRestrictedIterator(Iterator<T> completeIterator)
         {
             this.completeIterator = completeIterator;
             index = 0;
@@ -106,7 +106,7 @@ public abstract class AbstractIteratorExtractor <EXOUT> implements IExtractor<It
 
 
         @Override
-        public EXOUT next()
+        public T next()
         {
             index++;
 

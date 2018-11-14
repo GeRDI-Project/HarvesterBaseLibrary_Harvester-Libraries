@@ -21,11 +21,11 @@ import de.gerdiproject.harvest.etls.AbstractETL;
 /**
  * This class represents the Extractor of an ETL process.
  *
- * @param <EXOUT> the type of objects that are extracted
+ * @param <T> the type of objects that are extracted
  *
  * @author Robin Weiss
  */
-public interface IExtractor <EXOUT>
+public interface IExtractor <T>
 {
     /**
      * Initializes the extractor for a new harvest.
@@ -42,7 +42,7 @@ public interface IExtractor <EXOUT>
      *
      * @return an object that is to be transformed
      */
-    EXOUT extract() throws ExtractorException;
+    T extract() throws ExtractorException;
 
 
     /**

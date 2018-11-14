@@ -34,9 +34,12 @@ import de.gerdiproject.harvest.etls.transformers.AbstractIteratorTransformer;
  * This ETL harvests data via {@linkplain Iterator}s and creates a
  * document for each iterated element.
  *
+ * @param <T> the type of the extracted source data
+ * @param <S> the type of the transformed documents
+ * 
  * @author Robin Weiss
  */
-public abstract class AbstractIteratorETL<EXOUT, TRANSOUT> extends AbstractETL<Iterator<EXOUT>, Iterator<TRANSOUT>>
+public abstract class AbstractIteratorETL<T, S> extends AbstractETL<Iterator<T>, Iterator<S>>
 {
     protected volatile IntegerParameter startIndexParameter;
     protected volatile IntegerParameter endIndexParameter;
