@@ -16,21 +16,35 @@
  */
 package de.gerdiproject.harvest.scheduler.json;
 
+import de.gerdiproject.harvest.scheduler.Scheduler;
+
 /**
- * @author Robin Weiss
+ * This JSON object represents a REST request that can delete/add/change
+ * a crontab of the {@linkplain Scheduler}.
  *
+ * @author Robin Weiss
  */
 public class ChangeSchedulerRequest
 {
     private String cronTab;
 
 
-    public ChangeSchedulerRequest(String cronTab)
+    /**
+     * Constructor that requires the crontab to be changed.
+     *
+     * @param crontab  the crontab that is to be changed
+     */
+    public ChangeSchedulerRequest(String crontab)
     {
-        this.cronTab = cronTab;
+        this.cronTab = crontab;
     }
 
 
+    /**
+     * Returns the crontab that is to be changed.
+     *
+     * @return the crontab that is to be changed
+     */
     public String getCronTab()
     {
         return cronTab;

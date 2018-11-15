@@ -343,9 +343,9 @@ public class ETLManager extends AbstractRestObject<ETLManager, ETLManagerJson> i
     /**
      * Sums up the expected number of harvestable documents of all registered ETLs.
      *
-     * @return the expected total number of harvestable documents, 
+     * @return the expected total number of harvestable documents,
      * or -1 if the number cannot be calculated
-     * 
+     *
      */
     public int getMaxNumberOfDocuments()
     {

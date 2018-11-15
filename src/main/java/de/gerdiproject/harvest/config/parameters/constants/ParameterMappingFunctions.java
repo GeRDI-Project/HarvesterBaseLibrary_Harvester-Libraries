@@ -65,7 +65,7 @@ public class ParameterMappingFunctions
      * an exception if this check fails.
      *
      * @param value a string value
-     * 
+     *
      * @throws IllegalArgumentException if the value is null or empty
      *
      * @return a non-empty, non-null string value
@@ -86,7 +86,7 @@ public class ParameterMappingFunctions
      * @param value a string representation of a parameter value
      *
      * @throws ClassCastException this exception is thrown when the String value cannot be mapped to the target value
-     * 
+     *
      * @return a boolean value
      */
     public static Boolean mapToBoolean(String value) throws ClassCastException
@@ -109,7 +109,7 @@ public class ParameterMappingFunctions
      * @param value a string representation of a parameter value
      *
      * @throws ClassCastException this exception is thrown when the String value cannot be mapped to the target value
-     * 
+     *
      * @return an integer value
      */
     public static Integer mapToInteger(String value) throws ClassCastException
@@ -141,7 +141,7 @@ public class ParameterMappingFunctions
      * @param value a string representation of a parameter value
      *
      * @throws ClassCastException this exception is thrown when the String value cannot be mapped to the target value
-     * 
+     *
      * @return a positive integer value represented by the string
      */
     public static Integer mapToUnsignedInteger(String value) throws ClassCastException
@@ -178,7 +178,7 @@ public class ParameterMappingFunctions
      * @param value a string representation of a parameter value
      *
      * @throws IllegalArgumentException this exception is thrown when the string does not represent a valid {@linkplain URL}
-     * 
+     *
      * @return a valid URL string
      */
     public static String mapToUrlString(String value) throws IllegalArgumentException

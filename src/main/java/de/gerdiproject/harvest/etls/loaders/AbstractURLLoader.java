@@ -36,7 +36,7 @@ import de.gerdiproject.json.datacite.DataCiteJson;
 /**
  * This abstract class offers a basis for sending documents to a search index
  * via a REST request.
- * 
+ *
  * @param <S> The type of the sent documents
  *
  * @author Robin Weiss

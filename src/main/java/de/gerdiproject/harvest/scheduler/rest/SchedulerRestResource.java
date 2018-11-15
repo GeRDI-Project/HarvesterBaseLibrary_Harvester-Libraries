@@ -47,7 +47,7 @@ public class SchedulerRestResource extends AbstractRestResource<Scheduler, GetSc
     /**
      * Adds a harvesting task with a specified cron tab to the schedule.
      *
-     * @param cronTab a cron tab describing when a harvest should take place
+     * @param crontab a cron tab describing when a harvest should take place
      *
      * @return an info message explaining if the operation was successful or not
      */
@@ -55,16 +55,16 @@ public class SchedulerRestResource extends AbstractRestResource<Scheduler, GetSc
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.TEXT_PLAIN)
-    public Response addTask(String cronTab)
+    public Response addTask(String crontab)
     {
-        return changeObject(restObject::addTask, cronTab, ChangeSchedulerRequest.class);
+        return changeObject(restObject::addTask, crontab, ChangeSchedulerRequest.class);
     }
 
 
     /**
      * Deletes a harvesting task with a specified cron tab from the schedule.
      *
-     * @param cronTab the cron tab that is to be removed
+     * @param crontab the cron tab that is to be removed
      *
      * @return an info message explaining if the operation was successful or not
      */
@@ -72,9 +72,9 @@ public class SchedulerRestResource extends AbstractRestResource<Scheduler, GetSc
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.TEXT_PLAIN)
-    public Response deleteTask(String cronTab)
+    public Response deleteTask(String crontab)
     {
-        return changeObject(restObject::deleteTask, cronTab, ChangeSchedulerRequest.class);
+        return changeObject(restObject::deleteTask, crontab, ChangeSchedulerRequest.class);
     }
 
 
