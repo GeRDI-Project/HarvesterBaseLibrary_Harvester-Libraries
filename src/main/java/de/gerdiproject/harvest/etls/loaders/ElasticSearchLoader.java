@@ -39,7 +39,7 @@ import de.gerdiproject.json.datacite.DataCiteJson;
 
 /**
  * This class serves as a communicator for an Elastic Search node. An URL and
- * optionally a username and password must be set up prior to the submission.
+ * optionally a username and password must be set up prior to the loader execution.
  *
  * @author Robin Weiss
  */
@@ -62,7 +62,7 @@ public class ElasticSearchLoader extends AbstractURLLoader<DataCiteJson>
 
 
     @Override
-    protected void submitBatch(Map<String, IDocument> documents) throws Exception // NOPMD - Exception is explicitly thrown, because it is up to the implementation which Exception causes the submission to fail
+    protected void loadBatch(Map<String, IDocument> documents) throws Exception // NOPMD - Exception is explicitly thrown, because it is up to the implementation which Exception causes the loader to fail
     {
         // clear previous batch
         final StringBuilder batchRequestBuilder = new StringBuilder();
@@ -83,7 +83,7 @@ public class ElasticSearchLoader extends AbstractURLLoader<DataCiteJson>
         // parse JSON response
         ElasticSearchResponse responseJson = gson.fromJson(response, ElasticSearchResponse.class);
 
-        // throw error if some documents could not be submitted
+        // throw error if some documents could not be loaded
         if (responseJson.hasErrors())
             throw new ServerException(getSubmissionErrorText(responseJson));
     }
@@ -99,11 +99,11 @@ public class ElasticSearchLoader extends AbstractURLLoader<DataCiteJson>
      */
     private String getSubmissionErrorText(ElasticSearchResponse responseJson)
     {
-        List<ElasticSearchIndexWrapper> submittedItems = responseJson.getItems();
+        List<ElasticSearchIndexWrapper> loadedItems = responseJson.getItems();
         StringBuilder sb = new StringBuilder();
 
-        for (int i = 0, l = submittedItems.size(); i < l; i++) {
-            ElasticSearchIndex indexElement = submittedItems.get(i).getIndex();
+        for (int i = 0, l = loadedItems.size(); i < l; i++) {
+            ElasticSearchIndex indexElement = loadedItems.get(i).getIndex();
 
             if (indexElement.getError() != null) {
                 if (sb.length() > 0)

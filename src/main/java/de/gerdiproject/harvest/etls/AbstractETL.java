@@ -55,7 +55,7 @@ import de.gerdiproject.harvest.utils.HashGenerator;
 
 /**
  * This class offers a skeleton for harvesting a repository to
- * retrieve all of its metadata. The metadata can subsequently be submitted to
+ * retrieve all of its metadata. The metadata can subsequently be sent to
  * a search index via an {@link ILoader}. This most basic
  * ETL class offers functions that can be controlled via REST requests
  * from the {@link ETLRestResource}, as well as some utility objects that are
@@ -123,7 +123,7 @@ public abstract class AbstractETL <T, S> implements IEventListener
 
     /**
      * Creates an {@linkplain IExtractor} for retrieving elements from
-     * the harvested repository.
+     * the harvested repository to be used by the {@linkplain ITransformer}.
      *
      * @return an {@linkplain IExtractor} for retrieving elements from
      * the harvested repository
@@ -133,7 +133,7 @@ public abstract class AbstractETL <T, S> implements IEventListener
 
     /**
      * Creates an {@linkplain ITransformer} for transforming source elements
-     * to documents that can be submitted.
+     * to documents that can be used by the {@linkplain ILoader}.
      *
      * @return {@linkplain ITransformer} for transforming source elements
      */
@@ -141,10 +141,10 @@ public abstract class AbstractETL <T, S> implements IEventListener
 
 
     /**
-     * Creates an {@linkplain ILoader} for submitting the harvested documents
+     * Creates an {@linkplain ILoader} for sending the harvested documents
      * to a search index.
      *
-     * @return an {@linkplain ILoader} for submitting the harvested documents
+     * @return an {@linkplain ILoader} for sending the harvested documents
      */
     @SuppressWarnings("unchecked") // NOPMD the possible ClassCastException is caught
     protected ILoader<S> createLoader()

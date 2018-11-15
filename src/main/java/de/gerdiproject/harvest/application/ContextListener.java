@@ -30,7 +30,6 @@ import de.gerdiproject.harvest.application.events.ContextDestroyedEvent;
 import de.gerdiproject.harvest.application.events.ContextInitializedEvent;
 import de.gerdiproject.harvest.application.events.ResetContextEvent;
 import de.gerdiproject.harvest.etls.AbstractETL;
-import de.gerdiproject.harvest.etls.loaders.AbstractURLLoader;
 import de.gerdiproject.harvest.etls.loaders.DiskLoader;
 import de.gerdiproject.harvest.etls.loaders.ElasticSearchLoader;
 import de.gerdiproject.harvest.etls.loaders.ILoader;
@@ -83,15 +82,15 @@ public abstract class ContextListener implements ServletContextListener
      * Creates a list of {@linkplain AbstractETL} implementations that can be chosen to extract, transform and load
      * data from the targeted repository.
      *
-     * @return a harvested documents submitter
+     * @return a list of {@linkplain AbstractETL}s
      */
     protected abstract List<? extends AbstractETL<?, ?>> createETLs();
 
 
     /**
-     * Creates a list of {@linkplain AbstractURLLoader} implementations that can be chosen to transfer data to the search index.
+     * Creates a list of {@linkplain ILoader} implementations that can be chosen to transfer data to the search index.
      *
-     * @return a harvested documents submitter
+     * @return a list of {@linkplain ILoader}
      */
     protected List<Class<? extends ILoader<?>>> getLoaderClasses()
     {

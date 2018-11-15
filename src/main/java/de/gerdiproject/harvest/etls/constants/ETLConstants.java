@@ -78,11 +78,6 @@ public class ETLConstants
 
     public static final String ETL_SKIPPED_DISABLED = "Skipping %s, because it is disabled!";
     public static final String ETL_SKIPPED_NO_CHANGES = "Did not start harvest, because no changes were detected!";
-    public static final String ETL_SKIPPED_SUBMIT =
-        "Cannot harvest, because previous changes have not been submitted!%n"
-        + "Either /submit the current index or set the '"
-        + FORCED_PARAM.getCompositeKey()
-        + "' flag to true when harvesting.";
 
     // IteratorETL
     public static final String ERROR_NO_ENTRIES =
@@ -108,7 +103,7 @@ public class ETLConstants
         + "GET/versions-all Returns a list of all Maven dependencies.\n"
         + "\n"
         + "POST          Starts the harvest.\n"
-        + "POST/abort    Aborts an ongoing harvest, saving, or submission.\n"
+        + "POST/abort    Aborts an ongoing harvest.\n"
         + "POST/reset    Attempts to re-initialize this service.";
 
 

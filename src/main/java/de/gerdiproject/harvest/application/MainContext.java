@@ -59,8 +59,8 @@ public class MainContext
     private final ETLManager etlManager;
     private final Configuration configuration;
 
-    @SuppressWarnings("unused") // the submitter is connected via the event system
-    private final LoaderRegistry submitterManager;
+    @SuppressWarnings("unused") // the loaderRegistry is used by the event system
+    private final LoaderRegistry loaderRegistry;
     private final Scheduler scheduler;
     private final MavenUtils mavenUtils;
 
@@ -95,7 +95,7 @@ public class MainContext
         this.mavenUtils = createMavenUtils(callerClass);
         EventSystem.addSynchronousListener(GetMavenUtilsEvent.class, this::getMavenUtils);
 
-        this.submitterManager = createLoaderFactory(loaderClasses);
+        this.loaderRegistry = createLoaderFactory(loaderClasses);
         this.etlManager = createEtlManager(moduleName, etlSupplier);
         this.scheduler = createScheduler(moduleName);
     }

@@ -43,15 +43,15 @@ import de.gerdiproject.json.datacite.DataCiteJson;
  */
 public abstract class AbstractURLLoader <S extends DataCiteJson> extends AbstractIteratorLoader<S>
 {
-    private volatile HashGenerator hashGenerator;
-    private final StringParameter userNameParam;
-    private final StringParameter passwordParam;
-
     protected final Logger logger; // NOPMD - we want to retrieve the type of the inheriting class
     protected final Map<String, IDocument> batchMap;
     protected final IntegerParameter maxBatchSizeParam;
     protected final StringParameter urlParam;
     protected Charset charset;
+
+    private volatile HashGenerator hashGenerator;
+    private final StringParameter userNameParam;
+    private final StringParameter passwordParam;
 
     private int currentBatchSize = 0;
 
@@ -92,7 +92,7 @@ public abstract class AbstractURLLoader <S extends DataCiteJson> extends Abstrac
         batchMap.clear();
         currentBatchSize = 0;
 
-        // check if we can submit
+        // check if we can load
         final String errorMessage = checkPreconditionErrors();
 
         if (errorMessage != null)
@@ -109,7 +109,7 @@ public abstract class AbstractURLLoader <S extends DataCiteJson> extends Abstrac
         final String documentId = hashGenerator.getShaHash(document.getSourceId());
         int documentSize = getSizeOfDocument(documentId, document);
 
-        // check if the document alone is bigger than the maximum allowed submission size
+        // check if the document alone is bigger than the maximum load request size
         if (currentBatchSize == 0 && documentSize > maxBatchSizeParam.getValue()) {
             throw new LoaderException(
                 String.format(
@@ -119,9 +119,9 @@ public abstract class AbstractURLLoader <S extends DataCiteJson> extends Abstrac
                     maxBatchSizeParam.getValue()));
         }
 
-        // check if the batch size is reached and submit
+        // check if the batch size is reached and load
         if (currentBatchSize + documentSize > maxBatchSizeParam.getValue()) {
-            trySubmitBatch();
+            tryLoadingBatch();
             batchMap.clear();
             currentBatchSize = 0;
         }
@@ -137,7 +137,7 @@ public abstract class AbstractURLLoader <S extends DataCiteJson> extends Abstrac
     public void clear()
     {
         if (!batchMap.isEmpty()) {
-            trySubmitBatch();
+            tryLoadingBatch();
             batchMap.clear();
         }
 
@@ -157,24 +157,24 @@ public abstract class AbstractURLLoader <S extends DataCiteJson> extends Abstrac
 
 
     /**
-     * The core of the submission function which is to be implemented by
-     * subclasses. This method should submit each document of the map to the destination URL
+     * The core of the loading function which is to be implemented by
+     * subclasses. This method should load each document of the map to the destination URL
      * via a REST request.
      *
      * @param documents a map of documentIDs to documents that are to be
-     *            submitted, the values may also be null, in which case the
+     *            loaded, the values may also be null, in which case the
      *            document is to be removed from the index
      *
      * @throws Exception any kind of exception that can be thrown by the
-     *             submission process
+     *             loading process
      */
-    protected abstract void submitBatch(Map<String, IDocument> documents) throws Exception; // NOPMD - Exception is explicitly thrown, because it is up to the implementation which Exception causes the submission to fail
+    protected abstract void loadBatch(Map<String, IDocument> documents) throws Exception; // NOPMD - Exception is explicitly thrown, because it is up to the implementation which Exception causes the loader to fail
 
 
     /**
-     * Checks if the submission can start
+     * Checks if the loader can start
      *
-     * @return a message explaining if the preconditions failed
+     * @return a message explaining if the pre-conditions failed
      */
     protected String checkPreconditionErrors()
     {
@@ -190,21 +190,21 @@ public abstract class AbstractURLLoader <S extends DataCiteJson> extends Abstrac
     /**
      * Sends documents to an external place.
      *
-     * @throws LoaderException when the batch could nto be submitted
+     * @throws LoaderException when the batch could not be loaded
      */
-    protected void trySubmitBatch() throws LoaderException
+    protected void tryLoadingBatch() throws LoaderException
     {
         int numberOfDocs = batchMap.size();
 
         try {
-            // attempt to submit the batch
-            submitBatch(batchMap);
+            // attempt to load the batch
+            loadBatch(batchMap);
 
             // log success and send an event
             if (logger.isInfoEnabled()) {
                 logger.info(
                     String.format(
-                        LoaderConstants.SUBMIT_PARTIAL_OK, numberOfDocs));
+                        LoaderConstants.LOADED_PARTIAL_OK, numberOfDocs));
             }
         } catch (Exception e) {
             throw new LoaderException(e);
@@ -213,10 +213,10 @@ public abstract class AbstractURLLoader <S extends DataCiteJson> extends Abstrac
 
 
     /**
-     * Retrieves the credentials that may be necessary to authenticate the submitter
+     * Retrieves the credentials that may be necessary for to authenticate the loader
      * with the URL.
      *
-     * @return the credentials that may be necessary to authenticate the submitter
+     * @return the credentials that may be necessary to authenticate the loader
      * with the URL
      */
     protected String getCredentials()
@@ -229,9 +229,9 @@ public abstract class AbstractURLLoader <S extends DataCiteJson> extends Abstrac
 
 
     /**
-     * Returns the submission URL as a string.
+     * Returns the loader target URL as a string.
      *
-     * @return the submission URL as a string
+     * @return the loader target  URL as a string
      */
     protected String getUrl()
     {

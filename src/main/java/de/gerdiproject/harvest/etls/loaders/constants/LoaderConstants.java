@@ -20,21 +20,15 @@ import de.gerdiproject.harvest.config.parameters.PasswordParameter;
 import de.gerdiproject.harvest.config.parameters.StringParameter;
 import de.gerdiproject.harvest.config.parameters.constants.ParameterMappingFunctions;
 import de.gerdiproject.harvest.etls.AbstractIteratorETL;
+import de.gerdiproject.harvest.etls.loaders.ILoader;
 
 /**
- * This static class is a collection of constants that relate to the submission
- * of documents.
+ * This static class is a collection of constants that relate to {@linkplain ILoader}s.
  *
  * @author Robin Weiss
  */
 public class LoaderConstants
 {
-    public static final String SUBMISSION_START = "Submitter '%s' is valid.";
-    public static final String SUBMISSION_DONE_ALL_OK = "Submission done! All documents were submitted!";
-    public static final String SUBMISSION_DONE_SOME_FAILED = "Submission done! Failed to submit %d documents!";
-    public static final String SUBMISSION_DONE_ALL_FAILED = "Submission failed!";
-    public static final String SUBMISSION_INTERRUPTED = "Submission interrupted unexpectedly!";
-
     public static final String PARAMETER_CATEGORY = "Submission";
 
     public static final StringParameter URL_PARAM =
@@ -68,15 +62,13 @@ public class LoaderConstants
 
     public static final String LOADER_TYPE_PARAM_KEY = "loader";
 
-    public static final String SUBMIT_PARTIAL_OK = " Submitted %d documents.";
-    public static final String SUBMIT_PARTIAL_FAILED = "Error submitting documents %s to %s.";
+    public static final String LOADED_PARTIAL_OK = "Loaded %d documents.";
     public static final String UNKNOWN_DOCUMENT_COUNT = "???";
 
-    public static final String REGISTER_ERROR = "Could not register submitter: %s";
-    public static final String NO_URL_ERROR = "Cannot submit documents: You need to set up a valid submission URL!";
-    public static final String NO_DOCS_ERROR = "Cannot submit documents: There are no documents to submit!";
+    public static final String NO_URL_ERROR = "Loader Error: You need to set up a valid loader URL!";
+    public static final String NO_DOCS_ERROR = "Loader Error: No documents were harvested!";
     public static final String DOCUMENT_TOO_LARGE =
-        "Cannot submit document %s, because its submission size is %d bytes,"
+        "Loader Error: Size of document %s is %d bytes,"
         + " which is larger than the maximum permitted size of %d bytes.";
 
     public static final String NO_ITER_ETL_ERROR = "%s must be assigned to an " + AbstractIteratorETL.class.getSimpleName() + "!";

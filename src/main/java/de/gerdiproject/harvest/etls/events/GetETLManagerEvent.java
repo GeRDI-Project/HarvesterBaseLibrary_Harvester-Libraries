@@ -16,12 +16,14 @@
  */
 package de.gerdiproject.harvest.etls.events;
 
+import de.gerdiproject.harvest.application.MainContext;
 import de.gerdiproject.harvest.etls.utils.ETLManager;
 import de.gerdiproject.harvest.rest.events.GetRestObjectEvent;
 
 /**
- * @author Robin Weiss
+ * This event is used to retrieve the {@linkplain ETLManager} from the {@linkplain MainContext}.
  *
+ * @author Robin Weiss
  */
 public class GetETLManagerEvent extends GetRestObjectEvent<ETLManager>
 {

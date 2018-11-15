@@ -37,9 +37,9 @@ public interface ILoader <S>
 
 
     /**
-     * Submits the document to a targeted search index.
+     * Loads the document to a targeted search index.
      *
-     * @param document the document that is to be submitted
+     * @param document the document that is to be loaded
      * @throws LoaderException when the load did not work properly
      */
     void load(S document) throws LoaderException;

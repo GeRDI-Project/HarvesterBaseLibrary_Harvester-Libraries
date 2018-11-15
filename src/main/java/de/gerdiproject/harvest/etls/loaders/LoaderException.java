@@ -17,7 +17,7 @@
 package de.gerdiproject.harvest.etls.loaders;
 
 /**
- * This exception is thrown when an {@linkplain ILoader} fails to submit
+ * This exception is thrown when an {@linkplain ILoader} fails to load
  * documents.
  *
  * @author Robin Weiss

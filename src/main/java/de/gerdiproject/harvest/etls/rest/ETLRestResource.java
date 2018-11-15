@@ -139,7 +139,7 @@ public class ETLRestResource extends AbstractRestResource<ETLManager, GetETLMana
 
 
     /**
-     * Aborts an ongoing process, such as harvesting, submitting, or saving.
+     * Aborts an ongoing harvest.
      *
      * @return a status message describing if the abort could be started or not
      */

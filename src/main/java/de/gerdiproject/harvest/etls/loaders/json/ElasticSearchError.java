@@ -73,13 +73,13 @@ public class ElasticSearchError
     public String toString()
     {
         String errorText = String.format(
-                               ElasticSearchConstants.DOCUMENT_SUBMIT_ERROR_REASON,
+                               ElasticSearchConstants.LOAD_DOCUMENT_ERROR_REASON,
                                type,
                                reason);
 
         if (causedBy != null)
             errorText += String.format(
-                             ElasticSearchConstants.DOCUMENT_SUBMIT_ERROR_CAUSE,
+                             ElasticSearchConstants.LOAD_DOCUMENT_ERROR_CAUSE,
                              causedBy.getType(),
                              causedBy.getReason()
                          );

@@ -15,9 +15,10 @@
  */
 package de.gerdiproject.harvest.etls.loaders.constants;
 
+import de.gerdiproject.harvest.etls.loaders.ElasticSearchLoader;
+
 /**
- * This static class is a collection of constants that relate to the submission
- * of documents to ElasticSearch.
+ * This static class is a collection of constants that are related to the {@linkplain ElasticSearchLoader}.
  *
  * @author Robin Weiss
  */
@@ -40,9 +41,9 @@ public class ElasticSearchConstants
     public static final String EMPTY_DATE_RANGE_REPLACEMENT = "";
 
     // SERVER RESPONSE JSON
-    public static final String DOCUMENT_SUBMIT_ERROR = "Could not submit document #%s%n%s";
-    public static final String DOCUMENT_SUBMIT_ERROR_REASON = "  %s: %s";
-    public static final String DOCUMENT_SUBMIT_ERROR_CAUSE = ", caused by%n  %s: %s";
+    public static final String LOAD_DOCUMENT_ERROR = "Loader Error: Document #%s%n%s";
+    public static final String LOAD_DOCUMENT_ERROR_REASON = "  %s: %s";
+    public static final String LOAD_DOCUMENT_ERROR_CAUSE = ", caused by%n  %s: %s";
 
     public static final String BASIC_AUTH_PREFIX = "Basic ";
 

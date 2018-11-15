@@ -42,7 +42,7 @@ public class LoaderRegistry implements IEventListener
 
 
     /**
-     * Constructor that defines a default active submitter.
+     * Constructor that defines a default active loader.
      */
     public LoaderRegistry()
     {
@@ -71,7 +71,7 @@ public class LoaderRegistry implements IEventListener
         final String loaderName = loaderClass.getSimpleName();
         loaderMap.put(loaderName, loaderClass);
 
-        // register submitter in configuration if none was set before
+        // register loader in configuration if none was set before
         if (!loaderParam.isRegistered() && loaderParam.getValue() == null) {
             loaderParam.setValue(loaderName);
             this.loaderParam = Configuration.registerParameter(loaderParam);
