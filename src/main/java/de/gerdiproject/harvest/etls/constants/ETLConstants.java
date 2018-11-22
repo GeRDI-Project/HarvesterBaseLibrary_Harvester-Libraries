@@ -86,7 +86,7 @@ public class ETLConstants
 
     // REST
     public static final String ALLOWED_REQUESTS =
-        "GET/.json     Returns detailed information about all ETLs."
+        "GET/.json     Returns detailed information about all ETLs.\n"
         + "GET/etl       Returns detailed information about an ETL.\n"
         + "              The query parameter 'name' must be the name of the ETL.\n"
         + "GET/health    Returns plain text that serves as a health check.\n"
@@ -98,7 +98,7 @@ public class ETLConstants
         + "GET/log       Displays the server log. The query parameters\n"
         + "              'date', 'class', and 'level' can be used to\n"
         + "              filter the log with comma-separated values of\n"
-        + "              dates, logger classes, and log levels."
+        + "              dates, logger classes, and log levels.\n"
         + "GET/versions     Returns a list of GeRDI Maven dependencies.\n"
         + "GET/versions-all Returns a list of all Maven dependencies.\n"
         + "\n"
