@@ -109,7 +109,7 @@ public class MockedETL extends StaticIteratorETL<String, DataCiteJson>
         protected DataCiteJson transformElement(String source)
         {
             DataCiteJson mockedDocument = new DataCiteJson("source: " + source);
-            mockedDocument.setTitles(Arrays.asList(new Title("title: " + source)));
+            mockedDocument.addTitles(Arrays.asList(new Title("title: " + source)));
             return mockedDocument;
         }
     }

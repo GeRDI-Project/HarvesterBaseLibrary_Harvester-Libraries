@@ -15,7 +15,7 @@
  *  under the License.
  */
 /**
- * This package contails JSON classes related to the {@linkplain de.gerdiproject.harvest.scheduler.Scheduler}.
+ * This package contains JSON classes related to the {@linkplain de.gerdiproject.harvest.scheduler.Scheduler}.
  *
  * @author Robin Weiss
  */

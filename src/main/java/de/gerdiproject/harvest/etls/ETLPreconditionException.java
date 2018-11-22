@@ -36,4 +36,27 @@ public class ETLPreconditionException extends RuntimeException
     {
         super(message);
     }
+
+
+    /**
+     * Constructor that requires another exception.
+     *
+     * @param cause the reason why this exception was thrown
+     */
+    public ETLPreconditionException(final Throwable cause)
+    {
+        super(cause);
+    }
+
+
+    /**
+     * Constructor that requires a message and another exception.
+     *
+     * @param message a message explaining which pre-condition failed
+     * @param cause the reason why this exception was thrown
+     */
+    public ETLPreconditionException(final String message, final Throwable cause)
+    {
+        super(message, cause);
+    }
 }

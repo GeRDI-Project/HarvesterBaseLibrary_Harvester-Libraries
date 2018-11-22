@@ -46,4 +46,16 @@ public class LoaderException extends RuntimeException
     {
         super(e);
     }
+
+
+    /**
+     * Constructor that requires a message and another exception.
+     *
+     * @param message a message explaining which pre-condition failed
+     * @param cause the reason why this exception was thrown
+     */
+    public LoaderException(final String message, final Throwable cause)
+    {
+        super(message, cause);
+    }
 }

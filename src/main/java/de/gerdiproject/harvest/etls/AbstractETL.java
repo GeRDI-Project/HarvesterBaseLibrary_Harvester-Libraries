@@ -380,7 +380,8 @@ public abstract class AbstractETL <T, S> implements IEventListener
             setHealth(ETLHealth.HARVEST_FAILED);
 
             logger.error(String.format(ETLConstants.ETL_START_FAILED, getName()), e);
-            throw new ETLPreconditionException(e.getMessage());
+
+            throw new ETLPreconditionException(e.getMessage(), e);
         }
     }
 
