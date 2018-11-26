@@ -19,6 +19,7 @@ package de.gerdiproject.harvest.utils.data;
 import java.io.IOException;
 import java.lang.reflect.Type;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 
@@ -33,6 +34,8 @@ import de.gerdiproject.harvest.config.Configuration;
 import de.gerdiproject.harvest.config.parameters.BooleanParameter;
 import de.gerdiproject.harvest.utils.data.constants.DataOperationConstants;
 import de.gerdiproject.harvest.utils.data.enums.RestRequestType;
+import de.gerdiproject.json.GsonUtils;
+import de.gerdiproject.json.geo.GeoJson;
 
 
 /**
@@ -47,6 +50,16 @@ public class HttpRequester
     private String cacheFolder;
     private BooleanParameter readFromDisk;
     private BooleanParameter writeToDisk;
+
+
+    /**
+     * Constructor that uses an UTF-8 charset, and a {@linkplain Gson}
+     * implementation that can parse {@linkplain GeoJson} objects.
+     */
+    public HttpRequester()
+    {
+        this(GsonUtils.createGeoJsonGsonBuilder().create(), StandardCharsets.UTF_8);
+    }
 
 
     /**
