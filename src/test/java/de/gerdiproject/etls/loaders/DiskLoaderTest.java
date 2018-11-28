@@ -166,7 +166,7 @@ public class DiskLoaderTest extends AbstractFileSystemUnitTest<DiskLoader>
 
         for (int i = 0; i < numberOfHarvestedDocuments; i++) {
             final DataCiteJson doc = new DataCiteJson(SOURCE_ID + i);
-            doc.setPublicationYear((short) i);
+            doc.setPublicationYear(i);
             list.add(doc);
         }
 
