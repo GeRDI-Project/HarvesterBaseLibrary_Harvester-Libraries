@@ -145,17 +145,6 @@ public class MainContext
 
 
     /**
-     * Returns the name of the application.
-     *
-     * @return the module name
-     */
-    public static String getServiceName()
-    {
-        return instance != null ? instance.moduleName : null;
-    }
-
-
-    /**
      * Removes all event listeners.
      */
     private void removeEventListeners()

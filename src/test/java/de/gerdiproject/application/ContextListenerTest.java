@@ -16,7 +16,6 @@
  */
 package de.gerdiproject.application;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -131,25 +130,6 @@ public class ContextListenerTest extends AbstractObjectUnitTest<ContextListener>
         // trigger reset
         assertNotNull("The method getServiceName() should return a proper string!",
                       ((MockedContextListener) testedObject).getServiceName());
-    }
-
-
-    /**
-     * Tests if the {@linkplain ContextListener} successfully passes the service name to the
-     * {@linkplain MainContext} upon initialization.
-     */
-    @Test
-    public void testServiceNameInMainContext()
-    {
-        // init service
-        waitForEvent(ServiceInitializedEvent.class,
-                     INIT_TIMEOUT,
-                     () -> testedObject.contextInitialized(null));
-
-        // trigger reset
-        assertEquals("There is supposed to be an auto-created service name after intializing the context!",
-                     ((MockedContextListener) testedObject).getServiceName(),
-                     MainContext.getServiceName());
     }
 
 
