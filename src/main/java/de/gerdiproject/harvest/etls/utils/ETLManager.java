@@ -38,6 +38,7 @@ import com.google.gson.Gson;
 
 import de.gerdiproject.harvest.config.Configuration;
 import de.gerdiproject.harvest.config.parameters.BooleanParameter;
+import de.gerdiproject.harvest.config.parameters.constants.ParameterConstants;
 import de.gerdiproject.harvest.etls.AbstractETL;
 import de.gerdiproject.harvest.etls.ETLPreconditionException;
 import de.gerdiproject.harvest.etls.constants.ETLConstants;
@@ -223,14 +224,35 @@ public class ETLManager extends AbstractRestObject<ETLManager, ETLManagerJson> i
      * Registers an {@linkplain AbstractETL}, adding it to the list of ETLs
      * that can be controlled via REST.
      *
-     * @param etl the {@linkplain AbstractETL} to be registered
+     * @param addedEtl the {@linkplain AbstractETL} to be registered
      */
-    public void register(AbstractETL<?, ?> etl)
+    public void register(AbstractETL<?, ?> addedEtl)
     {
-        if (etls.contains(etl))
-            LOGGER.info(String.format(ETLConstants.DUPLICATE_ETL_REGISTERED_ERROR, etl.getClass().getSimpleName()));
-        else
-            etls.add(etl);
+        // abort if the ETL instance was already registered
+        if (etls.contains(addedEtl))
+            LOGGER.info(String.format(ETLConstants.DUPLICATE_ETL_REGISTERED_ERROR, addedEtl.getClass().getSimpleName()));
+        else {
+            // remove illegal characters from ETL name
+            final String etlNameOrig = addedEtl.getName().replaceAll(ParameterConstants.INVALID_PARAM_NAME_REGEX, "");
+            String etlName = etlNameOrig;
+            int duplicateCount = 1;
+
+            // find the first name for the ETL that is not already taken
+            while (true) {
+                final String etlNameTemp = etlName;
+
+                if (etls.stream().noneMatch((AbstractETL<?, ?> e) -> e.getName().equals(etlNameTemp)))
+                    break;
+                else
+                    etlName = etlNameOrig + (++duplicateCount);
+            }
+
+            // change the ETL name to the clean one
+            addedEtl.setName(etlName);
+
+            // add the ETL to the list
+            etls.add(addedEtl);
+        }
     }
 
 

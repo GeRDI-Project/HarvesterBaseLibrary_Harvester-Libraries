@@ -31,7 +31,6 @@ import de.gerdiproject.harvest.config.Configuration;
 import de.gerdiproject.harvest.config.events.ParameterChangedEvent;
 import de.gerdiproject.harvest.config.parameters.AbstractParameter;
 import de.gerdiproject.harvest.config.parameters.BooleanParameter;
-import de.gerdiproject.harvest.config.parameters.constants.ParameterConstants;
 import de.gerdiproject.harvest.etls.constants.ETLConstants;
 import de.gerdiproject.harvest.etls.enums.ETLHealth;
 import de.gerdiproject.harvest.etls.enums.ETLStatus;
@@ -46,6 +45,7 @@ import de.gerdiproject.harvest.etls.loaders.events.CreateLoaderEvent;
 import de.gerdiproject.harvest.etls.rest.ETLRestResource;
 import de.gerdiproject.harvest.etls.transformers.ITransformer;
 import de.gerdiproject.harvest.etls.transformers.TransformerException;
+import de.gerdiproject.harvest.etls.utils.ETLManager;
 import de.gerdiproject.harvest.etls.utils.TimestampedEntry;
 import de.gerdiproject.harvest.etls.utils.TimestampedList;
 import de.gerdiproject.harvest.event.EventSystem;
@@ -78,7 +78,7 @@ public abstract class AbstractETL <T, S> implements IEventListener
     private AtomicInteger maxDocumentCount;
 
     protected final Logger logger; // NOPMD - we want to retrieve the type of the inheriting class
-    protected final String name;
+    protected String name;
     protected volatile String hash;
 
     protected final TimestampedList<ETLHealth> healthHistory;
@@ -106,9 +106,7 @@ public abstract class AbstractETL <T, S> implements IEventListener
         this.healthHistory = new TimestampedList<>(ETLHealth.OK, 1);
 
         // set the name to camel case
-        this.name = name != null
-                    ? name.replaceAll(ParameterConstants.INVALID_PARAM_NAME_REGEX, "")
-                    : getClass().getSimpleName();
+        this.name = name != null ? name : getClass().getSimpleName();
 
         this.logger = LoggerFactory.getLogger(getName());
         this.maxDocumentCount = new AtomicInteger(0);
@@ -551,6 +549,19 @@ public abstract class AbstractETL <T, S> implements IEventListener
     public final String getName()
     {
         return name;
+    }
+
+
+    /**
+     * Changes the name of the ETL.
+     * This method should not be called manually.
+     * It is required by the {@linkplain ETLManager}.
+     *
+     * @param name the new name of the ETL
+     */
+    public final void setName(String name)
+    {
+        this.name = name;
     }
 
 
