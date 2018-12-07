@@ -162,7 +162,7 @@ public class ETLManager extends AbstractRestObject<ETLManager, ETLManagerJson> i
                 statusString += String.format(ETLConstants.PROGRESS_NO_BOUNDS, totalCurrCount);
         }
 
-        sb.append(String.format(ETLConstants.ETL_PRETTY, ETLConstants.NAME_TOTAL, statusString));
+        sb.append(String.format(ETLConstants.ETL_PRETTY, ETLConstants.NAME_TOTAL, statusString, getHealth()));
 
         if (status == ETLStatus.HARVESTING) {
             final long remainingMilliSeconds = estimateRemainingHarvestTime(totalCurrCount, totalMaxCount);

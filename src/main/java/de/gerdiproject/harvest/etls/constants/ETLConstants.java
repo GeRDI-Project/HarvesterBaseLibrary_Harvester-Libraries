@@ -99,6 +99,7 @@ public class ETLConstants
         + "              'date', 'class', and 'level' can be used to\n"
         + "              filter the log with comma-separated values of\n"
         + "              dates, logger classes, and log levels.\n"
+        + "GET/harvest-timestamp  Displays the date of the last harvest.\n"
         + "GET/versions     Returns a list of GeRDI Maven dependencies.\n"
         + "GET/versions-all Returns a list of all Maven dependencies.\n"
         + "\n"
@@ -112,7 +113,7 @@ public class ETLConstants
     public static final String ETL_NAME_QUERY_ERROR_UNKNOWN = "Unknown ETL name '%s'!";
 
     public static final String UNKNOWN_NUMBER = "???";
-    public static final String ETL_PRETTY = "%s : %s%n";
+    public static final String ETL_PRETTY = "%s : %s [Health: %s]%n";
     public static final String PROGRESS = " % 3d%% (%d / %d)";
     public static final String PROGRESS_NO_BOUNDS = " (%d / ???)";
     public static final String NAME_TOTAL = "---\nOVERALL";

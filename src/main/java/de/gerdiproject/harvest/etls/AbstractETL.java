@@ -604,7 +604,7 @@ public abstract class AbstractETL <T, S> implements IEventListener
                 etlStatus += String.format(ETLConstants.PROGRESS_NO_BOUNDS, currCount);
         }
 
-        return String.format(ETLConstants.ETL_PRETTY, getName(), etlStatus);
+        return String.format(ETLConstants.ETL_PRETTY, getName(), etlStatus, getHealth().toString());
     }
 
 
