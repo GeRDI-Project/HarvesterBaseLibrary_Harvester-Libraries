@@ -17,6 +17,8 @@ package de.gerdiproject.harvest.config.constants;
 
 import de.gerdiproject.harvest.config.Configuration;
 import de.gerdiproject.harvest.utils.file.constants.FileConstants;
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
 
 /**
  * This static class is a collection of constants, commonly used for classes
@@ -24,10 +26,13 @@ import de.gerdiproject.harvest.utils.file.constants.FileConstants;
  *
  * @author Robin Weiss
  */
+@NoArgsConstructor(access=AccessLevel.PRIVATE)
 public class ConfigurationConstants
 {
     public static final String NO_CHANGES = "No parameters were changed!";
-    public static final String UNKNOWN_PARAM = "Cannot change parameter '%s'. Unknown parameter!";
+    public static final String SET_NO_PAYLOAD_ERROR = "Cannot change parameters: Missing request body!";
+    public static final String SET_UNKNOWN_PARAM_ERROR = "Cannot change parameter '%s'. Unknown parameter!";
+    public static final String GET_UNKNOWN_PARAM_ERROR = "Unknown parameter '%s'!";
 
     public static final String CONFIG_PATH = FileConstants.CACHE_FOLDER_PATH + "config.json";
 
@@ -51,9 +56,9 @@ public class ConfigurationConstants
         + "Sets x-www-form-urlencoded parameters for the harvester.\n"
         + "Valid keys: ";
 
-    public static final String SAVE_NO_PATH_ERROR = "Could not save configuration: " + NO_PATH;
-    public static final String PARSE_ERROR = "Could not read configuration parameter value '%s' from key '%s'!";
-    public static final String REGISTER_ERROR = "Could not register parameter '%s', because no Configuration with event listeners exists, yet!";
+    public static final String SAVE_NO_PATH_ERROR = "Cannot save configuration: " + NO_PATH;
+    public static final String PARSE_ERROR = "Cannot read configuration parameter value '%s' from key '%s'!";
+    public static final String REGISTER_ERROR = "Cannot register parameter '%s', because no Configuration with event listeners exists, yet!";
 
     public static final String BASIC_PARAMETER_FORMAT = "%%n%%1$-%ds :  %%2$s";
     public static final String CATEGORY_FORMAT = "- %s -";
@@ -61,12 +66,4 @@ public class ConfigurationConstants
     public static final String ENVIRONMENT_VARIABLE_SET_START = "Searching for configuration from environment variables...";
 
     public static final String DEBUG_CATEGORY = "Debug";
-
-    /**
-     * Private constructor, because this class just serves as a place to define
-     * constants.
-     */
-    private ConfigurationConstants()
-    {
-    }
 }

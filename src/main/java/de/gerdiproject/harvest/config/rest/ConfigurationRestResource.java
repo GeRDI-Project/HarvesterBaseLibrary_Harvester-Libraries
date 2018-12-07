@@ -24,9 +24,10 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.UriInfo;
 
-import com.google.gson.Gson;
+import com.google.gson.JsonPrimitive;
 
 import de.gerdiproject.harvest.config.Configuration;
 import de.gerdiproject.harvest.config.constants.ConfigurationConstants;
@@ -62,7 +63,7 @@ public final class ConfigurationRestResource extends AbstractRestResource<Config
         for (String key : formParams.keySet())
             request.put(key, formParams.getFirst(key));
 
-        return setConfiguration(new Gson().toJson(request));
+        return setConfiguration(gson.toJson(request));
     }
 
 
@@ -97,7 +98,13 @@ public final class ConfigurationRestResource extends AbstractRestResource<Config
             final String compositeKey = query.get(ConfigurationConstants.QUERY_KEY).get(0);
             final String value = restObject.getParameterStringValue(compositeKey);
 
-            return HttpResponseFactory.createOkResponse(value);
+            if (value == null) {
+                final String errorMessage = String.format(
+                                                ConfigurationConstants.GET_UNKNOWN_PARAM_ERROR,
+                                                compositeKey);
+                return HttpResponseFactory.createBadRequestResponse(errorMessage);
+            } else
+                return HttpResponseFactory.createValueResponse(Status.OK, new JsonPrimitive(value));
         } else
             return super.getInfoText(uriInfo);
     }

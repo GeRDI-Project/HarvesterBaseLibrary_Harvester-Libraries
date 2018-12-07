@@ -40,6 +40,10 @@ public class RestConstants
     public static final String LINE_START_REPLACEMENT = "$1  $2";
 
     public static final String NOT_AVAILABLE = "N/A";
+    public static final String FEEDBACK_JSON = "{\"status\":\"%s\",\"message\":\"%s\"}";
+    public static final String VALUE_JSON = "{\"status\":\"%s\",\"value\":%s}";
+    public static final String STATUS_FAILED = "Failed";
+    public static final String STATUS_OK = "Ok";
 
     /**
      * Private constructor because this class only offers static constants.

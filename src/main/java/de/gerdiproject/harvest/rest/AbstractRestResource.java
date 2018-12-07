@@ -97,7 +97,7 @@ public abstract class AbstractRestResource<T extends AbstractRestObject<T, ?>, S
      * an error response describing what went wrong
      */
     @GET
-    @Produces(MediaType.TEXT_PLAIN)
+    @Produces({MediaType.TEXT_PLAIN, MediaType.APPLICATION_JSON})
     public Response getInfoText(@Context UriInfo uriInfo)
     {
         // abort if object is not initialized, yet
@@ -109,7 +109,7 @@ public abstract class AbstractRestResource<T extends AbstractRestObject<T, ?>, S
             final String responseText = restObject.getAsPlainText();
             final String allowedRequests = getAllowedRequests()
                                            .replaceAll(RestConstants.LINE_START_REGEX, RestConstants.LINE_START_REPLACEMENT);
-            return HttpResponseFactory.createOkResponse(responseText + allowedRequests);
+            return HttpResponseFactory.createPlainTextOkResponse(responseText + allowedRequests);
 
         } catch (IllegalArgumentException e) {
             return HttpResponseFactory.createBadRequestResponse(e.getMessage());
@@ -144,11 +144,7 @@ public abstract class AbstractRestResource<T extends AbstractRestObject<T, ?>, S
 
         // try to parse the JSON object
         try {
-            final String responseText = responseObject instanceof String
-                                        ? (String) responseObject
-                                        : gson.toJson(responseObject);
-
-            return HttpResponseFactory.createOkResponse(responseText);
+            return HttpResponseFactory.createOkResponse(gson.toJsonTree(responseObject));
 
         } catch (IllegalArgumentException e) {
             return HttpResponseFactory.createBadRequestResponse(e.getMessage());

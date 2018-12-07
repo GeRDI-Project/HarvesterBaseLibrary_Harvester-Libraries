@@ -32,6 +32,9 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.UriInfo;
 
+import com.google.gson.JsonArray;
+import com.google.gson.JsonPrimitive;
+
 import de.gerdiproject.harvest.application.events.ResetContextEvent;
 import de.gerdiproject.harvest.etls.constants.ETLConstants;
 import de.gerdiproject.harvest.etls.enums.ETLHealth;
@@ -80,9 +83,8 @@ public class ETLRestResource extends AbstractRestResource<ETLManager, GetETLMana
         // forward GET request to the object
         try {
             final ETLJson responseObject = restObject.getETLAsJson(uriInfo.getQueryParameters());
-            final String responseText =  gson.toJson(responseObject);
 
-            return HttpResponseFactory.createOkResponse(responseText);
+            return HttpResponseFactory.createOkResponse(gson.toJsonTree(responseObject));
         } catch (Exception e) {
             return HttpResponseFactory.createBadRequestResponse(e.getMessage());
         }
@@ -100,7 +102,7 @@ public class ETLRestResource extends AbstractRestResource<ETLManager, GetETLMana
      */
     @POST
     @Produces({
-        MediaType.TEXT_PLAIN
+        MediaType.APPLICATION_JSON
     })
     public Response startHarvest(final MultivaluedMap<String, String> formParams)
     {
@@ -126,7 +128,7 @@ public class ETLRestResource extends AbstractRestResource<ETLManager, GetETLMana
     @GET
     @Path("outdated")
     @Produces({
-        MediaType.TEXT_PLAIN, MediaType.APPLICATION_JSON
+        MediaType.APPLICATION_JSON
     })
     public Response isOutdated()
     {
@@ -134,7 +136,7 @@ public class ETLRestResource extends AbstractRestResource<ETLManager, GetETLMana
         if (restObject == null)
             return HttpResponseFactory.createInitResponse();
 
-        return HttpResponseFactory.createOkResponse(restObject.hasOutdatedETLs());
+        return HttpResponseFactory.createValueResponse(Status.OK, new JsonPrimitive(restObject.hasOutdatedETLs()));
     }
 
 
@@ -146,7 +148,7 @@ public class ETLRestResource extends AbstractRestResource<ETLManager, GetETLMana
     @POST
     @Path("abort")
     @Produces({
-        MediaType.TEXT_PLAIN
+        MediaType.APPLICATION_JSON
     })
     public Response abort()
     {
@@ -171,7 +173,7 @@ public class ETLRestResource extends AbstractRestResource<ETLManager, GetETLMana
     @POST
     @Path("reset")
     @Produces({
-        MediaType.TEXT_PLAIN
+        MediaType.APPLICATION_JSON
     })
     public Response reset()
     {
@@ -214,7 +216,7 @@ public class ETLRestResource extends AbstractRestResource<ETLManager, GetETLMana
         if (log == null)
             return HttpResponseFactory.createServerErrorResponse();
         else
-            return HttpResponseFactory.createOkResponse(log);
+            return HttpResponseFactory.createPlainTextOkResponse(log);
     }
 
 
@@ -227,7 +229,7 @@ public class ETLRestResource extends AbstractRestResource<ETLManager, GetETLMana
     @GET
     @Path("harvest-timestamp")
     @Produces({
-        MediaType.TEXT_PLAIN
+        MediaType.APPLICATION_JSON
     })
     public Response getHarvestStartTimestamp()
     {
@@ -241,7 +243,7 @@ public class ETLRestResource extends AbstractRestResource<ETLManager, GetETLMana
             return HttpResponseFactory.createBadRequestResponse();
 
         else
-            return HttpResponseFactory.createOkResponse(Instant.ofEpochMilli(timestamp).toString());
+            return HttpResponseFactory.createValueResponse(Status.OK, new JsonPrimitive(Instant.ofEpochMilli(timestamp).toString()));
     }
 
 
@@ -253,7 +255,7 @@ public class ETLRestResource extends AbstractRestResource<ETLManager, GetETLMana
     @GET
     @Path("health")
     @Produces({
-        MediaType.TEXT_PLAIN
+        MediaType.APPLICATION_JSON
     })
     public Response getHealth()
     {
@@ -266,7 +268,7 @@ public class ETLRestResource extends AbstractRestResource<ETLManager, GetETLMana
                                ? Status.OK
                                : Status.INTERNAL_SERVER_ERROR;
 
-        return HttpResponseFactory.createResponse(status, health);
+        return HttpResponseFactory.createValueResponse(status, new JsonPrimitive(health.toString()));
     }
 
 
@@ -278,16 +280,13 @@ public class ETLRestResource extends AbstractRestResource<ETLManager, GetETLMana
     @GET
     @Path("versions")
     @Produces({
-        MediaType.TEXT_PLAIN
+        MediaType.APPLICATION_JSON
     })
     public Response getVersions()
     {
-        final String versions = getSpecifiedVersions(MavenConstants.DEFAULT_GERDI_NAMESPACE);
-
-        if (versions == null)
-            return HttpResponseFactory.createUnknownErrorResponse();
-        else
-            return HttpResponseFactory.createOkResponse(versions);
+        return HttpResponseFactory.createValueResponse(
+                   Status.OK,
+                   getSpecifiedVersions(MavenConstants.DEFAULT_GERDI_NAMESPACE));
     }
 
 
@@ -299,28 +298,25 @@ public class ETLRestResource extends AbstractRestResource<ETLManager, GetETLMana
     @GET
     @Path("versions-all")
     @Produces({
-        MediaType.TEXT_PLAIN
+        MediaType.APPLICATION_JSON
     })
     public Response getAllVersions()
     {
-        final String versions = getSpecifiedVersions(null);
-
-        if (versions == null)
-            return HttpResponseFactory.createUnknownErrorResponse();
-        else
-            return HttpResponseFactory.createOkResponse(versions);
+        return HttpResponseFactory.createValueResponse(
+                   Status.OK,
+                   getSpecifiedVersions(null));
     }
 
 
     /**
-     * Retrieves filtered dependencies and the main jar as a linebreak separated list.
+     * Retrieves filtered dependencies and the main jar as a JsonArray.
      * The first entry is always the main jar and is separated by a double linebreak.
      *
      * @param filter a groupId that can be used to filter maven dependencies
      *
-     * @return dependencies and the main jar as a linebreak separated list
+     * @return dependencies and the main jar as a JsonArray
      */
-    private String getSpecifiedVersions(String filter)
+    private JsonArray getSpecifiedVersions(String filter)
     {
         final MavenUtils utils = EventSystem.sendSynchronousEvent(new GetMavenUtilsEvent());
 
@@ -340,10 +336,10 @@ public class ETLRestResource extends AbstractRestResource<ETLManager, GetETLMana
         // remove jar from dependencies. it's dealt with in a special manner
         dependencyList.remove(mainJar);
 
-        return String.format(
-                   MavenConstants.DEPENDENCY_LIST_FORMAT,
-                   mainJar,
-                   String.join("\n", dependencyList));
+        final JsonArray array = new JsonArray();
+        dependencyList.forEach((String d) -> array.add(d));
+
+        return array;
     }
 
 

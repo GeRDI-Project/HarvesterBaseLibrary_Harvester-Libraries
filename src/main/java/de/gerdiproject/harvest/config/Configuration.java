@@ -20,6 +20,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.TreeMap;
 import java.util.function.Consumer;
 
@@ -264,15 +265,16 @@ public class Configuration extends AbstractRestObject<Configuration, String> imp
      * @param compositeKey the parameter category and name, separated by a dot
      * @param value the new value of the parameter
      *
+     * @throws IllegalArgumentException if the compositeKey is empty or does not exist
      * @return a message describing if the operation was successful, or if not, why it failed
      */
-    public String setParameter(String compositeKey, String value)
+    public String setParameter(String compositeKey, String value) throws IllegalArgumentException
     {
         final AbstractParameter<?> param = parameterMap.get(compositeKey.toLowerCase());
 
         // change the parameter value or return an error, if it does not exist
         if (param == null || !param.isRegistered())
-            return String.format(ConfigurationConstants.UNKNOWN_PARAM, compositeKey);
+            throw new IllegalArgumentException(String.format(ConfigurationConstants.SET_UNKNOWN_PARAM_ERROR, compositeKey));
 
         final Object oldValue = param.getValue();
         final String paramChangeMessage = param.setValue(value);
@@ -292,14 +294,35 @@ public class Configuration extends AbstractRestObject<Configuration, String> imp
      *
      * @param values a map of key-value parameter pairs
      *
+     * @throws IllegalArgumentException if the values are empty or non of them are valid
      * @return a message describing if the operations were successful, or if not, why they failed
      */
-    public String setParameters(Map<String, String> values)
+    public String setParameters(Map<String, String> values) throws IllegalArgumentException
     {
+        if (values == null || values.isEmpty())
+            throw new IllegalArgumentException(ConfigurationConstants.SET_NO_PAYLOAD_ERROR);
+
+        boolean hasChanged = false;
         final StringBuilder sb = new StringBuilder();
-        values.forEach(
-            (String key, String value) -> sb.append(setParameter(key, value)).append('\n')
-        );
+
+        // change every defined parameter
+        for (Entry<String, String> p : values.entrySet()) {
+            String feedback;
+
+            try {
+                feedback = setParameter(p.getKey(), p.getValue());
+                hasChanged = true;
+            } catch (IllegalArgumentException e) {
+                feedback = e.getMessage();
+            }
+
+            sb.append(feedback).append('\n');
+        }
+
+        // if no parameter changed, the request fails
+        if (!hasChanged)
+            throw new IllegalArgumentException(sb.toString());
+
         saveToDisk();
 
         return sb.toString();

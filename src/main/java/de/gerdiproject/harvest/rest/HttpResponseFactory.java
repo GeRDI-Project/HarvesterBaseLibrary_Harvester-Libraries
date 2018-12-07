@@ -21,25 +21,22 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
 import javax.ws.rs.core.Response.Status;
 
+import com.google.gson.JsonElement;
+
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.event.ISynchronousEvent;
 import de.gerdiproject.harvest.rest.constants.RestConstants;
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
 
 /**
  * This factory creates common server responses to HTTP requests.
  *
  * @author Robin Weiss
  */
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class HttpResponseFactory
 {
-    /**
-     * Private constructor because this class only provides static methods.
-     */
-    private HttpResponseFactory()
-    {
-    }
-
-
     /**
      * Creates a HTTP-503 response that should be returned during
      * the initialization state of the harvester.
@@ -48,9 +45,10 @@ public class HttpResponseFactory
      */
     public static Response createInitResponse()
     {
+        final String message = RestConstants.CANNOT_PROCESS_PREFIX + RestConstants.WAIT_FOR_INIT;
         return Response
                .status(Status.SERVICE_UNAVAILABLE)
-               .entity(RestConstants.CANNOT_PROCESS_PREFIX + RestConstants.WAIT_FOR_INIT)
+               .entity(refineEntity(Status.SERVICE_UNAVAILABLE, message))
                .type(MediaType.TEXT_PLAIN)
                .build();
     }
@@ -70,10 +68,10 @@ public class HttpResponseFactory
     {
         final ResponseBuilder rb = Response
                                    .status(Status.SERVICE_UNAVAILABLE)
-                                   .entity(message)
+                                   .entity(refineEntity(Status.SERVICE_UNAVAILABLE, message))
                                    .type(MediaType.TEXT_PLAIN);
 
-        if (retryInSeconds != -1)
+        if (retryInSeconds > 0)
             rb.header(RestConstants.RETRY_AFTER_HEADER, retryInSeconds);
 
         return rb.build();
@@ -90,7 +88,7 @@ public class HttpResponseFactory
     {
         return Response
                .status(Status.ACCEPTED)
-               .entity(message)
+               .entity(refineEntity(Status.ACCEPTED, message))
                .type(MediaType.TEXT_PLAIN)
                .build();
     }
@@ -106,7 +104,7 @@ public class HttpResponseFactory
     {
         return Response
                .status(Status.INTERNAL_SERVER_ERROR)
-               .entity(RestConstants.INIT_ERROR_DETAILED)
+               .entity(refineEntity(Status.INTERNAL_SERVER_ERROR, RestConstants.INIT_ERROR_DETAILED))
                .type(MediaType.TEXT_PLAIN)
                .build();
     }
@@ -121,7 +119,7 @@ public class HttpResponseFactory
     {
         return Response
                .status(Status.INTERNAL_SERVER_ERROR)
-               .entity(RestConstants.UNKNOWN_ERROR)
+               .entity(refineEntity(Status.INTERNAL_SERVER_ERROR, RestConstants.UNKNOWN_ERROR))
                .type(MediaType.TEXT_PLAIN)
                .build();
     }
@@ -138,7 +136,7 @@ public class HttpResponseFactory
     {
         return Response
                .status(Status.INTERNAL_SERVER_ERROR)
-               .entity(message)
+               .entity(refineEntity(Status.INTERNAL_SERVER_ERROR, message))
                .type(MediaType.TEXT_PLAIN)
                .build();
     }
@@ -166,7 +164,7 @@ public class HttpResponseFactory
     {
         return Response
                .status(Status.BAD_REQUEST)
-               .entity(message)
+               .entity(refineEntity(Status.BAD_REQUEST, message))
                .type(MediaType.TEXT_PLAIN)
                .build();
     }
@@ -180,7 +178,7 @@ public class HttpResponseFactory
     {
         return Response
                .status(Status.METHOD_NOT_ALLOWED)
-               .entity(RestConstants.INVALID_REQUEST_ERROR)
+               .entity(refineEntity(Status.METHOD_NOT_ALLOWED, RestConstants.INVALID_REQUEST_ERROR))
                .type(MediaType.TEXT_PLAIN)
                .build();
     }
@@ -197,7 +195,24 @@ public class HttpResponseFactory
     {
         return Response
                .status(Status.OK)
-               .entity(entity == null ? "" : entity.toString())
+               .entity(refineEntity(Status.OK, entity))
+               .type(MediaType.APPLICATION_JSON)
+               .build();
+    }
+
+
+    /**
+     * Creates a HTTP-200 plain text response.
+     *
+     * @param message the response text
+     *
+     * @return a plain text HTTP-200
+     */
+    public static Response createPlainTextOkResponse(String message)
+    {
+        return Response
+               .status(Status.OK)
+               .entity(message.trim())
                .type(MediaType.TEXT_PLAIN)
                .build();
     }
@@ -206,17 +221,25 @@ public class HttpResponseFactory
     /**
      * Creates a response with a specified status code and entity.
      *
-     * @param status the HTTP return code of the response
-     * @param entity the entity that is passed along with the response
+     * @param statusCode the HTTP return code of the response
+     * @param value the entity that is passed along with the response
      *
      * @return a response with a specified status code and entity
      */
-    public static Response createResponse(Status status, Object entity)
+    public static Response createValueResponse(Status statusCode, JsonElement value)
     {
+        if (value == null)
+            return createBadRequestResponse();
+
+        final String status = statusCode.getStatusCode() >= 200 && statusCode.getStatusCode() < 400
+                              ? RestConstants.STATUS_OK
+                              : RestConstants.STATUS_FAILED;
+
+        final String valueEntity = String.format(RestConstants.VALUE_JSON, status, value.toString().trim());
         return Response
-               .status(status)
-               .entity(entity == null ? "" : entity.toString())
-               .type(MediaType.TEXT_PLAIN)
+               .status(statusCode)
+               .entity(valueEntity)
+               .type(MediaType.APPLICATION_JSON)
                .build();
     }
 
@@ -263,5 +286,29 @@ public class HttpResponseFactory
 
         else
             return createOkResponse(eventResponse);
+    }
+
+
+
+    /**
+     * Converts an entity object to a proper response string.
+     *
+     * @param statusCode the status of the response
+     * @param entity the (unrefined) entity
+     *
+     * @return a non-empty, non-null response JSON
+     */
+    private static String refineEntity(Status statusCode, Object entity)
+    {
+        if (entity == null)
+            entity = "{}";
+        else if (entity instanceof String) {
+            final String status = statusCode.getStatusCode() >= 200 && statusCode.getStatusCode() < 400
+                                  ? RestConstants.STATUS_OK
+                                  : RestConstants.STATUS_FAILED;
+            entity = String.format(RestConstants.FEEDBACK_JSON, status, ((String)entity).trim());
+        }
+
+        return entity.toString();
     }
 }
