@@ -538,11 +538,23 @@ public class ETLManager extends AbstractRestObject<ETLManager, ETLManagerJson> i
 
 
     /**
+     * Estimates the remaining harvesting duration in milliseconds.
+     *
+     * @return the remaining harvesting duration in milliseconds,
+     * or -1 if it cannot be estimated
+     */
+    public long estimateRemainingHarvestTime()
+    {
+        return estimateRemainingHarvestTime(getHarvestedCount(), getMaxNumberOfDocuments());
+    }
+
+
+    /**
      * Returns the unix timestamp of the most recent beginning of a harvest.
      *
      * @return a unix timestamp or -1 if no harvest was executed
      */
-    public long getLatestHarvestTimestamp()
+    private long getLatestHarvestTimestamp()
     {
         final Iterator<TimestampedEntry<ETLState>> reverseIter = combinedStateHistory.descendingIterator();
 

@@ -139,6 +139,8 @@ public class ETLRestResource extends AbstractRestResource<ETLManager, GetETLMana
             // start a harvest
             restObject.harvest();
             return HttpResponseFactory.createAcceptedResponse(ETLConstants.HARVEST_STARTED);
+        } catch (IllegalStateException e) {
+            return HttpResponseFactory.createBusyResponse(e.getMessage(), restObject.estimateRemainingHarvestTime() / 1000L);
         } catch (Exception e) {
             return HttpResponseFactory.createBadRequestResponse(e.getMessage());
         }

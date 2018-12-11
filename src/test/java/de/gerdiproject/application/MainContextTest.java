@@ -187,7 +187,7 @@ public class MainContextTest extends AbstractUnitTest
     {
         waitForEvent(ServiceInitializedEvent.class, INIT_TIMEOUT, initFunction);
 
-        assertNotEquals("Expected the method hasFailed() to return "+ shouldInitBeSuccessful + " after initialization!",
+        assertNotEquals("Expected the method hasFailed() to return " + shouldInitBeSuccessful + " after initialization!",
                         shouldInitBeSuccessful,
                         MainContext.hasFailed());
     }
