@@ -41,18 +41,6 @@ import de.gerdiproject.harvest.config.parameters.AbstractParameter;
 public class ConfigurationAdapter implements JsonDeserializer<Configuration>, JsonSerializer<Configuration>
 {
     private static final Type PARAM_MAP_TYPE = new TypeToken<Map<String, ParameterCategoryJson>>() {} .getType();
-    private final String moduleName;
-
-
-    /**
-     * Constructor that requires the service name.
-     *
-     * @param moduleName the name of the service
-     */
-    public ConfigurationAdapter(String moduleName)
-    {
-        this.moduleName = moduleName;
-    }
 
 
     @Override
@@ -69,7 +57,7 @@ public class ConfigurationAdapter implements JsonDeserializer<Configuration>, Js
         final AbstractParameter<?>[] parameterArray = new AbstractParameter<?>[parameters.size()];
         parameters.toArray(parameterArray);
 
-        return new Configuration(moduleName, parameterArray);
+        return new Configuration(null, parameterArray);
     }
 
 

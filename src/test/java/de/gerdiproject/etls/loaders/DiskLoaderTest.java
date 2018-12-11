@@ -34,7 +34,7 @@ import com.google.gson.JsonObject;
 import de.gerdiproject.AbstractFileSystemUnitTest;
 import de.gerdiproject.harvest.config.Configuration;
 import de.gerdiproject.harvest.config.parameters.AbstractParameter;
-import de.gerdiproject.harvest.etls.enums.ETLStatus;
+import de.gerdiproject.harvest.etls.enums.ETLState;
 import de.gerdiproject.harvest.etls.events.HarvestStartedEvent;
 import de.gerdiproject.harvest.etls.loaders.DiskLoader;
 import de.gerdiproject.harvest.etls.loaders.constants.DiskLoaderConstants;
@@ -80,7 +80,7 @@ public class DiskLoaderTest extends AbstractFileSystemUnitTest<DiskLoader>
     {
         testedObject.init(etl);
         final Iterator<DataCiteJson> docIter = createRandomNumberOfSaveableDocuments();
-        etl.setStatus(ETLStatus.HARVESTING);
+        etl.setStatus(ETLState.HARVESTING);
 
         // write file
         testedObject.load(docIter);
@@ -110,7 +110,7 @@ public class DiskLoaderTest extends AbstractFileSystemUnitTest<DiskLoader>
         testedObject.init(etl);
 
         final Iterator<DataCiteJson> docIter = createRandomNumberOfSaveableDocuments();
-        etl.setStatus(ETLStatus.HARVESTING);
+        etl.setStatus(ETLState.HARVESTING);
 
         // write file
         testedObject.load(docIter);

@@ -16,7 +16,6 @@
 package de.gerdiproject.harvest.etls.rest;
 
 
-import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 
@@ -38,8 +37,9 @@ import com.google.gson.JsonPrimitive;
 import de.gerdiproject.harvest.application.events.ResetContextEvent;
 import de.gerdiproject.harvest.etls.constants.ETLConstants;
 import de.gerdiproject.harvest.etls.enums.ETLHealth;
-import de.gerdiproject.harvest.etls.enums.ETLStatus;
+import de.gerdiproject.harvest.etls.enums.ETLState;
 import de.gerdiproject.harvest.etls.events.GetETLManagerEvent;
+import de.gerdiproject.harvest.etls.json.ETLInfosJson;
 import de.gerdiproject.harvest.etls.json.ETLJson;
 import de.gerdiproject.harvest.etls.utils.ETLManager;
 import de.gerdiproject.harvest.event.EventSystem;
@@ -83,6 +83,31 @@ public class ETLRestResource extends AbstractRestResource<ETLManager, GetETLMana
         // forward GET request to the object
         try {
             final ETLJson responseObject = restObject.getETLAsJson(uriInfo.getQueryParameters());
+
+            return HttpResponseFactory.createOkResponse(gson.toJsonTree(responseObject));
+        } catch (Exception e) {
+            return HttpResponseFactory.createBadRequestResponse(e.getMessage());
+        }
+    }
+
+
+    /**
+     * A HTTP GET request that returns a JSON representation of a all ETLs.
+     *
+     * @return a JSON object that represents all ETLs or an error response describing what went wrong
+     */
+    @GET
+    @Path("etls")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getAllETLInfos()
+    {
+        // abort if object is not initialized, yet
+        if (restObject == null)
+            return HttpResponseFactory.createInitResponse();
+
+        // forward GET request to the object
+        try {
+            final ETLInfosJson responseObject = restObject.getETLsAsJson();
 
             return HttpResponseFactory.createOkResponse(gson.toJsonTree(responseObject));
         } catch (Exception e) {
@@ -156,7 +181,7 @@ public class ETLRestResource extends AbstractRestResource<ETLManager, GetETLMana
         if (restObject == null)
             return HttpResponseFactory.createInitResponse();
 
-        if (restObject.getStatus() == ETLStatus.HARVESTING) {
+        if (restObject.getState() == ETLState.HARVESTING) {
             restObject.abortHarvest();
 
             return HttpResponseFactory.createAcceptedResponse(ETLConstants.ABORT_START);
@@ -221,33 +246,6 @@ public class ETLRestResource extends AbstractRestResource<ETLManager, GetETLMana
 
 
     /**
-    * Retrieves a formatted timestamp of the time at which the harvest started,
-    * or "N/A" if no harvest was started yet.
-    *
-    * @return a formatted timestamp or "N/A" if no harvest was started yet
-    */
-    @GET
-    @Path("harvest-timestamp")
-    @Produces({
-        MediaType.APPLICATION_JSON
-    })
-    public Response getHarvestStartTimestamp()
-    {
-        // abort if object is not initialized, yet
-        if (restObject == null)
-            return HttpResponseFactory.createInitResponse();
-
-        long timestamp = restObject.getLatestHarvestTimestamp();
-
-        if (timestamp == -1L)
-            return HttpResponseFactory.createBadRequestResponse();
-
-        else
-            return HttpResponseFactory.createValueResponse(Status.OK, new JsonPrimitive(Instant.ofEpochMilli(timestamp).toString()));
-    }
-
-
-    /**
      * Checks the health of the harvester.
      *
      * @return the health of the harvester
@@ -261,7 +259,9 @@ public class ETLRestResource extends AbstractRestResource<ETLManager, GetETLMana
     {
         // abort if object is not initialized, yet
         if (restObject == null)
-            return HttpResponseFactory.createInitResponse();
+            return HttpResponseFactory.createValueResponse(
+                       Status.INTERNAL_SERVER_ERROR,
+                       new JsonPrimitive(ETLHealth.INITIALIZATION_FAILED.toString()));
 
         final ETLHealth health = restObject.getHealth();
         final Status status =  health == ETLHealth.OK

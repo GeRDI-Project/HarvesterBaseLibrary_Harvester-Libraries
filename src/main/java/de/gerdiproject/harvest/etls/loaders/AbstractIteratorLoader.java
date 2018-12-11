@@ -20,7 +20,7 @@ import java.util.Iterator;
 
 import de.gerdiproject.harvest.etls.AbstractETL;
 import de.gerdiproject.harvest.etls.AbstractIteratorETL;
-import de.gerdiproject.harvest.etls.enums.ETLStatus;
+import de.gerdiproject.harvest.etls.enums.ETLState;
 import de.gerdiproject.harvest.etls.extractors.ExtractorException;
 import de.gerdiproject.harvest.etls.loaders.constants.LoaderConstants;
 import de.gerdiproject.harvest.etls.transformers.TransformerException;
@@ -53,7 +53,7 @@ public abstract class AbstractIteratorLoader <S> implements ILoader<Iterator<S>>
     public void load(Iterator<S> documents) throws LoaderException
     {
         // only load documents while the harvester is running
-        while (documents.hasNext() && dedicatedEtl.getStatus() == ETLStatus.HARVESTING) {
+        while (documents.hasNext() && dedicatedEtl.getState() == ETLState.HARVESTING) {
             final S next = documents.next();
             loadElementAndIncrement(next);
         }

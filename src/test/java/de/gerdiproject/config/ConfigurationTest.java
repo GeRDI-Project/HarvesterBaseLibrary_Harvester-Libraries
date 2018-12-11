@@ -450,7 +450,6 @@ public class ConfigurationTest extends AbstractFileSystemUnitTest<Configuration>
         for (AbstractParameter<?> param : savedConfig.getParameters()) {
             boolean hasLoadedParameter = false;
 
-            // TODO
             for (AbstractParameter<?> loadedParam : loadedParams) {
                 if (loadedParam.getCompositeKey().equals(param.getCompositeKey())) {
                     assertEquals("The class of a saved parmeter must not change when the parmeter is loaded!",
@@ -761,7 +760,7 @@ public class ConfigurationTest extends AbstractFileSystemUnitTest<Configuration>
         // deserialize cache file
         final Gson gson =
             new GsonBuilder()
-        .registerTypeAdapter(Configuration.class, new ConfigurationAdapter(MODULE_NAME))
+        .registerTypeAdapter(Configuration.class, new ConfigurationAdapter())
         .create();
         final DiskIO diskIo = new DiskIO(gson, StandardCharsets.UTF_8);
         return diskIo.getObject(configFile, Configuration.class);

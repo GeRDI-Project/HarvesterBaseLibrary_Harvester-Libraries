@@ -86,26 +86,34 @@ public class ETLConstants
 
     // REST
     public static final String ALLOWED_REQUESTS =
-        "GET/.json     Returns detailed information about all ETLs.\n"
-        + "GET/etl       Returns detailed information about an ETL.\n"
-        + "              The query parameter 'name' must be the name of the ETL.\n"
-        + "GET/health    Returns plain text that serves as a health check.\n"
-        + "GET/outdated  Checks if there is unharvested metadata.\n"
-        + "GET/config    Displays a table of parameters and a means of\n"
-        + "              configuring them.\n"
-        + "GET/schedule  Displays a configurable set of cron jobs that\n"
-        + "              can trigger harvests automatically.\n"
-        + "GET/log       Displays the server log. The query parameters\n"
-        + "              'date', 'class', and 'level' can be used to\n"
-        + "              filter the log with comma-separated values of\n"
-        + "              dates, logger classes, and log levels.\n"
-        + "GET/harvest-timestamp  Displays the date of the last harvest.\n"
-        + "GET/versions     Returns a list of GeRDI Maven dependencies.\n"
-        + "GET/versions-all Returns a list of all Maven dependencies.\n"
-        + "\n"
-        + "POST          Starts the harvest.\n"
-        + "POST/abort    Aborts an ongoing harvest.\n"
-        + "POST/reset    Attempts to re-initialize this service.";
+        "GET\n"
+        + "Retrieves the generic harvest information as a JSON object, or as plain text if the query parameter ?pretty is added.\n\n"
+        + "GET /etls\n"
+        + "Returns detailed information about all ETLs.\n\n"
+        + "GET /etl?name=XXX\n"
+        + "Returns detailed information about an ETL with the name 'XXX'.\n"
+        + "The query parameter 'name' must be the name of the ETL.\n\n"
+        + "GET /health\n"
+        + "Returns plain text that serves as a health check.\n\n"
+        + "GET /outdated\n"
+        + "Checks if there is unharvested metadata.\n\n"
+        + "GET /config\n"
+        + "Displays parameters and a means of configuring them.\n\n"
+        + "GET /schedule\n"
+        + "Displays a configurable set of cron jobs that can trigger harvests automatically.\n\n"
+        + "GET /log\n"
+        + "Displays the server log. The query parameters 'date', 'class', and 'level' can be used to "
+        + "filter the log with comma-separated values of dates, logger classes, and log levels.\n\n"
+        + "GET /versions\n"
+        + "Returns a list of GeRDI Maven dependencies.\n\n"
+        + "GET /versions-all\n"
+        + "Returns a list of all Maven dependencies.\n\n"
+        + "POST\n"
+        + "Starts the harvest.\n\n"
+        + "POST /abort\n"
+        + "Aborts an ongoing harvest.\n\n"
+        + "POST /reset\n"
+        + "Attempts to re-initialize this service.";
 
 
     public static final String ETL_NAME_QUERY = "name";
@@ -144,6 +152,7 @@ public class ETLConstants
 
     public static final String ETL_MANAGER_CACHE_PATH = FileConstants.CACHE_FOLDER_PATH + "state.json";
     public static final String ETL_MANAGER_LOADED = "Loaded " + ETLManager.class.getSimpleName() + " from cache file: %s.";
+    public static final String ETL_MANAGER_LOAD_ERROR = "Could not load " + ETLManager.class.getSimpleName() + "! The cached JSON file is invalid or outdated!";
     public static final String ETL_LOADING_FAILED = "Could not load %s state from cache!";
 
     public static final String REMAINING_TIME_UNKNOWN = "Remaining Time : ???";
@@ -159,6 +168,7 @@ public class ETLConstants
     public static final String HARVEST_IN_PROGRESS = "Please wait for the harvest to finish!";
     public static final String HARVEST_FINISHED = "Harvest finished!";
     public static final String HARVEST_FAILED = "Harvest failed!";
+
 
 
     /**

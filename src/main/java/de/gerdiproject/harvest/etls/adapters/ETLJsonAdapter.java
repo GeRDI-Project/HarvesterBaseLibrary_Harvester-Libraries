@@ -25,7 +25,7 @@ import com.google.gson.JsonParseException;
 import com.google.gson.reflect.TypeToken;
 
 import de.gerdiproject.harvest.etls.enums.ETLHealth;
-import de.gerdiproject.harvest.etls.enums.ETLStatus;
+import de.gerdiproject.harvest.etls.enums.ETLState;
 import de.gerdiproject.harvest.etls.json.ETLJson;
 import de.gerdiproject.harvest.etls.utils.TimestampedList;
 
@@ -55,8 +55,8 @@ public class ETLJsonAdapter implements JsonDeserializer<ETLJson>
         final int maxDocumentCount = maxDocumentCountEle != null ? maxDocumentCountEle.getAsInt() : 1;
 
         final JsonElement statusHistoryEle = jsonObject.get("statusHistory");
-        final Type statusHistoryType = new TypeToken<ETLStatus>() {} .getType();
-        final TimestampedList<ETLStatus> statusHistory = context.deserialize(statusHistoryEle, statusHistoryType);
+        final Type statusHistoryType = new TypeToken<ETLState>() {} .getType();
+        final TimestampedList<ETLState> statusHistory = context.deserialize(statusHistoryEle, statusHistoryType);
 
         final JsonElement healthHistoryEle = jsonObject.get("healthHistory");
         final Type healthHistoryType = new TypeToken<ETLHealth>() {} .getType();

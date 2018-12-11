@@ -20,7 +20,6 @@ import java.lang.reflect.ParameterizedType;
 import java.util.function.Function;
 
 import javax.ws.rs.GET;
-import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
@@ -104,48 +103,31 @@ public abstract class AbstractRestResource<T extends AbstractRestObject<T, ?>, S
         if (restObject == null)
             return HttpResponseFactory.createInitResponse();
 
-        // forward GET request to the object
-        try {
-            final String responseText = restObject.getAsPlainText();
-            final String allowedRequests = getAllowedRequests()
-                                           .replaceAll(RestConstants.LINE_START_REGEX, RestConstants.LINE_START_REPLACEMENT);
-            return HttpResponseFactory.createPlainTextOkResponse(responseText + allowedRequests);
+        // check if ?pretty=true or simply ?pretty
+        boolean isPlainText = false;
 
-        } catch (IllegalArgumentException e) {
-            return HttpResponseFactory.createBadRequestResponse(e.getMessage());
-        } catch (Exception e) {
-            return HttpResponseFactory.createUnknownErrorResponse();
+        if (uriInfo.getQueryParameters().get(RestConstants.PRETTY_QUERY_PARAM) != null) {
+            final String prettyValue = uriInfo.getQueryParameters().get(RestConstants.PRETTY_QUERY_PARAM).get(0);
+            isPlainText = prettyValue.isEmpty() || prettyValue.equals(String.valueOf(true));
         }
-    }
-
-
-    /**
-     * A HTTP GET request that returns a JSON representation of the singleton object.
-     *
-     * @param uriInfo an object that can be used to retrieve the path and possible query parameters.
-     *
-     * @return a JSON object that represents the singleton object or an error response describing what went wrong
-     */
-    @GET
-    @Path(".json")
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response getInfoJson(@Context UriInfo uriInfo)
-    {
-        // abort if object is not initialized, yet
-        if (restObject == null)
-            return HttpResponseFactory.createInitResponse();
 
         // forward GET request to the object
-        final Object responseObject = restObject.getAsJson(uriInfo.getQueryParameters());
-
-        // abort if nothing could be retrieved
-        if (responseObject == null)
-            return HttpResponseFactory.createServerErrorResponse();
-
-        // try to parse the JSON object
         try {
-            return HttpResponseFactory.createOkResponse(gson.toJsonTree(responseObject));
+            if (isPlainText) {
+                final String responseText = restObject.getAsPlainText();
+                final String allowedRequests = getAllowedRequests()
+                                               .replaceAll(RestConstants.LINE_START_REGEX, RestConstants.LINE_START_REPLACEMENT);
+                return HttpResponseFactory.createPlainTextOkResponse(responseText + allowedRequests);
+            } else {
+                final Object responseObject = restObject.getAsJson(uriInfo.getQueryParameters());
 
+                // abort if nothing could be retrieved
+                if (responseObject == null)
+                    return HttpResponseFactory.createServerErrorResponse();
+
+                // try to parse the JSON object
+                return HttpResponseFactory.createOkResponse(gson.toJsonTree(responseObject));
+            }
         } catch (IllegalArgumentException e) {
             return HttpResponseFactory.createBadRequestResponse(e.getMessage());
         } catch (Exception e) {

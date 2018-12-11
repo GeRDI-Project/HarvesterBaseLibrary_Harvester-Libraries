@@ -27,12 +27,14 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.UriInfo;
 
+import com.google.gson.GsonBuilder;
 import com.google.gson.JsonPrimitive;
 
 import de.gerdiproject.harvest.config.Configuration;
 import de.gerdiproject.harvest.config.constants.ConfigurationConstants;
 import de.gerdiproject.harvest.config.events.GetConfigurationEvent;
 import de.gerdiproject.harvest.config.json.ChangeConfigurationRequest;
+import de.gerdiproject.harvest.config.json.adapters.ConfigurationAdapter;
 import de.gerdiproject.harvest.config.parameters.AbstractParameter;
 import de.gerdiproject.harvest.rest.AbstractRestResource;
 import de.gerdiproject.harvest.rest.HttpResponseFactory;
@@ -46,6 +48,15 @@ import de.gerdiproject.harvest.rest.HttpResponseFactory;
 @Path("config")
 public final class ConfigurationRestResource extends AbstractRestResource<Configuration, GetConfigurationEvent>
 {
+    /**
+     * Constructor
+     */
+    public ConfigurationRestResource()
+    {
+        super(new GsonBuilder().registerTypeAdapter(Configuration.class, new ConfigurationAdapter()).create());
+    }
+
+
     /**
      * Changes parameters of the configuration.
      *

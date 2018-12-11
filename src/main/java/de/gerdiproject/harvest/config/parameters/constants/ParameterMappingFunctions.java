@@ -23,7 +23,7 @@ import java.util.function.Function;
 
 import de.gerdiproject.harvest.config.parameters.AbstractParameter;
 import de.gerdiproject.harvest.etls.AbstractETL;
-import de.gerdiproject.harvest.etls.enums.ETLStatus;
+import de.gerdiproject.harvest.etls.enums.ETLState;
 import de.gerdiproject.harvest.etls.events.GetETLManagerEvent;
 import de.gerdiproject.harvest.etls.utils.ETLManager;
 import de.gerdiproject.harvest.event.EventSystem;
@@ -211,7 +211,7 @@ public class ParameterMappingFunctions
     public static <V> Function<String, V> createMapperForETL(Function<String, V> originalMappingFunction, AbstractETL<?, ?> etl)
     {
         return (String value) -> {
-            final ETLStatus etlStatus = etl.getStatus();
+            final ETLState etlStatus = etl.getState();
 
             switch (etlStatus)
             {
@@ -245,7 +245,7 @@ public class ParameterMappingFunctions
     {
         return (String value) -> {
             final ETLManager registry = EventSystem.sendSynchronousEvent(new GetETLManagerEvent());
-            final ETLStatus overallEtlStatus = registry == null ? ETLStatus.INITIALIZING : registry.getStatus();
+            final ETLState overallEtlStatus = registry == null ? ETLState.INITIALIZING : registry.getState();
 
             switch (overallEtlStatus)
             {

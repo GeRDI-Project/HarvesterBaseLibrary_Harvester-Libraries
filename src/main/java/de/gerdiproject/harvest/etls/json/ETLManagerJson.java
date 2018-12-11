@@ -16,76 +16,27 @@
  */
 package de.gerdiproject.harvest.etls.json;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import de.gerdiproject.harvest.etls.AbstractETL;
-import de.gerdiproject.harvest.etls.events.GetRepositoryNameEvent;
+import de.gerdiproject.harvest.etls.enums.ETLHealth;
+import de.gerdiproject.harvest.etls.enums.ETLState;
 import de.gerdiproject.harvest.etls.utils.ETLManager;
-import de.gerdiproject.harvest.event.EventSystem;
+import lombok.Data;
 
 /**
- * This class serves as the JSON representation of the {@linkplain ETLManager}.
- * It is used for persisting certain values through sessions.
+ * This class represents a JSON object containing details
+ * of the {@linkplain ETLManager}.
  *
  * @author Robin Weiss
  */
+@Data
 public class ETLManagerJson
 {
-    private final ETLJson overallInfo;
-    private final Map<String, ETLJson> etlInfos;
     private final String repositoryName;
-
-
-    /**
-     * Constructor that requires all fields.
-     * @param overallInfo the {@linkplain ETLManager} details summarized
-     * @param registeredEtls all {@linkplain AbstractETL}s registered at the registry
-     */
-    public ETLManagerJson(ETLJson overallInfo, List<AbstractETL<?, ?>> registeredEtls)
-    {
-        this.overallInfo = overallInfo;
-        this.etlInfos = new HashMap<>();
-
-        for (AbstractETL<?, ?> etl : registeredEtls)
-            etlInfos.put(etl.getName(), etl.getAsJson());
-
-        this.repositoryName = EventSystem.sendSynchronousEvent(new GetRepositoryNameEvent());
-    }
-
-
-    /**
-     * Returns an info summary of all registered ETLs combined.
-     *
-     * @return An info summary of all registered ETLs combined
-     */
-    public ETLJson getOverallInfo()
-    {
-        return overallInfo;
-    }
-
-
-    /**
-     * Returns a map of ETL names to {@linkplain ETLJson}s of
-     * all registered {@linkplain AbstractETL}s.
-     *
-     * @return a list of {@linkplain ETLJson}
-     */
-    public Map<String, ETLJson> getEtlInfos()
-    {
-        return etlInfos;
-    }
-
-
-    /**
-     * Returns the name of the harvested repository, or null
-     * if it is unknown.
-     *
-     * @return the name of the harvested repository, or null
-     */
-    public String getRepositoryName()
-    {
-        return repositoryName;
-    }
+    private final ETLState state;
+    private final ETLHealth health;
+    private final int harvestedCount;
+    private final Integer maxDocumentCount;
+    private final Long remainingHarvestTime;
+    private final String lastHarvestDate;
+    private final String nextHarvestDate;
+    private boolean isEnabled = false;
 }

@@ -33,7 +33,7 @@ import de.gerdiproject.harvest.config.parameters.AbstractParameter;
 import de.gerdiproject.harvest.config.parameters.BooleanParameter;
 import de.gerdiproject.harvest.etls.constants.ETLConstants;
 import de.gerdiproject.harvest.etls.enums.ETLHealth;
-import de.gerdiproject.harvest.etls.enums.ETLStatus;
+import de.gerdiproject.harvest.etls.enums.ETLState;
 import de.gerdiproject.harvest.etls.events.HarvestFinishedEvent;
 import de.gerdiproject.harvest.etls.extractors.ExtractorException;
 import de.gerdiproject.harvest.etls.extractors.IExtractor;
@@ -82,7 +82,7 @@ public abstract class AbstractETL <T, S> implements IEventListener
     protected volatile String hash;
 
     protected final TimestampedList<ETLHealth> healthHistory;
-    protected final TimestampedList<ETLStatus> statusHistory;
+    protected final TimestampedList<ETLState> stateHistory;
 
 
     /**
@@ -102,7 +102,7 @@ public abstract class AbstractETL <T, S> implements IEventListener
      */
     public AbstractETL(String name)
     {
-        this.statusHistory = new TimestampedList<>(ETLStatus.INITIALIZING, 10);
+        this.stateHistory = new TimestampedList<>(ETLState.INITIALIZING, 10);
         this.healthHistory = new TimestampedList<>(ETLHealth.OK, 1);
 
         // set the name to camel case
@@ -198,7 +198,7 @@ public abstract class AbstractETL <T, S> implements IEventListener
      */
     public void loadFromJson(ETLJson json)
     {
-        this.statusHistory.addAllSorted(json.getStatusHistory());
+        this.stateHistory.addAllSorted(json.getStateHistory());
 
         // if the loaded health indicates a harvesting failure, make sure to persist it
         final List<TimestampedEntry<ETLHealth>> loadedHealthHistory = json.getHealthHistory();
@@ -221,7 +221,7 @@ public abstract class AbstractETL <T, S> implements IEventListener
     {
         return new ETLJson(
                    getName(),
-                   statusHistory,
+                   stateHistory,
                    healthHistory,
                    getHarvestedCount(),
                    getMaxNumberOfDocuments(),
@@ -236,14 +236,14 @@ public abstract class AbstractETL <T, S> implements IEventListener
      */
     public void abortHarvest() throws IllegalStateException
     {
-        switch (getStatus()) {
+        switch (getState()) {
             case HARVESTING:
-                setStatus(ETLStatus.ABORTING);
+                setStatus(ETLState.ABORTING);
                 break;
 
             case QUEUED:
                 cancelHarvest();
-                setStatus(ETLStatus.DONE);
+                setStatus(ETLState.DONE);
                 break;
 
             default:
@@ -261,10 +261,10 @@ public abstract class AbstractETL <T, S> implements IEventListener
      */
     public void init(final String moduleName) throws IllegalStateException
     {
-        if (getStatus() != ETLStatus.INITIALIZING)
+        if (getState() != ETLState.INITIALIZING)
             throw new IllegalStateException(ETLConstants.INIT_INVALID_STATE);
 
-        setStatus(ETLStatus.IDLE);
+        setStatus(ETLState.IDLE);
     }
 
 
@@ -344,7 +344,7 @@ public abstract class AbstractETL <T, S> implements IEventListener
      */
     public void prepareHarvest() throws ETLPreconditionException
     {
-        setStatus(ETLStatus.QUEUED);
+        setStatus(ETLState.QUEUED);
         setHealth(ETLHealth.OK);
 
         if (!enabledParameter.getValue()) {
@@ -369,12 +369,12 @@ public abstract class AbstractETL <T, S> implements IEventListener
             loader.init(this);
 
         } catch (ETLPreconditionException e) {
-            setStatus(ETLStatus.DONE);
+            setStatus(ETLState.DONE);
             setHealth(ETLHealth.HARVEST_FAILED);
             throw e;
 
         } catch (Exception e) {
-            setStatus(ETLStatus.DONE);
+            setStatus(ETLState.DONE);
             setHealth(ETLHealth.HARVEST_FAILED);
 
             logger.error(String.format(ETLConstants.ETL_START_FAILED, getName()), e);
@@ -390,14 +390,14 @@ public abstract class AbstractETL <T, S> implements IEventListener
      */
     public void cancelHarvest()
     {
-        switch (getStatus()) {
+        switch (getState()) {
             case HARVESTING:
             case QUEUED:
-                setStatus(ETLStatus.CANCELLING);
+                setStatus(ETLState.CANCELLING);
                 loader.clear();
                 transformer.clear();
                 extractor.clear();
-                setStatus(ETLStatus.DONE);
+                setStatus(ETLState.DONE);
                 break;
 
             default:
@@ -412,7 +412,7 @@ public abstract class AbstractETL <T, S> implements IEventListener
     protected void skipHarvest()
     {
         setHealth(ETLHealth.OK);
-        setStatus(ETLStatus.DONE);
+        setStatus(ETLState.DONE);
     }
 
 
@@ -423,7 +423,7 @@ public abstract class AbstractETL <T, S> implements IEventListener
     {
         try {
             logger.info(String.format(ETLConstants.ETL_STARTED, getName()));
-            setStatus(ETLStatus.HARVESTING);
+            setStatus(ETLState.HARVESTING);
 
             final T exOut = extractor.extract();
             final S transOut = transformer.transform(exOut);
@@ -434,12 +434,12 @@ public abstract class AbstractETL <T, S> implements IEventListener
             transformer.clear();
             extractor.clear();
 
-            if (getStatus() == ETLStatus.ABORTING)
+            if (getState() == ETLState.ABORTING)
                 logger.info(String.format(ETLConstants.ETL_ABORTED, getName()));
             else
                 logger.info(String.format(ETLConstants.ETL_FINISHED, getName()));
 
-            setStatus(ETLStatus.DONE);
+            setStatus(ETLState.DONE);
         } catch (Exception e) {
             finishHarvestExceptionally(e);
         }
@@ -454,7 +454,7 @@ public abstract class AbstractETL <T, S> implements IEventListener
     */
     protected void finishHarvestExceptionally(Throwable reason)
     {
-        if (getStatus() == ETLStatus.ABORTING)
+        if (getState() == ETLState.ABORTING)
             logger.info(String.format(ETLConstants.ETL_ABORTED, getName()));
         else {
             if (reason instanceof ExtractorException)
@@ -476,7 +476,7 @@ public abstract class AbstractETL <T, S> implements IEventListener
             logger.warn(String.format(ETLConstants.ETL_FAILED, getName()));
         }
 
-        setStatus(ETLStatus.DONE);
+        setStatus(ETLState.DONE);
     }
 
 
@@ -496,19 +496,19 @@ public abstract class AbstractETL <T, S> implements IEventListener
      *
      * @return an enum that represents the state of the ETL
      */
-    public ETLStatus getStatus()
+    public ETLState getState()
     {
-        return statusHistory.getLatestValue();
+        return stateHistory.getLatestValue();
     }
 
 
     /**
      * Changes the status that represents what the ETL is currently doing.
-     * @param status a new status
+     * @param state a new status
      */
-    public void setStatus(ETLStatus status)
+    public void setStatus(ETLState state)
     {
-        this.statusHistory.addValue(status);
+        this.stateHistory.addValue(state);
     }
 
 
@@ -590,11 +590,11 @@ public abstract class AbstractETL <T, S> implements IEventListener
     @Override
     public String toString()
     {
-        String etlStatus = getStatus().toString().toLowerCase();
+        String etlStatus = getState().toString().toLowerCase();
 
         if (!enabledParameter.getValue())
             etlStatus = ETLConstants.ETL_DISABLED;
-        else if (getStatus() == ETLStatus.HARVESTING) {
+        else if (getState() == ETLState.HARVESTING) {
             final int currCount = getHarvestedCount();
             final int maxCount = getMaxNumberOfDocuments();
 
@@ -648,8 +648,8 @@ public abstract class AbstractETL <T, S> implements IEventListener
      */
     protected void onHarvestFinished(boolean wasSuccessful)
     {
-        if (getStatus() == ETLStatus.DONE)
-            setStatus(ETLStatus.IDLE);
+        if (getState() == ETLState.DONE)
+            setStatus(ETLState.IDLE);
     }
 
 

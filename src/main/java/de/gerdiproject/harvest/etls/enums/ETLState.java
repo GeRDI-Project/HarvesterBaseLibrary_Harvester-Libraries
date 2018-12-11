@@ -20,7 +20,7 @@ package de.gerdiproject.harvest.etls.enums;
  * @author Robin Weiss
  *
  */
-public enum ETLStatus {
+public enum ETLState {
     INITIALIZING,
     FUBAR,
     IDLE,

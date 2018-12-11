@@ -52,9 +52,9 @@ import de.gerdiproject.harvest.utils.file.ICachedObject;
  *
  * @author Robin Weiss
  */
-public class Configuration extends AbstractRestObject<Configuration, String> implements ICachedObject
+public class Configuration extends AbstractRestObject<Configuration, Configuration> implements ICachedObject
 {
-    private final Gson gson;
+    private static final Gson GSON = new GsonBuilder().registerTypeAdapter(Configuration.class, new ConfigurationAdapter()).create();
     private static final Logger LOGGER = LoggerFactory.getLogger(Configuration.class);
 
     private final transient DiskIO diskIo;
@@ -78,8 +78,7 @@ public class Configuration extends AbstractRestObject<Configuration, String> imp
         for (AbstractParameter<?> param : parameters)
             parameterMap.put(param.getCompositeKey(), param);
 
-        this.gson = new GsonBuilder().registerTypeAdapter(Configuration.class, new ConfigurationAdapter(moduleName)).create();
-        this.diskIo = new DiskIO(gson, StandardCharsets.UTF_8);
+        this.diskIo = new DiskIO(GSON, StandardCharsets.UTF_8);
         this.cacheFilePath = null;
     }
 
@@ -373,9 +372,9 @@ public class Configuration extends AbstractRestObject<Configuration, String> imp
 
 
     @Override
-    public String getAsJson(MultivaluedMap<String, String> query)
+    public Configuration getAsJson(MultivaluedMap<String, String> query)
     {
-        return gson.toJson(this);
+        return this;
     }
 
 

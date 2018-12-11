@@ -45,6 +45,8 @@ public class RestConstants
     public static final String STATUS_FAILED = "Failed";
     public static final String STATUS_OK = "Ok";
 
+    public static final String PRETTY_QUERY_PARAM = "pretty";
+
     /**
      * Private constructor because this class only offers static constants.
      */

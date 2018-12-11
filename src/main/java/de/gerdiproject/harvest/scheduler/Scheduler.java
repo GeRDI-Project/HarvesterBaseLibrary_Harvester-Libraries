@@ -138,6 +138,25 @@ public class Scheduler extends AbstractRestObject<Scheduler, SchedulerResponse> 
 
 
     /**
+     * Returns the date of the earliest scheduled harvest.
+     *
+     * @return the date of the earliest scheduled harvest,
+     * or -1 if nothing was scheduled
+     */
+    public Date getNextHarvestDate()
+    {
+        long nextTimestamp = Long.MAX_VALUE;
+
+        for (TimerTask scheduledTask : registeredTasks.values())
+            nextTimestamp = Math.min(nextTimestamp, scheduledTask.scheduledExecutionTime());
+
+        return nextTimestamp == Long.MAX_VALUE
+               ? null
+               : new Date(nextTimestamp);
+    }
+
+
+    /**
      * Attempts to parse a specified cronTab and schedules a harvesting task to be executed at the earliest matching
      * date.
      *
@@ -237,6 +256,9 @@ public class Scheduler extends AbstractRestObject<Scheduler, SchedulerResponse> 
     {
         final String cronTab = addRequest.getCronTab();
 
+        if (cronTab == null)
+            throw new IllegalArgumentException(SchedulerConstants.ERROR_SET_NULL);
+
         // check for duplicate cron tabs
         if (registeredTasks.containsKey(cronTab))
             throw new IllegalArgumentException(String.format(SchedulerConstants.ERROR_ADD_ALREADY_EXISTS, cronTab));
@@ -262,6 +284,9 @@ public class Scheduler extends AbstractRestObject<Scheduler, SchedulerResponse> 
     public String deleteTask(ChangeSchedulerRequest deleteRequest) throws IllegalArgumentException
     {
         final String cronTab = deleteRequest.getCronTab();
+
+        if (cronTab == null)
+            throw new IllegalArgumentException(SchedulerConstants.ERROR_SET_NULL);
 
         // check if id is within bounds
         if (!registeredTasks.containsKey(cronTab))

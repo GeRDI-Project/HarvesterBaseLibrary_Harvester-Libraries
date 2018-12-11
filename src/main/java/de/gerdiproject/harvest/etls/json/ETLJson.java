@@ -20,9 +20,10 @@ import java.util.List;
 
 import de.gerdiproject.harvest.etls.AbstractETL;
 import de.gerdiproject.harvest.etls.enums.ETLHealth;
-import de.gerdiproject.harvest.etls.enums.ETLStatus;
+import de.gerdiproject.harvest.etls.enums.ETLState;
 import de.gerdiproject.harvest.etls.utils.ETLManager;
 import de.gerdiproject.harvest.etls.utils.TimestampedEntry;
+import lombok.Data;
 
 /**
  * This class represents a JSON object containing details
@@ -30,71 +31,13 @@ import de.gerdiproject.harvest.etls.utils.TimestampedEntry;
  *
  * @author Robin Weiss
  */
+@Data
 public class ETLJson
 {
     private final String name;
-    private final List<TimestampedEntry<ETLStatus>> statusHistory;
+    private final List<TimestampedEntry<ETLState>> stateHistory;
     private final List<TimestampedEntry<ETLHealth>> healthHistory;
     private final int harvestedCount;
     private final int maxDocumentCount;
     private final String versionHash;
-
-
-    /**
-     * Constructor that requires all fields.
-     *
-     * @param name the name of the object
-     * @param statusHistory the status history
-     * @param healthHistory the health history
-     * @param harvestedCount the number of harvested documents
-     * @param maxDocumentCount the maximum number of harvestable documents
-     * @param versionHash a hash representing a version of the harvested documents
-     */
-    public ETLJson(String name, List<TimestampedEntry<ETLStatus>> statusHistory,
-                   List<TimestampedEntry<ETLHealth>> healthHistory, int harvestedCount,
-                   int maxDocumentCount, String versionHash)
-    {
-        this.name = name;
-        this.statusHistory = statusHistory;
-        this.healthHistory = healthHistory;
-        this.harvestedCount = harvestedCount;
-        this.maxDocumentCount = maxDocumentCount;
-        this.versionHash = versionHash;
-    }
-
-
-    public String getName()
-    {
-        return name;
-    }
-
-
-    public List<TimestampedEntry<ETLStatus>> getStatusHistory()
-    {
-        return statusHistory;
-    }
-
-
-    public List<TimestampedEntry<ETLHealth>> getHealthHistory()
-    {
-        return healthHistory;
-    }
-
-
-    public int getHarvestedCount()
-    {
-        return harvestedCount;
-    }
-
-
-    public int getMaxDocumentCount()
-    {
-        return maxDocumentCount;
-    }
-
-
-    public String getVersionHash()
-    {
-        return versionHash;
-    }
 }

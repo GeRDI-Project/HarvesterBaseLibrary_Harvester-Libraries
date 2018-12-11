@@ -26,7 +26,7 @@ import lombok.NoArgsConstructor;
  *
  * @author Robin Weiss
  */
-@NoArgsConstructor(access=AccessLevel.PRIVATE)
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class ConfigurationConstants
 {
     public static final String NO_CHANGES = "No parameters were changed!";
@@ -47,11 +47,11 @@ public class ConfigurationConstants
     public static final String QUERY_KEY = "key";
     public static final String ALLOWED_REQUESTS =
         "GET\n"
-        + "Returns the entire configuration in pretty text.\n\n"
-        + "GET ?" + QUERY_KEY + "=xxx\n"
-        + "Returns the value of parameter 'xxx'.\n\n"
-        + "POST _set {\"XXX.YYY\" : \"ZZZ\"}\n"
-        + "Changes the value of parameter YYY of category XXX to ZZZ."
+        + "Retrieves the configuration as a JSON object, or as plain text if the query parameter ?pretty is added.\n\n"
+        + "GET ?" + QUERY_KEY + "=XXX\n"
+        + "Returns the value of parameter 'XXX'.\n\n"
+        + "POST /_set {\"XXX.YYY\" : \"ZZZ\"}\n"
+        + "Changes the value of parameter YYY of category XXX to ZZZ.\n\n"
         + "PUT\n"
         + "Sets x-www-form-urlencoded parameters for the harvester.\n"
         + "Valid keys: ";

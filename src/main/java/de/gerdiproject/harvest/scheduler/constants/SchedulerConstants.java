@@ -32,18 +32,20 @@ public class SchedulerConstants
 
     public static final String ADD_OK = "Successfully added task: %s";
     public static final String ERROR_ADD_ALREADY_EXISTS = "Cannot add task, because it already exists: %s";
-    public static final String ERROR_ADD_NULL =
-        "Cannot add task. You must specify a valid cron tab as a query parameter 'cron'!";
+    public static final String ERROR_SET_NULL =
+        "Cannot perform schedule operation. You must specify a valid 'cronTab' as a JSON field!";
 
     public static final String HARVESTING_TASK = "%s Harvesting";
     public static final String TASK_ENTRY = "%d. %s%n";
     public static final String ALLOWED_REQUESTS =
-        "POST _add {\"cronTab\":\"XXX\"}\n"
-        + "Adds a new harvest task with the cron tab XXX\n\n"
-        + "POST _delete {\"cronTab\":\"XXX\"}\n"
-        + "Deletes the harvest task with the cronTab XXX\n\n"
-        + "POST _deleteAll\n"
-        + "Deletes all harvest tasks";
+        "GET\n"
+        + "Retrieves the schedule as a JSON object, or as plain text if the query parameter ?pretty is added.\n\n"
+        + "POST /_add {\"cronTab\":\"XXX\"}\n"
+        + "Adds a new harvest task with the cron tab XXX.\n\n"
+        + "POST /_delete {\"cronTab\":\"XXX\"}\n"
+        + "Deletes the harvest task with the cronTab XXX.\n\n"
+        + "POST /_deleteAll\n"
+        + "Deletes all harvest tasks.";
 
     public static final String CACHE_PATH = FileConstants.CACHE_FOLDER_PATH + "schedule.json";
     public static final String ERROR_RESCHEDULE = "Cannot re-schedule task: %s";
