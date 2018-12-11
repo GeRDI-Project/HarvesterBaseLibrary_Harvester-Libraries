@@ -16,28 +16,65 @@
  */
 package de.gerdiproject.application;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameters;
 
 import de.gerdiproject.AbstractUnitTest;
 import de.gerdiproject.application.examples.MockedContextListener;
 import de.gerdiproject.harvest.application.MainContext;
 import de.gerdiproject.harvest.application.events.ServiceInitializedEvent;
+import de.gerdiproject.harvest.utils.Procedure;
 import de.gerdiproject.harvest.utils.file.FileUtils;
 
 /**
  * This class offers unit tests for the {@linkplain MainContext}.
+ * It tests various functionalities when the MainContext is initialized
+ * successfully, or when the initialization fails.
  *
  * @author Robin Weiss
  */
+@RunWith(Parameterized.class)
 public class MainContextTest extends AbstractUnitTest
 {
     private static final int INIT_TIMEOUT = 5000;
     private static final File CACHE_FOLDER = new File("cache");
     private static final String CLEANUP_ERROR = "Could not delete temporary test directory for MainContext tests: " + CACHE_FOLDER;
+
+    @Parameters(name = "successful init: {0}")
+    public static Object[] getParameters()
+    {
+        return new Object[] {Boolean.FALSE, Boolean.TRUE};
+    }
+
+    private final MockedContextListener mockedContextListener;
+    private final boolean shouldInitBeSuccessful;
+    private final Procedure initFunction;
+
+
+    /**
+     * This constructor is called via the Parameters. It determines
+     * whether the MainContext init() method should be successful
+     * or not.
+     *
+     * @param shouldInitBeSuccessful if true, the init() function should succeed
+     */
+    public MainContextTest(boolean shouldInitBeSuccessful)
+    {
+        this.shouldInitBeSuccessful = shouldInitBeSuccessful;
+        this.mockedContextListener = new MockedContextListener();
+        this.initFunction = shouldInitBeSuccessful
+                            ? mockedContextListener::initializeMainContext
+                            : mockedContextListener::failMainContextInitialization;
+    }
 
 
     @Override
@@ -65,19 +102,93 @@ public class MainContextTest extends AbstractUnitTest
 
     /**
      * Tests if the init() method ultimately sends a {@linkplain ServiceInitializedEvent}
-     * that marks the initialization as successful.
+     * with a corresponding payload.
      */
     @Test
-    public void testInitialization()
+    public void testInitializationEvent()
     {
-        final MockedContextListener mockedContextListener = new MockedContextListener();
+        final ServiceInitializedEvent initDoneEvent =
+            waitForEvent(ServiceInitializedEvent.class, INIT_TIMEOUT, initFunction);
 
-        ServiceInitializedEvent initDoneEvent = waitForEvent(
-                                                    ServiceInitializedEvent.class,
-                                                    INIT_TIMEOUT,
-                                                    () -> mockedContextListener.contextInitialized(null));
+        assertEquals("Expected the method init() to send an event carrying the initialization success as payload!",
+                     shouldInitBeSuccessful,
+                     initDoneEvent.isSuccessful());
+    }
 
-        assertTrue("Expected the method init() to send an event marking the initialization as successful!",
-                   initDoneEvent.isSuccessful());
+
+    /**
+     * Tests if the static isInitialized() method returns false before the initialization.
+     */
+    @Test
+    public void testInitializationStateBefore()
+    {
+        assertFalse("Expected the method isInitialized() to return false before initialization!",
+                    MainContext.isInitialized());
+    }
+
+
+    /**
+     * Tests if the static isInitialized() method returns false after destroying the MainContext.
+     */
+    @Test
+    public void testInitializationStateAfterDestroy()
+    {
+        waitForEvent(ServiceInitializedEvent.class, INIT_TIMEOUT, initFunction);
+        MainContext.destroy();
+
+        assertFalse("Expected the method isInitialized() to return false after calling destroy()!",
+                    MainContext.isInitialized());
+    }
+
+
+    /**
+     * Tests if the static isInitialized() method returns true after initialization.
+     */
+    @Test
+    public void testInitializationState()
+    {
+        waitForEvent(ServiceInitializedEvent.class, INIT_TIMEOUT, initFunction);
+
+        assertTrue("Expected the method isInitialized() to return true after initialization!",
+                   MainContext.isInitialized());
+    }
+
+
+    /**
+     * Tests if the static hasFailed() method returns false before initialization.
+     */
+    @Test
+    public void testFailedStateBefore()
+    {
+        assertFalse("Expected the method hasFailed() to return false before the initialization!",
+                    MainContext.hasFailed());
+    }
+
+
+    /**
+     * Tests if the static hasFailed() method returns false after destroying the MainContext.
+     */
+    @Test
+    public void testFailedStateAfterDestroy()
+    {
+        waitForEvent(ServiceInitializedEvent.class, INIT_TIMEOUT, initFunction);
+        MainContext.destroy();
+
+        assertFalse("Expected the method hasFailed() to return false after calling destroy()!",
+                    MainContext.hasFailed());
+    }
+
+
+    /**
+     * Tests if the static hasFailed() method returns the corresponding value after initialization.
+     */
+    @Test
+    public void testFailedState()
+    {
+        waitForEvent(ServiceInitializedEvent.class, INIT_TIMEOUT, initFunction);
+
+        assertNotEquals("Expected the method hasFailed() to return "+ shouldInitBeSuccessful + " after initialization!",
+                        shouldInitBeSuccessful,
+                        MainContext.hasFailed());
     }
 }

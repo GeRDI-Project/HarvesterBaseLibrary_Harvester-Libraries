@@ -20,8 +20,12 @@ import java.util.Arrays;
 import java.util.List;
 
 import de.gerdiproject.harvest.application.ContextListener;
+import de.gerdiproject.harvest.application.MainContext;
+import de.gerdiproject.harvest.application.events.ContextInitializedEvent;
+import de.gerdiproject.harvest.application.events.ResetContextEvent;
 import de.gerdiproject.harvest.etls.AbstractETL;
 import de.gerdiproject.harvest.etls.loaders.ILoader;
+import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.utils.examples.harvestercache.MockedETL;
 
 /**
@@ -45,12 +49,32 @@ public class MockedContextListener extends ContextListener
     }
 
 
-    /* (non-Javadoc)
-     * @see de.gerdiproject.harvest.application.ContextListener#createETLs()
-     */
     @Override
     protected List<? extends AbstractETL<?, ?>> createETLs()
     {
         return Arrays.asList(new MockedETL());
+    }
+
+
+    /**
+     * Initializes the {@linkplain MainContext} successfully.
+     */
+    public void initializeMainContext()
+    {
+        // send the regular initialization event
+        contextInitialized(null);
+    }
+
+
+    /**
+     * Initializes the {@linkplain MainContext} with null parameters,
+     * causing the initialization to fail due to NullPointer exceptions.
+     */
+    public void failMainContextInitialization()
+    {
+        // cause some NullPointerExceptions
+        EventSystem.addListener(ResetContextEvent.class, this::onResetContext);
+        MainContext.init(null, null, null, null);
+        EventSystem.sendEvent(new ContextInitializedEvent());
     }
 }

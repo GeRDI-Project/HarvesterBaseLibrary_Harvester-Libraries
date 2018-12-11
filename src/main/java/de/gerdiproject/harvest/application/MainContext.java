@@ -54,6 +54,9 @@ public class MainContext
     private static final Logger LOGGER = LoggerFactory.getLogger(MainContext.class);
     private static volatile MainContext instance = null;
 
+    private static boolean hasFailed;
+    private static boolean isInitialized;
+
     private final HarvesterLog log;
     private final String moduleName;
     private final ETLManager etlManager;
@@ -116,6 +119,8 @@ public class MainContext
         List<Class<? extends ILoader<?>>> loaderClasses)
     {
         LOGGER.info(ApplicationConstants.INIT_SERVICE);
+        hasFailed = false;
+        isInitialized = false;
 
         CancelableFuture<Boolean> initProcess = new CancelableFuture<>(() -> {
             // clear old instance if necessary
@@ -132,6 +137,27 @@ public class MainContext
 
 
     /**
+     * Checks if the initialization phase of the MainContext has finished.
+     *
+     * @return true, if the initialization phase has finished
+     */
+    public static boolean isInitialized()
+    {
+        return isInitialized;
+    }
+
+    /**
+     * Checks if the initialization of the MainContext has failed.
+     *
+     * @return true, if the initialization has failed
+     */
+    public static boolean hasFailed()
+    {
+        return hasFailed;
+    }
+
+
+    /**
      * Clears the current Singleton instance if it exists and nullifies it.
      */
     public static void destroy()
@@ -141,6 +167,9 @@ public class MainContext
             instance.log.unregisterLogger();
             instance = null;
         }
+
+        hasFailed = false;
+        isInitialized = false;
     }
 
 
@@ -341,6 +370,9 @@ public class MainContext
      */
     private static Boolean onHarvesterInitializedSuccess(Boolean state)
     {
+        hasFailed = false;
+        isInitialized = true;
+
         // change state
         EventSystem.sendEvent(new ServiceInitializedEvent(state));
 
@@ -362,6 +394,9 @@ public class MainContext
      */
     private static Boolean onHarvesterInitializedFailed(Throwable reason)
     {
+        hasFailed = true;
+        isInitialized = true;
+
         // log exception that caused the failure
         LOGGER.error(ApplicationConstants.INIT_SERVICE_FAILED, reason.getCause());
 

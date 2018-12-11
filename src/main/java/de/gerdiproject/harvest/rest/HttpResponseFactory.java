@@ -23,6 +23,7 @@ import javax.ws.rs.core.Response.Status;
 
 import com.google.gson.JsonElement;
 
+import de.gerdiproject.harvest.application.MainContext;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.event.ISynchronousEvent;
 import de.gerdiproject.harvest.rest.constants.RestConstants;
@@ -251,16 +252,12 @@ public class HttpResponseFactory
      */
     public static Response createServerErrorResponse()
     {
-        /* TODO final IState currentState = StateMachine.getCurrentState();
-
-        if (currentState instanceof InitializationState)
-            return createInitResponse();
-
-        else if (currentState instanceof ErrorState)
+        if (MainContext.hasFailed())
             return createFubarResponse();
-
-        else */
-        return createUnknownErrorResponse();
+        else if (!MainContext.isInitialized())
+            return createInitResponse();
+        else
+            return createUnknownErrorResponse();
     }
 
 
@@ -287,7 +284,6 @@ public class HttpResponseFactory
         else
             return createOkResponse(eventResponse);
     }
-
 
 
     /**

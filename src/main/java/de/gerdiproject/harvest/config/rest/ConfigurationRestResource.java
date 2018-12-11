@@ -104,7 +104,7 @@ public final class ConfigurationRestResource extends AbstractRestResource<Config
         if (query.containsKey(ConfigurationConstants.QUERY_KEY)) {
             // abort if object is not initialized, yet
             if (restObject == null)
-                return HttpResponseFactory.createInitResponse();
+                return HttpResponseFactory.createServerErrorResponse();
 
             final String compositeKey = query.get(ConfigurationConstants.QUERY_KEY).get(0);
             final String value = restObject.getParameterStringValue(compositeKey);

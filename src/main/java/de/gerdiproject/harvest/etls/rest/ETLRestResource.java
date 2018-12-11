@@ -78,7 +78,7 @@ public class ETLRestResource extends AbstractRestResource<ETLManager, GetETLMana
     {
         // abort if object is not initialized, yet
         if (restObject == null)
-            return HttpResponseFactory.createInitResponse();
+            return HttpResponseFactory.createServerErrorResponse();
 
         // forward GET request to the object
         try {
@@ -103,7 +103,7 @@ public class ETLRestResource extends AbstractRestResource<ETLManager, GetETLMana
     {
         // abort if object is not initialized, yet
         if (restObject == null)
-            return HttpResponseFactory.createInitResponse();
+            return HttpResponseFactory.createServerErrorResponse();
 
         // forward GET request to the object
         try {
@@ -133,7 +133,7 @@ public class ETLRestResource extends AbstractRestResource<ETLManager, GetETLMana
     {
         // abort if object is not initialized, yet
         if (restObject == null)
-            return HttpResponseFactory.createInitResponse();
+            return HttpResponseFactory.createServerErrorResponse();
 
         try {
             // start a harvest
@@ -159,7 +159,7 @@ public class ETLRestResource extends AbstractRestResource<ETLManager, GetETLMana
     {
         // abort if object is not initialized, yet
         if (restObject == null)
-            return HttpResponseFactory.createInitResponse();
+            return HttpResponseFactory.createServerErrorResponse();
 
         return HttpResponseFactory.createValueResponse(Status.OK, new JsonPrimitive(restObject.hasOutdatedETLs()));
     }
@@ -179,7 +179,7 @@ public class ETLRestResource extends AbstractRestResource<ETLManager, GetETLMana
     {
         // abort if object is not initialized, yet
         if (restObject == null)
-            return HttpResponseFactory.createInitResponse();
+            return HttpResponseFactory.createServerErrorResponse();
 
         if (restObject.getState() == ETLState.HARVESTING) {
             restObject.abortHarvest();

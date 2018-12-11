@@ -101,7 +101,7 @@ public abstract class AbstractRestResource<T extends AbstractRestObject<T, ?>, S
     {
         // abort if object is not initialized, yet
         if (restObject == null)
-            return HttpResponseFactory.createInitResponse();
+            return HttpResponseFactory.createServerErrorResponse();
 
         // check if ?pretty=true or simply ?pretty
         boolean isPlainText = false;
@@ -131,7 +131,7 @@ public abstract class AbstractRestResource<T extends AbstractRestObject<T, ?>, S
         } catch (IllegalArgumentException e) {
             return HttpResponseFactory.createBadRequestResponse(e.getMessage());
         } catch (Exception e) {
-            return HttpResponseFactory.createUnknownErrorResponse();
+            return HttpResponseFactory.createKnownErrorResponse(e.getMessage());
         }
     }
 
@@ -165,7 +165,7 @@ public abstract class AbstractRestResource<T extends AbstractRestObject<T, ?>, S
     {
         // abort if object is not initialized, yet
         if (restObject == null)
-            return HttpResponseFactory.createInitResponse();
+            return HttpResponseFactory.createServerErrorResponse();
 
         if (jsonRaw == null || jsonRaw.isEmpty())
             return HttpResponseFactory.createBadRequestResponse(RestConstants.NO_JSON_BODY_ERROR);
