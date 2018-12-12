@@ -194,6 +194,15 @@ public class ETLManager extends AbstractRestObject<ETLManager, ETLManagerJson> i
         final long lastHarvestTimestamp = getLatestHarvestTimestamp();
         final Date nextHarvestDate = EventSystem.sendSynchronousEvent(new GetSchedulerEvent()).getNextHarvestDate();
 
+        boolean hasEnabledETLs = false;
+
+        for (AbstractETL<?, ?> etl : etls) {
+            if (etl.isEnabled()) {
+                hasEnabledETLs = true;
+                break;
+            }
+        }
+
         return new ETLManagerJson(
                    repositoryName,
                    getState(),
@@ -202,7 +211,8 @@ public class ETLManager extends AbstractRestObject<ETLManager, ETLManagerJson> i
                    maxDocumentCount != -1 ? maxDocumentCount : null,
                    remainingHarvestTime != -1 ? remainingHarvestTime : null,
                    lastHarvestTimestamp != -1 ? new Date(lastHarvestTimestamp).toString() : null,
-                   nextHarvestDate != null ? nextHarvestDate.toString() : null
+                   nextHarvestDate != null ? nextHarvestDate.toString() : null,
+                   hasEnabledETLs
                );
     }
 

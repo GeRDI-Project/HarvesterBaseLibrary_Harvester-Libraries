@@ -38,5 +38,5 @@ public class ETLManagerJson
     private final Long remainingHarvestTime;
     private final String lastHarvestDate;
     private final String nextHarvestDate;
-    private boolean isEnabled = false;
+    private final boolean isEnabled;
 }
