@@ -293,6 +293,8 @@ public class MainContext
 
         // initialize and register harvesters
         for (AbstractETL<?, ?> etl : etlComponents) {
+            manager.register(etl);
+
             LOGGER.info(String.format(ApplicationConstants.INIT_FIELD, etl.getName()));
 
             etl.init(moduleName);
@@ -301,8 +303,6 @@ public class MainContext
                 etl.update();
             } catch (ETLPreconditionException e) { // NOPMD - Ignore exceptions, because we do not need to harvest yet
             }
-
-            manager.register(etl);
 
             LOGGER.info(String.format(ApplicationConstants.INIT_FIELD_SUCCESS, etl.getName()));
         }

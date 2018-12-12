@@ -63,7 +63,7 @@ public abstract class AbstractParameter<V>
             throw new IllegalArgumentException(String.format(ParameterConstants.INVALID_PARAMETER_KEY, key));
 
         if (!category.matches(ParameterConstants.VALID_PARAM_NAME_REGEX))
-            throw new IllegalArgumentException(String.format(ParameterConstants.INVALID_CATEGORY_NAME, key));
+            throw new IllegalArgumentException(String.format(ParameterConstants.INVALID_CATEGORY_NAME, category));
 
         this.key = key;
         this.category = category;

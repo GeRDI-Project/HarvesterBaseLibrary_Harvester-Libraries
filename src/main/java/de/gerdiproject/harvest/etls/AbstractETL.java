@@ -110,12 +110,6 @@ public abstract class AbstractETL <T, S> implements IEventListener
 
         this.logger = LoggerFactory.getLogger(getName());
         this.maxDocumentCount = new AtomicInteger(0);
-
-        registerParameters();
-
-        this.extractor = createExtractor();
-        this.transformer = createTransformer();
-        this.loader = createLoader();
     }
 
 
@@ -263,6 +257,12 @@ public abstract class AbstractETL <T, S> implements IEventListener
     {
         if (getState() != ETLState.INITIALIZING)
             throw new IllegalStateException(ETLConstants.INIT_INVALID_STATE);
+
+        registerParameters();
+
+        this.extractor = createExtractor();
+        this.transformer = createTransformer();
+        this.loader = createLoader();
 
         setStatus(ETLState.IDLE);
     }
