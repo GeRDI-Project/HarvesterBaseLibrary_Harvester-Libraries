@@ -62,7 +62,7 @@ public class HttpRequesterTest extends AbstractFileSystemUnitTest<HttpRequester>
     private static final String UNEXPECTED_FILE_ERROR = "This file should not exist: ";
     private static final String CACHED_JSON = "response.json";
     private static final String CACHED_HTML = "response.html";
-    private static final String MOCKED_RESPONSE_FOLDER = "/mocked";
+    private static final String MOCKED_RESPONSE_FOLDER = "mocked";
     private static final String READ_FROM_DISK_KEY = DataOperationConstants.READ_FROM_DISK_PARAM.getCompositeKey();
     private static final String WRITE_TO_DISK_KEY = DataOperationConstants.WRITE_TO_DISK_PARAM.getCompositeKey();
 
