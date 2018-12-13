@@ -15,6 +15,8 @@
  */
 package de.gerdiproject.harvest.utils.data.constants;
 
+import de.gerdiproject.harvest.config.constants.ConfigurationConstants;
+import de.gerdiproject.harvest.config.parameters.BooleanParameter;
 import de.gerdiproject.harvest.utils.data.HttpRequester;
 
 /**
@@ -29,7 +31,8 @@ public class DataOperationConstants
     public static final String SAVE_FAILED_NO_FOLDERS = "Could not write to file '%s': Failed to create directories!";
     public static final String LOAD_FAILED = "Could not load file: %s";
 
-    public static final String FILE_PATH = "savedHttpResponses/%s/%sresponse.%s";
+    public static final String CACHE_FOLDER_PATH = "savedHttpResponses";
+    public static final String FILE_PATH = "%s/%sresponse.%s";
     public static final String FILE_ENDING_JSON = "json";
     public static final String FILE_ENDING_HTML = "html";
 
@@ -40,6 +43,18 @@ public class DataOperationConstants
     public static final String WEB_ERROR_REST_HTTP = "%s-request for URL '%s' with body '%s' returned HTTP Status-Code %d.";
     public static final String REQUEST_PROPERTY_CHARSET = "charset";
     public static final String REDIRECT_LOCATION_HEADER = "Location";
+
+    public static final BooleanParameter READ_FROM_DISK_PARAM =
+        new BooleanParameter(
+        "readFromDisk",
+        ConfigurationConstants.DEBUG_CATEGORY,
+        false);
+
+    public static final BooleanParameter WRITE_TO_DISK_PARAM =
+        new BooleanParameter(
+        "writeToDisk",
+        ConfigurationConstants.DEBUG_CATEGORY,
+        false);
 
 
     /**

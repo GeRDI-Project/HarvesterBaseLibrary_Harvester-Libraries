@@ -22,10 +22,10 @@ import org.slf4j.LoggerFactory;
 
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
-import de.gerdiproject.harvest.utils.logger.LoggerUtils;
+import de.gerdiproject.harvest.utils.logger.HarvesterLog;
 
 /**
- * This static class is a collection of constants, used by the {@linkplain LoggerUtils}.
+ * This static class is a collection of constants, used by the {@linkplain HarvesterLog}.
  *
  * @author Robin Weiss
  */

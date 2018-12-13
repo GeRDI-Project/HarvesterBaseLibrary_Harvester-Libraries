@@ -16,7 +16,7 @@
 /**
  * This package contains classes of parameters that are used by the
  * {@linkplain de.gerdiproject.harvest.config.Configuration} and the
- * {@linkplain de.gerdiproject.harvest.harvester.AbstractHarvester}.
+ * {@linkplain de.gerdiproject.harvest.etls.AbstractETL}.
  *
  * @author Robin Weiss
  */

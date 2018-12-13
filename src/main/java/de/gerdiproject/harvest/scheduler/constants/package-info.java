@@ -16,7 +16,7 @@
  */
 /**
  * This package contains constants classes that are used by the
- * {@linkplain de.gerdiproject.harvest.scheduler.Scheduler} and related classes
+ * {@linkplain de.gerdiproject.harvest.scheduler.Scheduler} and related classes.
  *
  * @author Robin Weiss
  */

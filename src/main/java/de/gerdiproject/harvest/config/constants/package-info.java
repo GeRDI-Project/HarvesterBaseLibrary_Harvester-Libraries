@@ -15,7 +15,7 @@
  */
 /**
  * This package contains static classes of constants concerning
- * the harvester configuration and parameters.
+ * the {@linkplain de.gerdiproject.harvest.config.Configuration}.
  *
  * @author Robin Weiss
  */

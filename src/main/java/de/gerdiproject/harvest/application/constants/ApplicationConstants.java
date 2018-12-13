@@ -23,15 +23,18 @@ package de.gerdiproject.harvest.application.constants;
  */
 public class ApplicationConstants
 {
-    public static final String INIT_HARVESTER_START = "Initializing Harvester...";
-    public static final String INIT_HARVESTER_FAILED = "Could not initialize Harvester!";
-    public static final String INIT_HARVESTER_SUCCESS = "%s initialized!";
+    public static final String INIT_SERVICE = "Initializing Harvester Service...";
+    public static final String INIT_SERVICE_FAILED = "Initialization of the Harvester Service failed!";
+    public static final String INIT_SERVICE_SUCCESS = "%s is now ready!";
 
     public static final String CONTEXT_DESTROYED = "%s undeployed!";
     public static final String CONTEXT_RESET = "Resetting %s...";
 
     public static final String HARVESTER_SERVICE_NAME_SUFFIX = "HarvesterService";
     public static final String HARVESTER_NAME_SUB_STRING = "harvester";
+
+    public static final String INIT_FIELD = "Initializing %s...";
+    public static final String INIT_FIELD_SUCCESS = "Successfully initialized %s!";
 
     /**
      * Private constructor, because this is a static class.

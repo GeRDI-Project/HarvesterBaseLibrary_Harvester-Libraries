@@ -15,7 +15,7 @@
  *  under the License.
  */
 /**
- * This package contains constants related to {@linkplain de.gerdiproject.harvest.utils.logger.LoggerUtils}
+ * This package contains constants related to {@linkplain de.gerdiproject.harvest.utils.logger.HarvesterLog}
  * and logging in general.
  *
  * @author Robin Weiss
