@@ -56,13 +56,13 @@ import de.gerdiproject.harvest.utils.data.enums.RestRequestType;
 @RunWith(Parameterized.class)
 public class HttpRequesterTest extends AbstractFileSystemUnitTest<HttpRequester>
 {
-    private static final String MOCKED_RESPONSE_CACHE_FOLDER = "src/test/java/de/gerdiproject/utils/examples/httpRequester/";
+    private static final String MOCKED_RESPONSE_CACHE_FOLDER = "src/test/java/de/gerdiproject/utils/examples/httprequester/";
     private static final String JSON_OBJECT_URL = "http://fenixservices.fao.org/faostat/api/v1/en/documents/RFB/";
     private static final String DEFAULT_URL = "https://www.gerdi-project.eu/";
     private static final String UNEXPECTED_FILE_ERROR = "This file should not exist: ";
     private static final String CACHED_JSON = "response.json";
     private static final String CACHED_HTML = "response.html";
-    private static final String MOCKED_RESPONSE_FOLDER = "/mocked";
+    private static final String MOCKED_RESPONSE_FOLDER = "mocked";
     private static final String READ_FROM_DISK_KEY = DataOperationConstants.READ_FROM_DISK_PARAM.getCompositeKey();
     private static final String WRITE_TO_DISK_KEY = DataOperationConstants.WRITE_TO_DISK_PARAM.getCompositeKey();
 

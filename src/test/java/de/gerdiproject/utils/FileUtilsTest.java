@@ -22,9 +22,6 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collections;
@@ -242,35 +239,6 @@ public class FileUtilsTest extends AbstractUnitTest
 
 
     /**
-     * Tests if copying a file to a destination that already exists
-     * will cause no changes in the filesystem, if the target file is currently
-     * opened.
-     *
-     * throws IOException thrown when the copy target could not be read
-     */
-    @Test
-    public void testFileCopyingWithOpenStream() throws IOException
-    {
-        // create source file
-        final DiskIO diskIo = new DiskIO(new Gson(), StandardCharsets.UTF_8);
-        diskIo.writeStringToFile(COPY_TEST_SOURCE_FILE, COPY_TEST_TEXT);
-
-        // open a reader to block the file from being copied
-        FileUtils.createEmptyFile(COPY_TEST_TARGET_FILE);
-
-        try
-            (InputStreamReader reader = new InputStreamReader(new FileInputStream(COPY_TEST_TARGET_FILE), StandardCharsets.UTF_8)) {
-            FileUtils.copyFile(COPY_TEST_SOURCE_FILE, COPY_TEST_TARGET_FILE);
-        }
-
-        assertEquals(
-            "The method copyFile() should not write to a file that is locked by an open reader!",
-            0L,
-            COPY_TEST_TARGET_FILE.length());
-    }
-
-
-    /**
      * Tests if file replacement removes the source file.
      */
     @Test
@@ -356,35 +324,6 @@ public class FileUtilsTest extends AbstractUnitTest
         assertFalse("The method replaceFile() should not alter the file system if the source file is missing!",
                     COPY_TEST_TARGET_FILE.exists());
     }
-
-
-    /**
-     * Tests if file replacement does not overwrite an existing target file,
-     * if it is opened, and does not delete the source file.
-     *
-     * @throws IOException thrown when the target file could not be opened
-     */
-    @Test
-    public void testFileReplacementWithOpenStream() throws IOException
-    {
-        // create source file
-        final DiskIO diskIo = new DiskIO(new Gson(), StandardCharsets.UTF_8);
-        diskIo.writeStringToFile(COPY_TEST_SOURCE_FILE, COPY_TEST_TEXT);
-
-        // block target file
-        FileUtils.createEmptyFile(COPY_TEST_TARGET_FILE);
-
-        try
-            (InputStreamReader reader = new InputStreamReader(new FileInputStream(COPY_TEST_TARGET_FILE), StandardCharsets.UTF_8)) {
-            FileUtils.replaceFile(COPY_TEST_TARGET_FILE, COPY_TEST_SOURCE_FILE);
-        }
-
-        assertEquals(
-            "The method replaceFile() should not write to a file that is locked!",
-            0L,
-            COPY_TEST_TARGET_FILE.length());
-    }
-
 
 
     /////////////////////
