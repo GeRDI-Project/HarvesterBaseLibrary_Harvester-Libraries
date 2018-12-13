@@ -26,7 +26,7 @@ import de.gerdiproject.harvest.application.events.ResetContextEvent;
 import de.gerdiproject.harvest.etls.AbstractETL;
 import de.gerdiproject.harvest.etls.loaders.ILoader;
 import de.gerdiproject.harvest.event.EventSystem;
-import de.gerdiproject.utils.examples.harvestercache.MockedETL;
+import de.gerdiproject.utils.examples.MockedETL;
 
 /**
  * This class is a mocked ContextListener.

@@ -56,7 +56,7 @@ import de.gerdiproject.harvest.utils.data.enums.RestRequestType;
 @RunWith(Parameterized.class)
 public class HttpRequesterTest extends AbstractFileSystemUnitTest<HttpRequester>
 {
-    private static final String MOCKED_RESPONSE_CACHE_FOLDER = "src/test/java/de/gerdiproject/utils/examples/httpRequester/";
+    private static final String MOCKED_RESPONSE_CACHE_FOLDER = "src/test/java/de/gerdiproject/utils/examples/httprequester/";
     private static final String JSON_OBJECT_URL = "http://fenixservices.fao.org/faostat/api/v1/en/documents/RFB/";
     private static final String DEFAULT_URL = "https://www.gerdi-project.eu/";
     private static final String UNEXPECTED_FILE_ERROR = "This file should not exist: ";

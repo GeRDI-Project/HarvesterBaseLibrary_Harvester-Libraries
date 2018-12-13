@@ -40,7 +40,7 @@ import de.gerdiproject.harvest.etls.loaders.DiskLoader;
 import de.gerdiproject.harvest.etls.loaders.constants.DiskLoaderConstants;
 import de.gerdiproject.harvest.utils.data.DiskIO;
 import de.gerdiproject.json.datacite.DataCiteJson;
-import de.gerdiproject.utils.examples.harvestercache.MockedETL;
+import de.gerdiproject.utils.examples.MockedETL;
 
 /**
  * This class contains unit tests for the {@linkplain DiskLoader}.
