@@ -272,7 +272,9 @@ public class ETLManager extends AbstractRestObject<ETLManager, ETLManagerJson> i
 
     /**
      * Registers an {@linkplain AbstractETL}, adding it to the list of ETLs
-     * that can be controlled via REST.
+     * that can be controlled via REST. If the ETL name contains invalid characters,
+     * they are removed. If another ETL was registered under the same name as
+     * the added ETL, a number is appended to prevent name clashes.
      *
      * @param addedEtl the {@linkplain AbstractETL} to be registered
      */
