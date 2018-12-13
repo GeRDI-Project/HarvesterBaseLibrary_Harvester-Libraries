@@ -22,11 +22,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.io.File;
-import java.io.IOException;
-import java.nio.channels.FileChannel;
-import java.nio.channels.FileLock;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -239,37 +235,6 @@ public class FileUtilsTest extends AbstractUnitTest
             "The method copyFile() should overwrite existing target files!",
             COPY_TEST_TEXT,
             diskIo.getString(COPY_TEST_TARGET_FILE));
-    }
-
-
-    /**
-     * Tests if copying a file to a destination that already exists
-     * will cause no changes in the filesystem, if the target file is currently
-     * opened.
-     *
-     * throws IOException thrown when the copy target could not be read
-     */
-    @Test
-    public void testFileCopyingWithOpenStream() throws IOException
-    {
-        // create source file
-        final DiskIO diskIo = new DiskIO(new Gson(), StandardCharsets.UTF_8);
-        diskIo.writeStringToFile(COPY_TEST_SOURCE_FILE, COPY_TEST_TEXT);
-
-        // open a reader to block the file from being copied
-        FileUtils.createEmptyFile(COPY_TEST_TARGET_FILE);
-
-        try
-            (FileChannel channel = FileChannel.open(COPY_TEST_TARGET_FILE.toPath(), StandardOpenOption.WRITE);
-             FileLock lock = channel.lock()) {
-            FileUtils.copyFile(COPY_TEST_SOURCE_FILE, COPY_TEST_TARGET_FILE);
-            lock.close();
-        }
-
-        assertEquals(
-            "The method copyFile() should not write to a file that is locked by an open reader!",
-            0L,
-            COPY_TEST_TARGET_FILE.length());
     }
 
 
