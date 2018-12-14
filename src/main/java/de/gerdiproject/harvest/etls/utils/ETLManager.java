@@ -514,7 +514,9 @@ public class ETLManager extends AbstractRestObject<ETLManager, ETLManagerJson> i
     {
         final List<ETLHealth> healthStatuses = processETLs((AbstractETL<?, ?> harvester) ->
                                                            harvester.getHealth());
-        boolean hasHarvestFailed = false;
+        boolean hasExtractorFailed = false;
+        boolean hasTransformerFailed = false;
+        boolean hasLoaderFailed = false;
 
         for (ETLHealth subStatus : healthStatuses) {
             switch (subStatus) {
@@ -522,10 +524,21 @@ public class ETLManager extends AbstractRestObject<ETLManager, ETLManagerJson> i
                     return subStatus;
 
                 case HARVEST_FAILED:
+                    hasExtractorFailed = true;
+                    hasTransformerFailed = true;
+                    hasLoaderFailed = true;
+                    break;
+
                 case EXTRACTION_FAILED:
+                    hasExtractorFailed = true;
+                    break;
+
                 case TRANSFORMATION_FAILED:
+                    hasTransformerFailed = true;
+                    break;
+
                 case LOADING_FAILED:
-                    hasHarvestFailed = true;
+                    hasLoaderFailed = true;
                     break;
 
                 default:
@@ -533,7 +546,19 @@ public class ETLManager extends AbstractRestObject<ETLManager, ETLManagerJson> i
             }
         }
 
-        return hasHarvestFailed ? ETLHealth.HARVEST_FAILED : ETLHealth.OK;
+        if (!hasExtractorFailed && !hasTransformerFailed && !hasLoaderFailed)
+            return ETLHealth.OK;
+
+        if (hasExtractorFailed && !hasTransformerFailed && !hasLoaderFailed)
+            return ETLHealth.EXTRACTION_FAILED;
+
+        if (hasTransformerFailed && !hasExtractorFailed && !hasLoaderFailed)
+            return ETLHealth.TRANSFORMATION_FAILED;
+
+        if (hasLoaderFailed && !hasExtractorFailed && !hasTransformerFailed)
+            return ETLHealth.LOADING_FAILED;
+
+        return ETLHealth.HARVEST_FAILED;
     }
 
 
