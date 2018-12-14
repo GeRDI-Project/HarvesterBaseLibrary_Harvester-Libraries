@@ -512,53 +512,36 @@ public class ETLManager extends AbstractRestObject<ETLManager, ETLManagerJson> i
      */
     public ETLHealth getHealth()
     {
-        final List<ETLHealth> healthStatuses = processETLs((AbstractETL<?, ?> harvester) ->
-                                                           harvester.getHealth());
-        boolean hasExtractorFailed = false;
-        boolean hasTransformerFailed = false;
-        boolean hasLoaderFailed = false;
+        final List<ETLHealth> healthStatuses =
+            processETLs((AbstractETL<?, ?> harvester) -> harvester.getHealth());
 
-        for (ETLHealth subStatus : healthStatuses) {
-            switch (subStatus) {
-                case INITIALIZATION_FAILED:
-                    return subStatus;
+        ETLHealth overallHealth = ETLHealth.OK;
 
-                case HARVEST_FAILED:
-                    hasExtractorFailed = true;
-                    hasTransformerFailed = true;
-                    hasLoaderFailed = true;
-                    break;
+        // highest priority: the initialization of an ETL has failed
+        if (healthStatuses.contains(ETLHealth.INITIALIZATION_FAILED))
+            overallHealth = ETLHealth.INITIALIZATION_FAILED;
 
-                case EXTRACTION_FAILED:
-                    hasExtractorFailed = true;
-                    break;
+        // second highest priority: the overall harvesting process failed
+        else if (healthStatuses.contains(ETLHealth.HARVEST_FAILED))
+            overallHealth = ETLHealth.HARVEST_FAILED;
 
-                case TRANSFORMATION_FAILED:
-                    hasTransformerFailed = true;
-                    break;
+        else {
+            // if two or more ETLs failed for different reasons, summarize health as HARVEST_FAILED
+            if (healthStatuses.contains(ETLHealth.EXTRACTION_FAILED))
+                overallHealth = ETLHealth.EXTRACTION_FAILED;
 
-                case LOADING_FAILED:
-                    hasLoaderFailed = true;
-                    break;
+            if (healthStatuses.contains(ETLHealth.TRANSFORMATION_FAILED))
+                overallHealth = overallHealth == ETLHealth.OK
+                                ? ETLHealth.TRANSFORMATION_FAILED
+                                : ETLHealth.HARVEST_FAILED;
 
-                default:
-                    // do nothing
-            }
+            if (healthStatuses.contains(ETLHealth.LOADING_FAILED))
+                overallHealth = overallHealth == ETLHealth.OK
+                                ? ETLHealth.LOADING_FAILED
+                                : ETLHealth.HARVEST_FAILED;
         }
 
-        if (!hasExtractorFailed && !hasTransformerFailed && !hasLoaderFailed)
-            return ETLHealth.OK;
-
-        if (hasExtractorFailed && !hasTransformerFailed && !hasLoaderFailed)
-            return ETLHealth.EXTRACTION_FAILED;
-
-        if (hasTransformerFailed && !hasExtractorFailed && !hasLoaderFailed)
-            return ETLHealth.TRANSFORMATION_FAILED;
-
-        if (hasLoaderFailed && !hasExtractorFailed && !hasTransformerFailed)
-            return ETLHealth.LOADING_FAILED;
-
-        return ETLHealth.HARVEST_FAILED;
+        return overallHealth;
     }
 
 
