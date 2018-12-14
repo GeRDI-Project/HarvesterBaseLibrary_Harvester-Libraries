@@ -624,7 +624,8 @@ public class ETLManager extends AbstractRestObject<ETLManager, ETLManagerJson> i
 
 
     /**
-     * Harvests prepared and queued ETLs.
+     * Harvests prepared and queued ETLs either sequentially or
+     * concurrently, depending on the value of the "concurrentHarvest" parameter.
      */
     private void harvestETLs()
     {
@@ -663,8 +664,8 @@ public class ETLManager extends AbstractRestObject<ETLManager, ETLManagerJson> i
 
 
     /**
-     * Iterates all registered ETLs either sequentially,
-     * and stores the return values of a specified function in a list.
+     * Iterates all registered ETLs sequentially and stores the return
+     * values of a specified function in a list.
      *
      * @param function a function that is called on each ETL
      *
@@ -697,8 +698,7 @@ public class ETLManager extends AbstractRestObject<ETLManager, ETLManagerJson> i
 
 
     /**
-     * Iterates all registered and enabled ETLs either sequentially or concurrently,
-     * depending on the value of the corresponding parameter,
+     * Iterates all registered and enabled ETLs sequentially
      * and sums up the return value of a common function.
      *
      * @param intFunction a function that is called on each ETL that returns an integer value
