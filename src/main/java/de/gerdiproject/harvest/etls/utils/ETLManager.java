@@ -27,7 +27,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -513,28 +512,36 @@ public class ETLManager extends AbstractRestObject<ETLManager, ETLManagerJson> i
      */
     public ETLHealth getHealth()
     {
-        final List<ETLHealth> healthStatuses = processETLs((AbstractETL<?, ?> harvester) ->
-                                                           harvester.getHealth());
-        boolean hasHarvestFailed = false;
+        final List<ETLHealth> healthStatuses =
+            processETLs((AbstractETL<?, ?> harvester) -> harvester.getHealth());
 
-        for (ETLHealth subStatus : healthStatuses) {
-            switch (subStatus) {
-                case INITIALIZATION_FAILED:
-                    return subStatus;
+        ETLHealth overallHealth = ETLHealth.OK;
 
-                case HARVEST_FAILED:
-                case EXTRACTION_FAILED:
-                case TRANSFORMATION_FAILED:
-                case LOADING_FAILED:
-                    hasHarvestFailed = true;
-                    break;
+        // highest priority: the initialization of an ETL has failed
+        if (healthStatuses.contains(ETLHealth.INITIALIZATION_FAILED))
+            overallHealth = ETLHealth.INITIALIZATION_FAILED;
 
-                default:
-                    // do nothing
-            }
+        // second highest priority: the overall harvesting process failed
+        else if (healthStatuses.contains(ETLHealth.HARVEST_FAILED))
+            overallHealth = ETLHealth.HARVEST_FAILED;
+
+        else {
+            // if two or more ETLs failed for different reasons, summarize health as HARVEST_FAILED
+            if (healthStatuses.contains(ETLHealth.EXTRACTION_FAILED))
+                overallHealth = ETLHealth.EXTRACTION_FAILED;
+
+            if (healthStatuses.contains(ETLHealth.TRANSFORMATION_FAILED))
+                overallHealth = overallHealth == ETLHealth.OK
+                                ? ETLHealth.TRANSFORMATION_FAILED
+                                : ETLHealth.HARVEST_FAILED;
+
+            if (healthStatuses.contains(ETLHealth.LOADING_FAILED))
+                overallHealth = overallHealth == ETLHealth.OK
+                                ? ETLHealth.LOADING_FAILED
+                                : ETLHealth.HARVEST_FAILED;
         }
 
-        return hasHarvestFailed ? ETLHealth.HARVEST_FAILED : ETLHealth.OK;
+        return overallHealth;
     }
 
 
@@ -591,23 +598,23 @@ public class ETLManager extends AbstractRestObject<ETLManager, ETLManagerJson> i
         LOGGER.info(ETLConstants.PREPARE_ETLS);
         setStatus(ETLState.QUEUED);
 
-        final AtomicInteger preparedCount = new AtomicInteger(0);
-
-        processETLs((AbstractETL<?, ?> harvester) -> {
+        // count the number of ETLs that were successfully prepared
+        int preparedCount = sumUpETLValues((AbstractETL<?, ?> harvester) -> {
             try
             {
                 // prepareHarvest() can take time, abort as early as possible
                 if (getState() != ETLState.ABORTING) {
                     harvester.prepareHarvest();
-                    preparedCount.incrementAndGet();
+                    return 1;
                 }
             } catch (ETLPreconditionException e)
             {
                 LOGGER.info(e.getMessage());
             }
+            return 0;
         });
 
-        if (preparedCount.get() == 0 || getState() == ETLState.ABORTING) {
+        if (preparedCount == 0 || getState() == ETLState.ABORTING) {
             setStatus(ETLState.IDLE);
             return false;
         }
@@ -617,7 +624,8 @@ public class ETLManager extends AbstractRestObject<ETLManager, ETLManagerJson> i
 
 
     /**
-     * Harvests prepared and queued ETLs.
+     * Harvests prepared and queued ETLs either sequentially or
+     * concurrently, depending on the value of the "concurrentHarvest" parameter.
      */
     private void harvestETLs()
     {
@@ -626,17 +634,38 @@ public class ETLManager extends AbstractRestObject<ETLManager, ETLManagerJson> i
 
         EventSystem.sendEvent(new HarvestStartedEvent(getHash(), getMaxNumberOfDocuments()));
 
-        processETLs((AbstractETL<?, ?> harvester) -> {
-            if (getState() != ETLState.ABORTING && harvester.getState() == ETLState.QUEUED)
-                harvester.harvest();
-        });
+        // check parameter to see if harvests must run sequentially or not
+        if (concurrentParam.getValue()) {
+            // run all harvests asynchronously
+            final List<CompletableFuture<?>> asyncHarvests = processETLs(
+                                                                 (AbstractETL<?, ?> etl) ->
+            CompletableFuture.runAsync(() -> {
+                if (getState() != ETLState.ABORTING && etl.getState() == ETLState.QUEUED)
+                    etl.harvest();
+            })
+                                                             );
+
+            // wait for all async harvests to complete
+            try {
+                final CompletableFuture<?>[] asyncHarvestArray =
+                    asyncHarvests.toArray(new CompletableFuture<?>[asyncHarvests.size()]);
+                CompletableFuture.allOf(asyncHarvestArray).get();
+
+            } catch (InterruptedException | ExecutionException e) {
+                LOGGER.error(ETLConstants.ETL_PROCESSING_ERROR, e);
+            }
+        } else {
+            processETLs((AbstractETL<?, ?> etl) -> {
+                if (getState() != ETLState.ABORTING && etl.getState() == ETLState.QUEUED)
+                    etl.harvest();
+            });
+        }
     }
 
 
     /**
-     * Iterates all registered ETLs either sequentially or concurrently,
-     * depending on the value of the corresponding parameter,
-     * and stores the return values of a common function in a list.
+     * Iterates all registered ETLs sequentially and stores the return
+     * values of a specified function in a list.
      *
      * @param function a function that is called on each ETL
      *
@@ -644,57 +673,32 @@ public class ETLManager extends AbstractRestObject<ETLManager, ETLManagerJson> i
      */
     private <T> List<T> processETLs(Function<AbstractETL<?, ?>, T> function)
     {
-        final int len = etls.size();
-        final List<T> returnValues = new ArrayList<>(len);
+        final List<T> returnValues = new ArrayList<>(etls.size());
 
-        if (concurrentParam.getValue()) {
-            final List<CompletableFuture<?>> subProcessList = new LinkedList<>();
-
-            for (int i = 0; i < len; i++) {
-                final int j = i;
-
-                if (etls.get(j).isEnabled())
-                    subProcessList.add(CompletableFuture.runAsync(() -> returnValues.add(function.apply(etls.get(j)))));
-            }
-
-            // convert list to array
-            final CompletableFuture<?>[] subProcessArray = subProcessList.toArray(new CompletableFuture<?>[subProcessList.size()]);
-
-            // wait for all sub-processes to complete
-            try {
-                CompletableFuture.allOf(subProcessArray).get();
-            } catch (InterruptedException | ExecutionException e) {
-                LOGGER.error(ETLConstants.ETL_PROCESSING_ERROR, e);
-            }
-        } else {
-            for (AbstractETL<?, ?> etl : etls)
-                if (etl.isEnabled())
-                    returnValues.add(function.apply(etl));
-        }
+        for (AbstractETL<?, ?> etl : etls)
+            if (etl.isEnabled())
+                returnValues.add(function.apply(etl));
 
         return returnValues;
     }
 
 
     /**
-     * Iterates all registered and enabled ETLs either sequentially or concurrently,
-     * depending on the value of the corresponding parameter.
+     * Sequentially iterates all registered and enabled ETLs and executes a function
+     * on them.
      *
      * @param consumer the function that is called on each ETL
      */
     private void processETLs(Consumer<AbstractETL<?, ?>> consumer)
     {
-        processETLs((AbstractETL<?, ?> etl) -> {
+        for (AbstractETL<?, ?> etl : etls)
             if (etl.isEnabled())
                 consumer.accept(etl);
-            return null;
-        });
     }
 
 
     /**
-     * Iterates all registered and enabled ETLs either sequentially or concurrently,
-     * depending on the value of the corresponding parameter,
+     * Iterates all registered and enabled ETLs sequentially
      * and sums up the return value of a common function.
      *
      * @param intFunction a function that is called on each ETL that returns an integer value

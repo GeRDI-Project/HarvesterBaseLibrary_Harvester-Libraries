@@ -27,6 +27,7 @@ import javax.ws.rs.core.MediaType;
 import com.google.gson.Gson;
 
 import de.gerdiproject.harvest.IDocument;
+import de.gerdiproject.harvest.etls.AbstractETL;
 import de.gerdiproject.harvest.etls.loaders.constants.ElasticSearchConstants;
 import de.gerdiproject.harvest.etls.loaders.json.ElasticSearchIndex;
 import de.gerdiproject.harvest.etls.loaders.json.ElasticSearchIndexWrapper;
@@ -45,8 +46,8 @@ import de.gerdiproject.json.datacite.DataCiteJson;
  */
 public class ElasticSearchLoader extends AbstractURLLoader<DataCiteJson>
 {
-    private final WebDataRetriever webRequester;
     private final Gson gson;
+    private final WebDataRetriever webRequester;
 
 
     /**
@@ -55,8 +56,18 @@ public class ElasticSearchLoader extends AbstractURLLoader<DataCiteJson>
     public ElasticSearchLoader()
     {
         super();
+
         this.gson = GsonUtils.createGerdiDocumentGsonBuilder().create();
         this.webRequester = new WebDataRetriever(gson, charset);
+    }
+
+
+    @Override
+    public void init(AbstractETL<?, ?> etl)
+    {
+        super.init(etl);
+
+        // retrieve updated charset
         this.webRequester.setCharset(charset);
     }
 
