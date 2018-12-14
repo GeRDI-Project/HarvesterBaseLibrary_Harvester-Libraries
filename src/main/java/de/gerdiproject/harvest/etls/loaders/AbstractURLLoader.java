@@ -61,6 +61,7 @@ public abstract class AbstractURLLoader <S extends DataCiteJson> extends Abstrac
      */
     public AbstractURLLoader()
     {
+        super();
         this.logger = LoggerFactory.getLogger(getClass());
         this.batchMap = new HashMap<>();
 
