@@ -650,17 +650,38 @@ public class ETLManager extends AbstractRestObject<ETLManager, ETLManagerJson> i
 
         EventSystem.sendEvent(new HarvestStartedEvent(getHash(), getMaxNumberOfDocuments()));
 
-        processETLs((AbstractETL<?, ?> harvester) -> {
-            if (getState() != ETLState.ABORTING && harvester.getState() == ETLState.QUEUED)
-                harvester.harvest();
-        });
+        // check parameter to see if harvests must run sequentially or not
+        if (concurrentParam.getValue()) {
+            // run all harvests asynchronously
+            final List<CompletableFuture<?>> asyncHarvests = processETLs(
+                                                                 (AbstractETL<?, ?> etl) ->
+            CompletableFuture.runAsync(() -> {
+                if (getState() != ETLState.ABORTING && etl.getState() == ETLState.QUEUED)
+                    etl.harvest();
+            })
+                                                             );
+
+            // wait for all async harvests to complete
+            try {
+                final CompletableFuture<?>[] asyncHarvestArray =
+                    asyncHarvests.toArray(new CompletableFuture<?>[asyncHarvests.size()]);
+                CompletableFuture.allOf(asyncHarvestArray).get();
+
+            } catch (InterruptedException | ExecutionException e) {
+                LOGGER.error(ETLConstants.ETL_PROCESSING_ERROR, e);
+            }
+        } else {
+            processETLs((AbstractETL<?, ?> etl) -> {
+                if (getState() != ETLState.ABORTING && etl.getState() == ETLState.QUEUED)
+                    etl.harvest();
+            });
+        }
     }
 
 
     /**
-     * Iterates all registered ETLs either sequentially or concurrently,
-     * depending on the value of the corresponding parameter,
-     * and stores the return values of a common function in a list.
+     * Iterates all registered ETLs either sequentially,
+     * and stores the return values of a specified function in a list.
      *
      * @param function a function that is called on each ETL
      *
@@ -668,51 +689,27 @@ public class ETLManager extends AbstractRestObject<ETLManager, ETLManagerJson> i
      */
     private <T> List<T> processETLs(Function<AbstractETL<?, ?>, T> function)
     {
-        final int len = etls.size();
-        final List<T> returnValues = new ArrayList<>(len);
+        final List<T> returnValues = new ArrayList<>(etls.size());
 
-        if (concurrentParam.getValue()) {
-            final List<CompletableFuture<?>> subProcessList = new LinkedList<>();
-
-            for (int i = 0; i < len; i++) {
-                final int j = i;
-
-                if (etls.get(j).isEnabled())
-                    subProcessList.add(CompletableFuture.runAsync(() -> returnValues.add(function.apply(etls.get(j)))));
-            }
-
-            // convert list to array
-            final CompletableFuture<?>[] subProcessArray = subProcessList.toArray(new CompletableFuture<?>[subProcessList.size()]);
-
-            // wait for all sub-processes to complete
-            try {
-                CompletableFuture.allOf(subProcessArray).get();
-            } catch (InterruptedException | ExecutionException e) {
-                LOGGER.error(ETLConstants.ETL_PROCESSING_ERROR, e);
-            }
-        } else {
-            for (AbstractETL<?, ?> etl : etls)
-                if (etl.isEnabled())
-                    returnValues.add(function.apply(etl));
-        }
+        for (AbstractETL<?, ?> etl : etls)
+            if (etl.isEnabled())
+                returnValues.add(function.apply(etl));
 
         return returnValues;
     }
 
 
     /**
-     * Iterates all registered and enabled ETLs either sequentially or concurrently,
-     * depending on the value of the corresponding parameter.
+     * Sequentially iterates all registered and enabled ETLs and executes a function
+     * on them.
      *
      * @param consumer the function that is called on each ETL
      */
     private void processETLs(Consumer<AbstractETL<?, ?>> consumer)
     {
-        processETLs((AbstractETL<?, ?> etl) -> {
+        for (AbstractETL<?, ?> etl : etls)
             if (etl.isEnabled())
                 consumer.accept(etl);
-            return null;
-        });
     }
 
 
