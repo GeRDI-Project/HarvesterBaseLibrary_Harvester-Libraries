@@ -27,7 +27,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -591,23 +590,23 @@ public class ETLManager extends AbstractRestObject<ETLManager, ETLManagerJson> i
         LOGGER.info(ETLConstants.PREPARE_ETLS);
         setStatus(ETLState.QUEUED);
 
-        final AtomicInteger preparedCount = new AtomicInteger(0);
-
-        processETLs((AbstractETL<?, ?> harvester) -> {
+        // count the number of ETLs that were successfully prepared
+        int preparedCount = sumUpETLValues((AbstractETL<?, ?> harvester) -> {
             try
             {
                 // prepareHarvest() can take time, abort as early as possible
                 if (getState() != ETLState.ABORTING) {
                     harvester.prepareHarvest();
-                    preparedCount.incrementAndGet();
+                    return 1;
                 }
             } catch (ETLPreconditionException e)
             {
                 LOGGER.info(e.getMessage());
             }
+            return 0;
         });
 
-        if (preparedCount.get() == 0 || getState() == ETLState.ABORTING) {
+        if (preparedCount == 0 || getState() == ETLState.ABORTING) {
             setStatus(ETLState.IDLE);
             return false;
         }
