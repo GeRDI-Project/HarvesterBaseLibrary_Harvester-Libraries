@@ -18,12 +18,14 @@ package de.gerdiproject.harvest.etls.loaders.json;
 import com.google.gson.annotations.SerializedName;
 
 import de.gerdiproject.harvest.etls.loaders.constants.ElasticSearchConstants;
+import lombok.Data;
 
 /**
  * This JSON object is part of an ElasticSearch submission response.
  *
  * @author Robin Weiss
  */
+@Data
 public class ElasticSearchIndex
 {
     @SerializedName("_index")
@@ -64,113 +66,5 @@ public class ElasticSearchIndex
                        error.toString());
         else
             return "";
-    }
-
-
-    public String getIndex()
-    {
-        return index;
-    }
-
-
-    public String getType()
-    {
-        return type;
-    }
-
-
-    public String getId()
-    {
-        return id;
-    }
-
-
-    public String getResult()
-    {
-        return result;
-    }
-
-
-    public String getStatus()
-    {
-        return status;
-    }
-
-
-    public boolean isCreated()
-    {
-        return created;
-    }
-
-
-    public int getVersion()
-    {
-        return version;
-    }
-
-
-    public ElasticSearchShard getShards()
-    {
-        return shards;
-    }
-
-
-    public ElasticSearchError getError()
-    {
-        return error;
-    }
-
-
-    public void setIndex(String index)
-    {
-        this.index = index;
-    }
-
-
-    public void setType(String type)
-    {
-        this.type = type;
-    }
-
-
-    public void setId(String id)
-    {
-        this.id = id;
-    }
-
-
-    public void setVersion(int version)
-    {
-        this.version = version;
-    }
-
-
-    public void setShards(ElasticSearchShard shards)
-    {
-        this.shards = shards;
-    }
-
-
-    public void setResult(String result)
-    {
-        this.result = result;
-    }
-
-
-    public void setStatus(String status)
-    {
-        this.status = status;
-    }
-
-
-    public void setCreated(boolean created)
-    {
-        this.created = created;
-    }
-
-
-    public void setError(ElasticSearchError error)
-    {
-        this.error = error;
     }
 }

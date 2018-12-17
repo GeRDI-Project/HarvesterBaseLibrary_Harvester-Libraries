@@ -16,11 +16,14 @@
 package de.gerdiproject.harvest.etls.loaders;
 
 
+import java.lang.reflect.Field;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.rmi.ServerException;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.regex.Matcher;
 
 import javax.ws.rs.core.MediaType;
 
@@ -29,6 +32,7 @@ import com.google.gson.Gson;
 import de.gerdiproject.harvest.IDocument;
 import de.gerdiproject.harvest.etls.AbstractETL;
 import de.gerdiproject.harvest.etls.loaders.constants.ElasticSearchConstants;
+import de.gerdiproject.harvest.etls.loaders.json.ElasticSearchError;
 import de.gerdiproject.harvest.etls.loaders.json.ElasticSearchIndex;
 import de.gerdiproject.harvest.etls.loaders.json.ElasticSearchIndexWrapper;
 import de.gerdiproject.harvest.etls.loaders.json.ElasticSearchResponse;
@@ -79,24 +83,37 @@ public class ElasticSearchLoader extends AbstractURLLoader<DataCiteJson>
         final StringBuilder batchRequestBuilder = new StringBuilder();
 
         // build a string for bulk-posting to Elastic search
-        documents.forEach(
-            (String documentId, IDocument document) -> batchRequestBuilder.append(
-                createBulkInstruction(documentId, document)));
+        for (Entry<String, IDocument> entry : documents.entrySet()) {
+            final String documentAddInstruction =
+                createBulkInstruction(entry.getKey(), entry.getValue());
+            batchRequestBuilder.append(documentAddInstruction);
+        }
 
         // send POST request to Elastic search
-        String response = webRequester.getRestResponse(
-                              RestRequestType.POST,
-                              getUrl(),
-                              batchRequestBuilder.toString(),
-                              getCredentials(),
-                              MediaType.APPLICATION_JSON);
+        final String response = webRequester.getRestResponse(
+                                    RestRequestType.POST,
+                                    getUrl(),
+                                    batchRequestBuilder.toString(),
+                                    getCredentials(),
+                                    MediaType.APPLICATION_JSON);
 
         // parse JSON response
-        ElasticSearchResponse responseJson = gson.fromJson(response, ElasticSearchResponse.class);
+        final ElasticSearchResponse responseJson = gson.fromJson(response, ElasticSearchResponse.class);
 
-        // throw error if some documents could not be loaded
-        if (responseJson.hasErrors())
-            throw new ServerException(getSubmissionErrorText(responseJson));
+        // check if ElasticSearch responded with errors
+        if (responseJson.hasErrors()) {
+            // log the error
+            logger.error(getSubmissionErrorText(responseJson));
+
+            // try to fix documents that could not be parsed entirely
+            final Map<String, IDocument> fixedDocuments = fixInvalidDocuments(responseJson, documents);
+
+            // if documents can be fixed, attepmt to resubmit them
+            if (!fixedDocuments.isEmpty()) {
+                logger.warn(ElasticSearchConstants.DOCUMENTS_RESUBMIT);
+                loadBatch(fixedDocuments);
+            }
+        }
     }
 
 
@@ -173,6 +190,76 @@ public class ElasticSearchLoader extends AbstractURLLoader<DataCiteJson>
                    ElasticSearchConstants.DATE_RANGE_REPLACEMENT).replaceAll(
                    ElasticSearchConstants.DATE_REGEX,
                    ElasticSearchConstants.DATE_REPLACEMENT);
+    }
+
+
+    /**
+     * Parses an {@linkplain ElasticSearchResponse}, retrieving potential error messages.
+     * If at least one error message was caused by Elasticsearch trying to parse an invalid
+     * field, the corresponding field is removed. All documents that can be hotfixed in that
+     * manner are returned in a map of document IDs to documents.
+     *
+     * @param response an Elasticsearch response JSON object
+     * @param documents the map of originally submitted documents
+     *
+     * @return a map of documents with removed invalid fields
+     */
+    private Map<String, IDocument> fixInvalidDocuments(ElasticSearchResponse response, Map<String, IDocument> documents)
+    {
+        final Map<String, IDocument> fixedDocMap = new HashMap<>();
+
+        for (ElasticSearchIndexWrapper documentFeedback : response.getItems()) {
+            final ElasticSearchError docError = documentFeedback.getIndex().getError();
+
+            if (docError != null) {
+                final String documentId = documentFeedback.getIndex().getId();
+                final IDocument doc = documents.get(documentId);
+
+                if (doc != null && tryFixInvalidDocument(doc, docError))
+                    fixedDocMap.put(documentId, doc);
+            }
+        }
+
+        return fixedDocMap;
+    }
+
+
+    /**
+     * Attempts to fix a document that could not be submitted to Elasticsearch,
+     * by removing fields that caused parsing errors.
+     *
+     * @param errorDocument the document that could not be submitted
+     * @param docError a JSON error object containing error details
+     *
+     * @return the erroneous document with all fields removed that caused errors
+     */
+    private boolean tryFixInvalidDocument(IDocument errorDocument, ElasticSearchError docError)
+    {
+        // check if a specific field could not be parsed
+        final Matcher errorReasonMatcher =
+            ElasticSearchConstants.PARSE_ERROR_REASON_PATTERN.matcher(docError.getReason());
+
+        if (errorReasonMatcher.find()) {
+            final String invalidFieldName = errorReasonMatcher.group(1);
+
+            // try to remove the invalid field
+            try {
+                final Field invalidField = errorDocument.getClass().getDeclaredField(invalidFieldName);
+                final boolean accessibility = invalidField.isAccessible();
+                invalidField.setAccessible(true);
+                invalidField.set(errorDocument, null);
+                invalidField.setAccessible(accessibility);
+
+                return true;
+            } catch (NoSuchFieldException | SecurityException | IllegalArgumentException | IllegalAccessException e) {
+                logger.warn(String.format(
+                                ElasticSearchConstants.CANNOT_FIX_INVALID_DOCUMENT_ERROR,
+                                invalidFieldName,
+                                errorDocument.getSourceId()));
+            }
+        }
+
+        return false;
     }
 
 

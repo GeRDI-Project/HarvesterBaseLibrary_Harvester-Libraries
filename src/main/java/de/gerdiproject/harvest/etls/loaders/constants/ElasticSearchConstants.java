@@ -15,6 +15,8 @@
  */
 package de.gerdiproject.harvest.etls.loaders.constants;
 
+import java.util.regex.Pattern;
+
 import de.gerdiproject.harvest.etls.loaders.ElasticSearchLoader;
 
 /**
@@ -30,6 +32,11 @@ public class ElasticSearchConstants
 
     public static final String INVALID_URL_ERROR = "Invalid Elasticsearch API URL: %s";
 
+    // INVALID FIELD HANDLING
+    public static final String DOCUMENTS_RESUBMIT = "Resubmitting documents after removing invalid fields.";
+    public static final Pattern PARSE_ERROR_REASON_PATTERN = Pattern.compile("failed to parse \\[([^.]+)[A-Za-z.]*\\]");
+    public static final String CANNOT_FIX_INVALID_DOCUMENT_ERROR = "Could not remove invalid field '%s' from Document %s!";
+
     // DATE RANGE FIX
     public static final String DATE_REGEX = "\"value\":(\"\\d\\d\\d\\d-\\d\\d-\\d\\dT\\d\\d:\\d\\d[^\"/]*Z\")";
     public static final String DATE_REPLACEMENT = "\"value\":\\{\"gte\":$1,\"lte\":$1\\}";
@@ -41,7 +48,7 @@ public class ElasticSearchConstants
     public static final String EMPTY_DATE_RANGE_REPLACEMENT = "";
 
     // SERVER RESPONSE JSON
-    public static final String LOAD_DOCUMENT_ERROR = "Loader Error: Document #%s%n%s";
+    public static final String LOAD_DOCUMENT_ERROR = "Loader Error: Document %s%n%s";
     public static final String LOAD_DOCUMENT_ERROR_REASON = "  %s: %s";
     public static final String LOAD_DOCUMENT_ERROR_CAUSE = ", caused by%n  %s: %s";
 

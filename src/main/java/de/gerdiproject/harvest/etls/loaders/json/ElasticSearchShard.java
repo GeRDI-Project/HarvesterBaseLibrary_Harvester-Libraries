@@ -15,51 +15,18 @@
  */
 package de.gerdiproject.harvest.etls.loaders.json;
 
+import lombok.Data;
+
 /**
  * This JSON object is part of an ElasticSearch submission response.
  *
  * @author Robin Weiss
  */
+@Data
 public class ElasticSearchShard
 {
     private int total;
     private int successful;
     private int failed;
-
-
-    public int getTotal()
-    {
-        return total;
-    }
-
-
-    public int getSuccessful()
-    {
-        return successful;
-    }
-
-
-    public int getFailed()
-    {
-        return failed;
-    }
-
-
-    public void setTotal(int total)
-    {
-        this.total = total;
-    }
-
-
-    public void setSuccessful(int successful)
-    {
-        this.successful = successful;
-    }
-
-
-    public void setFailed(int failed)
-    {
-        this.failed = failed;
-    }
 }
 

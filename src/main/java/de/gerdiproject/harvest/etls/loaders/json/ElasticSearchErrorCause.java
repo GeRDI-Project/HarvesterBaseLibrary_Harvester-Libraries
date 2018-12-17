@@ -15,38 +15,16 @@
  */
 package de.gerdiproject.harvest.etls.loaders.json;
 
+import lombok.Data;
 
 /**
  * This JSON object is part of an ElasticSearch submission response if an error appears.
  *
  * @author Robin Weiss
  */
+@Data
 public class ElasticSearchErrorCause
 {
     private String type;
     private String reason;
-
-
-    public String getType()
-    {
-        return type;
-    }
-
-
-    public void setType(String type)
-    {
-        this.type = type;
-    }
-
-
-    public String getReason()
-    {
-        return reason;
-    }
-
-
-    public void setReason(String reason)
-    {
-        this.reason = reason;
-    }
 }
