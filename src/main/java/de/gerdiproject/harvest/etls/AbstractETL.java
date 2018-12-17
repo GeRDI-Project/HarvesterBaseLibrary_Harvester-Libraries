@@ -312,8 +312,7 @@ public abstract class AbstractETL <T, S> implements IEventListener
 
         try {
             extractor.init(this);
-        }catch(RuntimeException e)
-        {
+        } catch (RuntimeException e) {
             throw new ETLPreconditionException(e);
         }
 
