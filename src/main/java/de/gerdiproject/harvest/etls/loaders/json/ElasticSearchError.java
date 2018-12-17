@@ -18,12 +18,14 @@ package de.gerdiproject.harvest.etls.loaders.json;
 import com.google.gson.annotations.SerializedName;
 
 import de.gerdiproject.harvest.etls.loaders.constants.ElasticSearchConstants;
+import lombok.Data;
 
 /**
  * This JSON object is part of an ElasticSearch submission response if an error appears.
  *
  * @author Robin Weiss
  */
+@Data
 public class ElasticSearchError
 {
     private String type;
@@ -33,42 +35,6 @@ public class ElasticSearchError
     private ElasticSearchErrorCause causedBy;
 
 
-    public String getType()
-    {
-        return type;
-    }
-
-
-    public void setType(String type)
-    {
-        this.type = type;
-    }
-
-
-    public String getReason()
-    {
-        return reason;
-    }
-
-
-    public void setReason(String reason)
-    {
-        this.reason = reason;
-    }
-
-
-    public ElasticSearchErrorCause getCausedBy()
-    {
-        return causedBy;
-    }
-
-
-    public void setCausedBy(ElasticSearchErrorCause causedBy)
-    {
-        this.causedBy = causedBy;
-    }
-
-
     @Override
     public String toString()
     {
@@ -76,6 +42,8 @@ public class ElasticSearchError
                                ElasticSearchConstants.LOAD_DOCUMENT_ERROR_REASON,
                                type,
                                reason);
+
+        //reason == "failed to parse [geoLocations.geoLocationBox]"
 
         if (causedBy != null)
             errorText += String.format(

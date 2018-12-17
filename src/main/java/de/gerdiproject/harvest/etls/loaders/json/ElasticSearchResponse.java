@@ -17,51 +17,28 @@ package de.gerdiproject.harvest.etls.loaders.json;
 
 import java.util.List;
 
+import lombok.AccessLevel;
+import lombok.Data;
+import lombok.Getter;
+
 
 /**
  * This JSON object represents the response of an ElasticSearch submission.
  *
  * @author Robin Weiss
  */
+@Data
 public class ElasticSearchResponse
 {
     private int took;
+
+    @Getter(value = AccessLevel.PRIVATE)
     private boolean errors;
     private List<ElasticSearchIndexWrapper> items;
-
-
-    public int getTook()
-    {
-        return took;
-    }
 
 
     public boolean hasErrors()
     {
         return errors;
-    }
-
-
-    public List<ElasticSearchIndexWrapper> getItems()
-    {
-        return items;
-    }
-
-
-    public void setTook(int took)
-    {
-        this.took = took;
-    }
-
-
-    public void setErrors(boolean errors)
-    {
-        this.errors = errors;
-    }
-
-
-    public void setItems(List<ElasticSearchIndexWrapper> items)
-    {
-        this.items = items;
     }
 }

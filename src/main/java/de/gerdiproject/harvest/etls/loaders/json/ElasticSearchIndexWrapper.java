@@ -15,24 +15,15 @@
  */
 package de.gerdiproject.harvest.etls.loaders.json;
 
+import lombok.Data;
 
 /**
  * This JSON object is part of an ElasticSearch submission response.
  *
  * @author Robin Weiss
  */
+@Data
 public class ElasticSearchIndexWrapper
 {
     private ElasticSearchIndex index;
-
-    public ElasticSearchIndex getIndex()
-    {
-        return index;
-    }
-
-
-    public void setIndex(ElasticSearchIndex index)
-    {
-        this.index = index;
-    }
 }
