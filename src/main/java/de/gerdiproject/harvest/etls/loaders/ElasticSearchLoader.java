@@ -108,7 +108,7 @@ public class ElasticSearchLoader extends AbstractURLLoader<DataCiteJson>
             // try to fix documents that could not be parsed entirely
             final Map<String, IDocument> fixedDocuments = fixInvalidDocuments(responseJson, documents);
 
-            // if documents can be fixed, attemt to resubmit them
+            // if documents can be fixed, attepmt to resubmit them
             if (!fixedDocuments.isEmpty()) {
                 logger.warn(ElasticSearchConstants.DOCUMENTS_RESUBMIT);
                 loadBatch(fixedDocuments);
