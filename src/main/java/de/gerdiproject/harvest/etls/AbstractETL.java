@@ -310,7 +310,12 @@ public abstract class AbstractETL <T, S> implements IEventListener
         if (extractor == null)
             throw new ETLPreconditionException(String.format(ETLConstants.EXTRACTOR_CREATE_ERROR, getName()));
 
-        extractor.init(this);
+        try {
+            extractor.init(this);
+        }catch(RuntimeException e)
+        {
+            throw new ETLPreconditionException(e);
+        }
 
         // calculate hash
         try {
