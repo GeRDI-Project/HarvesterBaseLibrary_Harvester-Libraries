@@ -161,26 +161,26 @@ public abstract class AbstractParameter<V>
 
 
     /**
-     * Changes the value by parsing a String value. A message is returned that describes
-     * whether the value change was successful, or if not, why it failed.
+     * Changes the stored value by parsing a String argument.
      *
      * @param value a String representation of the new value
      *
-     * @return a message that describes whether the value change was successful, or if not, why it failed
+     * @throws IllegalArgumentException if the value could not be changed
      */
-    public final String setValue(String value)
+    public final void setValue(String value) throws IllegalArgumentException
     {
-        final V newValue;
-
         // try to map the input string to the expected parameter value
         try {
-            newValue = mappingFunction.apply(value);
+            final V newValue = mappingFunction.apply(value);
+            this.value = newValue;
         } catch (RuntimeException e) {
-            return String.format(ParameterConstants.CANNOT_CHANGE_PARAM, getCompositeKey(), value, e.getMessage());
+            throw new IllegalArgumentException(
+                String.format(
+                    ParameterConstants.CANNOT_CHANGE_PARAM,
+                    getCompositeKey(),
+                    value, e.getMessage()),
+                e);
         }
-
-        this.value = newValue;
-        return String.format(ParameterConstants.CHANGED_PARAM, getCompositeKey(), getStringValue());
     }
 
 
@@ -195,7 +195,7 @@ public abstract class AbstractParameter<V>
         final Map<String, String> environmentVariables = System.getenv();
 
         if (environmentVariables.containsKey(envVarName))
-            LOGGER.info(setValue(environmentVariables.get(envVarName)));
+            setValue(environmentVariables.get(envVarName));
     }
 
 
