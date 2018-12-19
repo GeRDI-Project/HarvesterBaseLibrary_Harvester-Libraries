@@ -302,7 +302,7 @@ public class HttpResponseFactory
             final String status = statusCode.getStatusCode() >= 200 && statusCode.getStatusCode() < 400
                                   ? RestConstants.STATUS_OK
                                   : RestConstants.STATUS_FAILED;
-            entity = String.format(RestConstants.FEEDBACK_JSON, status, ((String)entity).trim());
+            entity = String.format(RestConstants.FEEDBACK_JSON, status, ((String)entity).replaceAll("\\n", ";  ").trim());
         }
 
         return entity.toString();
