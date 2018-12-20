@@ -39,6 +39,7 @@ import de.gerdiproject.harvest.config.events.RegisterParameterEvent;
 import de.gerdiproject.harvest.config.events.UnregisterParameterEvent;
 import de.gerdiproject.harvest.config.json.adapters.ConfigurationAdapter;
 import de.gerdiproject.harvest.config.parameters.AbstractParameter;
+import de.gerdiproject.harvest.config.parameters.constants.ParameterConstants;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.rest.AbstractRestObject;
 import de.gerdiproject.harvest.utils.data.DiskIO;
@@ -265,9 +266,8 @@ public class Configuration extends AbstractRestObject<Configuration, Configurati
      * @param value the new value of the parameter
      *
      * @throws IllegalArgumentException if the compositeKey is empty or does not exist
-     * @return a message describing if the operation was successful, or if not, why it failed
      */
-    public String setParameter(String compositeKey, String value) throws IllegalArgumentException
+    public void setParameter(String compositeKey, String value) throws IllegalArgumentException
     {
         final AbstractParameter<?> param = parameterMap.get(compositeKey.toLowerCase());
 
@@ -276,14 +276,15 @@ public class Configuration extends AbstractRestObject<Configuration, Configurati
             throw new IllegalArgumentException(String.format(ConfigurationConstants.SET_UNKNOWN_PARAM_ERROR, compositeKey));
 
         final Object oldValue = param.getValue();
-        final String paramChangeMessage = param.setValue(value);
 
-        if (oldValue == null && param.getValue() != null || oldValue != null && !oldValue.equals(param.getValue())) {
+        param.setValue(value);
+
+        final Object newValue = param.getValue();
+
+        if (oldValue == null && newValue != null || oldValue != null && !oldValue.equals(newValue)) {
             EventSystem.sendEvent(new ParameterChangedEvent(param, oldValue));
-            LOGGER.debug(paramChangeMessage);
+            LOGGER.debug(String.format(ParameterConstants.CHANGED_PARAM, param.getCompositeKey(), param.getStringValue()));
         }
-
-        return paramChangeMessage;
     }
 
 
@@ -306,16 +307,24 @@ public class Configuration extends AbstractRestObject<Configuration, Configurati
 
         // change every defined parameter
         for (Entry<String, String> p : values.entrySet()) {
+            if (sb.length() != 0)
+                sb.append('\n');
+
             String feedback;
 
             try {
-                feedback = setParameter(p.getKey(), p.getValue());
+                setParameter(p.getKey(), p.getValue());
                 hasChanged = true;
+                feedback = String.format(
+                               ParameterConstants.CHANGED_PARAM,
+                               p.getKey(),
+                               getParameterStringValue(p.getKey()));
             } catch (IllegalArgumentException e) {
                 feedback = e.getMessage();
+                LOGGER.warn("", e);
             }
 
-            sb.append(feedback).append('\n');
+            sb.append(feedback);
         }
 
         // if no parameter changed, the request fails
