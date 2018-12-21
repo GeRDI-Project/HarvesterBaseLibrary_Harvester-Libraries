@@ -10,7 +10,7 @@
 	</parent>
 	
 	<artifactId>RestfulHarvester-Library</artifactId>
-	<version>7.0.3-SNAPSHOT</version>
+	<version>7.1.0-SNAPSHOT</version>
     <packaging>jar</packaging>
 	<name>Restful Harvester Library</name>
 	<description>This library provides a skeleton for restful harvesters.</description>
@@ -22,7 +22,7 @@
 		<javadoc.plugin.version>3.0.1</javadoc.plugin.version>
 		<source.plugin.version>3.0.1</source.plugin.version>
 		<bundle.plugin.version>3.0.1</bundle.plugin.version>
-		<gerdigson.dependency.version>5.0.0-SNAPSHOT</gerdigson.dependency.version>
+		<gerdigson.dependency.version>5.1.0-SNAPSHOT</gerdigson.dependency.version>
 		<javaxservlet.dependency.version>4.0.1</javaxservlet.dependency.version>
 		<javaxwsrs.dependency.version>2.1</javaxwsrs.dependency.version>
 	</properties>
