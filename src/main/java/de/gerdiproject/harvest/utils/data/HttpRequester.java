@@ -48,8 +48,8 @@ public class HttpRequester
     private final DiskIO diskIO;
     private final WebDataRetriever webDataRetriever;
     private String cacheFolder;
-    private BooleanParameter readFromDisk;
-    private BooleanParameter writeToDisk;
+    private final BooleanParameter readFromDisk;
+    private final BooleanParameter writeToDisk;
 
 
     /**
@@ -70,14 +70,19 @@ public class HttpRequester
      */
     public HttpRequester(Gson gson, Charset httpCharset)
     {
+        BooleanParameter readFromDiskTemp;
+        BooleanParameter writeToDiskTemp;
+
         try {
-            this.readFromDisk = Configuration.registerParameter(DataOperationConstants.READ_FROM_DISK_PARAM);
-            this.writeToDisk = Configuration.registerParameter(DataOperationConstants.WRITE_TO_DISK_PARAM);
+            readFromDiskTemp = Configuration.registerParameter(DataOperationConstants.READ_FROM_DISK_PARAM);
+            writeToDiskTemp = Configuration.registerParameter(DataOperationConstants.WRITE_TO_DISK_PARAM);
         } catch (IllegalStateException e) {
-            this.readFromDisk = DataOperationConstants.READ_FROM_DISK_PARAM;
-            this.writeToDisk = DataOperationConstants.WRITE_TO_DISK_PARAM;
+            readFromDiskTemp = DataOperationConstants.READ_FROM_DISK_PARAM;
+            writeToDiskTemp = DataOperationConstants.WRITE_TO_DISK_PARAM;
         }
 
+        this.readFromDisk = readFromDiskTemp;
+        this.writeToDisk = writeToDiskTemp;
         this.diskIO = new DiskIO(gson, httpCharset);
         this.webDataRetriever = new WebDataRetriever(gson, httpCharset);
 
