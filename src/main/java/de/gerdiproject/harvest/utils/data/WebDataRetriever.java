@@ -23,12 +23,14 @@ import java.io.InputStreamReader;
 import java.lang.reflect.Type;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
+import java.net.SocketTimeoutException;
 import java.net.URL;
 import java.nio.charset.Charset;
 import java.util.List;
 import java.util.Map;
 
 import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.MediaType;
 import javax.xml.ws.http.HTTPException;
 
 import org.jsoup.HttpStatusException;
@@ -41,6 +43,9 @@ import com.google.gson.Gson;
 import com.google.gson.JsonIOException;
 import com.google.gson.JsonSyntaxException;
 
+import de.gerdiproject.harvest.config.Configuration;
+import de.gerdiproject.harvest.config.parameters.IntegerParameter;
+import de.gerdiproject.harvest.rest.constants.RestConstants;
 import de.gerdiproject.harvest.utils.data.constants.DataOperationConstants;
 import de.gerdiproject.harvest.utils.data.enums.RestRequestType;
 
@@ -53,20 +58,48 @@ public class WebDataRetriever implements IDataRetriever
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(WebDataRetriever.class);
     private final Gson gson;
+    private final IntegerParameter retriesParam;
+    private int timeout;
+
     private Charset charset;
 
 
     /**
      * Constructor that sets the GSON (de-)serializer for reading and
-     * writing JSON objects.
+     * writing JSON objects, as well as the charset and timeout.
+     *
+     * @param gson the GSON (de-)serializer for reading and writing JSON objects
+     * @param charset the charset of the files to be read and written
+     * @param timeout the web request timeout in milliseconds
+     */
+    public WebDataRetriever(Gson gson, Charset charset, int timeout)
+    {
+        this.gson = gson;
+        this.charset = charset;
+        this.timeout = timeout;
+
+        // set up retries parameters
+        IntegerParameter retriesTemp;
+
+        try {
+            retriesTemp = Configuration.registerParameter(DataOperationConstants.RETRIES_PARAM);
+        } catch (IllegalStateException e) {
+            retriesTemp = DataOperationConstants.RETRIES_PARAM;
+        }
+
+        this.retriesParam = retriesTemp;
+    }
+
+    /**
+     * Constructor that sets the GSON (de-)serializer for reading and
+     * writing JSON objects, as well as the charset.
      *
      * @param gson the GSON (de-)serializer for reading and writing JSON objects
      * @param charset the charset of the files to be read and written
      */
     public WebDataRetriever(Gson gson, Charset charset)
     {
-        this.gson = gson;
-        this.charset = charset;
+        this(gson, charset, DataOperationConstants.NO_TIMEOUT);
     }
 
 
@@ -77,8 +110,7 @@ public class WebDataRetriever implements IDataRetriever
      */
     public WebDataRetriever(WebDataRetriever other)
     {
-        this.gson = other.gson;
-        this.charset = other.charset;
+        this(other.gson, other.charset, other.timeout);
     }
 
 
@@ -154,19 +186,11 @@ public class WebDataRetriever implements IDataRetriever
     public Document getHtml(String url)
     {
         try {
-            final HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
+            final HttpURLConnection connection = sendWebRequest(
+                                                     RestRequestType.GET, url, null, null, MediaType.TEXT_PLAIN, retriesParam.getValue());
 
-            switch (connection.getResponseCode()) {
-                case HttpURLConnection.HTTP_MOVED_TEMP :
-                case HttpURLConnection.HTTP_MOVED_PERM :
-                case HttpURLConnection.HTTP_SEE_OTHER :
-                    connection.disconnect();
-                    final String redirectedUrl = connection.getHeaderField(DataOperationConstants.REDIRECT_LOCATION_HEADER);
-                    return getHtml(redirectedUrl);
+            return Jsoup.parse(connection.getInputStream(), charset.displayName(), url);
 
-                default:
-                    return Jsoup.parse(connection.getInputStream(), charset.displayName(), url);
-            }
         } catch (Exception e) {
             LOGGER.warn(String.format(DataOperationConstants.WEB_ERROR_JSON, url), e);
             return null;
@@ -178,6 +202,17 @@ public class WebDataRetriever implements IDataRetriever
     public void setCharset(Charset charset)
     {
         this.charset = charset;
+    }
+
+
+    /**
+     * Changes the request timeout in milliseconds.
+     *
+     * @param timeout the request timeout in milliseconds
+     */
+    public void setTimeout(int timeout)
+    {
+        this.timeout = timeout;
     }
 
 
@@ -199,7 +234,7 @@ public class WebDataRetriever implements IDataRetriever
      */
     public String getRestResponse(RestRequestType method, String url, String body, String authorization, String contentType) throws HTTPException, IOException
     {
-        HttpURLConnection connection = sendRestRequest(method, url, body, authorization, contentType);
+        HttpURLConnection connection = sendWebRequest(method, url, body, authorization, contentType, retriesParam.getValue());
 
         // create a reader for the HTTP response
         InputStream response = connection.getInputStream();
@@ -254,7 +289,7 @@ public class WebDataRetriever implements IDataRetriever
     {
         Map<String, List<String>> headerFields = null;
 
-        HttpURLConnection connection = sendRestRequest(method, url, body, authorization, contentType);
+        HttpURLConnection connection = sendWebRequest(method, url, body, authorization, contentType, retriesParam.getValue());
         headerFields = connection.getHeaderFields();
 
         return headerFields;
@@ -270,13 +305,14 @@ public class WebDataRetriever implements IDataRetriever
      * @param authorization the base-64-encoded username and password, or null if no
      *                           authorization is required
      * @param contentType the contentType of the body
+     * @param retries the number of retries if the request fails with a response code 5xx
      *
      * @throws HTTPException thrown if the response code is not 2xx
      * @throws IOException thrown if the response output stream could not be created
      *
      * @return the connection to the host
      */
-    private HttpURLConnection sendRestRequest(RestRequestType method, String url, String body, String authorization, String contentType)
+    private HttpURLConnection sendWebRequest(RestRequestType method, String url, String body, String authorization, String contentType, int retries)
     throws IOException, HTTPException
     {
         // generate a URL and open a connection
@@ -284,11 +320,17 @@ public class WebDataRetriever implements IDataRetriever
 
         // set request properties
         connection.setDoOutput(true);
-        connection.setInstanceFollowRedirects(false);
+        connection.setInstanceFollowRedirects(true);
         connection.setUseCaches(false);
         connection.setRequestMethod(method.toString());
         connection.setRequestProperty(HttpHeaders.CONTENT_TYPE, contentType);
         connection.setRequestProperty(DataOperationConstants.REQUEST_PROPERTY_CHARSET, charset.displayName());
+
+        // set timeout
+        if (timeout != DataOperationConstants.NO_TIMEOUT) {
+            connection.setConnectTimeout(timeout);
+            connection.setReadTimeout(timeout);
+        }
 
         // set authentication
         if (authorization != null)
@@ -306,15 +348,44 @@ public class WebDataRetriever implements IDataRetriever
             wr.close();
         }
 
-        // check if we got an erroneous response
-        int responseCode = connection.getResponseCode();
+        boolean mustRetry = false;
 
-        if (responseCode < 200 || responseCode >= 300) {
-            final String message = String.format(DataOperationConstants.WEB_ERROR_REST_HTTP, method.toString(), url, body, responseCode);
-            throw new HttpStatusException(message, responseCode, url);
+        // check if we got an erroneous response
+        try {
+            int responseCode = connection.getResponseCode();
+
+            // handle erroneous response codes
+            if (responseCode < 200 || responseCode >= 400) {
+                final String message = String.format(DataOperationConstants.WEB_ERROR_REST_HTTP, method.toString(), url, body, responseCode);
+
+                // if the server cannot be reached, retry
+                if (responseCode >= 500 && retries != 0)
+                    mustRetry = true;
+                else
+                    throw new HttpStatusException(message, responseCode, url);
+            }
+        } catch (SocketTimeoutException e) {
+            // if we time out, try again
+            if (retries != 0)
+                mustRetry = true;
+            else
+                throw e;
         }
 
-        return connection;
+        // if the request failed due to server issues, attempt to retry
+        if (mustRetry) {
+            // if the response header contains a retry-after field, wait for that period before retrying
+            final int delayInSeconds = connection.getHeaderFieldInt(RestConstants.RETRY_AFTER_HEADER, 1);
+            
+            try {
+                Thread.sleep(delayInSeconds * 1000);
+            } catch (InterruptedException e) {
+                throw new IOException(e);
+            }
+
+            return sendWebRequest(method, url, body, authorization, contentType, Math.max(retries - 1, -1));
+        } else
+            return connection;
     }
 
 
@@ -330,18 +401,9 @@ public class WebDataRetriever implements IDataRetriever
      */
     private InputStreamReader createWebReader(String url) throws MalformedURLException, IOException
     {
-        final HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
+        final HttpURLConnection connection = sendWebRequest(
+                                                 RestRequestType.GET, url, null, null, MediaType.TEXT_PLAIN, retriesParam.getValue());
 
-        switch (connection.getResponseCode()) {
-            case HttpURLConnection.HTTP_MOVED_TEMP :
-            case HttpURLConnection.HTTP_MOVED_PERM :
-            case HttpURLConnection.HTTP_SEE_OTHER :
-                connection.disconnect();
-                final String redirectedUrl = connection.getHeaderField(DataOperationConstants.REDIRECT_LOCATION_HEADER);
-                return createWebReader(redirectedUrl);
-
-            default:
-                return new InputStreamReader(connection.getInputStream(), charset);
-        }
+        return new InputStreamReader(connection.getInputStream(), charset);
     }
 }

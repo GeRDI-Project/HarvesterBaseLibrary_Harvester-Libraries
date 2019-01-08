@@ -359,6 +359,17 @@ public class HttpRequester
 
 
     /**
+     * Changes the request timeout for web requests.
+     *
+     * @param timeout the request timeout in milliseconds
+     */
+    public void setTimeout(int timeout)
+    {
+        this.webDataRetriever.setTimeout(timeout);
+    }
+
+
+    /**
      * Returns true if HTTP responses are read from a cache on disk.
      *
      * @return true if HTTP responses are read from a cache on disk

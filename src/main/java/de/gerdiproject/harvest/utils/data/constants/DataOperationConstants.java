@@ -65,7 +65,7 @@ public class DataOperationConstants
         new IntegerParameter(
         "retries",
         HTTP_CATEGORY,
-        0,
+        -1,
         ParameterMappingFunctions::mapToUnsignedInteger);
 
 
