@@ -15,8 +15,9 @@
  */
 package de.gerdiproject.harvest.utils.data.constants;
 
-import de.gerdiproject.harvest.config.constants.ConfigurationConstants;
 import de.gerdiproject.harvest.config.parameters.BooleanParameter;
+import de.gerdiproject.harvest.config.parameters.IntegerParameter;
+import de.gerdiproject.harvest.config.parameters.constants.ParameterMappingFunctions;
 import de.gerdiproject.harvest.utils.data.HttpRequester;
 
 /**
@@ -43,18 +44,29 @@ public class DataOperationConstants
     public static final String WEB_ERROR_REST_HTTP = "%s-request for URL '%s' with body '%s' returned HTTP Status-Code %d.";
     public static final String REQUEST_PROPERTY_CHARSET = "charset";
     public static final String REDIRECT_LOCATION_HEADER = "Location";
+    public static final int NO_TIMEOUT = -1;
+
+
+    public static final String HTTP_CATEGORY = "HttpRequests";
 
     public static final BooleanParameter READ_FROM_DISK_PARAM =
         new BooleanParameter(
         "readFromDisk",
-        ConfigurationConstants.DEBUG_CATEGORY,
+        HTTP_CATEGORY,
         false);
 
     public static final BooleanParameter WRITE_TO_DISK_PARAM =
         new BooleanParameter(
         "writeToDisk",
-        ConfigurationConstants.DEBUG_CATEGORY,
+        HTTP_CATEGORY,
         false);
+
+    public static final IntegerParameter RETRIES_PARAM =
+        new IntegerParameter(
+        "retries",
+        HTTP_CATEGORY,
+        0,
+        ParameterMappingFunctions::mapToUnsignedInteger);
 
 
     /**
