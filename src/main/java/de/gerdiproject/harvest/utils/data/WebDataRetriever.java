@@ -376,7 +376,8 @@ public class WebDataRetriever implements IDataRetriever
         if (mustRetry) {
             // if the response header contains a retry-after field, wait for that period before retrying
             final int delayInSeconds = connection.getHeaderFieldInt(RestConstants.RETRY_AFTER_HEADER, 1);
-            
+            LOGGER.debug(String.format(DataOperationConstants.RETRY, url, delayInSeconds));
+
             try {
                 Thread.sleep(delayInSeconds * 1000);
             } catch (InterruptedException e) {

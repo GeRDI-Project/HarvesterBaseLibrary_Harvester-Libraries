@@ -67,6 +67,7 @@ public class DataOperationConstants
         HTTP_CATEGORY,
         -1,
         ParameterMappingFunctions::mapToUnsignedInteger);
+    public static final String RETRY = "Could not reach %s! Retrying in %d s.";
 
 
     /**
