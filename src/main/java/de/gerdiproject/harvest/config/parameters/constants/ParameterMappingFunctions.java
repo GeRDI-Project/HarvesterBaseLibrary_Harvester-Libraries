@@ -91,7 +91,7 @@ public class ParameterMappingFunctions
      */
     public static Boolean mapToBoolean(String value) throws ClassCastException
     {
-        if (value == null)
+        if (value == null || value.isEmpty())
             return false;
 
         else if (ParameterConstants.BOOLEAN_VALID_VALUES_LIST.contains(value))
@@ -114,7 +114,7 @@ public class ParameterMappingFunctions
      */
     public static Integer mapToInteger(String value) throws ClassCastException
     {
-        if (value == null)
+        if (value == null || value.isEmpty())
             return 0;
 
         else if (value.equals(ParameterConstants.INTEGER_VALUE_MAX))
@@ -146,7 +146,7 @@ public class ParameterMappingFunctions
      */
     public static Integer mapToUnsignedInteger(String value) throws ClassCastException
     {
-        if (value == null)
+        if (value == null || value.isEmpty())
             return 0;
 
         else if (value.equals(ParameterConstants.INTEGER_VALUE_MAX))
@@ -183,7 +183,7 @@ public class ParameterMappingFunctions
      */
     public static String mapToUrlString(String value) throws IllegalArgumentException
     {
-        if (value == null)
+        if (value == null || value.isEmpty())
             return null;
 
         try {
@@ -277,7 +277,7 @@ public class ParameterMappingFunctions
     {
         return (String value) -> {
             // null values are always returned
-            if (value == null)
+            if (value == null || value.isEmpty())
                 return null;
 
             // value is only valid if it is within the list
@@ -308,7 +308,7 @@ public class ParameterMappingFunctions
     {
         return (String value) -> {
             // null values are always returned
-            if (value == null)
+            if (value == null || value.isEmpty())
                 return null;
 
             StringBuilder allowedValuesStringBuilder = new StringBuilder();
