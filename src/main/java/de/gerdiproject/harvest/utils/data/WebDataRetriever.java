@@ -222,7 +222,7 @@ public class WebDataRetriever implements IDataRetriever
      *
      * @param method the request method that is being sent
      * @param url the URL to which the request is being sent
-     * @param body the body of the request
+     * @param body the body of the request, or null if no body is to be sent
      * @param authorization the base-64-encoded username and password, or null if no
      *                       authorization is required
      * @param contentType the contentType of the body
@@ -274,7 +274,7 @@ public class WebDataRetriever implements IDataRetriever
      *
      * @param method the request method that is being sent
      * @param url the URL to which the request is being sent
-     * @param body the body of the request
+     * @param body the body of the request, or null if no body is to be sent
      * @param authorization the base-64-encoded username and password, or null if no
      *                       authorization is required
      * @param contentType the contentType of the body
@@ -301,7 +301,7 @@ public class WebDataRetriever implements IDataRetriever
      *
      * @param method the request method that is being sent
      * @param urlString the URL to which the request is being sent
-     * @param body the body of the request
+     * @param body the body of the request, or null if no body is to be sent
      * @param authorization the base-64-encoded username and password, or null if no
      *                           authorization is required
      * @param contentType the contentType of the body
@@ -317,41 +317,11 @@ public class WebDataRetriever implements IDataRetriever
     {
         // generate a URL and open a connection
         final URL url = new URL(urlString);
-        final HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-
-        // set request properties
-        connection.setDoOutput(true);
-        connection.setInstanceFollowRedirects(true);
-        connection.setUseCaches(false);
-        connection.setRequestMethod(method.toString());
-        connection.setRequestProperty(HttpHeaders.CONTENT_TYPE, contentType);
-        connection.setRequestProperty(DataOperationConstants.REQUEST_PROPERTY_CHARSET, charset.displayName());
-
-        // set timeout
-        if (timeout != DataOperationConstants.NO_TIMEOUT) {
-            connection.setConnectTimeout(timeout);
-            connection.setReadTimeout(timeout);
-        }
-
-        // set authentication
-        if (authorization != null)
-            connection.setRequestProperty(HttpHeaders.AUTHORIZATION, authorization);
-
-        // only send date if it is specified
-        if (body != null) {
-            // convert body string to bytes
-            byte[] bodyBytes = body.getBytes(charset);
-            connection.setRequestProperty(HttpHeaders.CONTENT_LENGTH, Integer.toString(bodyBytes.length));
-
-            // try to send body
-            DataOutputStream wr = new DataOutputStream(connection.getOutputStream());
-            wr.write(bodyBytes);
-            wr.close();
-        }
+        final HttpURLConnection connection = createConnection(method, url, body, authorization, contentType);
 
         boolean mustRetry = false;
 
-        // check if we got an erroneous response
+        // open the connection
         try {
             int responseCode = connection.getResponseCode();
 
@@ -361,18 +331,21 @@ public class WebDataRetriever implements IDataRetriever
                 // handle server errors
                 if (responseCode >= 500)
                     mustRetry = retries != 0;
+
                 // handle redirection from HTTP > HTTPS
-                else if (responseCode >= 300 && responseCode < 400) {
+                else if (responseCode < 400) {
                     connection.disconnect();
                     final String redirectedUrl =
                         connection.getHeaderField(DataOperationConstants.REDIRECT_LOCATION_HEADER);
 
                     // disallow redirect from HTTPS to HTTP
-                    if (!(url.getProtocol().equalsIgnoreCase(DataOperationConstants.HTTPS)
-                          && redirectedUrl.startsWith(DataOperationConstants.HTTP)))
+                    if (redirectedUrl != null
+                        && !(url.getProtocol().equalsIgnoreCase(DataOperationConstants.HTTPS)
+                             && redirectedUrl.startsWith(DataOperationConstants.HTTP)))
                         return sendWebRequest(method, redirectedUrl, body, authorization, contentType, retries);
                 }
 
+                // throw an error if the request is not to be reattempted
                 if (!mustRetry) {
                     final String errorMessage = String.format(
                                                     DataOperationConstants.WEB_ERROR_REST_HTTP,
@@ -406,6 +379,58 @@ public class WebDataRetriever implements IDataRetriever
             return sendWebRequest(method, urlString, body, authorization, contentType, Math.max(retries - 1, -1));
         } else
             return connection;
+    }
+
+
+    /**
+     * Sets up a {@linkplain HttpURLConnection} connection with specified properties.
+     *
+     * @param method the request method that is being sent
+     * @param url the URL to which the connection is to be established
+     * @param body the body of the request, or null if no body is to be sent
+     * @param authorization the base-64-encoded username and password, or null if no
+     *                           authorization is required
+     * @param contentType the contentType of the body
+     *
+     * @throws IOException thrown if the response output stream could not be created
+     *
+     * @return the connection to the host
+     */
+    private HttpURLConnection createConnection(RestRequestType method, URL url, String body, String authorization, String contentType) throws IOException
+    {
+        final HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+
+        // set request properties
+        connection.setDoOutput(true);
+        connection.setInstanceFollowRedirects(true);
+        connection.setUseCaches(false);
+        connection.setRequestMethod(method.toString());
+        connection.setRequestProperty(HttpHeaders.CONTENT_TYPE, contentType);
+        connection.setRequestProperty(DataOperationConstants.REQUEST_PROPERTY_CHARSET, charset.displayName());
+
+        // set timeout
+        if (timeout != DataOperationConstants.NO_TIMEOUT) {
+            connection.setConnectTimeout(timeout);
+            connection.setReadTimeout(timeout);
+        }
+
+        // set authentication
+        if (authorization != null)
+            connection.setRequestProperty(HttpHeaders.AUTHORIZATION, authorization);
+
+        // only send data if it is specified
+        if (body != null) {
+            // convert body string to bytes
+            final byte[] bodyBytes = body.getBytes(charset);
+            connection.setRequestProperty(HttpHeaders.CONTENT_LENGTH, Integer.toString(bodyBytes.length));
+
+            // try to send body
+            final DataOutputStream wr = new DataOutputStream(connection.getOutputStream());
+            wr.write(bodyBytes);
+            wr.close();
+        }
+
+        return connection;
     }
 
 
