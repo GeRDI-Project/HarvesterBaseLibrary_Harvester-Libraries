@@ -46,7 +46,6 @@ public class DataOperationConstants
     public static final String REDIRECT_LOCATION_HEADER = "Location";
     public static final int NO_TIMEOUT = -1;
 
-
     public static final String HTTP_CATEGORY = "HttpRequests";
 
     public static final BooleanParameter READ_FROM_DISK_PARAM =
@@ -68,6 +67,9 @@ public class DataOperationConstants
         -1,
         ParameterMappingFunctions::mapToUnsignedInteger);
     public static final String RETRY = "Could not reach %s! Retrying in %d s.";
+
+    public static final String HTTPS = "https";
+    public static final String HTTP = "http";
 
 
     /**

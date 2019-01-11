@@ -300,7 +300,7 @@ public class WebDataRetriever implements IDataRetriever
      * Sends a REST request with a specified body and returns the connection.
      *
      * @param method the request method that is being sent
-     * @param url the URL to which the request is being sent
+     * @param urlString the URL to which the request is being sent
      * @param body the body of the request
      * @param authorization the base-64-encoded username and password, or null if no
      *                           authorization is required
@@ -312,11 +312,12 @@ public class WebDataRetriever implements IDataRetriever
      *
      * @return the connection to the host
      */
-    private HttpURLConnection sendWebRequest(RestRequestType method, String url, String body, String authorization, String contentType, int retries)
+    private HttpURLConnection sendWebRequest(RestRequestType method, String urlString, String body, String authorization, String contentType, int retries)
     throws IOException, HTTPException
     {
         // generate a URL and open a connection
-        HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
+        final URL url = new URL(urlString);
+        final HttpURLConnection connection = (HttpURLConnection) url.openConnection();
 
         // set request properties
         connection.setDoOutput(true);
@@ -354,15 +355,33 @@ public class WebDataRetriever implements IDataRetriever
         try {
             int responseCode = connection.getResponseCode();
 
-            // handle erroneous response codes
-            if (responseCode < 200 || responseCode >= 400) {
-                final String message = String.format(DataOperationConstants.WEB_ERROR_REST_HTTP, method.toString(), url, body, responseCode);
+            if (responseCode >= 300) {
+                connection.disconnect();
 
-                // if the server cannot be reached, retry
-                if (responseCode >= 500 && retries != 0)
-                    mustRetry = true;
-                else
-                    throw new HttpStatusException(message, responseCode, url);
+                // handle server errors
+                if (responseCode >= 500)
+                    mustRetry = retries != 0;
+                // handle redirection from HTTP > HTTPS
+                else if (responseCode >= 300 && responseCode < 400) {
+                    connection.disconnect();
+                    final String redirectedUrl =
+                        connection.getHeaderField(DataOperationConstants.REDIRECT_LOCATION_HEADER);
+
+                    // disallow redirect from HTTPS to HTTP
+                    if (!(url.getProtocol().equalsIgnoreCase(DataOperationConstants.HTTPS)
+                          && redirectedUrl.startsWith(DataOperationConstants.HTTP)))
+                        return sendWebRequest(method, redirectedUrl, body, authorization, contentType, retries);
+                }
+
+                if (!mustRetry) {
+                    final String errorMessage = String.format(
+                                                    DataOperationConstants.WEB_ERROR_REST_HTTP,
+                                                    method.toString(),
+                                                    urlString,
+                                                    body,
+                                                    responseCode);
+                    throw new HttpStatusException(errorMessage, responseCode, urlString);
+                }
             }
         } catch (SocketTimeoutException e) {
             // if we time out, try again
@@ -376,7 +395,7 @@ public class WebDataRetriever implements IDataRetriever
         if (mustRetry) {
             // if the response header contains a retry-after field, wait for that period before retrying
             final int delayInSeconds = connection.getHeaderFieldInt(RestConstants.RETRY_AFTER_HEADER, 1);
-            LOGGER.debug(String.format(DataOperationConstants.RETRY, url, delayInSeconds));
+            LOGGER.debug(String.format(DataOperationConstants.RETRY, urlString, delayInSeconds));
 
             try {
                 Thread.sleep(delayInSeconds * 1000);
@@ -384,7 +403,7 @@ public class WebDataRetriever implements IDataRetriever
                 throw new IOException(e);
             }
 
-            return sendWebRequest(method, url, body, authorization, contentType, Math.max(retries - 1, -1));
+            return sendWebRequest(method, urlString, body, authorization, contentType, Math.max(retries - 1, -1));
         } else
             return connection;
     }
