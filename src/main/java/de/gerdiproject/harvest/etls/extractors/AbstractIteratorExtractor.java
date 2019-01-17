@@ -60,7 +60,10 @@ public abstract class AbstractIteratorExtractor <T> implements IExtractor<Iterat
     @Override
     public Iterator<T> extract() throws ExtractorException
     {
-        return new RangeRestrictedIterator(extractAll());
+        if (endIndex == Integer.MAX_VALUE && startIndex == 0)
+            return extractAll();
+        else
+            return new RangeRestrictedIterator(extractAll());
     }
 
 
@@ -101,7 +104,7 @@ public abstract class AbstractIteratorExtractor <T> implements IExtractor<Iterat
         @Override
         public boolean hasNext()
         {
-            return index < endIndex && completeIterator.hasNext();
+            return (index < endIndex || endIndex == Integer.MAX_VALUE) && completeIterator.hasNext();
         }
 
 

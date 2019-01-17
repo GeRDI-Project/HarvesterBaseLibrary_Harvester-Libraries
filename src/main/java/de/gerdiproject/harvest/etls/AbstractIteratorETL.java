@@ -126,6 +126,26 @@ public abstract class AbstractIteratorETL<T, S> extends AbstractETL<Iterator<T>,
 
 
     /**
+     * Returns the total number of documents that are harvested,
+     * considering the range parameters.
+     *
+     * @return the total number of documents that can possibly be harvested with the set range parameters
+     */
+    @Override
+    public int getMaxNumberOfDocuments()
+    {
+        final int unrestrictedMaxDocs = super.getMaxNumberOfDocuments();
+
+        if (unrestrictedMaxDocs == -1) {
+            return getEndIndex() != Integer.MAX_VALUE
+                   ? getEndIndex() - getStartIndex()
+                   : -1;
+        } else
+            return Math.min(unrestrictedMaxDocs, getEndIndex()) - getStartIndex();
+    }
+
+
+    /**
      * Returns start index 'a' of the harvesting range [a,b).
      *
      * @return the start index of the harvesting range
