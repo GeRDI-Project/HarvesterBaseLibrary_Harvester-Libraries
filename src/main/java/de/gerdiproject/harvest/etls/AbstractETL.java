@@ -334,7 +334,7 @@ public abstract class AbstractETL <T, S> implements IEventListener
      *
      * @return the total number of documents that can possibly be harvested
      */
-    public final int getMaxNumberOfDocuments()
+    public int getMaxNumberOfDocuments()
     {
         return maxDocumentCount.get();
     }
