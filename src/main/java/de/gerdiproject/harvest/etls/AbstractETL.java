@@ -480,6 +480,10 @@ public abstract class AbstractETL <T, S> implements IEventListener
             logger.warn(String.format(ETLConstants.ETL_FAILED, getName()));
         }
 
+        loader.clear();
+        transformer.clear();
+        extractor.clear();
+
         setStatus(ETLState.DONE);
     }
 
