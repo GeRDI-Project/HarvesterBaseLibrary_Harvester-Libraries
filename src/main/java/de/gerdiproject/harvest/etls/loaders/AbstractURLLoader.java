@@ -19,6 +19,7 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 
 import org.slf4j.Logger;
@@ -102,6 +103,19 @@ public abstract class AbstractURLLoader <S extends DataCiteJson> extends Abstrac
 
 
     @Override
+    public void load(Iterator<S> documents) throws LoaderException
+    {
+        super.load(documents);
+
+        // execute the final submission
+        if (!batchMap.isEmpty()) {
+            tryLoadingBatch();
+            batchMap.clear();
+        }
+    }
+
+
+    @Override
     public void loadElement(S document) throws LoaderException
     {
         if (document == null)
@@ -138,7 +152,12 @@ public abstract class AbstractURLLoader <S extends DataCiteJson> extends Abstrac
     public void clear()
     {
         if (!batchMap.isEmpty()) {
-            tryLoadingBatch();
+            try {
+                tryLoadingBatch();
+            } catch (LoaderException e) {
+                logger.warn(LoaderConstants.CLEAN_LOAD_ERROR, e);
+            }
+
             batchMap.clear();
         }
 

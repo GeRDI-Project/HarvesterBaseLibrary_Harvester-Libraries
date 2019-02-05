@@ -67,12 +67,12 @@ public class LoaderConstants
 
     public static final String NO_URL_ERROR = "Loader Error: You need to set up a valid loader URL!";
     public static final String NO_DOCS_ERROR = "Loader Error: No documents were harvested!";
+    public static final String CLEAN_LOAD_ERROR = "Loader Error: Unable to submit partially harvested documents while cancelling the harvest!";
     public static final String DOCUMENT_TOO_LARGE =
         "Loader Error: Size of document %s is %d bytes,"
         + " which is larger than the maximum permitted size of %d bytes.";
 
     public static final String NO_ITER_ETL_ERROR = "%s must be assigned to an " + AbstractIteratorETL.class.getSimpleName() + "!";
-    public static final String NO_SUBMITTER_CONFIGURED = "No Submitter was configured! You can change it by sending a PUT request to .../config";
 
 
     /**
