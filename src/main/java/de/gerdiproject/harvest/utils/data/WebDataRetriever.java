@@ -312,7 +312,7 @@ public class WebDataRetriever implements IDataRetriever
      *
      * @return the connection to the host
      */
-    private HttpURLConnection sendWebRequest(RestRequestType method, String urlString, String body, String authorization, String contentType, int retries)
+    public HttpURLConnection sendWebRequest(RestRequestType method, String urlString, String body, String authorization, String contentType, int retries)
     throws IOException, HTTPException
     {
         // generate a URL and open a connection
