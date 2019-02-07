@@ -17,12 +17,15 @@
 package de.gerdiproject.harvest.scheduler.constants;
 
 import de.gerdiproject.harvest.utils.file.constants.FileConstants;
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
 
 /**
  * This class offers constants that are related to scheduling.
  *
  * @author Robin Weiss
  */
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class SchedulerConstants
 {
     public static final String TASK_MESSAGE = "Scheduler attempts to start a harvest: %s";
@@ -54,12 +57,4 @@ public class SchedulerConstants
     public static final String NEXT_DATE = "Scheduled Task '%s' will be next executed at %s";
 
     public static final String SCHEDULED_HARVESTS_TITLE = "Scheduled Harvests:\n";
-
-
-    /**
-     * Private constructor, because this is just a collection of constants.
-     */
-    private SchedulerConstants()
-    {
-    }
 }

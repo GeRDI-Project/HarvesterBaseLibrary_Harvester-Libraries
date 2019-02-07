@@ -18,12 +18,15 @@ package de.gerdiproject.harvest.etls.loaders.constants;
 import java.util.regex.Pattern;
 
 import de.gerdiproject.harvest.etls.loaders.ElasticSearchLoader;
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
 
 /**
  * This static class is a collection of constants that are related to the {@linkplain ElasticSearchLoader}.
  *
  * @author Robin Weiss
  */
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class ElasticSearchConstants
 {
     public static final String BATCH_INDEX_INSTRUCTION = "{\"index\":{\"_id\":\"%s\"}}%n%s%n";
@@ -53,13 +56,4 @@ public class ElasticSearchConstants
     public static final String LOAD_DOCUMENT_ERROR_CAUSE = ", caused by%n  %s: %s";
 
     public static final String BASIC_AUTH_PREFIX = "Basic ";
-
-
-    /**
-     * Private constructor, because this class just serves as a place to define
-     * constants.
-     */
-    private ElasticSearchConstants()
-    {
-    }
 }

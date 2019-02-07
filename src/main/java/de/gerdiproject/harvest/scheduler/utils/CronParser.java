@@ -23,22 +23,17 @@ import java.util.TreeSet;
 import de.gerdiproject.harvest.scheduler.constants.CronConstants;
 import de.gerdiproject.harvest.scheduler.enums.CronMonth;
 import de.gerdiproject.harvest.scheduler.enums.CronWeekDay;
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
 
 /**
  * This class provides static functions for parsing cron tabs.
  *
  * @author Robin Weiss
  */
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class CronParser
 {
-    /**
-     * Private constructor, because this is just a collection of static methods.
-     */
-    private CronParser()
-    {
-    }
-
-
     /**
      * This method parses the "minutes" of a cron tab and generates a byte array
      * of all viable minutes.

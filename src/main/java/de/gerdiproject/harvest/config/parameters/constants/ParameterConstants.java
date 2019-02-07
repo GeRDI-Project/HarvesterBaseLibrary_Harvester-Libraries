@@ -20,6 +20,8 @@ import java.util.Collections;
 import java.util.List;
 
 import de.gerdiproject.harvest.config.Configuration;
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
 
 /**
  * This static class is a collection of constants, commonly used for classes
@@ -27,6 +29,7 @@ import de.gerdiproject.harvest.config.Configuration;
  *
  * @author Robin Weiss
  */
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class ParameterConstants
 {
     public static final String CHANGED_PARAM = "Set parameter '%s' to '%s'.";
@@ -59,14 +62,4 @@ public class ParameterConstants
     public static final String INVALID_CATEGORY_NAME = "Invalid Category-Name: %s%nNames must only consist of letters!";
 
     public static final String ENVIRONMENT_VARIABLE = "GERDI_HARVESTER_%S_%S";
-
-
-
-    /**
-     * Private constructor, because this class just serves as a place to define
-     * constants.
-     */
-    private ParameterConstants()
-    {
-    }
 }

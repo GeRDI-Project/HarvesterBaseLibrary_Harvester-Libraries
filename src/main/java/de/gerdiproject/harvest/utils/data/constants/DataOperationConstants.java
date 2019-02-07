@@ -19,12 +19,15 @@ import de.gerdiproject.harvest.config.parameters.BooleanParameter;
 import de.gerdiproject.harvest.config.parameters.IntegerParameter;
 import de.gerdiproject.harvest.config.parameters.constants.ParameterMappingFunctions;
 import de.gerdiproject.harvest.utils.data.HttpRequester;
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
 
 /**
  * This static class contains constants for the {@linkplain HttpRequester} and related classes.
  *
  * @author Robin Weiss
  */
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class DataOperationConstants
 {
     public static final String SAVE_OK = "Saved file: %s";
@@ -70,13 +73,4 @@ public class DataOperationConstants
 
     public static final String HTTPS = "https";
     public static final String HTTP = "http";
-
-
-    /**
-     * Private constructor, because this class just serves
-     * as a place to define constants.
-     */
-    private DataOperationConstants()
-    {
-    }
 }

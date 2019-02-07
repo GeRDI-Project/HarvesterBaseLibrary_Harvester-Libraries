@@ -27,6 +27,8 @@ import de.gerdiproject.harvest.etls.enums.ETLState;
 import de.gerdiproject.harvest.etls.events.GetETLManagerEvent;
 import de.gerdiproject.harvest.etls.utils.ETLManager;
 import de.gerdiproject.harvest.event.EventSystem;
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
 
 /**
  * This class provides functions for mapping string values
@@ -34,17 +36,9 @@ import de.gerdiproject.harvest.event.EventSystem;
  *
  * @author Robin Weiss
  */
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class ParameterMappingFunctions
 {
-    /**
-     * Private constructor because this class only
-     * provides public methods.
-     */
-    private ParameterMappingFunctions()
-    {
-    }
-
-
     /**
      * This function simply forwards the string parameter that was passed to it.
      * If any useful checks should come up in the future, they can be implemented here

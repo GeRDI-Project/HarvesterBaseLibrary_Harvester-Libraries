@@ -24,12 +24,15 @@ import de.gerdiproject.harvest.etls.loaders.AbstractIteratorLoader;
 import de.gerdiproject.harvest.etls.transformers.AbstractIteratorTransformer;
 import de.gerdiproject.harvest.etls.utils.ETLManager;
 import de.gerdiproject.harvest.utils.file.constants.FileConstants;
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
 
 /**
  * This static class is a collection of constants that are used by harvesters.
  *
  * @author Robin Weiss
  */
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class ETLConstants
 {
     // PARAMETERS
@@ -168,14 +171,4 @@ public class ETLConstants
     public static final String HARVEST_IN_PROGRESS = "Please wait for the harvest to finish!";
     public static final String HARVEST_FINISHED = "Harvest finished!";
     public static final String HARVEST_FAILED = "Harvest failed!";
-
-
-
-    /**
-     * Private constructor, because this class just serves as a place to define
-     * constants.
-     */
-    private ETLConstants()
-    {
-    }
 }

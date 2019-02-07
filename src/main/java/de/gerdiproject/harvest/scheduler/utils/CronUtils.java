@@ -20,6 +20,8 @@ import java.util.Calendar;
 import java.util.Date;
 
 import de.gerdiproject.harvest.scheduler.constants.CronConstants;
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
 
 
 /**
@@ -28,16 +30,9 @@ import de.gerdiproject.harvest.scheduler.constants.CronConstants;
  *
  * @author Robin Weiss
  */
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class CronUtils
 {
-    /**
-     * Private constructor, because this is just a collection of static methods.
-     */
-    private CronUtils()
-    {
-    }
-
-
     /**
      * Uses the cron tab to calculate the first matching date after the current
      * date + one minute.

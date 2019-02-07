@@ -21,12 +21,15 @@ import de.gerdiproject.harvest.config.parameters.StringParameter;
 import de.gerdiproject.harvest.config.parameters.constants.ParameterMappingFunctions;
 import de.gerdiproject.harvest.etls.AbstractIteratorETL;
 import de.gerdiproject.harvest.etls.loaders.ILoader;
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
 
 /**
  * This static class is a collection of constants that relate to {@linkplain ILoader}s.
  *
  * @author Robin Weiss
  */
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class LoaderConstants
 {
     public static final String PARAMETER_CATEGORY = "Submission";
@@ -73,13 +76,4 @@ public class LoaderConstants
         + " which is larger than the maximum permitted size of %d bytes.";
 
     public static final String NO_ITER_ETL_ERROR = "%s must be assigned to an " + AbstractIteratorETL.class.getSimpleName() + "!";
-
-
-    /**
-     * Private constructor, because this class just serves as a place to define
-     * constants.
-     */
-    private LoaderConstants()
-    {
-    }
 }

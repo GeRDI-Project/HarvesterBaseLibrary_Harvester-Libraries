@@ -27,6 +27,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import de.gerdiproject.harvest.utils.file.constants.FileConstants;
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
 
 /**
  * A small class with helper functions that are used for file operations.
@@ -34,17 +36,10 @@ import de.gerdiproject.harvest.utils.file.constants.FileConstants;
  * @author Robin Weiss
  *
  */
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class FileUtils
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(FileUtils.class);
-
-
-    /**
-     * Private constructor because this class only contains static functions.
-     */
-    private FileUtils()
-    {
-    }
 
 
     /**

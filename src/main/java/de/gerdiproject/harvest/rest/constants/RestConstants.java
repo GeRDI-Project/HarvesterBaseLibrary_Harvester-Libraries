@@ -16,11 +16,15 @@
  */
 package de.gerdiproject.harvest.rest.constants;
 
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
+
 /**
  * This class provides constants that are used by generic REST requests.
  *
  * @author Robin Weiss
  */
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class RestConstants
 {
     public static final String WAIT_FOR_INIT = "Please wait for the service to be initialized!";
@@ -46,12 +50,4 @@ public class RestConstants
     public static final String STATUS_OK = "Ok";
 
     public static final String PRETTY_QUERY_PARAM = "pretty";
-
-    /**
-     * Private constructor because this class only offers static constants.
-     */
-    private RestConstants()
-    {
-
-    }
 }
