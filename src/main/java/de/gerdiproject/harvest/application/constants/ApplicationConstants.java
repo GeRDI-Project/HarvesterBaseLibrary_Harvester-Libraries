@@ -15,12 +15,15 @@
  */
 package de.gerdiproject.harvest.application.constants;
 
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
 
 /**
  * This static class is a collection of constants that are used for ContextListeners and application related classes.
  *
  * @author Robin Weiss
  */
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class ApplicationConstants
 {
     public static final String INIT_SERVICE = "Initializing Harvester Service...";
@@ -35,12 +38,4 @@ public class ApplicationConstants
 
     public static final String INIT_FIELD = "Initializing %s...";
     public static final String INIT_FIELD_SUCCESS = "Successfully initialized %s!";
-
-    /**
-     * Private constructor, because this is a static class.
-     */
-    private ApplicationConstants()
-    {
-
-    }
 }

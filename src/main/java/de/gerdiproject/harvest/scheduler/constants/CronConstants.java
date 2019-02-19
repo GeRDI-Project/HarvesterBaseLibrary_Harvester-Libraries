@@ -20,6 +20,9 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
+
 
 /**
  * This class offers constants that are used for parsing cron tabs.
@@ -29,6 +32,7 @@ import java.util.Map;
  *
  * @author Robin Weiss
  */
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class CronConstants
 {
     public static final int MINUTES_MIN_CRON = 0;
@@ -57,14 +61,6 @@ public class CronConstants
         "Invalid cron tab '%s': A cron tab must consist of exactly five space-separated values!";
 
     public static final Map<Byte, Byte> MAX_DAYS_IN_MONTH_MAP = createDaysInMonthMap();
-
-
-    /**
-     * Private constructor, because this is just a collection of constants.
-     */
-    private CronConstants()
-    {
-    }
 
 
     /**

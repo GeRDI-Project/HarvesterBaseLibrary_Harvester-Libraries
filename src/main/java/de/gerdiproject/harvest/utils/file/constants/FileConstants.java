@@ -15,13 +15,15 @@
  */
 package de.gerdiproject.harvest.utils.file.constants;
 
-
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
 
 /**
  * This static class is a collection of constants, used by file operations.
  *
  * @author Robin Weiss
  */
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class FileConstants
 {
     public static final String JSON_FILE_EXTENSION = ".json";
@@ -63,13 +65,4 @@ public class FileConstants
     // AbstractStreamHarvester
     public static final String CACHE_ENTRY_STREAM_PATH = CACHE_FOLDER_PATH + "StreamHarvester/%s" + JSON_FILE_EXTENSION;
     public static final String ENTRY_STREAM_WRITE_ERROR = "Could not write entries to file at path '%s'!";
-
-
-    /**
-     * Private constructor, because this class just serves as a place to define
-     * constants.
-     */
-    private FileConstants()
-    {
-    }
 }

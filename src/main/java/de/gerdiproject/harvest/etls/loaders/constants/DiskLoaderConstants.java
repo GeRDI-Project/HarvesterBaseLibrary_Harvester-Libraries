@@ -18,6 +18,8 @@ package de.gerdiproject.harvest.etls.loaders.constants;
 import de.gerdiproject.harvest.config.parameters.StringParameter;
 import de.gerdiproject.harvest.config.parameters.constants.ParameterMappingFunctions;
 import de.gerdiproject.harvest.etls.loaders.DiskLoader;
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
 
 /**
  * This static class is a collection of constants that are used by the
@@ -25,6 +27,7 @@ import de.gerdiproject.harvest.etls.loaders.DiskLoader;
  *
  * @author Robin Weiss
  */
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class DiskLoaderConstants
 {
     public static final String HARVEST_DATE_JSON = "harvestDate";
@@ -42,13 +45,4 @@ public class DiskLoaderConstants
         LoaderConstants.PARAMETER_CATEGORY,
         SAVE_FOLDER_NAME,
         ParameterMappingFunctions.createMapperForETLs(ParameterMappingFunctions::mapToString));
-
-
-    /**
-     * Private constructor, because this class just serves as a place to define
-     * constants.
-     */
-    private DiskLoaderConstants()
-    {
-    }
 }
