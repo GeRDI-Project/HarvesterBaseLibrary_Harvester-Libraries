@@ -48,9 +48,9 @@ public abstract class AbstractURLLoader <S extends DataCiteJson> extends Abstrac
     protected final Map<String, IDocument> batchMap;
     protected final IntegerParameter maxBatchSizeParam;
     protected final StringParameter urlParam;
-    protected Charset charset;
+    protected final HashGenerator hashGenerator;
 
-    private volatile HashGenerator hashGenerator;
+    protected volatile Charset charset;
     private final StringParameter userNameParam;
     private final StringParameter passwordParam;
 
@@ -70,6 +70,7 @@ public abstract class AbstractURLLoader <S extends DataCiteJson> extends Abstrac
         this.userNameParam = Configuration.registerParameter(LoaderConstants.USER_NAME_PARAM);
         this.passwordParam = Configuration.registerParameter(LoaderConstants.PASSWORD_PARAM);
         this.maxBatchSizeParam = Configuration.registerParameter(LoaderConstants.MAX_BATCH_SIZE_PARAM);
+        this.hashGenerator = new HashGenerator(StandardCharsets.UTF_8);
     }
 
 
@@ -88,11 +89,9 @@ public abstract class AbstractURLLoader <S extends DataCiteJson> extends Abstrac
     {
         super.init(etl);
 
-        this.charset = etl.getCharset();
-        this.hashGenerator = new HashGenerator(charset);
-
         batchMap.clear();
         currentBatchSize = 0;
+        charset = etl.getCharset();
 
         // check if we can load
         final String errorMessage = checkPreconditionErrors();

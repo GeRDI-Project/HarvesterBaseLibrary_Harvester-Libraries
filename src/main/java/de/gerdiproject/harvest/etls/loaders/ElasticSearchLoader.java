@@ -19,6 +19,7 @@ package de.gerdiproject.harvest.etls.loaders;
 import java.lang.reflect.Field;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -30,7 +31,6 @@ import javax.ws.rs.core.MediaType;
 import com.google.gson.Gson;
 
 import de.gerdiproject.harvest.IDocument;
-import de.gerdiproject.harvest.etls.AbstractETL;
 import de.gerdiproject.harvest.etls.loaders.constants.ElasticSearchConstants;
 import de.gerdiproject.harvest.etls.loaders.json.ElasticSearchError;
 import de.gerdiproject.harvest.etls.loaders.json.ElasticSearchIndex;
@@ -62,17 +62,7 @@ public class ElasticSearchLoader extends AbstractURLLoader<DataCiteJson>
         super();
 
         this.gson = GsonUtils.createGerdiDocumentGsonBuilder().create();
-        this.webRequester = new WebDataRetriever(gson, charset);
-    }
-
-
-    @Override
-    public void init(AbstractETL<?, ?> etl)
-    {
-        super.init(etl);
-
-        // retrieve updated charset
-        this.webRequester.setCharset(charset);
+        this.webRequester = new WebDataRetriever(gson, StandardCharsets.UTF_8);
     }
 
 
@@ -158,8 +148,13 @@ public class ElasticSearchLoader extends AbstractURLLoader<DataCiteJson>
         final String bulkInstruction;
 
         if (doc != null) {
-            // convert document to JSON string and make DateRanges compatible with ElasticSearch
-            String jsonString = toElasticSearchJson(doc);
+            // convert document to UTF-8 JSON string and make DateRanges compatible with ElasticSearch
+            final String jsonString;
+
+            if (charset != StandardCharsets.UTF_8)
+                jsonString = new String(toElasticSearchJson(doc).getBytes(StandardCharsets.UTF_8), StandardCharsets.UTF_8);
+            else
+                jsonString = toElasticSearchJson(doc);
 
             bulkInstruction = String.format(
                                   ElasticSearchConstants.BATCH_INDEX_INSTRUCTION,
@@ -318,7 +313,7 @@ public class ElasticSearchLoader extends AbstractURLLoader<DataCiteJson>
     @Override
     protected int getSizeOfDocument(String documentId, IDocument document)
     {
-        return createBulkInstruction(documentId, document).getBytes(charset).length;
+        return createBulkInstruction(documentId, document).getBytes(StandardCharsets.UTF_8).length;
     }
 
 
