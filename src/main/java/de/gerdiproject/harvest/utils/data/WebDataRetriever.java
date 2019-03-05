@@ -425,7 +425,7 @@ public class WebDataRetriever implements IDataRetriever
         connection.setRequestMethod(method.toString());
         connection.setRequestProperty(HttpHeaders.CONTENT_TYPE, contentType);
         connection.setRequestProperty(DataOperationConstants.REQUEST_PROPERTY_CHARSET, charset.displayName());
-        connection.setRequestProperty("Accept-Encoding", "gzip");
+        connection.setRequestProperty("Accept-Encoding", DataOperationConstants.GZIP_ENCODING);
 
         // set timeout
         if (timeout != DataOperationConstants.NO_TIMEOUT) {
