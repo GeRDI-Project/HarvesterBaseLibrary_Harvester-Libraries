@@ -435,6 +435,23 @@ public class WebDataRetriever implements IDataRetriever
         return connection;
     }
 
+    /**
+     * Returns the correct InputStream based on the Content-Encoding header of
+     * a connection. Necessary to support compression.
+     *
+     * @param connection the connection to be checked
+     *
+     * @throws IOException thrown if InputStream is corrupted
+     *
+     * @return an InputStream subclass
+     */
+    private InputStream getInputStream(HttpURLConnection connection) throws IOException
+    {
+        if (DataOperationConstants.GZIP_ENCODING.equals(connection.getContentEncoding()))
+            return new GZIPInputStream(connection.getInputStream());
+
+        return connection.getInputStream();
+    }
 
     /**
      * Creates an input stream reader of a specified URL.
@@ -452,23 +469,5 @@ public class WebDataRetriever implements IDataRetriever
                                                  RestRequestType.GET, url, null, null, MediaType.TEXT_PLAIN, retriesParam.getValue());
 
         return new InputStreamReader(this.getInputStream(connection), charset);
-    }
-
-    /**
-     * Returns the correct InputStream based on the Content-Encoding header of
-     * a connection. Necessary to support compression.
-     *
-     * @param connection the connection to be checked
-     *
-     * @throws IOException thrown if InputStream is corrupted
-     *
-     * @return an InputStream subclass
-     */
-    private InputStream getInputStream(HttpURLConnection connection) throws IOException
-    {
-        if (DataOperationConstants.GZIP_ENCODING.equals(connection.getContentEncoding()))
-            return new GZIPInputStream(connection.getInputStream());
-
-        return connection.getInputStream();
     }
 }
