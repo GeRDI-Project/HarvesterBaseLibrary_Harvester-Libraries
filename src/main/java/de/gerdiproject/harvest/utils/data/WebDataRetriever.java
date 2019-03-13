@@ -198,23 +198,6 @@ public class WebDataRetriever implements IDataRetriever
         }
     }
 
-    /**
-     * Returns the correct InputStream based on the Content-Encoding header of
-     * a connection. Necessary to support compression.
-     *
-     * @param connection the connection to be checked
-     *
-     * @throws IOException thrown if InputStream is corrupted
-     *
-     * @return an InputStream subclass
-     */
-    private InputStream getInputStream(HttpURLConnection connection) throws IOException
-    {
-        if(DataOperationConstants.GZIP_ENCODING.equals(connection.getContentEncoding())) {
-            return new GZIPInputStream(connection.getInputStream());
-        }
-        return connection.getInputStream();
-    }
 
     @Override
     public void setCharset(Charset charset)
@@ -425,7 +408,7 @@ public class WebDataRetriever implements IDataRetriever
         connection.setRequestMethod(method.toString());
         connection.setRequestProperty(HttpHeaders.CONTENT_TYPE, contentType);
         connection.setRequestProperty(DataOperationConstants.REQUEST_PROPERTY_CHARSET, charset.displayName());
-        connection.setRequestProperty("Accept-Encoding", DataOperationConstants.GZIP_ENCODING);
+        connection.setRequestProperty(HttpHeaders.ACCEPT_ENCODING, DataOperationConstants.GZIP_ENCODING);
 
         // set timeout
         if (timeout != DataOperationConstants.NO_TIMEOUT) {
@@ -469,5 +452,23 @@ public class WebDataRetriever implements IDataRetriever
                                                  RestRequestType.GET, url, null, null, MediaType.TEXT_PLAIN, retriesParam.getValue());
 
         return new InputStreamReader(this.getInputStream(connection), charset);
+    }
+
+    /**
+     * Returns the correct InputStream based on the Content-Encoding header of
+     * a connection. Necessary to support compression.
+     *
+     * @param connection the connection to be checked
+     *
+     * @throws IOException thrown if InputStream is corrupted
+     *
+     * @return an InputStream subclass
+     */
+    private InputStream getInputStream(HttpURLConnection connection) throws IOException
+    {
+        if (DataOperationConstants.GZIP_ENCODING.equals(connection.getContentEncoding()))
+            return new GZIPInputStream(connection.getInputStream());
+
+        return connection.getInputStream();
     }
 }
