@@ -28,6 +28,7 @@ import java.net.URL;
 import java.nio.charset.Charset;
 import java.util.List;
 import java.util.Map;
+import java.util.zip.GZIPInputStream;
 
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
@@ -189,7 +190,7 @@ public class WebDataRetriever implements IDataRetriever
             final HttpURLConnection connection = sendWebRequest(
                                                      RestRequestType.GET, url, null, null, MediaType.TEXT_PLAIN, retriesParam.getValue());
 
-            return Jsoup.parse(connection.getInputStream(), charset.displayName(), url);
+            return Jsoup.parse(this.getInputStream(connection), charset.displayName(), url);
 
         } catch (Exception e) {
             LOGGER.warn(String.format(DataOperationConstants.WEB_ERROR_JSON, url), e);
@@ -237,7 +238,7 @@ public class WebDataRetriever implements IDataRetriever
         HttpURLConnection connection = sendWebRequest(method, url, body, authorization, contentType, retriesParam.getValue());
 
         // create a reader for the HTTP response
-        InputStream response = connection.getInputStream();
+        InputStream response = this.getInputStream(connection);
         BufferedReader reader = new BufferedReader(new InputStreamReader(response, charset));
 
         // read the first line of the response
@@ -407,6 +408,7 @@ public class WebDataRetriever implements IDataRetriever
         connection.setRequestMethod(method.toString());
         connection.setRequestProperty(HttpHeaders.CONTENT_TYPE, contentType);
         connection.setRequestProperty(DataOperationConstants.REQUEST_PROPERTY_CHARSET, charset.displayName());
+        connection.setRequestProperty(HttpHeaders.ACCEPT_ENCODING, DataOperationConstants.GZIP_ENCODING);
 
         // set timeout
         if (timeout != DataOperationConstants.NO_TIMEOUT) {
@@ -433,6 +435,23 @@ public class WebDataRetriever implements IDataRetriever
         return connection;
     }
 
+    /**
+     * Returns the correct InputStream based on the Content-Encoding header of
+     * a connection. Necessary to support compression.
+     *
+     * @param connection the connection to be checked
+     *
+     * @throws IOException thrown if InputStream is corrupted
+     *
+     * @return an InputStream subclass
+     */
+    private InputStream getInputStream(HttpURLConnection connection) throws IOException
+    {
+        if (DataOperationConstants.GZIP_ENCODING.equals(connection.getContentEncoding()))
+            return new GZIPInputStream(connection.getInputStream());
+
+        return connection.getInputStream();
+    }
 
     /**
      * Creates an input stream reader of a specified URL.
@@ -449,6 +468,6 @@ public class WebDataRetriever implements IDataRetriever
         final HttpURLConnection connection = sendWebRequest(
                                                  RestRequestType.GET, url, null, null, MediaType.TEXT_PLAIN, retriesParam.getValue());
 
-        return new InputStreamReader(connection.getInputStream(), charset);
+        return new InputStreamReader(this.getInputStream(connection), charset);
     }
 }
