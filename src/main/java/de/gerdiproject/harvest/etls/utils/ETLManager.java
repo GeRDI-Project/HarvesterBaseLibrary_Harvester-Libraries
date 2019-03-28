@@ -397,7 +397,11 @@ public class ETLManager extends AbstractRestObject<ETLManager, ETLManagerJson> i
             setStatus(ETLState.IDLE);
         })
         .exceptionally((Throwable reason) -> {
-            LOGGER.error(ETLConstants.ETLS_FAILED_UNKNOWN_ERROR, reason);
+            // log stack trace only if it is an unexpected error
+            if (reason.getCause() instanceof ETLPreconditionException)
+                LOGGER.error(ETLConstants.PREPARE_ETLS_FAILED);
+            else
+                LOGGER.error(ETLConstants.ETLS_FAILED_UNKNOWN_ERROR, reason);
 
             // clean up all ETLs
             processETLs((AbstractETL<?, ?> harvester) -> harvester.cancelHarvest());
@@ -599,17 +603,17 @@ public class ETLManager extends AbstractRestObject<ETLManager, ETLManagerJson> i
         setStatus(ETLState.QUEUED);
 
         // count the number of ETLs that were successfully prepared
-        int preparedCount = sumUpETLValues((AbstractETL<?, ?> harvester) -> {
+        int preparedCount = sumUpETLValues((AbstractETL<?, ?> etl) -> {
             try
             {
                 // prepareHarvest() can take time, abort as early as possible
                 if (getState() != ETLState.ABORTING) {
-                    harvester.prepareHarvest();
+                    etl.prepareHarvest();
                     return 1;
                 }
             } catch (ETLPreconditionException e)
             {
-                LOGGER.info(e.getMessage());
+                LOGGER.info(String.format(ETLConstants.ETL_INIT_FAILED, etl.getName()), e);
             }
             return 0;
         });

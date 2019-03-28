@@ -24,6 +24,8 @@ import de.gerdiproject.harvest.config.parameters.AbstractParameter;
 import de.gerdiproject.harvest.config.parameters.IntegerParameter;
 import de.gerdiproject.harvest.config.parameters.constants.ParameterMappingFunctions;
 import de.gerdiproject.harvest.etls.constants.ETLConstants;
+import de.gerdiproject.harvest.etls.enums.ETLHealth;
+import de.gerdiproject.harvest.etls.enums.ETLState;
 import de.gerdiproject.harvest.etls.extractors.AbstractIteratorExtractor;
 import de.gerdiproject.harvest.etls.json.ETLJson;
 import de.gerdiproject.harvest.etls.loaders.AbstractIteratorLoader;
@@ -101,18 +103,25 @@ public abstract class AbstractIteratorETL<T, S> extends AbstractETL<Iterator<T>,
         super.prepareHarvest();
 
         if (getStartIndex() == getEndIndex()) {
+            setStatus(ETLState.DONE);
             throw new ETLPreconditionException(
                 String.format(ETLConstants.ETL_SKIPPED_OUT_OF_RANGE, getName()));
         }
 
-        if (!(extractor instanceof AbstractIteratorExtractor))
-            throw new ETLPreconditionException(ETLConstants.INVALID_ITER_EXTRACTOR_ERROR);
+        try {
+            if (!(extractor instanceof AbstractIteratorExtractor))
+                throw new ETLPreconditionException(ETLConstants.INVALID_ITER_EXTRACTOR_ERROR);
 
-        if (!(transformer instanceof AbstractIteratorTransformer))
-            throw new ETLPreconditionException(ETLConstants.INVALID_ITER_TRANSFORMER_ERROR);
+            if (!(transformer instanceof AbstractIteratorTransformer))
+                throw new ETLPreconditionException(ETLConstants.INVALID_ITER_TRANSFORMER_ERROR);
 
-        if (!(loader instanceof AbstractIteratorLoader))
-            throw new ETLPreconditionException(ETLConstants.INVALID_ITER_LOADER_ERROR);
+            if (!(loader instanceof AbstractIteratorLoader))
+                throw new ETLPreconditionException(ETLConstants.INVALID_ITER_LOADER_ERROR);
+        } catch (ETLPreconditionException e) {
+            setStatus(ETLState.DONE);
+            setHealth(ETLHealth.HARVEST_FAILED);
+            throw e;
+        }
 
         harvestedCount.set(0);
     }

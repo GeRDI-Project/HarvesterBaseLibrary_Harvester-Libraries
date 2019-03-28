@@ -305,15 +305,14 @@ public abstract class AbstractETL <T, S> implements IEventListener
     public void update() throws ETLPreconditionException
     {
         // the extractor may need to retrieve information about the repository, initialize it early
-        extractor = createExtractor();
-
-        if (extractor == null)
-            throw new ETLPreconditionException(String.format(ETLConstants.EXTRACTOR_CREATE_ERROR, getName()));
-
         try {
+            extractor = createExtractor();
             extractor.init(this);
+        } catch (ETLPreconditionException e) {
+            throw e;
+
         } catch (RuntimeException e) {
-            throw new ETLPreconditionException(e);
+            throw new ETLPreconditionException(String.format(ETLConstants.EXTRACTOR_CREATE_ERROR, getName()), e);
         }
 
         // calculate hash
@@ -360,30 +359,41 @@ public abstract class AbstractETL <T, S> implements IEventListener
 
         try {
             // update to check if source data has changed
-            update();
+            try {
+                update();
+            } catch (ETLPreconditionException e) {
+                throw e;
 
-            // loader and transformer only become relevant when the harvest is about to start, load them now
-            if (transformer == null)
-                throw new ETLPreconditionException(String.format(ETLConstants.TRANSFORMER_CREATE_ERROR, getName()));
+            } catch (Exception e) {
+                logger.error(String.format(ETLConstants.ETL_START_FAILED, getName()), e);
+                throw new ETLPreconditionException(ETLConstants.UPDATE_ERROR, e);
+            }
 
-            if (loader == null)
-                throw new ETLPreconditionException(String.format(ETLConstants.LOADER_CREATE_ERROR, getName()));
+            // initialize transformer
+            try {
+                transformer.init(this);
+            } catch (ETLPreconditionException e) {
+                throw e;
 
-            transformer.init(this);
-            loader.init(this);
+            } catch (Exception e) {
+                logger.error(String.format(ETLConstants.ETL_START_FAILED, getName()), e);
+                throw new ETLPreconditionException(String.format(ETLConstants.TRANSFORMER_CREATE_ERROR, getName()), e);
+            }
 
+            // initialize loader
+            try {
+                loader.init(this);
+            } catch (ETLPreconditionException e) {
+                throw e;
+
+            } catch (Exception e) {
+                logger.error(String.format(ETLConstants.ETL_START_FAILED, getName()), e);
+                throw new ETLPreconditionException(String.format(ETLConstants.LOADER_CREATE_ERROR, getName()), e);
+            }
         } catch (ETLPreconditionException e) {
             setStatus(ETLState.DONE);
             setHealth(ETLHealth.HARVEST_FAILED);
             throw e;
-
-        } catch (Exception e) {
-            setStatus(ETLState.DONE);
-            setHealth(ETLHealth.HARVEST_FAILED);
-
-            logger.error(String.format(ETLConstants.ETL_START_FAILED, getName()), e);
-
-            throw new ETLPreconditionException(e.getMessage(), e);
         }
     }
 
