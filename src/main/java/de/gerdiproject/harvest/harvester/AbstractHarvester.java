@@ -198,8 +198,7 @@ public abstract class AbstractHarvester
         // calculate number of documents
         int maxHarvestableDocs = initMaxNumberOfDocuments();
         maxDocumentCount.set(maxHarvestableDocs);
-        endIndex.set(maxHarvestableDocs);
-
+        
         // prepare documents cache
         documentsCache = initCache();
     }

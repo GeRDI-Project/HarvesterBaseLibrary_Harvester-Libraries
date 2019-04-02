@@ -17,9 +17,9 @@ package de.gerdiproject.harvest.utils.data;
 
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.lang.reflect.Type;
+import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 
@@ -138,19 +138,26 @@ public class WebDataRetriever implements IDataRetriever
     @Override
     public Document getHtml(String url)
     {
-        Document htmlResponse = null;
+        try {
+            final HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
 
-        try
-            (InputStream response = new URL(url).openStream()) {
-            // parse the html object
-            htmlResponse = Jsoup.parse(response, MainContext.getCharset().displayName(), url);
+            switch (connection.getResponseCode()) {
+                case HttpURLConnection.HTTP_MOVED_TEMP :
+                case HttpURLConnection.HTTP_MOVED_PERM :
+                case HttpURLConnection.HTTP_SEE_OTHER :
+                    connection.disconnect();
+                    final String redirectedUrl = connection.getHeaderField(DataOperationConstants.REDIRECT_LOCATION_HEADER);
+                    return getHtml(redirectedUrl);
 
+                default:
+                    return Jsoup.parse(connection.getInputStream(), MainContext.getCharset().displayName(), url);
+            }
         } catch (Exception e) {
             LOGGER.warn(String.format(DataOperationConstants.WEB_ERROR_JSON, url), e);
+            return null;
         }
-
-        return htmlResponse;
     }
+
 
     /**
      * Creates an input stream reader of a specified URL.
@@ -164,6 +171,18 @@ public class WebDataRetriever implements IDataRetriever
      */
     private InputStreamReader createWebReader(String url) throws MalformedURLException, IOException
     {
-        return new InputStreamReader(new URL(url).openStream(), MainContext.getCharset());
+        final HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
+
+        switch (connection.getResponseCode()) {
+            case HttpURLConnection.HTTP_MOVED_TEMP :
+            case HttpURLConnection.HTTP_MOVED_PERM :
+            case HttpURLConnection.HTTP_SEE_OTHER :
+                connection.disconnect();
+                final String redirectedUrl = connection.getHeaderField(DataOperationConstants.REDIRECT_LOCATION_HEADER);
+                return createWebReader(redirectedUrl);
+
+            default:
+                return new InputStreamReader(connection.getInputStream(), MainContext.getCharset());
+        }
     }
 }
