@@ -15,54 +15,69 @@
  */
 package de.gerdiproject.harvest.config.parameters;
 
-import java.text.ParseException;
-import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import de.gerdiproject.harvest.config.Configuration;
-import de.gerdiproject.harvest.config.constants.ConfigurationConstants;
-import de.gerdiproject.harvest.state.IState;
+import de.gerdiproject.harvest.config.parameters.constants.ParameterConstants;
 
 /**
  * Parameters are part of the {@linkplain Configuration}. Each parameter holds some information about how and when it can be changed.
  *
  * @author Robin Weiss
  *
- * @param <T> The underlying type of the parameter value
+ * @param <V> The underlying type of the parameter value
  */
-public abstract class AbstractParameter<T>
+public abstract class AbstractParameter<V>
 {
-    protected T value;
-    protected final transient String key;
+    protected static final Logger LOGGER = LoggerFactory.getLogger(AbstractParameter.class);
 
-    private final transient List<Class<? extends IState>> allowedStates;
-    private final transient String allowedValues;
+    protected V value;
+    protected final String key;
+    protected final String category;
+
+    /**
+     * This function maps a String value to the parameter value type.
+     */
+    protected Function<String, V> mappingFunction;
+
+    private boolean isRegistered;
 
 
     /**
-     * Constructor that requires all fields.
+     * Constructor that uses a custom mapping function.
      *
      * @param key the unique key of the parameter, which is used to change it via REST
-     * @param allowedStates a list of state-machine states during which the parameter may be changed
-     * @param allowedValues a human readable String that describes which values can be set
+     * @param category the category of the parameter
+     * @param defaultValue the default value
+     * @param customMappingFunction a function that maps strings to the parameter values
+     *
+     * @throws IllegalArgumentException thrown if the key contains invalid characters
      */
-    public AbstractParameter(String key, List<Class<? extends IState>> allowedStates, String allowedValues)
+    public AbstractParameter(String key, String category, V defaultValue, Function<String, V> customMappingFunction) throws IllegalArgumentException
     {
+        if (!key.matches(ParameterConstants.VALID_PARAM_NAME_REGEX))
+            throw new IllegalArgumentException(String.format(ParameterConstants.INVALID_PARAMETER_KEY, key));
+
+        if (!category.matches(ParameterConstants.VALID_PARAM_NAME_REGEX))
+            throw new IllegalArgumentException(String.format(ParameterConstants.INVALID_CATEGORY_NAME, category));
+
         this.key = key;
-        this.allowedStates = allowedStates;
-        this.allowedValues = allowedValues;
+        this.category = category;
+        this.value = defaultValue;
+        this.mappingFunction = customMappingFunction;
     }
 
 
     /**
-     * This function attempts to convert a String value to the actual Type of the parameter.
-     * @param value a String representation of the new value
+     * Creates an unregistered copy of this parameter.
      *
-     * @return a converted value
-     *
-     * @throws ClassCastException this exception is thrown when the String value cannot be cast to the target value
-     * @throws ParseException this exception is thrown when the conversion failed for a different reason
+     * @return a copy of this parameter
      */
-    public abstract T stringToValue(String value) throws ParseException, ClassCastException;
+    public abstract AbstractParameter<V> copy();
 
 
     /**
@@ -77,11 +92,36 @@ public abstract class AbstractParameter<T>
 
 
     /**
+     * Returns a unique key consisting of the category and the parameter key.
+     *
+     * @return a unique key consisting of the category and the parameter key
+     */
+    public String getCompositeKey()
+    {
+        return String.format(
+                   ParameterConstants.COMPOSITE_KEY,
+                   category.toLowerCase(),
+                   key.toLowerCase());
+    }
+
+
+    /**
+     * Returns the category to which the parameter belongs.
+     *
+     * @return the category to which the parameter belongs
+     */
+    public String getCategory()
+    {
+        return category;
+    }
+
+
+    /**
      * Returns the parameter value.
      *
      * @return the parameter value
      */
-    public final T getValue()
+    public final V getValue()
     {
         return value;
     }
@@ -99,33 +139,87 @@ public abstract class AbstractParameter<T>
 
 
     /**
-     * Changes the value by parsing a String value. A message is returned that describes
-     * whether the value change was successful, or if not, why it failed.
+     * Retrieves the function that maps strings to parameter values.
+     *
+     * @return the function that maps strings to parameter values
+     */
+    public Function<String, V> getMappingFunction()
+    {
+        return mappingFunction;
+    }
+
+
+    /**
+     * Changes the function that maps strings to the parameter values.
+     *
+     * @param mappingFunction a function that maps strings to parameter values
+     */
+    public void setMappingFunction(Function<String, V> mappingFunction)
+    {
+        this.mappingFunction = mappingFunction;
+    }
+
+
+    /**
+     * Changes the stored value by parsing a String argument.
      *
      * @param value a String representation of the new value
-     * @param currentState the current state of the state machine
      *
-     * @return a message that describes whether the value change was successful, or if not, why it failed
+     * @throws IllegalArgumentException if the value could not be changed
      */
-    public final String setValue(String value, IState currentState)
+    public final void setValue(String value) throws IllegalArgumentException
     {
-        String returnMessage;
-
-        if (currentState != null && !allowedStates.contains(currentState.getClass()))
-            returnMessage = String.format(ConfigurationConstants.CANNOT_CHANGE_PARAM_INVALID_STATE, key, currentState.getName());
-        else {
-            try {
-                this.value = stringToValue(value);
-                returnMessage = String.format(ConfigurationConstants.CHANGED_PARAM, key, getStringValue());
-            } catch (ClassCastException e) {
-                returnMessage = String.format(ConfigurationConstants.CANNOT_CHANGE_PARAM_INVALID_VALUE, key, value, allowedValues);
-            } catch (ParseException e) {
-                returnMessage = e.getMessage();
-            }
+        // try to map the input string to the expected parameter value
+        try {
+            final V newValue = mappingFunction.apply(value);
+            this.value = newValue;
+        } catch (RuntimeException e) {
+            throw new IllegalArgumentException(
+                String.format(
+                    ParameterConstants.CANNOT_CHANGE_PARAM,
+                    getCompositeKey(),
+                    value, e.getMessage()),
+                e);
         }
-
-        return returnMessage;
     }
+
+
+    /**
+     * Looks for an environment variable that contains the category and key of this parameter
+     * and sets the value to that of the environment variable.
+     */
+    public void loadFromEnvironmentVariables()
+    {
+        String envVarName = String.format(ParameterConstants.ENVIRONMENT_VARIABLE, category, key);
+
+        final Map<String, String> environmentVariables = System.getenv();
+
+        if (environmentVariables.containsKey(envVarName))
+            setValue(environmentVariables.get(envVarName));
+    }
+
+
+    /**
+     * Returns true if this parameter is registered at the {@linkplain Configuration}.
+     *
+     * @return true if this parameter is registered at the {@linkplain Configuration}
+     */
+    public boolean isRegistered()
+    {
+        return isRegistered;
+    }
+
+
+    /**
+     * Sets a flag that signifies if this parameter is registered at the {@linkplain Configuration}.
+     *
+     * @param isRegistered if true, this parameter is considered to be registered
+     */
+    public void setRegistered(boolean isRegistered)
+    {
+        this.isRegistered = isRegistered;
+    }
+
 
     @Override
     public String toString()

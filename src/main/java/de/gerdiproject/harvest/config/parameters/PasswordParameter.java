@@ -15,10 +15,9 @@
  */
 package de.gerdiproject.harvest.config.parameters;
 
-import java.util.List;
+import java.util.function.Function;
 
-import de.gerdiproject.harvest.config.constants.ConfigurationConstants;
-import de.gerdiproject.harvest.state.IState;
+import de.gerdiproject.harvest.config.parameters.constants.ParameterConstants;
 
 /**
  * This parameter holds a String value used for passwords.
@@ -29,15 +28,38 @@ import de.gerdiproject.harvest.state.IState;
 public class PasswordParameter extends StringParameter
 {
     /**
-     * Constructor that requires a key and valid states.
+     * Constructor that uses a custom mapping function.
      *
      * @param key the unique key of the parameter, which is used to change it via REST
-     * @param allowedStates a list of state-machine states during which the parameter may be changed
+     * @param category the category of the parameter
+     * @param defaultValue the default value
+     * @param customMappingFunction a function that maps strings to the parameter values
+     *
+     * @throws IllegalArgumentException thrown if the key contains invalid characters
      */
-    public PasswordParameter(String key, List<Class<? extends IState>> allowedStates)
+    public PasswordParameter(String key, String category, String defaultValue, Function<String, String> customMappingFunction) throws IllegalArgumentException
     {
-        super(key, allowedStates, ConfigurationConstants.STRING_VALID_VALUES_TEXT);
-        value = null;
+        super(key, category, defaultValue, customMappingFunction);
+    }
+
+
+    /**
+     * Constructor that uses the default mapping function.
+     *
+     * @param key the unique key of the parameter, which is used to change it via REST
+     * @param category the category of the parameter
+     * @param defaultValue the default value
+     */
+    public PasswordParameter(String key, String category, String defaultValue)
+    {
+        super(key, category, defaultValue);
+    }
+
+
+    @Override
+    public PasswordParameter copy()
+    {
+        return new PasswordParameter(key, category, value, mappingFunction);
     }
 
 
@@ -45,9 +67,6 @@ public class PasswordParameter extends StringParameter
     public String getStringValue()
     {
         // always return ***** as a string value
-        return ConfigurationConstants.PASSWORD_STRING_TEXT;
+        return ParameterConstants.PASSWORD_STRING_TEXT;
     }
-
-
-
 }

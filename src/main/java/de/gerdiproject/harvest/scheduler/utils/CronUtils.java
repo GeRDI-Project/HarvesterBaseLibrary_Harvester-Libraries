@@ -20,6 +20,8 @@ import java.util.Calendar;
 import java.util.Date;
 
 import de.gerdiproject.harvest.scheduler.constants.CronConstants;
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
 
 
 /**
@@ -28,16 +30,9 @@ import de.gerdiproject.harvest.scheduler.constants.CronConstants;
  *
  * @author Robin Weiss
  */
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class CronUtils
 {
-    /**
-     * Private constructor, because this is just a collection of static methods.
-     */
-    private CronUtils()
-    {
-    }
-
-
     /**
      * Uses the cron tab to calculate the first matching date after the current
      * date + one minute.
@@ -81,12 +76,12 @@ public class CronUtils
         final byte[] months = CronParser.parseMonths(cronFields[3], monthDays, weekDays);
 
         // check if month is not *
-        boolean isMonthDayRestricted = monthDays[0] == CronConstants.DAYS_MIN_CRON
-                                       && monthDays[monthDays.length - 1] == CronConstants.DAYS_MAX_CRON;
+        boolean isMonthDayRestricted = !(monthDays[0] == CronConstants.DAYS_MIN_CRON
+                                         && monthDays[monthDays.length - 1] == CronConstants.DAYS_MAX_CRON);
 
         // check if the week day is not *
-        boolean isWeekDayRestricted = weekDays[0] == CronConstants.WEEK_DAYS_MIN_CRON
-                                      && weekDays[weekDays.length - 1] == CronConstants.WEEK_DAYS_MAX_CRON;
+        boolean isWeekDayRestricted = !(weekDays[0] == CronConstants.WEEK_DAYS_MIN_CRON
+                                        && weekDays[weekDays.length - 1] == CronConstants.WEEK_DAYS_MAX_CRON);
 
         // retrieve times from current time stamp
         final Calendar cal = Calendar.getInstance();
@@ -213,11 +208,11 @@ public class CronUtils
         final byte currMonthDay = (byte) cal.get(Calendar.DAY_OF_MONTH);
         final byte currWeekDay = (byte)(cal.get(Calendar.DAY_OF_WEEK) - 1);
 
-        final boolean isMonthDayRestricted = monthDays[0] == CronConstants.DAYS_MIN_CRON
-                                             && monthDays[monthDays.length - 1] == CronConstants.DAYS_MAX_CRON;
+        final boolean isMonthDayRestricted = !(monthDays[0] == CronConstants.DAYS_MIN_CRON
+                                               && monthDays[monthDays.length - 1] == CronConstants.DAYS_MAX_CRON);
 
-        final boolean isWeekDayRestricted = weekDays[0] == CronConstants.WEEK_DAYS_MIN_CRON
-                                            && weekDays[weekDays.length - 1] == CronConstants.WEEK_DAYS_MAX_CRON;
+        final boolean isWeekDayRestricted = !(weekDays[0] == CronConstants.WEEK_DAYS_MIN_CRON
+                                              && weekDays[weekDays.length - 1] == CronConstants.WEEK_DAYS_MAX_CRON);
 
         final int daysInThisMonth = getDaysInMonth(currMonth, currYear);
 

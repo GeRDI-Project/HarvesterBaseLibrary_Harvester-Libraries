@@ -15,11 +15,10 @@
  */
 package de.gerdiproject.harvest.config.parameters;
 
-import java.text.ParseException;
-import java.util.List;
+import java.util.function.Function;
 
-import de.gerdiproject.harvest.config.constants.ConfigurationConstants;
-import de.gerdiproject.harvest.state.IState;
+import de.gerdiproject.harvest.config.parameters.constants.ParameterConstants;
+import de.gerdiproject.harvest.config.parameters.constants.ParameterMappingFunctions;
 
 /**
  * This parameter holds an integer value.
@@ -29,29 +28,38 @@ import de.gerdiproject.harvest.state.IState;
 public class IntegerParameter extends AbstractParameter<Integer>
 {
     /**
-     * Constructor that requires a key, valid states and a default value.
+     * Constructor that uses a custom mapping function.
      *
      * @param key the unique key of the parameter, which is used to change it via REST
-     * @param allowedStates a list of state-machine states during which the parameter may be changed
-     * @param defaultValue the value with which the state is initialized
+     * @param category the category of the parameter
+     * @param defaultValue the default value
+     * @param customMappingFunction a function that maps strings to the parameter values
+     *
+     * @throws IllegalArgumentException thrown if the key contains invalid characters
      */
-    public IntegerParameter(String key, List<Class<? extends IState>> allowedStates, int defaultValue)
+    public IntegerParameter(String key, String category, int defaultValue, Function<String, Integer> customMappingFunction) throws IllegalArgumentException
     {
-        super(key, allowedStates, ConfigurationConstants.INTEGER_VALID_VALUES_TEXT);
-        value = defaultValue;
+        super(key, category, defaultValue, customMappingFunction);
     }
 
 
     /**
-     * Constructor for harvester parameters that only forbid changes during harvesting.
+     * Constructor that uses the default mapping function.
      *
      * @param key the unique key of the parameter, which is used to change it via REST
-     * @param defaultValue the value with which the state is initialized
+     * @param category the category of the parameter
+     * @param defaultValue the default value
      */
-    public IntegerParameter(String key, int defaultValue)
+    public IntegerParameter(String key, String category, int defaultValue)
     {
-        super(key, ConfigurationConstants.HARVESTER_PARAM_ALLOWED_STATES, ConfigurationConstants.INTEGER_VALID_VALUES_TEXT);
-        value = defaultValue;
+        super(key, category, defaultValue, ParameterMappingFunctions::mapToInteger);
+    }
+
+
+    @Override
+    public IntegerParameter copy()
+    {
+        return new IntegerParameter(key, category, value, mappingFunction);
     }
 
 
@@ -59,42 +67,12 @@ public class IntegerParameter extends AbstractParameter<Integer>
     public String getStringValue()
     {
         if (value == Integer.MAX_VALUE)
-            return ConfigurationConstants.INTEGER_VALUE_MAX;
+            return ParameterConstants.INTEGER_VALUE_MAX;
 
         else if (value == Integer.MIN_VALUE)
-            return ConfigurationConstants.INTEGER_VALUE_MIN;
+            return ParameterConstants.INTEGER_VALUE_MIN;
 
         else
             return String.valueOf(value);
     }
-
-
-    @Override
-    public Integer stringToValue(String value) throws ParseException, ClassCastException
-    {
-        if (value == null)
-            return 0;
-
-        else if (value.equals(ConfigurationConstants.INTEGER_VALUE_MAX))
-            return Integer.MAX_VALUE;
-
-        else if (value.equals(ConfigurationConstants.INTEGER_VALUE_MIN))
-            return Integer.MIN_VALUE;
-
-        else {
-            try {
-                // try to parse the integer
-                int intValue = Integer.parseInt(value);
-
-                // do not accept negative numbers
-                if (intValue < 0)
-                    throw new ClassCastException();
-
-                return intValue;
-            } catch (NumberFormatException e) {
-                throw new ClassCastException();
-            }
-        }
-    }
-
 }

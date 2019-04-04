@@ -22,13 +22,16 @@ import org.slf4j.LoggerFactory;
 
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
-import de.gerdiproject.harvest.utils.logger.LoggerUtils;
+import de.gerdiproject.harvest.utils.logger.HarvesterLog;
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
 
 /**
- * This static class is a collection of constants, used by the {@linkplain LoggerUtils}.
+ * This static class is a collection of constants, used by the {@linkplain HarvesterLog}.
  *
  * @author Robin Weiss
  */
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class LoggerConstants
 {
     public static final Logger ROOT_LOGGER = (Logger) LoggerFactory.getLogger(org.slf4j.Logger.ROOT_LOGGER_NAME);
@@ -38,14 +41,4 @@ public class LoggerConstants
     public static final String LOG_PATTERN = "%date %logger{0} %level %msg%n";
     public static final Pattern PARSE_LOG_PATTERN = Pattern.compile("^([^ ]+) [^ ]+ ([^ ]+) (\\w+?) [\\d\\D]*$");
     public static final String ERROR_READING_LOG = "Could not read log file: %s";
-
-
-
-    /**
-     * Private constructor, because this class just serves
-     * as a place to define constants.
-     */
-    private LoggerConstants()
-    {
-    }
 }

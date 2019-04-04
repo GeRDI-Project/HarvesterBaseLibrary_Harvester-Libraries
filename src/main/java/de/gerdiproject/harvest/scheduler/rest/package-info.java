@@ -15,7 +15,7 @@
  *  under the License.
  */
 /**
- * This package contains REST interface classes for setting the scheduler.
+ * This package contains REST interface classes for setting the {@linkplain de.gerdiproject.harvest.scheduler.Scheduler}.
  *
  * @author Robin Weiss
  */

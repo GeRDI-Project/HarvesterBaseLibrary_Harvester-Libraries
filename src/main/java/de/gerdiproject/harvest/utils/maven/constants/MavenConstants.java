@@ -16,26 +16,23 @@
  */
 package de.gerdiproject.harvest.utils.maven.constants;
 
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
+
 /**
  * This class contains Maven and pom.xml related constants.
  *
  * @author Robin Weiss
  */
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class MavenConstants
 {
-    public static final String MAVEN_JAR_FILE_PATTERN = "^.+/([^/]*?)\\.jar!.+$";
-    public static final String MAVEN_JAR_FILE_NAME_REPLACEMENT = "$1";
+    public static final String MAVEN_JAR_FILE_PATTERN = "^jar:.+/([^/]*?)\\.jar!.+$|^file:.+/([^/]+)/target/.+$";
+    public static final String MAVEN_JAR_FILE_NAME_REPLACEMENT = "$1$2";
 
     public static final String DEPENDENCY_LIST_FORMAT = "%s%n%n%s";
 
     public static final String MAVEN_JAR_META_INF_FOLDER = "META-INF/maven/%s";
     public static final String DEFAULT_GERDI_NAMESPACE = "de.gerdi-project";
     public static final String JAR_PREFIX = "jar:";
-
-    /**
-     * Private constructor, because this class offers only constants.
-     */
-    private MavenConstants()
-    {
-    }
 }

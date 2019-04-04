@@ -15,11 +15,9 @@
  */
 package de.gerdiproject.harvest.config.parameters;
 
-import java.text.ParseException;
-import java.util.List;
+import java.util.function.Function;
 
-import de.gerdiproject.harvest.config.constants.ConfigurationConstants;
-import de.gerdiproject.harvest.state.IState;
+import de.gerdiproject.harvest.config.parameters.constants.ParameterMappingFunctions;
 
 /**
  * This parameter holds a String value.
@@ -29,35 +27,37 @@ import de.gerdiproject.harvest.state.IState;
 public class StringParameter extends AbstractParameter<String>
 {
     /**
-     * Constructor that requires a key, valid states and a default value.
+     * Constructor that uses a custom mapping function.
      *
      * @param key the unique key of the parameter, which is used to change it via REST
-     * @param allowedStates a list of state-machine states during which the parameter may be changed
-     * @param defaultValue the value with which the state is initialized
+     * @param category the category of the parameter
+     * @param defaultValue the default value
+     * @param customMappingFunction a function that maps strings to the parameter values
+     *
+     * @throws IllegalArgumentException thrown if the key contains invalid characters
      */
-    public StringParameter(String key, List<Class<? extends IState>> allowedStates, String defaultValue)
+    public StringParameter(String key, String category, String defaultValue, Function<String, String> customMappingFunction) throws IllegalArgumentException
     {
-        super(key, allowedStates, ConfigurationConstants.STRING_VALID_VALUES_TEXT);
-        value = defaultValue;
+        super(key, category, defaultValue, customMappingFunction);
     }
 
+
     /**
-     * Constructor for harvester parameters, that only forbid changes during harvesting.
+     * Constructor that uses the default mapping function.
      *
      * @param key the unique key of the parameter, which is used to change it via REST
-     * @param defaultValue the value with which the state is initialized
+     * @param category the category of the parameter
+     * @param defaultValue the default value
      */
-    public StringParameter(String key, String defaultValue)
+    public StringParameter(String key, String category, String defaultValue)
     {
-        super(key, ConfigurationConstants.HARVESTER_PARAM_ALLOWED_STATES, ConfigurationConstants.STRING_VALID_VALUES_TEXT);
-        value = defaultValue;
+        super(key, category, defaultValue, ParameterMappingFunctions::mapToString);
     }
 
 
     @Override
-    public String stringToValue(String value) throws ParseException, ClassCastException
+    public StringParameter copy()
     {
-        return value;
+        return new StringParameter(key, category, value, mappingFunction);
     }
-
 }
