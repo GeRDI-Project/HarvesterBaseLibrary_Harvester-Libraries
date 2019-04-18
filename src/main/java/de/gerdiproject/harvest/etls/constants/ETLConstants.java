@@ -136,7 +136,7 @@ public class ETLConstants
     public static final String EXTRACTOR_CREATE_ERROR = "Could not initialize EXTRACTOR for %s!";
     public static final String TRANSFORMER_CREATE_ERROR = "Could not initialize TRANSFORMER for %s!";
     public static final String LOADER_CREATE_ERROR = "Could not initialize LOADER for %s!";
-    public static final String UPDATE_ERROR = "Could not retrieve source date updates of the repository that is to be harvested!";
+    public static final String UPDATE_ERROR = "Could not update source data of %s!";
 
     public static final String ETL_PROCESSING_ERROR = "Error iterating through ETL components!";
     public static final String DUPLICATE_ETL_REGISTERED_ERROR = "Did not register %s, because it was already registered!";

@@ -435,7 +435,7 @@ public class WebDataRetriever implements IDataRetriever
         return connection;
     }
 
-    
+
     /**
      * Returns the correct InputStream based on the Content-Encoding header of
      * a connection. Necessary to support compression.
