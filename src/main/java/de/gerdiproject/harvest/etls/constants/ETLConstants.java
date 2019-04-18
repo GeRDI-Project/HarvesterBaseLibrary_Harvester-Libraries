@@ -133,9 +133,10 @@ public class ETLConstants
 
     public static final String BUSY_ERROR_MESSAGE = "The harvesters are currently processing another request!";
 
-    public static final String EXTRACTOR_CREATE_ERROR = "Could not create EXTRACTOR for %s!";
-    public static final String TRANSFORMER_CREATE_ERROR = "Could not create TRANSFORMER for %s!";
-    public static final String LOADER_CREATE_ERROR = "Could not create LOADER for %s!";
+    public static final String EXTRACTOR_CREATE_ERROR = "Could not initialize EXTRACTOR for %s!";
+    public static final String TRANSFORMER_CREATE_ERROR = "Could not initialize TRANSFORMER for %s!";
+    public static final String LOADER_CREATE_ERROR = "Could not initialize LOADER for %s!";
+    public static final String UPDATE_ERROR = "Could not update source data of %s!";
 
     public static final String ETL_PROCESSING_ERROR = "Error iterating through ETL components!";
     public static final String DUPLICATE_ETL_REGISTERED_ERROR = "Did not register %s, because it was already registered!";
@@ -157,6 +158,7 @@ public class ETLConstants
     public static final String ETL_MANAGER_LOADED = "Loaded " + ETLManager.class.getSimpleName() + " from cache file: %s.";
     public static final String ETL_MANAGER_LOAD_ERROR = "Could not load " + ETLManager.class.getSimpleName() + "! The cached JSON file is invalid or outdated!";
     public static final String ETL_LOADING_FAILED = "Could not load %s state from cache!";
+    public static final String ETL_INIT_FAILED = "Unable to prepare %s for harvest!";
 
     public static final String REMAINING_TIME_UNKNOWN = "Remaining Time : ???";
     public static final String REMAINING_TIME = "Remaining Time: %1$02d:%2$tM:%2$tS";

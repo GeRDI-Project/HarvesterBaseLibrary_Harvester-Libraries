@@ -435,6 +435,7 @@ public class WebDataRetriever implements IDataRetriever
         return connection;
     }
 
+
     /**
      * Returns the correct InputStream based on the Content-Encoding header of
      * a connection. Necessary to support compression.
@@ -445,7 +446,7 @@ public class WebDataRetriever implements IDataRetriever
      *
      * @return an InputStream subclass
      */
-    private InputStream getInputStream(HttpURLConnection connection) throws IOException
+    public InputStream getInputStream(HttpURLConnection connection) throws IOException
     {
         if (DataOperationConstants.GZIP_ENCODING.equals(connection.getContentEncoding()))
             return new GZIPInputStream(connection.getInputStream());

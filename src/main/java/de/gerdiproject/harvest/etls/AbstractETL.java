@@ -305,15 +305,14 @@ public abstract class AbstractETL <T, S> implements IEventListener
     public void update() throws ETLPreconditionException
     {
         // the extractor may need to retrieve information about the repository, initialize it early
-        extractor = createExtractor();
-
-        if (extractor == null)
-            throw new ETLPreconditionException(String.format(ETLConstants.EXTRACTOR_CREATE_ERROR, getName()));
-
         try {
+            extractor = createExtractor();
             extractor.init(this);
+        } catch (ETLPreconditionException e) {
+            throw e;
+
         } catch (RuntimeException e) {
-            throw new ETLPreconditionException(e);
+            throw new ETLPreconditionException(String.format(ETLConstants.EXTRACTOR_CREATE_ERROR, getName()), e);
         }
 
         // calculate hash
@@ -358,32 +357,37 @@ public abstract class AbstractETL <T, S> implements IEventListener
                 String.format(ETLConstants.ETL_SKIPPED_DISABLED, getName()));
         }
 
+        // this string contains a descriptive error message and will only be used if an exception occurs
+        String errorMessage = ETLConstants.UPDATE_ERROR;
+
         try {
             // update to check if source data has changed
             update();
 
-            // loader and transformer only become relevant when the harvest is about to start, load them now
-            if (transformer == null)
-                throw new ETLPreconditionException(String.format(ETLConstants.TRANSFORMER_CREATE_ERROR, getName()));
-
-            if (loader == null)
-                throw new ETLPreconditionException(String.format(ETLConstants.LOADER_CREATE_ERROR, getName()));
-
+            // initialize transformer
+            errorMessage = ETLConstants.TRANSFORMER_CREATE_ERROR;
             transformer.init(this);
+
+            // initialize loader
+            errorMessage = ETLConstants.LOADER_CREATE_ERROR;
             loader.init(this);
 
         } catch (ETLPreconditionException e) {
+            // update ETL status
             setStatus(ETLState.DONE);
             setHealth(ETLHealth.HARVEST_FAILED);
             throw e;
 
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
+            // update ETL status
             setStatus(ETLState.DONE);
             setHealth(ETLHealth.HARVEST_FAILED);
 
+            // log the failure
             logger.error(String.format(ETLConstants.ETL_START_FAILED, getName()), e);
 
-            throw new ETLPreconditionException(e.getMessage(), e);
+            // wrap exception into a Precondition exception
+            throw new ETLPreconditionException(String.format(errorMessage, getName()), e);
         }
     }
 
