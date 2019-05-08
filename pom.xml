@@ -17,7 +17,6 @@
 	<inceptionYear>2017</inceptionYear>
   
 	<properties>
-		<compiler.plugin.version>3.8.0</compiler.plugin.version>
 		<jar.plugin.version>3.1.0</jar.plugin.version>
 		<javadoc.plugin.version>3.0.1</javadoc.plugin.version>
 		<source.plugin.version>3.0.1</source.plugin.version>
@@ -28,28 +27,17 @@
 	</properties>
 	
 	<build>
-        <plugins>
-			<!-- Compile Java -->
+		<plugins>
+			<!-- Generate jar and move it to /target/ folder -->
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-compiler-plugin</artifactId>
-				<version>${compiler.plugin.version}</version>
+				<artifactId>maven-jar-plugin</artifactId>
+				<version>${jar.plugin.version}</version>
 				<configuration>
-				  <source>${java.version}</source>
-				  <target>${java.version}</target>
+					<outputDirectory>${project.build.directory}</outputDirectory>
 				</configuration>
 			</plugin>
-			  
-			<!-- Generate jar and move it to /target/ folder -->
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-jar-plugin</artifactId>
-                <version>${jar.plugin.version}</version>
-				<configuration>
-				  <outputDirectory>${project.build.directory}</outputDirectory>
-				</configuration>
-            </plugin>
-			
+
 			<!-- Add javadoc -->
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
