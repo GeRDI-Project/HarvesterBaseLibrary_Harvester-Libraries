@@ -240,6 +240,8 @@ public class ElasticSearchLoader extends AbstractURLLoader<DataCiteJson>
             // try to remove the invalid field
             try {
                 final Field invalidField = errorDocument.getClass().getDeclaredField(invalidFieldName);
+
+                // replace with "invalidField.canAccess()" in Java9 or higher
                 final boolean accessibility = invalidField.isAccessible();
                 invalidField.setAccessible(true);
                 invalidField.set(errorDocument, null);

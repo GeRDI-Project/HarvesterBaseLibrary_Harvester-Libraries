@@ -16,6 +16,7 @@
  */
 package de.gerdiproject.harvest.etls.loaders.utils;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
@@ -109,8 +110,13 @@ public class LoaderRegistry implements IEventListener
         final Class<? extends ILoader<?>> loaderClass = loaderMap.get(loaderParam.getValue());
 
         try {
-            return loaderClass.newInstance();
-        } catch (InstantiationException | IllegalAccessException e) {
+            return loaderClass.getDeclaredConstructor().newInstance();
+        } catch (InstantiationException
+                     | IllegalAccessException
+                     | IllegalArgumentException
+                     | InvocationTargetException
+                     | NoSuchMethodException
+                     | SecurityException e) {
             return null;
         }
     }

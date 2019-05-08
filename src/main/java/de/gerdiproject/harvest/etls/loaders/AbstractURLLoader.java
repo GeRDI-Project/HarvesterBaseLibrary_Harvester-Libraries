@@ -32,7 +32,6 @@ import de.gerdiproject.harvest.config.parameters.StringParameter;
 import de.gerdiproject.harvest.etls.AbstractETL;
 import de.gerdiproject.harvest.etls.loaders.constants.LoaderConstants;
 import de.gerdiproject.harvest.utils.HashGenerator;
-import de.gerdiproject.json.datacite.DataCiteJson;
 
 /**
  * This abstract class offers a basis for sending documents to a search index
@@ -42,7 +41,7 @@ import de.gerdiproject.json.datacite.DataCiteJson;
  *
  * @author Robin Weiss
  */
-public abstract class AbstractURLLoader <S extends DataCiteJson> extends AbstractIteratorLoader<S>
+public abstract class AbstractURLLoader <S extends IDocument> extends AbstractIteratorLoader<S>
 {
     protected final Logger logger; // NOPMD - we want to retrieve the type of the inheriting class
     protected final Map<String, IDocument> batchMap;

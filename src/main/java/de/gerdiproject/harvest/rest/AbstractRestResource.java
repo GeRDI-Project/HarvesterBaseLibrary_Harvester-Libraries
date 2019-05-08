@@ -16,6 +16,7 @@
  */
 package de.gerdiproject.harvest.rest;
 
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.ParameterizedType;
 import java.util.function.Function;
 
@@ -66,8 +67,13 @@ public abstract class AbstractRestResource<T extends AbstractRestObject<T, ?>, S
         T retrievedObject;
 
         try {
-            retrievedObject = EventSystem.sendSynchronousEvent(getEventClass.newInstance());
-        } catch (InstantiationException | IllegalAccessException e) {
+            retrievedObject = EventSystem.sendSynchronousEvent(getEventClass.getDeclaredConstructor().newInstance());
+        } catch (InstantiationException
+                     | IllegalAccessException
+                     | IllegalArgumentException
+                     | InvocationTargetException
+                     | NoSuchMethodException
+                     | SecurityException e) {
             retrievedObject = null;
         }
 

@@ -426,8 +426,8 @@ public class ETLManager extends AbstractRestObject<ETLManager, ETLManagerJson> i
      */
     public int getMaxNumberOfDocuments()
     {
-        final List<Integer> sizes = processETLs((AbstractETL<?, ?> harvester) ->
-                                                harvester.getMaxNumberOfDocuments());
+        final List<Integer> sizes = processETLsAsList((AbstractETL<?, ?> harvester) ->
+                                                      harvester.getMaxNumberOfDocuments());
         int total = 0;
 
         for (int size : sizes) {
@@ -517,7 +517,7 @@ public class ETLManager extends AbstractRestObject<ETLManager, ETLManagerJson> i
     public ETLHealth getHealth()
     {
         final List<ETLHealth> healthStatuses =
-            processETLs((AbstractETL<?, ?> harvester) -> harvester.getHealth());
+            processETLsAsList((AbstractETL<?, ?> harvester) -> harvester.getHealth());
 
         ETLHealth overallHealth = ETLHealth.OK;
 
@@ -641,7 +641,7 @@ public class ETLManager extends AbstractRestObject<ETLManager, ETLManagerJson> i
         // check parameter to see if harvests must run sequentially or not
         if (concurrentParam.getValue()) {
             // run all harvests asynchronously
-            final List<CompletableFuture<?>> asyncHarvests = processETLs(
+            final List<CompletableFuture<?>> asyncHarvests = processETLsAsList(
                                                                  (AbstractETL<?, ?> etl) ->
             CompletableFuture.runAsync(() -> {
                 if (getState() != ETLState.ABORTING && etl.getState() == ETLState.QUEUED)
@@ -675,7 +675,7 @@ public class ETLManager extends AbstractRestObject<ETLManager, ETLManagerJson> i
      *
      * @return a list containing the return values of each ETL
      */
-    private <T> List<T> processETLs(Function<AbstractETL<?, ?>, T> function)
+    private <T> List<T> processETLsAsList(Function<AbstractETL<?, ?>, T> function)
     {
         final List<T> returnValues = new ArrayList<>(etls.size());
 
@@ -711,7 +711,7 @@ public class ETLManager extends AbstractRestObject<ETLManager, ETLManagerJson> i
      */
     private int sumUpETLValues(Function<AbstractETL<?, ?>, Integer> intFunction)
     {
-        final List<Integer> processedData = processETLs(intFunction);
+        final List<Integer> processedData = processETLsAsList(intFunction);
 
         int total = 0;
 
