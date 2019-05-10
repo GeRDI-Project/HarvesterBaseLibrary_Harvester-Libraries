@@ -84,7 +84,7 @@ public abstract class AbstractURLLoader <S extends IDocument> extends AbstractIt
 
 
     @Override
-    public void init(AbstractETL<?, ?> etl)
+    public void init(final AbstractETL<?, ?> etl)
     {
         super.init(etl);
 
@@ -101,7 +101,7 @@ public abstract class AbstractURLLoader <S extends IDocument> extends AbstractIt
 
 
     @Override
-    public void load(Iterator<S> documents) throws LoaderException
+    public void load(final Iterator<S> documents) throws LoaderException
     {
         super.load(documents);
 
@@ -114,13 +114,13 @@ public abstract class AbstractURLLoader <S extends IDocument> extends AbstractIt
 
 
     @Override
-    public void loadElement(S document) throws LoaderException
+    public void loadElement(final S document) throws LoaderException
     {
         if (document == null)
             return;
 
         final String documentId = hashGenerator.getShaHash(document.getSourceId());
-        int documentSize = getSizeOfDocument(documentId, document);
+        final int documentSize = getSizeOfDocument(documentId, document);
 
         // check if the document alone is bigger than the maximum load request size
         if (currentBatchSize == 0 && documentSize > maxBatchSizeParam.getValue()) {
@@ -152,7 +152,7 @@ public abstract class AbstractURLLoader <S extends IDocument> extends AbstractIt
         if (!batchMap.isEmpty()) {
             try {
                 tryLoadingBatch();
-            } catch (LoaderException e) {
+            } catch (final LoaderException e) {
                 logger.warn(LoaderConstants.CLEAN_LOAD_ERROR, e);
             }
 
@@ -212,7 +212,7 @@ public abstract class AbstractURLLoader <S extends IDocument> extends AbstractIt
      */
     protected void tryLoadingBatch() throws LoaderException
     {
-        int numberOfDocs = batchMap.size();
+        final int numberOfDocs = batchMap.size();
 
         try {
             // attempt to load the batch
@@ -224,7 +224,7 @@ public abstract class AbstractURLLoader <S extends IDocument> extends AbstractIt
                     String.format(
                         LoaderConstants.LOADED_PARTIAL_OK, numberOfDocs));
             }
-        } catch (Exception e) {
+        } catch (final Exception e) {
             throw new LoaderException(e);
         }
     }

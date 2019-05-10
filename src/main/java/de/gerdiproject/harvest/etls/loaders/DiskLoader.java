@@ -79,20 +79,20 @@ public class DiskLoader extends AbstractIteratorLoader<DataCiteJson>
 
 
     @Override
-    public void load(Iterator<DataCiteJson> documents) throws LoaderException
+    public void load(final Iterator<DataCiteJson> documents) throws LoaderException
     {
         try {
             super.load(documents);
         } catch (ExtractorException | TransformerException | LoaderException e) {
             throw e;
-        } catch (Exception e) {
+        } catch (final Exception e) {
             throw new LoaderException(e);
         }
     }
 
 
     @Override
-    public void init(AbstractETL<?, ?> etl)
+    public void init(final AbstractETL<?, ?> etl)
     {
         super.init(etl);
 
@@ -124,7 +124,7 @@ public class DiskLoader extends AbstractIteratorLoader<DataCiteJson>
 
             writer.name(DiskLoaderConstants.DOCUMENTS_JSON);
             writer.beginArray();
-        } catch (IOException e) {
+        } catch (final IOException e) {
             throw new IllegalStateException(e);
         }
     }
@@ -146,7 +146,7 @@ public class DiskLoader extends AbstractIteratorLoader<DataCiteJson>
             writer.endObject();
             writer.close();
             writer = null;
-        } catch (IOException e) {
+        } catch (final IOException e) {
             throw new LoaderException(e);
         }
 
@@ -156,12 +156,12 @@ public class DiskLoader extends AbstractIteratorLoader<DataCiteJson>
 
 
     @Override
-    public void loadElement(DataCiteJson document) throws LoaderException
+    public void loadElement(final DataCiteJson document) throws LoaderException
     {
         if (document != null) {
             try {
                 gson.toJson(document, document.getClass(), writer);
-            } catch (JsonIOException e) {
+            } catch (final JsonIOException e) {
                 throw new LoaderException(e);
             }
         }

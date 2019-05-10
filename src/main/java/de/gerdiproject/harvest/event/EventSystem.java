@@ -64,7 +64,7 @@ public class EventSystem
      *            dispatched
      * @param <T> the type of the event
      */
-    public static <T extends IEvent> void addListener(Class<T> eventClass, Consumer<T> callback)
+    public static <T extends IEvent> void addListener(final Class<T> eventClass, final Consumer<T> callback)
     {
         synchronized (instance.callbackMap) {
             List<Consumer<? extends IEvent>> eventList = instance.callbackMap.get(eventClass);
@@ -89,10 +89,10 @@ public class EventSystem
      *            event
      * @param <T> the type of the event
      */
-    public static <T extends IEvent> void removeListener(Class<T> eventClass, Consumer<T> callback)
+    public static <T extends IEvent> void removeListener(final Class<T> eventClass, final Consumer<T> callback)
     {
         synchronized (instance.callbackMap) {
-            List<Consumer<? extends IEvent>> eventList = instance.callbackMap.get(eventClass);
+            final List<Consumer<? extends IEvent>> eventList = instance.callbackMap.get(eventClass);
 
             // remove event from list, if the list exists
             if (eventList != null) {
@@ -111,7 +111,7 @@ public class EventSystem
      * @param eventClass the class of the event
      * @param <T> the type of the event
      */
-    public static <T extends IEvent> void removeAllListeners(Class<T> eventClass)
+    public static <T extends IEvent> void removeAllListeners(final Class<T> eventClass)
     {
         synchronized (instance.callbackMap) {
             final List<Consumer<? extends IEvent>> eventList = instance.callbackMap.remove(eventClass);
@@ -136,9 +136,9 @@ public class EventSystem
 
         // remove all async events
         synchronized (instance.callbackMap) {
-            Collection<List<Consumer<? extends IEvent>>> listenerLists = instance.callbackMap.values();
+            final Collection<List<Consumer<? extends IEvent>>> listenerLists = instance.callbackMap.values();
 
-            for (List<Consumer<? extends IEvent>> listeners : listenerLists)
+            for (final List<Consumer<? extends IEvent>> listeners : listenerLists)
                 listeners.clear();
 
             instance.callbackMap.clear();
@@ -154,7 +154,7 @@ public class EventSystem
      * @param event the event that is dispatched
      * @param <T> the type of the dispatched event
      */
-    public static <T extends IEvent> void sendEvent(T event)
+    public static <T extends IEvent> void sendEvent(final T event)
     {
         instance.asyncEventQueue.add(event);
         instance.processAsynchronousEventQueue();
@@ -188,7 +188,7 @@ public class EventSystem
     @SuppressWarnings({
         "unchecked"
     }) // this warning is suppressed, because the public functions guarantee that the consumer consumes events of the same class as the corresponding key
-    private <T extends IEvent> void executeAsynchronousCallbacks(T event)
+    private <T extends IEvent> void executeAsynchronousCallbacks(final T event)
     {
         final List<Consumer<? extends IEvent>> eventList;
 
@@ -220,7 +220,7 @@ public class EventSystem
      * @param <T> the type of the synchronous event
      * @param <R> the type of the return value of the callback function
      */
-    public static <R, T extends ISynchronousEvent<R>> void addSynchronousListener(Class<T> eventClass, Function<T, R> callback)
+    public static <R, T extends ISynchronousEvent<R>> void addSynchronousListener(final Class<T> eventClass, final Function<T, R> callback)
     {
         synchronized (instance.synchronousCallbackMap) {
             instance.synchronousCallbackMap.put(eventClass, callback);
@@ -238,10 +238,10 @@ public class EventSystem
      * @param <T> the type of the synchronous event
      * @param <R> the type of the return value of the callback function
      */
-    public static <R, T extends ISynchronousEvent<R>> void addSynchronousListener(Class<T> eventClass, Supplier<R> callback)
+    public static <R, T extends ISynchronousEvent<R>> void addSynchronousListener(final Class<T> eventClass, final Supplier<R> callback)
     {
         synchronized (instance.synchronousCallbackMap) {
-            instance.synchronousCallbackMap.put(eventClass, (T event) -> callback.get());
+            instance.synchronousCallbackMap.put(eventClass, (final T event) -> callback.get());
         }
     }
 
@@ -252,7 +252,7 @@ public class EventSystem
      * @param eventClass the class of the synchronous event
      * @param <T> the type of the synchronous event
      */
-    public static <T extends ISynchronousEvent<?>> void removeSynchronousListener(Class<T> eventClass)
+    public static <T extends ISynchronousEvent<?>> void removeSynchronousListener(final Class<T> eventClass)
     {
         synchronized (instance.synchronousCallbackMap) {
             instance.synchronousCallbackMap.remove(eventClass);
@@ -271,10 +271,10 @@ public class EventSystem
      * @return the return value of the callback function that is registered
      */
     @SuppressWarnings("unchecked")
-    public static <R, T extends ISynchronousEvent<R>> R sendSynchronousEvent(T event)
+    public static <R, T extends ISynchronousEvent<R>> R sendSynchronousEvent(final T event)
     {
         synchronized (instance.synchronousCallbackMap) {
-            Function<? extends ISynchronousEvent<?>, ?> callback =
+            final Function<? extends ISynchronousEvent<?>, ?> callback =
                 instance.synchronousCallbackMap.get(event.getClass());
 
             if (callback != null)

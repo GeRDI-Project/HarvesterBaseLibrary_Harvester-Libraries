@@ -34,7 +34,7 @@ public abstract class AbstractIteratorTransformer <T, S> implements ITransformer
 {
 
     @Override
-    public void init(AbstractETL<?, ?> etl)
+    public void init(final AbstractETL<?, ?> etl)
     {
         // by default, nothing needs to be done
     }
@@ -53,7 +53,7 @@ public abstract class AbstractIteratorTransformer <T, S> implements ITransformer
 
 
     @Override
-    public Iterator<S> transform(Iterator<T> elements) throws TransformerException
+    public Iterator<S> transform(final Iterator<T> elements) throws TransformerException
     {
         return new PassThroughIterator(elements);
     }
@@ -69,7 +69,7 @@ public abstract class AbstractIteratorTransformer <T, S> implements ITransformer
     {
         private final Iterator<T> input;
 
-        public PassThroughIterator(Iterator<T> input)
+        public PassThroughIterator(final Iterator<T> input)
         {
             this.input = input;
         }
@@ -87,15 +87,15 @@ public abstract class AbstractIteratorTransformer <T, S> implements ITransformer
 
             try {
                 in = input.next();
-            } catch (ExtractorException e) {
+            } catch (final ExtractorException e) {
                 throw e;
-            } catch (Exception e) {
+            } catch (final Exception e) {
                 throw new ExtractorException(e);
             }
 
             try {
                 return in != null ? transformElement(in) : null;
-            } catch (Exception e) {
+            } catch (final Exception e) {
                 throw new TransformerException(e);
             }
         }

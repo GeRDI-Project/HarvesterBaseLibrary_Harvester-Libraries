@@ -29,7 +29,7 @@ public abstract class AbstractSucceededOrFailedEvent implements IEvent
      *
      * @param isSuccessful true if the event marks something that succeeded
      */
-    public AbstractSucceededOrFailedEvent(boolean isSuccessful)
+    public AbstractSucceededOrFailedEvent(final boolean isSuccessful)
     {
         this.isSuccessful = isSuccessful;
     }

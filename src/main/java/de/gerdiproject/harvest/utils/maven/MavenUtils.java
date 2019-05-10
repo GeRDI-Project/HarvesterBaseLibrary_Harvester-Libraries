@@ -41,7 +41,7 @@ public class MavenUtils
      *
      * @param mainJarClass a class of the harvester jar
      */
-    public MavenUtils(Class<?> mainJarClass)
+    public MavenUtils(final Class<?> mainJarClass)
     {
         URL contextListenerResource =
             mainJarClass.getResource(mainJarClass.getSimpleName() + ".class");
@@ -67,7 +67,7 @@ public class MavenUtils
      *
      * @return a list of maven dependencies, or null if no versions could be retrieved
      */
-    public List<String> getMavenVersionInfo(String groupId)
+    public List<String> getMavenVersionInfo(final String groupId)
     {
         final List<String> dependencyList = new LinkedList<>();
         final String projectFilter = String.format(
@@ -91,7 +91,7 @@ public class MavenUtils
                                            MavenConstants.MAVEN_JAR_FILE_NAME_REPLACEMENT));
                 }
             }
-        } catch (IOException e) {
+        } catch (final IOException e) {
             return null;
         }
 

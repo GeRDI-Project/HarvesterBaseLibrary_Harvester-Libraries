@@ -67,13 +67,13 @@ public class ElasticSearchLoader extends AbstractURLLoader<DataCiteJson>
 
 
     @Override
-    protected void loadBatch(Map<String, IDocument> documents) throws Exception // NOPMD - Exception is explicitly thrown, because it is up to the implementation which Exception causes the loader to fail
+    protected void loadBatch(final Map<String, IDocument> documents) throws Exception // NOPMD - Exception is explicitly thrown, because it is up to the implementation which Exception causes the loader to fail
     {
         // clear previous batch
         final StringBuilder batchRequestBuilder = new StringBuilder();
 
         // build a string for bulk-posting to Elastic search
-        for (Entry<String, IDocument> entry : documents.entrySet()) {
+        for (final Entry<String, IDocument> entry : documents.entrySet()) {
             final String documentAddInstruction =
                 createBulkInstruction(entry.getKey(), entry.getValue());
             batchRequestBuilder.append(documentAddInstruction);
@@ -115,13 +115,13 @@ public class ElasticSearchLoader extends AbstractURLLoader<DataCiteJson>
      *
      * @return an error string of failed submissions
      */
-    private String getSubmissionErrorText(ElasticSearchResponse responseJson)
+    private String getSubmissionErrorText(final ElasticSearchResponse responseJson)
     {
-        List<ElasticSearchIndexWrapper> loadedItems = responseJson.getItems();
-        StringBuilder sb = new StringBuilder();
+        final List<ElasticSearchIndexWrapper> loadedItems = responseJson.getItems();
+        final StringBuilder sb = new StringBuilder();
 
         for (int i = 0, l = loadedItems.size(); i < l; i++) {
-            ElasticSearchIndex indexElement = loadedItems.get(i).getIndex();
+            final ElasticSearchIndex indexElement = loadedItems.get(i).getIndex();
 
             if (indexElement.getError() != null) {
                 if (sb.length() > 0)
@@ -143,7 +143,7 @@ public class ElasticSearchLoader extends AbstractURLLoader<DataCiteJson>
      *
      * @return a bulk-submission instruction for a single document
      */
-    private String createBulkInstruction(String documentId, IDocument doc)
+    private String createBulkInstruction(final String documentId, final IDocument doc)
     {
         final String bulkInstruction;
 
@@ -199,11 +199,11 @@ public class ElasticSearchLoader extends AbstractURLLoader<DataCiteJson>
      *
      * @return a map of documents with removed invalid fields
      */
-    private Map<String, IDocument> fixInvalidDocuments(ElasticSearchResponse response, Map<String, IDocument> documents)
+    private Map<String, IDocument> fixInvalidDocuments(final ElasticSearchResponse response, final Map<String, IDocument> documents)
     {
         final Map<String, IDocument> fixedDocMap = new HashMap<>();
 
-        for (ElasticSearchIndexWrapper documentFeedback : response.getItems()) {
+        for (final ElasticSearchIndexWrapper documentFeedback : response.getItems()) {
             final ElasticSearchError docError = documentFeedback.getIndex().getError();
 
             if (docError != null) {
@@ -228,7 +228,7 @@ public class ElasticSearchLoader extends AbstractURLLoader<DataCiteJson>
      *
      * @return the erroneous document with all fields removed that caused errors
      */
-    private boolean tryFixInvalidDocument(IDocument errorDocument, ElasticSearchError docError)
+    private boolean tryFixInvalidDocument(final IDocument errorDocument, final ElasticSearchError docError)
     {
         // check if a specific field could not be parsed
         final Matcher errorReasonMatcher =
@@ -269,18 +269,18 @@ public class ElasticSearchLoader extends AbstractURLLoader<DataCiteJson>
 
             try {
                 rawPath = new URL(urlParam.getValue()).getPath() + '/';
-            } catch (MalformedURLException e) {
+            } catch (final MalformedURLException e) {
                 logger.error(String.format(ElasticSearchConstants.INVALID_URL_ERROR, urlParam.getValue()));
                 return null;
             }
 
-            String[] path = rawPath.substring(1).split("/");
+            final String[] path = rawPath.substring(1).split("/");
             String bulkSubmitUrl = urlParam.getStringValue();
 
             // check if the URL already is a bulk submission URL
             if (path.length == 0 || !path[path.length - 1].equals(ElasticSearchConstants.BULK_SUBMISSION_URL_SUFFIX)) {
                 // extract URL without Query, add a slash if necessary
-                int queryIndex = bulkSubmitUrl.indexOf('?');
+                final int queryIndex = bulkSubmitUrl.indexOf('?');
 
                 if (queryIndex != -1)
                     bulkSubmitUrl = bulkSubmitUrl.substring(0, queryIndex);
@@ -302,7 +302,7 @@ public class ElasticSearchLoader extends AbstractURLLoader<DataCiteJson>
     @Override
     protected String getCredentials()
     {
-        String credentials = super.getCredentials();
+        final String credentials = super.getCredentials();
 
         // prepend Basic-Authorization keyword
         if (credentials != null)
@@ -313,7 +313,7 @@ public class ElasticSearchLoader extends AbstractURLLoader<DataCiteJson>
 
 
     @Override
-    protected int getSizeOfDocument(String documentId, IDocument document)
+    protected int getSizeOfDocument(final String documentId, final IDocument document)
     {
         return createBulkInstruction(documentId, document).getBytes(StandardCharsets.UTF_8).length;
     }

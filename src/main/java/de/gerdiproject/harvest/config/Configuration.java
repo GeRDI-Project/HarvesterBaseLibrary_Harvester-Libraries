@@ -70,13 +70,13 @@ public class Configuration extends AbstractRestObject<Configuration, Configurati
      * @param moduleName the name of the service
      * @param parameters a list parameters
      */
-    public Configuration(final String moduleName, AbstractParameter<?>... parameters)
+    public Configuration(final String moduleName, final AbstractParameter<?>... parameters)
     {
         super(moduleName, GetConfigurationEvent.class);
 
         this.parameterMap = new TreeMap<>();
 
-        for (AbstractParameter<?> param : parameters)
+        for (final AbstractParameter<?> param : parameters)
             parameterMap.put(param.getCompositeKey(), param);
 
         this.diskIo = new DiskIO(GSON, StandardCharsets.UTF_8);
@@ -95,7 +95,7 @@ public class Configuration extends AbstractRestObject<Configuration, Configurati
      * @return the registered parameter as it appears in the configuration
      */
     @SuppressWarnings("unchecked")  // the cast will succeed, because the value type is the one that is registered
-    public static <T extends AbstractParameter<?>> T registerParameter(T parameter) throws IllegalStateException
+    public static <T extends AbstractParameter<?>> T registerParameter(final T parameter) throws IllegalStateException
     {
         final T registeredParam = (T) EventSystem.sendSynchronousEvent(new RegisterParameterEvent(parameter));
 
@@ -110,7 +110,7 @@ public class Configuration extends AbstractRestObject<Configuration, Configurati
      *
      * @param parameter the parameter to be unregistered
      */
-    public static void unregisterParameter(AbstractParameter<?> parameter)
+    public static void unregisterParameter(final AbstractParameter<?> parameter)
     {
         EventSystem.sendEvent(new UnregisterParameterEvent(parameter));
     }
@@ -145,8 +145,8 @@ public class Configuration extends AbstractRestObject<Configuration, Configurati
     {
         int maxLength = 0;
 
-        for (AbstractParameter<?> param : parameterMap.values()) {
-            int keyLength = param.getKey().length();
+        for (final AbstractParameter<?> param : parameterMap.values()) {
+            final int keyLength = param.getKey().length();
 
             if (keyLength > maxLength)
                 maxLength = keyLength;
@@ -161,7 +161,7 @@ public class Configuration extends AbstractRestObject<Configuration, Configurati
      *
      * @param path a path to a file
      */
-    public void setCacheFilePath(String path)
+    public void setCacheFilePath(final String path)
     {
         this.cacheFilePath = path;
     }
@@ -199,7 +199,7 @@ public class Configuration extends AbstractRestObject<Configuration, Configurati
 
         try {
             loadedConfig = diskIo.getObject(cacheFilePath, Configuration.class);
-        } catch (NullPointerException e) {
+        } catch (final NullPointerException e) {
             LOGGER.info(ConfigurationConstants.OUTDATED_CONFIG_FILE_ERROR);
             return;
         }
@@ -212,7 +212,7 @@ public class Configuration extends AbstractRestObject<Configuration, Configurati
         this.parameterMap.clear();
         this.parameterMap.putAll(loadedConfig.parameterMap);
 
-        for (AbstractParameter<?> param : getParameters())
+        for (final AbstractParameter<?> param : getParameters())
             LOGGER.debug(String.format(ConfigurationConstants.LOADED_PARAM,
                                        param.getClass().getSimpleName(),
                                        param.getCompositeKey(),
@@ -231,7 +231,7 @@ public class Configuration extends AbstractRestObject<Configuration, Configurati
      * @return the value of the parameter with the specified key
      */
     @SuppressWarnings("unchecked")  // the cast will succeed, because the value type is compared to the parameterType
-    public <T> T getParameterValue(String compositeKey)
+    public <T> T getParameterValue(final String compositeKey)
     {
         final AbstractParameter<?> param = parameterMap.get(compositeKey.toLowerCase());
 
@@ -250,7 +250,7 @@ public class Configuration extends AbstractRestObject<Configuration, Configurati
      *
      * @return the human readable value of the parameter with a specified key
      */
-    public String getParameterStringValue(String compositeKey)
+    public String getParameterStringValue(final String compositeKey)
     {
         final AbstractParameter<?> param = parameterMap.get(compositeKey.toLowerCase());
 
@@ -267,7 +267,7 @@ public class Configuration extends AbstractRestObject<Configuration, Configurati
      *
      * @throws IllegalArgumentException if the compositeKey is empty or does not exist
      */
-    public void setParameter(String compositeKey, String value) throws IllegalArgumentException
+    public void setParameter(final String compositeKey, final String value) throws IllegalArgumentException
     {
         final AbstractParameter<?> param = parameterMap.get(compositeKey.toLowerCase());
 
@@ -297,7 +297,7 @@ public class Configuration extends AbstractRestObject<Configuration, Configurati
      * @throws IllegalArgumentException if the values are empty or non of them are valid
      * @return a message describing if the operations were successful, or if not, why they failed
      */
-    public String setParameters(Map<String, String> values) throws IllegalArgumentException
+    public String setParameters(final Map<String, String> values) throws IllegalArgumentException
     {
         if (values == null || values.isEmpty())
             throw new IllegalArgumentException(ConfigurationConstants.SET_NO_PAYLOAD_ERROR);
@@ -306,7 +306,7 @@ public class Configuration extends AbstractRestObject<Configuration, Configurati
         final StringBuilder sb = new StringBuilder();
 
         // change every defined parameter
-        for (Entry<String, String> p : values.entrySet()) {
+        for (final Entry<String, String> p : values.entrySet()) {
             if (sb.length() != 0)
                 sb.append('\n');
 
@@ -319,7 +319,7 @@ public class Configuration extends AbstractRestObject<Configuration, Configurati
                                ParameterConstants.CHANGED_PARAM,
                                p.getKey(),
                                getParameterStringValue(p.getKey()));
-            } catch (IllegalArgumentException e) {
+            } catch (final IllegalArgumentException e) {
                 feedback = e.getMessage();
                 LOGGER.warn("", e);
             }
@@ -354,7 +354,7 @@ public class Configuration extends AbstractRestObject<Configuration, Configurati
         final String format = getParameterFormat();
         final Map<String, StringBuilder> categoryStringBuilders = new HashMap<>();
 
-        for (AbstractParameter<?> param : getParameters()) {
+        for (final AbstractParameter<?> param : getParameters()) {
             // ignore unregistered parameters
             if (!param.isRegistered())
                 continue;
@@ -370,8 +370,8 @@ public class Configuration extends AbstractRestObject<Configuration, Configurati
             categoryStringBuilders.get(categoryName).append(String.format(format, param.getKey(), param.getStringValue()));
         }
 
-        StringBuilder combinedBuilder = new StringBuilder();
-        categoryStringBuilders.forEach((String categoryName, StringBuilder categoryString) -> {
+        final StringBuilder combinedBuilder = new StringBuilder();
+        categoryStringBuilders.forEach((final String categoryName, final StringBuilder categoryString) -> {
             if (combinedBuilder.length() != 0)
                 combinedBuilder.append("\n\n");
             combinedBuilder.append(categoryString.toString());
@@ -381,7 +381,7 @@ public class Configuration extends AbstractRestObject<Configuration, Configurati
 
 
     @Override
-    public Configuration getAsJson(MultivaluedMap<String, String> query)
+    public Configuration getAsJson(final MultivaluedMap<String, String> query)
     {
         return this;
     }
@@ -405,7 +405,7 @@ public class Configuration extends AbstractRestObject<Configuration, Configurati
      * @return the registered parameter as it appears in the configuration
      */
     @SuppressWarnings("unchecked") // the cast must succeed, because the parameter must be the same
-    private <T> AbstractParameter<T> onRegisterParameter(RegisterParameterEvent event)
+    private <T> AbstractParameter<T> onRegisterParameter(final RegisterParameterEvent event)
     {
         AbstractParameter<T> registeredParameter = (AbstractParameter<T>) event.getParameter();
         final String compositeKey = registeredParameter.getCompositeKey();
@@ -440,6 +440,6 @@ public class Configuration extends AbstractRestObject<Configuration, Configurati
      * Callback:<br>
      * Unregisters a parameter so it can no longer be changed via REST.
      */
-    private final Consumer<UnregisterParameterEvent> onUnregisterParameter = (UnregisterParameterEvent event) ->
+    private final Consumer<UnregisterParameterEvent> onUnregisterParameter = (final UnregisterParameterEvent event) ->
                                                                              event.getParameter().setRegistered(false);
 }

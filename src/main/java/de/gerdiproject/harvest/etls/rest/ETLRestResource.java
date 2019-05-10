@@ -74,7 +74,7 @@ public class ETLRestResource extends AbstractRestResource<ETLManager, GetETLMana
     @GET
     @Path("etl")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response getETLInfo(@Context UriInfo uriInfo)
+    public Response getETLInfo(@Context final UriInfo uriInfo)
     {
         // abort if object is not initialized, yet
         if (restObject == null)
@@ -85,7 +85,7 @@ public class ETLRestResource extends AbstractRestResource<ETLManager, GetETLMana
             final ETLJson responseObject = restObject.getETLAsJson(uriInfo.getQueryParameters());
 
             return HttpResponseFactory.createOkResponse(gson.toJsonTree(responseObject));
-        } catch (Exception e) {
+        } catch (final Exception e) {
             return HttpResponseFactory.createBadRequestResponse(e.getMessage());
         }
     }
@@ -110,7 +110,7 @@ public class ETLRestResource extends AbstractRestResource<ETLManager, GetETLMana
             final ETLInfosJson responseObject = restObject.getETLsAsJson();
 
             return HttpResponseFactory.createOkResponse(gson.toJsonTree(responseObject));
-        } catch (Exception e) {
+        } catch (final Exception e) {
             return HttpResponseFactory.createBadRequestResponse(e.getMessage());
         }
     }
@@ -139,9 +139,9 @@ public class ETLRestResource extends AbstractRestResource<ETLManager, GetETLMana
             // start a harvest
             restObject.harvest();
             return HttpResponseFactory.createAcceptedResponse(ETLConstants.HARVEST_STARTED);
-        } catch (IllegalStateException e) {
+        } catch (final IllegalStateException e) {
             return HttpResponseFactory.createBusyResponse(e.getMessage(), restObject.estimateRemainingHarvestTime() / 1000L);
-        } catch (Exception e) {
+        } catch (final Exception e) {
             return HttpResponseFactory.createBadRequestResponse(e.getMessage());
         }
     }
@@ -227,7 +227,7 @@ public class ETLRestResource extends AbstractRestResource<ETLManager, GetETLMana
     @Produces({
         MediaType.TEXT_PLAIN
     })
-    public Response getLog(@QueryParam("date") String dateString, @QueryParam("level") String levelString, @QueryParam("class") String classString)
+    public Response getLog(@QueryParam("date") final String dateString, @QueryParam("level") final String levelString, @QueryParam("class") final String classString)
     {
         final List<String> dateFilters = dateString == null ? null : Arrays.asList(dateString.split(","));
         final List<String> levelFilters = levelString == null ? null : Arrays.asList(levelString.split(","));
@@ -318,7 +318,7 @@ public class ETLRestResource extends AbstractRestResource<ETLManager, GetETLMana
      *
      * @return dependencies and the main jar as a JsonArray
      */
-    private JsonArray getSpecifiedVersions(String filter)
+    private JsonArray getSpecifiedVersions(final String filter)
     {
         final MavenUtils utils = EventSystem.sendSynchronousEvent(new GetMavenUtilsEvent());
 
@@ -339,7 +339,7 @@ public class ETLRestResource extends AbstractRestResource<ETLManager, GetETLMana
         dependencyList.remove(mainJar);
 
         final JsonArray array = new JsonArray();
-        dependencyList.forEach((String d) -> array.add(d));
+        dependencyList.forEach((final String d) -> array.add(d));
 
         return array;
     }

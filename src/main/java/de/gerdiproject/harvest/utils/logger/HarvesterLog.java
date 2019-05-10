@@ -80,7 +80,7 @@ public class HarvesterLog
      */
     public void clearLog()
     {
-        boolean wasStarted = fileAppender.isStarted();
+        final boolean wasStarted = fileAppender.isStarted();
 
         // stop logging and delete the log file
         fileAppender.stop();
@@ -128,7 +128,7 @@ public class HarvesterLog
      *
      * @return all log messages that fit the filter criteria
      */
-    public String getLog(List<String> dateFilters, List<String> levelFilters, List<String> classFilters)
+    public String getLog(final List<String> dateFilters, final List<String> levelFilters, final List<String> classFilters)
     {
         final StringBuilder logBuilder = new StringBuilder();
 
@@ -157,7 +157,7 @@ public class HarvesterLog
                         logBuilder.append(line).append('\n');
                 }
             }
-        } catch (IOException e) {
+        } catch (final IOException e) {
             LOGGER.error(String.format(LoggerConstants.ERROR_READING_LOG, fileAppender.getFile()), e);
             return null;
         }

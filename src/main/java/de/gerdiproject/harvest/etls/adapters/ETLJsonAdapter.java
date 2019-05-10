@@ -38,7 +38,7 @@ import de.gerdiproject.harvest.etls.utils.TimestampedList;
 public class ETLJsonAdapter implements JsonDeserializer<ETLJson>
 {
     @Override
-    public ETLJson deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context) throws JsonParseException
+    public ETLJson deserialize(final JsonElement json, final Type typeOfT, final JsonDeserializationContext context) throws JsonParseException
     {
         final JsonObject jsonObject = json.getAsJsonObject();
 

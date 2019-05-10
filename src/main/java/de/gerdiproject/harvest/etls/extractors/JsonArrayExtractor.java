@@ -62,7 +62,7 @@ public class JsonArrayExtractor<T> extends AbstractIteratorExtractor<T>
      * @param gson used to parse the JSON response
      * @param jsonQuery a dot separated object structure at which the JSON array is expected
      */
-    public JsonArrayExtractor(Gson gson, String jsonQuery)
+    public JsonArrayExtractor(final Gson gson, final String jsonQuery)
     {
         this.jsonQuery = jsonQuery;
         this.httpRequester = new HttpRequester(gson, StandardCharsets.UTF_8);
@@ -76,7 +76,7 @@ public class JsonArrayExtractor<T> extends AbstractIteratorExtractor<T>
      *
      * @param gson used to parse the JSON response
      */
-    public JsonArrayExtractor(Gson gson)
+    public JsonArrayExtractor(final Gson gson)
     {
         this(gson, null);
     }
@@ -98,14 +98,14 @@ public class JsonArrayExtractor<T> extends AbstractIteratorExtractor<T>
      *
      * @param url the new URL
      */
-    public void setUrl(String url)
+    public void setUrl(final String url)
     {
         this.url = url;
     }
 
 
     @Override
-    public void init(AbstractETL<?, ?> etl)
+    public void init(final AbstractETL<?, ?> etl)
     {
         super.init(etl);
         final JsonElement jsonResponse = httpRequester.getObjectFromUrl(url, JsonElement.class);
@@ -142,7 +142,7 @@ public class JsonArrayExtractor<T> extends AbstractIteratorExtractor<T>
      *
      * @return a hash value representing the current state of the object
      */
-    protected String getHashFromJson(JsonElement json)
+    protected String getHashFromJson(final JsonElement json)
     {
         final HashGenerator gen = new HashGenerator(StandardCharsets.UTF_8);
         return gen.getShaHash(json.toString());
@@ -163,7 +163,7 @@ public class JsonArrayExtractor<T> extends AbstractIteratorExtractor<T>
     {
         // retrieve the JsonArray from the JsonObject via the provided query
         if (jsonQuery != null) {
-            for (String q : jsonQuery.split("\\."))
+            for (final String q : jsonQuery.split("\\."))
                 json = json.getAsJsonObject().get(q);
         }
 
@@ -174,7 +174,7 @@ public class JsonArrayExtractor<T> extends AbstractIteratorExtractor<T>
 
         final JsonArray sourceArray = json.getAsJsonArray();
 
-        for (JsonElement ele : sourceArray)
+        for (final JsonElement ele : sourceArray)
             list.add(gson.fromJson(ele, outputClass));
 
         return list;

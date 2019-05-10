@@ -57,7 +57,7 @@ public abstract class AbstractParameter<V>
      *
      * @throws IllegalArgumentException thrown if the key contains invalid characters
      */
-    public AbstractParameter(String key, String category, V defaultValue, Function<String, V> customMappingFunction) throws IllegalArgumentException
+    public AbstractParameter(final String key, final String category, final V defaultValue, final Function<String, V> customMappingFunction) throws IllegalArgumentException
     {
         if (!key.matches(ParameterConstants.VALID_PARAM_NAME_REGEX))
             throw new IllegalArgumentException(String.format(ParameterConstants.INVALID_PARAMETER_KEY, key));
@@ -154,7 +154,7 @@ public abstract class AbstractParameter<V>
      *
      * @param mappingFunction a function that maps strings to parameter values
      */
-    public void setMappingFunction(Function<String, V> mappingFunction)
+    public void setMappingFunction(final Function<String, V> mappingFunction)
     {
         this.mappingFunction = mappingFunction;
     }
@@ -167,13 +167,13 @@ public abstract class AbstractParameter<V>
      *
      * @throws IllegalArgumentException if the value could not be changed
      */
-    public final void setValue(String value) throws IllegalArgumentException
+    public final void setValue(final String value) throws IllegalArgumentException
     {
         // try to map the input string to the expected parameter value
         try {
             final V newValue = mappingFunction.apply(value);
             this.value = newValue;
-        } catch (RuntimeException e) {
+        } catch (final RuntimeException e) {
             throw new IllegalArgumentException(
                 String.format(
                     ParameterConstants.CANNOT_CHANGE_PARAM,
@@ -190,7 +190,7 @@ public abstract class AbstractParameter<V>
      */
     public void loadFromEnvironmentVariables()
     {
-        String envVarName = String.format(ParameterConstants.ENVIRONMENT_VARIABLE, category, key);
+        final String envVarName = String.format(ParameterConstants.ENVIRONMENT_VARIABLE, category, key);
 
         final Map<String, String> environmentVariables = System.getenv();
 
@@ -215,7 +215,7 @@ public abstract class AbstractParameter<V>
      *
      * @param isRegistered if true, this parameter is considered to be registered
      */
-    public void setRegistered(boolean isRegistered)
+    public void setRegistered(final boolean isRegistered)
     {
         this.isRegistered = isRegistered;
     }

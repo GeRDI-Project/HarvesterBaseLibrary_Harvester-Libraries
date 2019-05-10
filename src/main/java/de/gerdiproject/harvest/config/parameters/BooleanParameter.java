@@ -36,7 +36,7 @@ public class BooleanParameter extends AbstractParameter<Boolean>
      *
      * @throws IllegalArgumentException thrown if the key contains invalid characters
      */
-    public BooleanParameter(String key, String category, boolean defaultValue, Function<String, Boolean> customMappingFunction) throws IllegalArgumentException
+    public BooleanParameter(final String key, final String category, final boolean defaultValue, final Function<String, Boolean> customMappingFunction) throws IllegalArgumentException
     {
         super(key, category, defaultValue, customMappingFunction);
     }
@@ -49,7 +49,7 @@ public class BooleanParameter extends AbstractParameter<Boolean>
      * @param category the category of the parameter
      * @param defaultValue the default value
      */
-    public BooleanParameter(String key, String category, boolean defaultValue)
+    public BooleanParameter(final String key, final String category, final boolean defaultValue)
     {
         super(key, category, defaultValue, ParameterMappingFunctions::mapToBoolean);
     }

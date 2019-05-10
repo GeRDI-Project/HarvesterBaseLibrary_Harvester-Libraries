@@ -37,7 +37,7 @@ import de.gerdiproject.harvest.rest.events.GetRestObjectEvent;
  */
 public abstract class AbstractRestObject <T extends AbstractRestObject<T, P>, P> implements IEventListener
 {
-    private Class<? extends GetRestObjectEvent<T>> getterEventClass;
+    private final Class<? extends GetRestObjectEvent<T>> getterEventClass;
     protected final String moduleName;
 
 
@@ -48,7 +48,7 @@ public abstract class AbstractRestObject <T extends AbstractRestObject<T, P>, P>
      * @param moduleName the name of the service
      * @param getterEventClass the class of a {@linkplain GetRestObjectEvent}
      */
-    public AbstractRestObject(String moduleName, Class<? extends GetRestObjectEvent<T>> getterEventClass)
+    public AbstractRestObject(final String moduleName, final Class<? extends GetRestObjectEvent<T>> getterEventClass)
     {
         this.moduleName = moduleName;
         this.getterEventClass = getterEventClass;
@@ -126,7 +126,7 @@ public abstract class AbstractRestObject <T extends AbstractRestObject<T, P>, P>
      *
      * @param event the event that triggered the callback
      */
-    private final Consumer<ContextDestroyedEvent> onContextDestroyed = (ContextDestroyedEvent event) -> {
+    private final Consumer<ContextDestroyedEvent> onContextDestroyed = (final ContextDestroyedEvent event) -> {
         destroy();
     };
 }

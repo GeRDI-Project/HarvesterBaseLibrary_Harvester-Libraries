@@ -67,7 +67,7 @@ public class LoaderRegistry implements IEventListener
      *
      * @param loaderClass the class of the loader that is to be registered
      */
-    public void registerLoader(Class<? extends ILoader<?>> loaderClass)
+    public void registerLoader(final Class<? extends ILoader<?>> loaderClass)
     {
         final String loaderName = loaderClass.getSimpleName();
         loaderMap.put(loaderName, loaderClass);

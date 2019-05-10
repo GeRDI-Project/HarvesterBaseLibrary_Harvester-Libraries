@@ -58,7 +58,7 @@ public abstract class AbstractRestResource<T extends AbstractRestObject<T, ?>, S
      * @param gson a gson instance used to parse JSON requests and responses
      */
     @SuppressWarnings("unchecked") // this warning is suppressed, because the only generic Superclass MUST be T2. The cast will always succeed.
-    public AbstractRestResource(Gson gson)
+    public AbstractRestResource(final Gson gson)
     {
         final Class<S> getEventClass =
             (Class<S>)((ParameterizedType) getClass().getGenericSuperclass()).getActualTypeArguments()[1];
@@ -103,7 +103,7 @@ public abstract class AbstractRestResource<T extends AbstractRestObject<T, ?>, S
      */
     @GET
     @Produces({MediaType.TEXT_PLAIN, MediaType.APPLICATION_JSON})
-    public Response getInfoText(@Context UriInfo uriInfo)
+    public Response getInfoText(@Context final UriInfo uriInfo)
     {
         // abort if object is not initialized, yet
         if (restObject == null)
@@ -134,9 +134,9 @@ public abstract class AbstractRestResource<T extends AbstractRestObject<T, ?>, S
                 // try to parse the JSON object
                 return HttpResponseFactory.createOkResponse(gson.toJsonTree(responseObject));
             }
-        } catch (IllegalArgumentException e) {
+        } catch (final IllegalArgumentException e) {
             return HttpResponseFactory.createBadRequestResponse(e.getMessage());
-        } catch (Exception e) {
+        } catch (final Exception e) {
             return HttpResponseFactory.createKnownErrorResponse(e.getMessage());
         }
     }
@@ -166,8 +166,8 @@ public abstract class AbstractRestResource<T extends AbstractRestObject<T, ?>, S
      * @return a response that describes the status of the operation
      */
     protected <P, R> Response changeObject(
-        Function<P, R> changeFunction,
-        String jsonRaw, Class<P> jsonClass)
+        final Function<P, R> changeFunction,
+        final String jsonRaw, final Class<P> jsonClass)
     {
         // abort if object is not initialized, yet
         if (restObject == null)
@@ -195,9 +195,9 @@ public abstract class AbstractRestResource<T extends AbstractRestObject<T, ?>, S
 
         try {
             response = changeFunction.apply(jsonBody);
-        } catch (IllegalArgumentException e) {
+        } catch (final IllegalArgumentException e) {
             return HttpResponseFactory.createBadRequestResponse(e.getMessage());
-        } catch (IllegalStateException e) {
+        } catch (final IllegalStateException e) {
             return HttpResponseFactory.createServerErrorResponse();
         }
 

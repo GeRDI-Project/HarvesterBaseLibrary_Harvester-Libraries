@@ -32,7 +32,7 @@ public class ExtractorException extends RuntimeException
      *
      * @param message a message describing the cause of the exception
      */
-    public ExtractorException(String message)
+    public ExtractorException(final String message)
     {
         super(message);
     }
@@ -43,7 +43,7 @@ public class ExtractorException extends RuntimeException
      *
      * @param e the exception that caused the failure
      */
-    public ExtractorException(Throwable e)
+    public ExtractorException(final Throwable e)
     {
         super(e);
     }

@@ -37,7 +37,7 @@ public class IntegerParameter extends AbstractParameter<Integer>
      *
      * @throws IllegalArgumentException thrown if the key contains invalid characters
      */
-    public IntegerParameter(String key, String category, int defaultValue, Function<String, Integer> customMappingFunction) throws IllegalArgumentException
+    public IntegerParameter(final String key, final String category, final int defaultValue, final Function<String, Integer> customMappingFunction) throws IllegalArgumentException
     {
         super(key, category, defaultValue, customMappingFunction);
     }
@@ -50,7 +50,7 @@ public class IntegerParameter extends AbstractParameter<Integer>
      * @param category the category of the parameter
      * @param defaultValue the default value
      */
-    public IntegerParameter(String key, String category, int defaultValue)
+    public IntegerParameter(final String key, final String category, final int defaultValue)
     {
         super(key, category, defaultValue, ParameterMappingFunctions::mapToInteger);
     }

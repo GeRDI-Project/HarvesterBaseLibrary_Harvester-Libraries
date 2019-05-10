@@ -57,12 +57,12 @@ public class ETLInfosJson
      * @param overallInfo the {@linkplain ETLManager} details summarized
      * @param registeredEtls all {@linkplain AbstractETL}s registered at the registry
      */
-    public ETLInfosJson(ETLJson overallInfo, List<AbstractETL<?, ?>> registeredEtls)
+    public ETLInfosJson(final ETLJson overallInfo, final List<AbstractETL<?, ?>> registeredEtls)
     {
         this.overallInfo = overallInfo;
         this.etlInfos = new HashMap<>();
 
-        for (AbstractETL<?, ?> etl : registeredEtls)
+        for (final AbstractETL<?, ?> etl : registeredEtls)
             etlInfos.put(etl.getName(), etl.getAsJson());
 
         this.repositoryName = EventSystem.sendSynchronousEvent(new GetRepositoryNameEvent());

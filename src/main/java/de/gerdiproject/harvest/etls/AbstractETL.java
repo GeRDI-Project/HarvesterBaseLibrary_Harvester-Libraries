@@ -100,7 +100,7 @@ public abstract class AbstractETL <T, S> implements IEventListener
      *
      * @param name the name of this ETL
      */
-    public AbstractETL(String name)
+    public AbstractETL(final String name)
     {
         this.stateHistory = new TimestampedList<>(ETLState.INITIALIZING, 10);
         this.healthHistory = new TimestampedList<>(ETLHealth.OK, 1);
@@ -144,7 +144,7 @@ public abstract class AbstractETL <T, S> implements IEventListener
         try {
             return (ILoader<S>) EventSystem.sendSynchronousEvent(new CreateLoaderEvent());
 
-        } catch (ClassCastException e) {
+        } catch (final ClassCastException e) {
             logger.error(e.getMessage());
             return null;
         }
@@ -190,7 +190,7 @@ public abstract class AbstractETL <T, S> implements IEventListener
      *
      * @param json a simplified JSON representation of the ETL
      */
-    public void loadFromJson(ETLJson json)
+    public void loadFromJson(final ETLJson json)
     {
         this.stateHistory.addAllSorted(json.getStateHistory());
 
@@ -308,17 +308,17 @@ public abstract class AbstractETL <T, S> implements IEventListener
         try {
             extractor = createExtractor();
             extractor.init(this);
-        } catch (ETLPreconditionException e) {
+        } catch (final ETLPreconditionException e) {
             throw e;
 
-        } catch (RuntimeException e) {
+        } catch (final RuntimeException e) {
             throw new ETLPreconditionException(String.format(ETLConstants.EXTRACTOR_CREATE_ERROR, getName()), e);
         }
 
         // calculate hash
         try {
             hash = initHash();
-        } catch (NullPointerException e) {
+        } catch (final NullPointerException e) {
             logger.error(String.format(ETLConstants.HASH_CREATION_FAILED, getName()), e);
             hash = null;
         }
@@ -372,13 +372,13 @@ public abstract class AbstractETL <T, S> implements IEventListener
             errorMessage = ETLConstants.LOADER_CREATE_ERROR;
             loader.init(this);
 
-        } catch (ETLPreconditionException e) {
+        } catch (final ETLPreconditionException e) {
             // update ETL status
             setStatus(ETLState.DONE);
             setHealth(ETLHealth.HARVEST_FAILED);
             throw e;
 
-        } catch (RuntimeException e) {
+        } catch (final RuntimeException e) {
             // update ETL status
             setStatus(ETLState.DONE);
             setHealth(ETLHealth.HARVEST_FAILED);
@@ -448,7 +448,7 @@ public abstract class AbstractETL <T, S> implements IEventListener
                 logger.info(String.format(ETLConstants.ETL_FINISHED, getName()));
 
             setStatus(ETLState.DONE);
-        } catch (Exception e) {
+        } catch (final Exception e) {
             finishHarvestExceptionally(e);
         }
     }
@@ -460,7 +460,7 @@ public abstract class AbstractETL <T, S> implements IEventListener
     *
     * @param reason the exception that caused the harvest to fail
     */
-    protected void finishHarvestExceptionally(Throwable reason)
+    protected void finishHarvestExceptionally(final Throwable reason)
     {
         if (getState() == ETLState.ABORTING)
             logger.info(String.format(ETLConstants.ETL_ABORTED, getName()));
@@ -518,7 +518,7 @@ public abstract class AbstractETL <T, S> implements IEventListener
      * Changes the status that represents what the ETL is currently doing.
      * @param state a new status
      */
-    public void setStatus(ETLState state)
+    public void setStatus(final ETLState state)
     {
         this.stateHistory.addValue(state);
     }
@@ -539,7 +539,7 @@ public abstract class AbstractETL <T, S> implements IEventListener
      * Changes the health status.
      * @param health the new health status value
      */
-    public void setHealth(ETLHealth health)
+    public void setHealth(final ETLHealth health)
     {
         this.healthHistory.addValue(health);
     }
@@ -571,7 +571,7 @@ public abstract class AbstractETL <T, S> implements IEventListener
      *
      * @param name the new name of the ETL
      */
-    public final void setName(String name)
+    public final void setName(final String name)
     {
         this.name = name;
     }
@@ -630,7 +630,7 @@ public abstract class AbstractETL <T, S> implements IEventListener
      * @see AbstractETL#onResetContext()
      */
     private final Consumer<ResetContextEvent> onResetContextCallback =
-        (ResetContextEvent event) -> onResetContext();
+        (final ResetContextEvent event) -> onResetContext();
 
 
     /**
@@ -649,7 +649,7 @@ public abstract class AbstractETL <T, S> implements IEventListener
      * @see AbstractETL#onHarvestFinished(boolean)
      */
     private final Consumer<HarvestFinishedEvent> onHarvestFinishedCallback =
-        (HarvestFinishedEvent event) -> onHarvestFinished(event.isSuccessful());
+        (final HarvestFinishedEvent event) -> onHarvestFinished(event.isSuccessful());
 
 
     /**
@@ -658,7 +658,7 @@ public abstract class AbstractETL <T, S> implements IEventListener
      *
      * @param wasSuccessful if true, the harvest was a success
      */
-    protected void onHarvestFinished(boolean wasSuccessful)
+    protected void onHarvestFinished(final boolean wasSuccessful)
     {
         if (getState() == ETLState.DONE)
             setStatus(ETLState.IDLE);
@@ -671,7 +671,7 @@ public abstract class AbstractETL <T, S> implements IEventListener
      * @see AbstractETL#onParameterChanged(AbstractParameter)
      */
     private final Consumer<ParameterChangedEvent> onParameterChangedCallback =
-        (ParameterChangedEvent event) -> onParameterChanged(event.getParameter());
+        (final ParameterChangedEvent event) -> onParameterChanged(event.getParameter());
 
 
     /**
@@ -679,7 +679,7 @@ public abstract class AbstractETL <T, S> implements IEventListener
      *
      * @param param the parameter that has changed
      */
-    protected void onParameterChanged(AbstractParameter<?> param)
+    protected void onParameterChanged(final AbstractParameter<?> param)
     {
         if (param.getKey().equals(LoaderConstants.LOADER_TYPE_PARAM_KEY)
             && param.getCategory().equals(LoaderConstants.PARAMETER_CATEGORY)) {
@@ -698,7 +698,7 @@ public abstract class AbstractETL <T, S> implements IEventListener
      * @see AbstractETL#onContextDestroyed()
      */
     private final Consumer<ContextDestroyedEvent> onContextDestroyedCallback =
-        (ContextDestroyedEvent event) -> onContextDestroyed();
+        (final ContextDestroyedEvent event) -> onContextDestroyed();
 
 
     /**

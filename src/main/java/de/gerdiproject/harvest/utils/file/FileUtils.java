@@ -47,7 +47,7 @@ public class FileUtils
      *
      * @param deletedFile the file that is to be deleted
      */
-    public static void deleteFile(File deletedFile)
+    public static void deleteFile(final File deletedFile)
     {
         if (deletedFile.exists()) {
             boolean wasDeleted;
@@ -58,10 +58,10 @@ public class FileUtils
                 // delete contained files and directories recursively
                 try
                     (DirectoryStream<Path> dirStream = Files.newDirectoryStream(deletedFile.toPath())) {
-                    for (Path fileInDir : dirStream)
+                    for (final Path fileInDir : dirStream)
                         deleteFile(fileInDir.toFile());
 
-                } catch (IOException e) {
+                } catch (final IOException e) {
                     wasDeleted = false;
                     ioException = e;
                 }
@@ -88,7 +88,7 @@ public class FileUtils
      * @param targetFile the file that is to be replaced
      * @param newFile the new file that replaces the target file
      */
-    public static void replaceFile(File targetFile, File newFile)
+    public static void replaceFile(final File targetFile, final File newFile)
     {
         if (!newFile.exists()) {
             LOGGER.error(String.format(
@@ -146,7 +146,7 @@ public class FileUtils
      * @param sourceFile the file that is to be copied
      * @param targetFile the destination file
      */
-    public static void copyFile(File sourceFile, File targetFile)
+    public static void copyFile(final File sourceFile, final File targetFile)
     {
         if (!sourceFile.exists())
             LOGGER.error(String.format(
@@ -158,7 +158,7 @@ public class FileUtils
             if (sourceFile.isDirectory()) {
                 try
                     (DirectoryStream<Path> sourceStream = Files.newDirectoryStream(sourceFile.toPath())) {
-                    for (Path sourceFilePath : sourceStream) {
+                    for (final Path sourceFilePath : sourceStream) {
                         final File sourceDirContent = sourceFilePath.toFile();
                         final File targetDirContent = new File(targetFile, sourceDirContent.getName());
 
@@ -167,7 +167,7 @@ public class FileUtils
                         else
                             Files.copy(sourceDirContent.toPath(), targetDirContent.toPath(), StandardCopyOption.REPLACE_EXISTING);
                     }
-                } catch (IOException e) {
+                } catch (final IOException e) {
                     LOGGER.error(String.format(
                                      FileConstants.COPY_FILE_FAILED,
                                      sourceFile.getPath(),
@@ -178,7 +178,7 @@ public class FileUtils
             } else {
                 try {
                     Files.copy(sourceFile.toPath(), targetFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
-                } catch (IOException e) {
+                } catch (final IOException e) {
                     LOGGER.error(
                         String.format(
                             FileConstants.COPY_FILE_FAILED,
@@ -201,7 +201,7 @@ public class FileUtils
      *
      * @return true if the directories already exist or were created
      */
-    public static boolean createDirectories(File directory)
+    public static boolean createDirectories(final File directory)
     {
         if (directory == null || directory.exists())
             return true;
@@ -222,7 +222,7 @@ public class FileUtils
      *
      * @param file the file that is to be created
      */
-    public static void createEmptyFile(File file)
+    public static void createEmptyFile(final File file)
     {
         deleteFile(file);
 
@@ -232,7 +232,7 @@ public class FileUtils
 
         try {
             creationSuccessful &= file.createNewFile();
-        } catch (IOException e) {
+        } catch (final IOException e) {
             creationSuccessful = false;
             ioException = e;
         }
@@ -255,7 +255,7 @@ public class FileUtils
      * @param replaceFiles if true, sourceDirectory files with the same name as in the
      * target directory, will be replaced
      */
-    public static void integrateDirectory(File sourceDirectory, File targetDirectory, boolean replaceFiles)
+    public static void integrateDirectory(final File sourceDirectory, final File targetDirectory, final boolean replaceFiles)
     {
         // make sure the source directory exists
         if (!sourceDirectory.exists()) {
@@ -283,7 +283,7 @@ public class FileUtils
 
         try
             (DirectoryStream<Path> sourceStream = Files.newDirectoryStream(sourceDirectory.toPath())) {
-            for (Path sourceFilePath : sourceStream) {
+            for (final Path sourceFilePath : sourceStream) {
                 final File sourceFile = sourceFilePath.toFile();
                 final File targetFile = new File(targetDirectory, sourceFile.getName());
 
@@ -297,7 +297,7 @@ public class FileUtils
                         replaceFile(targetFile, sourceFile);
                 }
             }
-        } catch (IOException e) {
+        } catch (final IOException e) {
             LOGGER.error(String.format(
                              FileConstants.DIR_MERGE_FAILED,
                              sourceDirectory.getPath(),

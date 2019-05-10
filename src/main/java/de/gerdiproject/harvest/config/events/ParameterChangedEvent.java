@@ -36,7 +36,7 @@ public class ParameterChangedEvent implements IEvent
      * @param param the parameter that has changed
      * @param oldValue the previous value of the parameter
      */
-    public ParameterChangedEvent(AbstractParameter<?> param, Object oldValue)
+    public ParameterChangedEvent(final AbstractParameter<?> param, final Object oldValue)
     {
         this.param = param;
         this.oldValue = oldValue;

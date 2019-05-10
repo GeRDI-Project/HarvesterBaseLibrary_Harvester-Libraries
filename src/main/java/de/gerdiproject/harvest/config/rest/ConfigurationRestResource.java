@@ -71,7 +71,7 @@ public final class ConfigurationRestResource extends AbstractRestResource<Config
     {
         final ChangeConfigurationRequest request = new ChangeConfigurationRequest();
 
-        for (String key : formParams.keySet())
+        for (final String key : formParams.keySet())
             request.put(key, formParams.getFirst(key));
 
         return setConfiguration(gson.toJson(request));
@@ -89,14 +89,14 @@ public final class ConfigurationRestResource extends AbstractRestResource<Config
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.TEXT_PLAIN)
-    public Response setConfiguration(String configJson)
+    public Response setConfiguration(final String configJson)
     {
         return changeObject(restObject::setParameters, configJson, ChangeConfigurationRequest.class);
     }
 
 
     @Override
-    public Response getInfoText(UriInfo uriInfo)
+    public Response getInfoText(final UriInfo uriInfo)
     {
         final MultivaluedMap<String, String> query = uriInfo.getQueryParameters();
 
@@ -125,9 +125,9 @@ public final class ConfigurationRestResource extends AbstractRestResource<Config
     protected String getAllowedRequests()
     {
         // assemble valid keys
-        StringBuilder allowedValues = new StringBuilder();
+        final StringBuilder allowedValues = new StringBuilder();
 
-        for (AbstractParameter<?> param : restObject.getParameters()) {
+        for (final AbstractParameter<?> param : restObject.getParameters()) {
             if (allowedValues.length() != 0)
                 allowedValues.append(", ");
 

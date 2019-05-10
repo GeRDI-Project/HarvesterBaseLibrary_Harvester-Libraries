@@ -133,7 +133,7 @@ public class HttpResponseFactory
      *
      * @return a HTTP-500 response
      */
-    public static Response createKnownErrorResponse(String message)
+    public static Response createKnownErrorResponse(final String message)
     {
         return Response
                .status(Status.INTERNAL_SERVER_ERROR)
@@ -161,7 +161,7 @@ public class HttpResponseFactory
      *
      * @return a HTTP-400 response with a specified message
      */
-    public static Response createBadRequestResponse(String message)
+    public static Response createBadRequestResponse(final String message)
     {
         return Response
                .status(Status.BAD_REQUEST)
@@ -192,7 +192,7 @@ public class HttpResponseFactory
      *
      * @return a HTTP-200 message with a specified entity
      */
-    public static Response createOkResponse(Object entity)
+    public static Response createOkResponse(final Object entity)
     {
         return Response
                .status(Status.OK)
@@ -209,7 +209,7 @@ public class HttpResponseFactory
      *
      * @return a plain text HTTP-200
      */
-    public static Response createPlainTextOkResponse(String message)
+    public static Response createPlainTextOkResponse(final String message)
     {
         return Response
                .status(Status.OK)
@@ -227,7 +227,7 @@ public class HttpResponseFactory
      *
      * @return a response with a specified status code and entity
      */
-    public static Response createValueResponse(Status statusCode, JsonElement value)
+    public static Response createValueResponse(final Status statusCode, final JsonElement value)
     {
         if (value == null)
             return createBadRequestResponse();
@@ -271,7 +271,7 @@ public class HttpResponseFactory
      *          or a HTTP-500 response if the service is broken beyond repair,
      *          or a HTTP-503 response if the service is initializing
      */
-    public static Response createSynchronousEventResponse(ISynchronousEvent<?> event)
+    public static Response createSynchronousEventResponse(final ISynchronousEvent<?> event)
     {
         final Object eventResponse = EventSystem.sendSynchronousEvent(event);
 
@@ -294,7 +294,7 @@ public class HttpResponseFactory
      *
      * @return a non-empty, non-null response JSON
      */
-    private static String refineEntity(Status statusCode, Object entity)
+    private static String refineEntity(final Status statusCode, Object entity)
     {
         if (entity == null)
             entity = "{}";

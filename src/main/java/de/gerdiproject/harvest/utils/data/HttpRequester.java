@@ -68,7 +68,7 @@ public class HttpRequester
      * @param gson the GSON (de-)serializer for reading and writing JSON objects
      * @param httpCharset the encoding charset
      */
-    public HttpRequester(Gson gson, Charset httpCharset)
+    public HttpRequester(final Gson gson, final Charset httpCharset)
     {
         BooleanParameter readFromDiskTemp;
         BooleanParameter writeToDiskTemp;
@@ -76,7 +76,7 @@ public class HttpRequester
         try {
             readFromDiskTemp = Configuration.registerParameter(DataOperationConstants.READ_FROM_DISK_PARAM);
             writeToDiskTemp = Configuration.registerParameter(DataOperationConstants.WRITE_TO_DISK_PARAM);
-        } catch (IllegalStateException e) {
+        } catch (final IllegalStateException e) {
             readFromDiskTemp = DataOperationConstants.READ_FROM_DISK_PARAM;
             writeToDiskTemp = DataOperationConstants.WRITE_TO_DISK_PARAM;
         }
@@ -95,7 +95,7 @@ public class HttpRequester
      *
      * @param other the {@linkplain HttpRequester} from which the settings are copied
      */
-    public HttpRequester(HttpRequester other)
+    public HttpRequester(final HttpRequester other)
     {
         this.readFromDisk = other.readFromDisk;
         this.writeToDisk = other.writeToDisk;
@@ -116,7 +116,7 @@ public class HttpRequester
      *            a URL that returns a JSON object
      * @return a JSON object, or null if the HTML document could not be retrieved
      */
-    public Document getHtmlFromUrl(String url)
+    public Document getHtmlFromUrl(final String url)
     {
         Document htmlResponse = null;
         boolean isResponseReadFromWeb = false;
@@ -135,7 +135,7 @@ public class HttpRequester
         if (isResponseReadFromWeb && isWritingToDisk()) {
             // deliberately write an empty object to disk, if the response could
             // not be retrieved
-            String responseText = (htmlResponse == null) ? "" : htmlResponse.toString();
+            final String responseText = (htmlResponse == null) ? "" : htmlResponse.toString();
             diskIO.writeStringToFile(urlToFilePath(url, DataOperationConstants.FILE_ENDING_HTML), responseText);
         }
 
@@ -154,7 +154,7 @@ public class HttpRequester
      *
      * @return a Java object, or null if the object could not be loaded or parsed
      */
-    public <T> T getObjectFromUrl(String url, Class<T> targetClass)
+    public <T> T getObjectFromUrl(final String url, final Class<T> targetClass)
     {
         T targetObject = null;
         boolean isResponseReadFromWeb = false;
@@ -191,7 +191,7 @@ public class HttpRequester
      *
      * @return a Java object, or null if the object could not be loaded or parsed
      */
-    public <T> T getObjectFromUrl(String url, Type targetType)
+    public <T> T getObjectFromUrl(final String url, final Type targetType)
     {
         T targetObject = null;
         boolean isResponseReadFromWeb = false;
@@ -226,7 +226,7 @@ public class HttpRequester
      *            the file type
      * @return a file-path on disk
      */
-    private String urlToFilePath(String url, String fileEnding)
+    private String urlToFilePath(final String url, final String fileEnding)
     {
         String path = url;
 
@@ -264,7 +264,7 @@ public class HttpRequester
      *
      * @return the HTTP response as plain text
      */
-    public String getRestResponse(RestRequestType method, String url, String body) throws HTTPException, IOException
+    public String getRestResponse(final RestRequestType method, final String url, final String body) throws HTTPException, IOException
     {
         return webDataRetriever.getRestResponse(method, url, body, null, MediaType.TEXT_PLAIN);
     }
@@ -286,7 +286,7 @@ public class HttpRequester
      *
      * @return the HTTP response as plain text
      */
-    public String getRestResponse(RestRequestType method, String url, String body, String authorization, String contentType) throws HTTPException, IOException
+    public String getRestResponse(final RestRequestType method, final String url, final String body, final String authorization, final String contentType) throws HTTPException, IOException
     {
         return webDataRetriever.getRestResponse(method, url, body, authorization, contentType);
     }
@@ -305,7 +305,7 @@ public class HttpRequester
      *
      * @return the response header fields, or null if the response could not be parsed
      */
-    public Map<String, List<String>> getRestHeader(RestRequestType method, String url, String body) throws HTTPException, IOException
+    public Map<String, List<String>> getRestHeader(final RestRequestType method, final String url, final String body) throws HTTPException, IOException
     {
         return webDataRetriever.getRestHeader(method, url, body, null, MediaType.TEXT_PLAIN);
     }
@@ -327,8 +327,8 @@ public class HttpRequester
      *
      * @return the response header fields, or null if the response could not be parsed
      */
-    public Map<String, List<String>> getRestHeader(RestRequestType method, String url, String body,
-                                                   String authorization, String contentType) throws HTTPException, IOException
+    public Map<String, List<String>> getRestHeader(final RestRequestType method, final String url, final String body,
+                                                   final String authorization, final String contentType) throws HTTPException, IOException
     {
         return webDataRetriever.getRestHeader(method, url, body, authorization, contentType);
     }
@@ -363,7 +363,7 @@ public class HttpRequester
      *
      * @param timeout the request timeout in milliseconds
      */
-    public void setTimeout(int timeout)
+    public void setTimeout(final int timeout)
     {
         this.webDataRetriever.setTimeout(timeout);
     }
@@ -396,7 +396,7 @@ public class HttpRequester
      *
      * @param httpCharset the charset that is used for reading and writing responses
      */
-    public void setCharset(Charset httpCharset)
+    public void setCharset(final Charset httpCharset)
     {
         this.webDataRetriever.setCharset(httpCharset);
         this.diskIO.setCharset(httpCharset);

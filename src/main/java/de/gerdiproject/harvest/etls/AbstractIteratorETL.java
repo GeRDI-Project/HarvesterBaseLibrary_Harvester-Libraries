@@ -62,7 +62,7 @@ public abstract class AbstractIteratorETL<T, S> extends AbstractETL<Iterator<T>,
      *
      * @param name the name of this ETL
      */
-    public AbstractIteratorETL(String name)
+    public AbstractIteratorETL(final String name)
     {
         super(name);
     }
@@ -90,7 +90,7 @@ public abstract class AbstractIteratorETL<T, S> extends AbstractETL<Iterator<T>,
 
 
     @Override
-    public void loadFromJson(ETLJson json)
+    public void loadFromJson(final ETLJson json)
     {
         super.loadFromJson(json);
         this.harvestedCount.set(json.getHarvestedCount());
@@ -117,7 +117,7 @@ public abstract class AbstractIteratorETL<T, S> extends AbstractETL<Iterator<T>,
 
             if (!(loader instanceof AbstractIteratorLoader))
                 throw new ETLPreconditionException(ETLConstants.INVALID_ITER_LOADER_ERROR);
-        } catch (ETLPreconditionException e) {
+        } catch (final ETLPreconditionException e) {
             setStatus(ETLState.DONE);
             setHealth(ETLHealth.HARVEST_FAILED);
             throw e;
@@ -161,7 +161,7 @@ public abstract class AbstractIteratorETL<T, S> extends AbstractETL<Iterator<T>,
      */
     public int getStartIndex()
     {
-        int index = startIndexParameter.getValue();
+        final int index = startIndexParameter.getValue();
 
         if (index < 0)
             return 0;
@@ -177,7 +177,7 @@ public abstract class AbstractIteratorETL<T, S> extends AbstractETL<Iterator<T>,
      */
     public int getEndIndex()
     {
-        int index = endIndexParameter.getValue();
+        final int index = endIndexParameter.getValue();
 
         if (index < 0)
             return 0;
@@ -201,7 +201,7 @@ public abstract class AbstractIteratorETL<T, S> extends AbstractETL<Iterator<T>,
     //////////////////////////////
 
     @Override
-    protected void onParameterChanged(AbstractParameter<?> param)
+    protected void onParameterChanged(final AbstractParameter<?> param)
     {
         super.onParameterChanged(param);
 

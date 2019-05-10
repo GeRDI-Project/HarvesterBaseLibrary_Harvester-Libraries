@@ -29,7 +29,7 @@ public class ServiceInitializedEvent extends AbstractSucceededOrFailedEvent
      *
      * @param isSuccessful if true, the harvester service was initialized and is ready to go
      */
-    public ServiceInitializedEvent(boolean isSuccessful)
+    public ServiceInitializedEvent(final boolean isSuccessful)
     {
         super(isSuccessful);
     }
