@@ -31,6 +31,7 @@ import org.slf4j.LoggerFactory;
 
 import com.google.gson.Gson;
 
+import de.gerdiproject.harvest.application.events.ContextDestroyedEvent;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.rest.AbstractRestObject;
 import de.gerdiproject.harvest.scheduler.constants.SchedulerConstants;
@@ -56,6 +57,8 @@ public class Scheduler extends AbstractRestObject<Scheduler, SchedulerResponse> 
     private final DiskIO diskIo;
     private final String cacheFilePath;
 
+    private final Consumer<ScheduledTaskExecutedEvent> onTaskExecutedCallback = this::onTaskExecuted;
+
 
     /**
      * Constructor that initializes the timer and task registry.
@@ -79,7 +82,7 @@ public class Scheduler extends AbstractRestObject<Scheduler, SchedulerResponse> 
     public void addEventListeners()
     {
         super.addEventListeners();
-        EventSystem.addListener(ScheduledTaskExecutedEvent.class, onTaskExecuted);
+        EventSystem.addListener(ScheduledTaskExecutedEvent.class, onTaskExecutedCallback);
     }
 
 
@@ -87,7 +90,7 @@ public class Scheduler extends AbstractRestObject<Scheduler, SchedulerResponse> 
     public void removeEventListeners()
     {
         super.removeEventListeners();
-        EventSystem.removeListener(ScheduledTaskExecutedEvent.class, onTaskExecuted);
+        EventSystem.removeListener(ScheduledTaskExecutedEvent.class, onTaskExecutedCallback);
     }
 
 
@@ -186,35 +189,13 @@ public class Scheduler extends AbstractRestObject<Scheduler, SchedulerResponse> 
 
 
     /**
-     * Reschedules a task, calculating a next fitting date.
-     *
-     * @param rescheduledTask the task that is to be rescheduled
-     */
-    private void rescheduleTask(final TimerTask rescheduledTask)
-    {
-        registeredTasks.forEach((final String cronTab, final TimerTask task) -> {
-            if (task == rescheduledTask)
-            {
-                try {
-                    scheduleTask(cronTab);
-                } catch (final IllegalArgumentException e) {
-                    LOGGER.error(
-                        String.format(SchedulerConstants.ERROR_RESCHEDULE, cronTab),
-                        e);
-                }
-            }
-        });
-    }
-
-
-    /**
      * Removes event listeners, cancels the timer and removes
      * all registered tasks.
      */
     @Override
-    protected void destroy()
+    protected void onContextDestroyed(final ContextDestroyedEvent event)
     {
-        super.destroy();
+        super.onContextDestroyed(event);
 
         // stop all running task threads
         timer.cancel();
@@ -252,6 +233,13 @@ public class Scheduler extends AbstractRestObject<Scheduler, SchedulerResponse> 
     }
 
 
+    /**
+     * Adds a new task to the scheduler.
+     *
+     * @param addRequest the request that is to add a new task
+     *
+     * @return a feedback String
+     */
     public String addTask(final ChangeSchedulerRequest addRequest)
     {
         final String cronTab = addRequest.getCronTab();
@@ -326,12 +314,23 @@ public class Scheduler extends AbstractRestObject<Scheduler, SchedulerResponse> 
     //////////////////////////////
 
     /**
-     * Event callback that is called when a scheduled task is executed. Reschedules the excuted task with an updated
-     * date.
+     * Reschedules a task, calculating a next fitting date.
      *
-     * @param event the event that triggered the callback
+     * @param rescheduledTask the task that is to be rescheduled
      */
-    private final Consumer<ScheduledTaskExecutedEvent> onTaskExecuted = (final ScheduledTaskExecutedEvent event) -> {
-        rescheduleTask(event.getExecutedTask());
-    };
+    private void onTaskExecuted(final ScheduledTaskExecutedEvent event)
+    {
+        registeredTasks.forEach((final String cronTab, final TimerTask task) -> {
+            if (task.equals(event.getExecutedTask()))
+            {
+                try {
+                    scheduleTask(cronTab);
+                } catch (final IllegalArgumentException e) {
+                    LOGGER.error(
+                        String.format(SchedulerConstants.ERROR_RESCHEDULE, cronTab),
+                        e);
+                }
+            }
+        });
+    }
 }

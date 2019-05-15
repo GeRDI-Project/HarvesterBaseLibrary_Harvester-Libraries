@@ -38,20 +38,18 @@ public class ElasticSearchError
     @Override
     public String toString()
     {
-        String errorText = String.format(
-                               ElasticSearchConstants.LOAD_DOCUMENT_ERROR_REASON,
-                               type,
-                               reason);
-
-        //reason == "failed to parse [geoLocations.geoLocationBox]"
+        final StringBuilder sb = new StringBuilder();
+        sb.append(String.format(
+                      ElasticSearchConstants.LOAD_DOCUMENT_ERROR_REASON,
+                      type,
+                      reason));
 
         if (causedBy != null)
-            errorText += String.format(
-                             ElasticSearchConstants.LOAD_DOCUMENT_ERROR_CAUSE,
-                             causedBy.getType(),
-                             causedBy.getReason()
-                         );
+            sb.append(String.format(
+                          ElasticSearchConstants.LOAD_DOCUMENT_ERROR_CAUSE,
+                          causedBy.getType(),
+                          causedBy.getReason()));
 
-        return errorText;
+        return sb.toString();
     }
 }

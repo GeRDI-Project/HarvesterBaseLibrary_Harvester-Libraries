@@ -141,7 +141,7 @@ public class WebDataRetriever implements IDataRetriever
 
                 responseText = responseBuilder.toString();
             }
-        } catch (final Exception e) {
+        } catch (final IOException e) {
             LOGGER.warn(String.format(DataOperationConstants.WEB_ERROR_JSON, url), e);
         }
 
@@ -192,7 +192,7 @@ public class WebDataRetriever implements IDataRetriever
 
             return Jsoup.parse(this.getInputStream(connection), charset.displayName(), url);
 
-        } catch (final Exception e) {
+        } catch (final IOException | HTTPException e) {
             LOGGER.warn(String.format(DataOperationConstants.WEB_ERROR_JSON, url), e);
             return null;
         }
@@ -326,25 +326,9 @@ public class WebDataRetriever implements IDataRetriever
         try {
             final int responseCode = connection.getResponseCode();
 
-            if (responseCode >= 300) {
+            if (responseCode >= 500) {
                 connection.disconnect();
-
-                // handle server errors
-                if (responseCode >= 500)
-                    mustRetry = retries != 0;
-
-                // handle redirection from HTTP > HTTPS
-                else if (responseCode < 400) {
-                    connection.disconnect();
-                    final String redirectedUrl =
-                        connection.getHeaderField(DataOperationConstants.REDIRECT_LOCATION_HEADER);
-
-                    // disallow redirect from HTTPS to HTTP
-                    if (redirectedUrl != null
-                        && !(url.getProtocol().equalsIgnoreCase(DataOperationConstants.HTTPS)
-                             && redirectedUrl.startsWith(DataOperationConstants.HTTP)))
-                        return sendWebRequest(method, redirectedUrl, body, authorization, contentType, retries);
-                }
+                mustRetry = retries != 0;
 
                 // throw an error if the request is not to be reattempted
                 if (!mustRetry) {
@@ -356,13 +340,30 @@ public class WebDataRetriever implements IDataRetriever
                                                     responseCode);
                     throw new HttpStatusException(errorMessage, responseCode, urlString);
                 }
-            }
+            } else if (responseCode >= 400) {
+                connection.disconnect();
+                final String redirectedUrl =
+                    connection.getHeaderField(DataOperationConstants.REDIRECT_LOCATION_HEADER);
+
+                // make sure there is a url to redirect to
+                if (redirectedUrl != null) {
+                    // disallow redirect from HTTPS to HTTP
+                    final boolean isCurrentlyHttps = urlString.startsWith(DataOperationConstants.HTTPS);
+                    final boolean isRedirectingToHttps = redirectedUrl.startsWith(DataOperationConstants.HTTPS);
+
+                    if (!isCurrentlyHttps || isRedirectingToHttps)
+                        return sendWebRequest(method, redirectedUrl, body, authorization, contentType, retries);
+                }
+
+            } else if (responseCode >= 300)
+                connection.disconnect();
+
         } catch (final SocketTimeoutException e) {
             // if we time out, try again
-            if (retries != 0)
-                mustRetry = true;
-            else
+            if (retries == 0)
                 throw e;
+            else
+                mustRetry = true;
         }
 
         // if the request failed due to server issues, attempt to retry

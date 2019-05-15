@@ -31,6 +31,7 @@ import lombok.NoArgsConstructor;
  *
  * @author Robin Weiss
  */
+@SuppressWarnings("PMD.GodClass") // not a god class, it only contains cron parsing logic
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class CronParser
 {
@@ -233,118 +234,200 @@ public class CronParser
      */
     private static byte[] parseCronField(final String field, final int minVal, final int maxVal) throws IllegalArgumentException
     {
-        byte[] values;
+        final byte[] values;
 
         // check if all possible values are to be added
-        if (field.equals("*")) {
-            final int len = 1 + maxVal - minVal;
-            values = new byte[len];
+        if ("*".equals(field))
+            values = parseAllValuesField(minVal, maxVal);
 
-            for (int i = 0; i < len; i++)
-                values[i] = (byte)(minVal + i);
-        }
+        else if (field.contains(","))
+            values = parseMultiValueField(field, minVal, maxVal);
 
-        // check if there are multiple values
-        else if (field.contains(",")) {
-            final Set<Byte> tempValues = new TreeSet<>();
-            final String[] subFields = field.split(",");
+        else if (field.contains("/"))
+            values = parseFrequencyField(field, minVal, maxVal);
 
-            // parse recursively
-            for (final String subField : subFields) {
-                final byte[] subValues = parseCronField(subField, minVal, maxVal);
+        else if (field.contains("-"))
+            values = parseRangeField(field, minVal, maxVal);
 
-                // add values to a set to avoid duplicates
-                for (final byte subValue : subValues)
-                    tempValues.add(subValue);
-            }
-
-            // convert set to array
-            int i = 0;
-            values = new byte[tempValues.size()];
-
-            for (final Byte v : tempValues)
-                values[i++] = v;
-        }
-
-        // check if there are frequencies
-        else if (field.contains("/")) {
-            try {
-                final String[] frequency = field.split("/");
-
-                if (frequency.length != 2)
-                    throw new IllegalArgumentException(String.format(CronConstants.ERROR_PARSE_FREQUENCY, field));
-
-                // parse frequency parts recursively
-                final byte[] freqRange = parseCronField(frequency[0], minVal, maxVal);
-                final byte freqInterval = parseCronField(frequency[1], minVal, maxVal)[0];
-
-                // get the frequency start index, considering the wrap-around
-                final int freqRangeFrom = freqRange[0];
-
-                // if only one number describes the range, the max range is assumed
-                final int freqRangeTo = freqRange.length == 1
-                                  ? maxVal
-                                  : freqRange[freqRange.length - 1];
-
-                // calculate the byte array length
-                final int len = 1 + ((freqRangeTo - freqRangeFrom) / freqInterval);
-                values = new byte[len];
-
-                // fill the byte array
-                for (int i = 0; i < len; i++)
-                    values[i] = (byte)(freqRangeFrom + i * freqInterval);
-            } catch (final NumberFormatException e) {
-                throw new IllegalArgumentException(String.format(CronConstants.ERROR_PARSE_FREQUENCY, field));
-            }
-        }
-
-        // check if there are ranges
-        else if (field.contains("-")) {
-            final String[] range = field.split("-");
-
-            if (range.length != 2)
-                throw new IllegalArgumentException(String.format(CronConstants.ERROR_PARSE_RANGE, field));
-
-            // parse two range values recursively
-            final byte rangeFrom = parseCronField(range[0], minVal, maxVal)[0];
-            final byte rangeTo = parseCronField(range[1], minVal, maxVal)[0];
-
-            return parseCronField("*", rangeFrom, rangeTo);
-
-        } else {
-            byte singleValue = -1;
-
-            try {
-                singleValue = Byte.parseByte(field);
-            } catch (final NumberFormatException e) { // NOPMD continue with other tests
-            }
-
-            // if no number could be parsed, try to parse a month name
-            if (singleValue == -1) {
-                try {
-                    singleValue = (byte) CronMonth.valueOf(field).ordinal();
-                } catch (final IllegalArgumentException e) { // NOPMD continue with other tests
-                }
-            }
-
-            // if it was not a month name, try to parse a week day
-
-            if (singleValue == -1) {
-                try {
-                    singleValue = (byte) CronWeekDay.valueOf(field).ordinal();
-                } catch (final IllegalArgumentException e) { // NOPMD continue with other tests
-                    throw new IllegalArgumentException(String.format(CronConstants.ERROR_CANNOT_PARSE, field));
-                }
-
-            }
-
-            if (singleValue < minVal || singleValue > maxVal)
-                throw new IllegalArgumentException(
-                    String.format(CronConstants.ERROR_OUT_OF_RANGE, field, minVal, maxVal));
-
+        else {
             values = new byte[1];
-            values[0] = singleValue;
+            values[0] = parseSingleValueField(field, minVal, maxVal);
         }
+
+        return values;
+    }
+
+    /**
+     * Parses a cron tab field that describes a single value.
+     *
+     * @param field a cron tab field that contains a number, weekday or month
+     * @param minVal the minimum possible value of the field
+     * @param maxVal the maximum possible value of the field
+     *
+     * @return a byte array, where each byte represents one time element that is
+     *         covered by the cron field
+     *
+     * @throws IllegalArgumentException if the single value could not be parsed
+     */
+    private static byte parseSingleValueField(final String field, final int minVal, final int maxVal) throws IllegalArgumentException
+    {
+        byte singleValue = -1;
+
+        try {
+            singleValue = Byte.parseByte(field);
+        } catch (final NumberFormatException e) { // NOPMD continue with other tests
+        }
+
+        // if no number could be parsed, try to parse a month name
+        if (singleValue == -1) {
+            try {
+                singleValue = (byte) CronMonth.valueOf(field).ordinal();
+            } catch (final IllegalArgumentException e) { // NOPMD continue with other tests
+            }
+        }
+
+        // if it was not a month name, try to parse a week day
+
+        if (singleValue == -1) {
+            try {
+                singleValue = (byte) CronWeekDay.valueOf(field).ordinal();
+            } catch (final IllegalArgumentException e) { // NOPMD the message of the exception is changed
+                throw new IllegalArgumentException(String.format(CronConstants.ERROR_CANNOT_PARSE, field)); // NOPMD (see above)
+            }
+
+        }
+
+        if (singleValue < minVal || singleValue > maxVal)
+            throw new IllegalArgumentException(
+                String.format(CronConstants.ERROR_OUT_OF_RANGE, field, minVal, maxVal));
+
+        return singleValue;
+    }
+
+
+    /**
+     * Parses a cron tab field that describes the total range of a value.
+     *
+     * @param minVal the minimum possible value of the field
+     * @param maxVal the maximum possible value of the field
+     *
+     * @return a byte array, where each byte represents one time element that is
+     *         covered by the cron field
+     */
+    private static byte[] parseAllValuesField(final int minVal, final int maxVal)
+    {
+        final int len = 1 + maxVal - minVal;
+        final byte[] values = new byte[len];
+
+        for (int i = 0; i < len; i++)
+            values[i] = (byte)(minVal + i);
+
+        return values;
+    }
+
+
+    /**
+     * Parses a cron tab field that describes a frequency value.
+     *
+     * @param field a cron tab field that contains a slash
+     * @param minVal the minimum possible value of the field
+     * @param maxVal the maximum possible value of the field
+     *
+     * @return a byte array, where each byte represents one time element that is
+     *         covered by the cron field
+     *
+     * @throws IllegalArgumentException if the frequency could not be parsed properly
+     */
+    private static byte[] parseFrequencyField(final String field, final int minVal, final int maxVal) throws IllegalArgumentException
+    {
+        try {
+            final String[] frequency = field.split("/");
+
+            if (frequency.length != 2)
+                throw new IllegalArgumentException(String.format(CronConstants.ERROR_PARSE_FREQUENCY, field));
+
+            // parse frequency parts recursively
+            final byte[] freqRange = parseCronField(frequency[0], minVal, maxVal);
+            final byte freqInterval = parseSingleValueField(frequency[1], minVal, maxVal);
+
+            // get the frequency start index, considering the wrap-around
+            final int freqRangeFrom = freqRange[0];
+
+            // if only one number describes the range, the max range is assumed
+            final int freqRangeTo = freqRange.length == 1
+                                    ? maxVal
+                                    : freqRange[freqRange.length - 1];
+
+            // calculate the byte array length
+            final int len = 1 + ((freqRangeTo - freqRangeFrom) / freqInterval);
+            final byte[] values = new byte[len];
+
+            // fill the byte array
+            for (int i = 0; i < len; i++)
+                values[i] = (byte)(freqRangeFrom + i * freqInterval);
+
+            return values;
+        } catch (final NumberFormatException e) {
+            throw new IllegalArgumentException(String.format(CronConstants.ERROR_PARSE_FREQUENCY, field)); // NOPMD intended exception
+        }
+    }
+
+
+    /**
+     * Parses a cron tab field that describes a value range.
+     *
+     * @param field a cron tab field that contains a dash
+     * @param minVal the minimum possible value of the field
+     * @param maxVal the maximum possible value of the field
+     *
+     * @return a byte array, where each byte represents one time element that is
+     *         covered by the cron field
+     */
+    private static byte[] parseRangeField(final String field, final int minVal, final int maxVal)
+    {
+        final String[] range = field.split("-");
+
+        if (range.length != 2)
+            throw new IllegalArgumentException(String.format(CronConstants.ERROR_PARSE_RANGE, field));
+
+        // parse two range values recursively
+        final byte rangeFrom = parseSingleValueField(range[0], minVal, maxVal);
+        final byte rangeTo = parseSingleValueField(range[1], minVal, maxVal);
+
+        return parseAllValuesField(rangeFrom, rangeTo);
+    }
+
+
+    /**
+     * Parses a cron tab field that contains multiple comma-separated values.
+     *
+     * @param field a cron tab field that contains colons
+     * @param minVal the minimum possible value of the field
+     * @param maxVal the maximum possible value of the field
+     *
+     * @return a byte array, where each byte represents one time element that is
+     *         covered by the cron field
+     */
+    private static byte[] parseMultiValueField(final String field, final int minVal, final int maxVal)
+    {
+        final Set<Byte> tempValues = new TreeSet<>();
+        final String[] subFields = field.split(",");
+
+        // parse recursively
+        for (final String subField : subFields) {
+            final byte[] subValues = parseCronField(subField, minVal, maxVal);
+
+            // add values to a set to avoid duplicates
+            for (final byte subValue : subValues)
+                tempValues.add(subValue);
+        }
+
+        // convert set to array
+        int i = 0;
+        final byte[] values = new byte[tempValues.size()];
+
+        for (final Byte v : tempValues)
+            values[i++] = v;
 
         return values;
     }

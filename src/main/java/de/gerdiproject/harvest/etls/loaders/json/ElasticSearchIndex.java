@@ -59,12 +59,12 @@ public class ElasticSearchIndex
      */
     public String getErrorText()
     {
-        if (error != null)
+        if (error == null)
+            return "";
+        else
             return String.format(
                        ElasticSearchConstants.LOAD_DOCUMENT_ERROR,
                        id,
                        error.toString());
-        else
-            return "";
     }
 }

@@ -87,9 +87,13 @@ public abstract class AbstractIteratorExtractor <T> implements IExtractor<Iterat
      */
     private class RangeRestrictedIterator implements Iterator<T>
     {
-        final Iterator<T> completeIterator;
-        int index;
+        private final Iterator<T> completeIterator;
+        private int index;
 
+        /**
+         * Constructor.
+         * @param completeIterator an {@linkplain Iterator} that iterates over the entire set of harvestable data
+         */
         public RangeRestrictedIterator(final Iterator<T> completeIterator)
         {
             this.completeIterator = completeIterator;
@@ -115,16 +119,9 @@ public abstract class AbstractIteratorExtractor <T> implements IExtractor<Iterat
 
             try {
                 return completeIterator.next();
-            } catch (final Exception e) {
+            } catch (final RuntimeException e) { // NOPMD depending on the implementation, anything could happen
                 throw new ExtractorException(e);
             }
         }
-    }
-
-
-    @Override
-    public void clear()
-    {
-        // nothing to clean up
     }
 }

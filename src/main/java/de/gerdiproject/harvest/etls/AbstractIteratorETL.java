@@ -20,7 +20,7 @@ import java.util.Iterator;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import de.gerdiproject.harvest.config.Configuration;
-import de.gerdiproject.harvest.config.parameters.AbstractParameter;
+import de.gerdiproject.harvest.config.events.ParameterChangedEvent;
 import de.gerdiproject.harvest.config.parameters.IntegerParameter;
 import de.gerdiproject.harvest.config.parameters.constants.ParameterMappingFunctions;
 import de.gerdiproject.harvest.etls.constants.ETLConstants;
@@ -146,9 +146,9 @@ public abstract class AbstractIteratorETL<T, S> extends AbstractETL<Iterator<T>,
         final int unrestrictedMaxDocs = super.getMaxNumberOfDocuments();
 
         if (unrestrictedMaxDocs == -1) {
-            return getEndIndex() != Integer.MAX_VALUE
-                   ? getEndIndex() - getStartIndex()
-                   : -1;
+            return getEndIndex() == Integer.MAX_VALUE
+                   ? -1
+                   : getEndIndex() - getStartIndex();
         } else
             return Math.min(unrestrictedMaxDocs, getEndIndex()) - getStartIndex();
     }
@@ -201,11 +201,11 @@ public abstract class AbstractIteratorETL<T, S> extends AbstractETL<Iterator<T>,
     //////////////////////////////
 
     @Override
-    protected void onParameterChanged(final AbstractParameter<?> param)
+    protected void onParameterChanged(final ParameterChangedEvent event)
     {
-        super.onParameterChanged(param);
+        super.onParameterChanged(event);
 
-        final String paramKey = param.getCompositeKey();
+        final String paramKey = event.getParameter().getCompositeKey();
 
         // if the range changed, re-init the extractor to recalculate the max
         // number of harvestable documents

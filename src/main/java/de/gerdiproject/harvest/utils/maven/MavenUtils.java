@@ -50,12 +50,13 @@ public class MavenUtils
         if (contextListenerResource == null)
             contextListenerResource = getClass().getResource(mainJarClass.getSimpleName() + ".class");
 
-        if (contextListenerResource != null)
+        if (contextListenerResource == null)
+            this.harvesterJarName = null;
+        else {
             this.harvesterJarName = contextListenerResource.toString().replaceAll(
                                         MavenConstants.MAVEN_JAR_FILE_PATTERN,
                                         MavenConstants.MAVEN_JAR_FILE_NAME_REPLACEMENT);
-        else
-            this.harvesterJarName = null;
+        }
     }
 
 
@@ -77,8 +78,9 @@ public class MavenUtils
         try {
             // retrieve all resources that match 'projectFilter'
             final Enumeration<URL> gerdiMavenLibraries =
-                MavenUtils.class
-                .getClassLoader()
+                Thread
+                .currentThread()
+                .getContextClassLoader()
                 .getResources(projectFilter);
 
             // retrieve only the jar names from the resources

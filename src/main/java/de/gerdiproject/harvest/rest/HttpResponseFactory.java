@@ -254,10 +254,10 @@ public class HttpResponseFactory
     {
         if (MainContext.hasFailed())
             return createFubarResponse();
-        else if (!MainContext.isInitialized())
-            return createInitResponse();
-        else
+        else if (MainContext.isInitialized())
             return createUnknownErrorResponse();
+        else
+            return createInitResponse();
     }
 
 
@@ -294,17 +294,20 @@ public class HttpResponseFactory
      *
      * @return a non-empty, non-null response JSON
      */
-    private static String refineEntity(final Status statusCode, Object entity)
+    private static String refineEntity(final Status statusCode, final Object entity)
     {
+        final String entityString;
+
         if (entity == null)
-            entity = "{}";
+            entityString = "{}";
         else if (entity instanceof String) {
             final String status = statusCode.getStatusCode() >= 200 && statusCode.getStatusCode() < 400
                                   ? RestConstants.STATUS_OK
                                   : RestConstants.STATUS_FAILED;
-            entity = String.format(RestConstants.FEEDBACK_JSON, status, ((String)entity).replaceAll("\\n", ";  ").trim());
-        }
+            entityString = String.format(RestConstants.FEEDBACK_JSON, status, ((String)entity).replaceAll("\\n", ";  ").trim());
+        } else
+            entityString = entity.toString();
 
-        return entity.toString();
+        return entityString;
     }
 }

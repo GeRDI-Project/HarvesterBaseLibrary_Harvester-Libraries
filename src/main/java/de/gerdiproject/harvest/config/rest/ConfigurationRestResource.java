@@ -67,14 +67,14 @@ public final class ConfigurationRestResource extends AbstractRestResource<Config
     @PUT
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     @Produces(MediaType.TEXT_PLAIN)
-    public Response setParameters(final MultivaluedMap<String, String> formParams)
+    public Response putParameters(final MultivaluedMap<String, String> formParams)
     {
         final ChangeConfigurationRequest request = new ChangeConfigurationRequest();
 
         for (final String key : formParams.keySet())
             request.put(key, formParams.getFirst(key));
 
-        return setConfiguration(gson.toJson(request));
+        return postConfiguration(gson.toJson(request));
     }
 
 
@@ -89,9 +89,9 @@ public final class ConfigurationRestResource extends AbstractRestResource<Config
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.TEXT_PLAIN)
-    public Response setConfiguration(final String configJson)
+    public Response postConfiguration(final String configJson)
     {
-        return changeObject(restObject::setParameters, configJson, ChangeConfigurationRequest.class);
+        return changeObject(restObject::changeParameters, configJson, ChangeConfigurationRequest.class);
     }
 
 

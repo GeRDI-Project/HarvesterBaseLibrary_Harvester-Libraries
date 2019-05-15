@@ -232,7 +232,7 @@ public class HttpRequester
 
         // remove the scheme
         int schemeEnd = path.indexOf("://");
-        schemeEnd = (schemeEnd != -1) ? schemeEnd + 3 : 0;
+        schemeEnd = (schemeEnd == -1) ? 0 : schemeEnd + 3;
         path = path.substring(schemeEnd);
 
         // remove double slashes
@@ -245,7 +245,7 @@ public class HttpRequester
 
         // add slash at the end
         if (path.charAt(path.length() - 1) != '/')
-            path += '/';
+            path += '/';// NOPMD StringBuffer does not pay off for a single operation
 
         // assemble the complete file name
         return String.format(DataOperationConstants.FILE_PATH, cacheFolder, path, fileEnding);
@@ -349,12 +349,12 @@ public class HttpRequester
      * Changes the folder were responses are cached when the writeToDisk parameter is set.
      * @param cacheFolder the folder were responses can be cached
      */
-    public void setCacheFolder(String cacheFolder)
+    public void setCacheFolder(final String cacheFolder)
     {
-        if (cacheFolder != null && !cacheFolder.endsWith("/"))
-            cacheFolder += '/';
-
-        this.cacheFolder = cacheFolder;
+        if (cacheFolder == null || cacheFolder.endsWith("/"))
+            this.cacheFolder = cacheFolder;
+        else
+            this.cacheFolder = cacheFolder + '/';
     }
 
 

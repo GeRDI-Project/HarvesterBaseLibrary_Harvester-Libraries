@@ -45,6 +45,7 @@ public class CancelableFuture<T> extends CompletableFuture<T>
      */
     public CancelableFuture(final Callable<T> task, final ExecutorService executor)
     {
+        super();
         this.inner = executor.submit(() -> complete(task));
     }
 
@@ -58,6 +59,7 @@ public class CancelableFuture<T> extends CompletableFuture<T>
      */
     public CancelableFuture(final Callable<T> task)
     {
+        super();
         final ExecutorService executor = ForkJoinPool.commonPool();
         this.inner = executor.submit(() -> complete(task));
     }
@@ -74,7 +76,7 @@ public class CancelableFuture<T> extends CompletableFuture<T>
             final T result = callable.call();
             complete(result);
 
-        } catch (final Exception e) {
+        } catch (final Exception e) { // NOPMD required
             completeExceptionally(e);
         }
     }

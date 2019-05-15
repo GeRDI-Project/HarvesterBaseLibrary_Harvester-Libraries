@@ -38,12 +38,6 @@ import de.gerdiproject.harvest.scheduler.json.ChangeSchedulerRequest;
 @Path("schedule")
 public class SchedulerRestResource extends AbstractRestResource<Scheduler, GetSchedulerEvent>
 {
-    public SchedulerRestResource()
-    {
-        super();
-    }
-
-
     /**
      * Adds a harvesting task with a specified cron tab to the schedule.
      *

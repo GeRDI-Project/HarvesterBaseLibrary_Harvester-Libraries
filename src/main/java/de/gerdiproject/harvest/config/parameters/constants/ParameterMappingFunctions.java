@@ -19,6 +19,7 @@ package de.gerdiproject.harvest.config.parameters.constants;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Collection;
+import java.util.Locale;
 import java.util.function.Function;
 
 import de.gerdiproject.harvest.config.parameters.AbstractParameter;
@@ -37,7 +38,7 @@ import lombok.NoArgsConstructor;
  * @author Robin Weiss
  */
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
-public class ParameterMappingFunctions
+public class ParameterMappingFunctions // NOPMD the class name is fiiine
 {
     /**
      * This function simply forwards the string parameter that was passed to it.
@@ -122,7 +123,7 @@ public class ParameterMappingFunctions
                 // try to parse the integer
                 return Integer.parseInt(value);
             } catch (final NumberFormatException e) {
-                throw new ClassCastException(ParameterConstants.INTEGER_ALLOWED_VALUES);
+                throw new ClassCastException(ParameterConstants.INTEGER_ALLOWED_VALUES); // NOPMD we don't care about the stack trace here
             }
         }
     }
@@ -160,7 +161,7 @@ public class ParameterMappingFunctions
 
                 return intValue;
             } catch (final NumberFormatException e) {
-                throw new ClassCastException(ParameterConstants.INTEGER_RANGE_ALLOWED_VALUES);
+                throw new ClassCastException(ParameterConstants.INTEGER_RANGE_ALLOWED_VALUES); // NOPMD we don't care about the stack trace here
             }
         }
     }
@@ -183,7 +184,7 @@ public class ParameterMappingFunctions
         try {
             new URL(value);
         } catch (final MalformedURLException e) {
-            throw new IllegalArgumentException(ParameterConstants.URL_PARAM_INVALID);
+            throw new IllegalArgumentException(ParameterConstants.URL_PARAM_INVALID); // NOPMD we don't care about the stack trace here
         }
 
         return value;
@@ -216,7 +217,7 @@ public class ParameterMappingFunctions
                     throw new IllegalStateException(String.format(
                                                         ParameterConstants.ETL_PARAM_INVALID_STATE,
                                                         etl.getName(),
-                                                        etlStatus.toString().toLowerCase()));
+                                                        etlStatus.toString().toLowerCase(Locale.ENGLISH)));
 
                 default:
                     return originalMappingFunction.apply(value);
@@ -249,7 +250,7 @@ public class ParameterMappingFunctions
                 case CANCELLING:
                     throw new IllegalStateException(String.format(
                                                         ParameterConstants.ETL_REGISTRY_PARAM_INVALID_STATE,
-                                                        overallEtlStatus.toString().toLowerCase()));
+                                                        overallEtlStatus.toString().toLowerCase(Locale.ENGLISH)));
 
                 default:
                     return originalMappingFunction.apply(value);

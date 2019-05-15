@@ -33,14 +33,14 @@ import java.util.function.Supplier;
  *
  * @author Robin Weiss
  */
-public class EventSystem
+public final class EventSystem
 {
     private final Map<Class<? extends IEvent>, List<Consumer<? extends IEvent>>> callbackMap;
     private final Map<Class<? extends ISynchronousEvent<?>>, Function<? extends ISynchronousEvent<?>, ?>> synchronousCallbackMap;
     private final Queue<IEvent> asyncEventQueue;
     private final AtomicBoolean isProcessingEvents;
 
-    private final static EventSystem instance = new EventSystem();
+    private final static EventSystem INSTANCE = new EventSystem();
 
 
     /**
@@ -66,13 +66,13 @@ public class EventSystem
      */
     public static <T extends IEvent> void addListener(final Class<T> eventClass, final Consumer<T> callback)
     {
-        synchronized (instance.callbackMap) {
-            List<Consumer<? extends IEvent>> eventList = instance.callbackMap.get(eventClass);
+        synchronized (INSTANCE.callbackMap) {
+            List<Consumer<? extends IEvent>> eventList = INSTANCE.callbackMap.get(eventClass);
 
             // create list, if it does not exist yet
             if (eventList == null) {
                 eventList = new LinkedList<Consumer<? extends IEvent>>();
-                instance.callbackMap.put(eventClass, eventList);
+                INSTANCE.callbackMap.put(eventClass, eventList);
             }
 
             // add callback to list
@@ -91,15 +91,15 @@ public class EventSystem
      */
     public static <T extends IEvent> void removeListener(final Class<T> eventClass, final Consumer<T> callback)
     {
-        synchronized (instance.callbackMap) {
-            final List<Consumer<? extends IEvent>> eventList = instance.callbackMap.get(eventClass);
+        synchronized (INSTANCE.callbackMap) {
+            final List<Consumer<? extends IEvent>> eventList = INSTANCE.callbackMap.get(eventClass);
 
             // remove event from list, if the list exists
             if (eventList != null) {
                 eventList.remove(callback);
 
                 if (eventList.isEmpty())
-                    instance.callbackMap.remove(eventClass);
+                    INSTANCE.callbackMap.remove(eventClass);
             }
         }
     }
@@ -113,8 +113,8 @@ public class EventSystem
      */
     public static <T extends IEvent> void removeAllListeners(final Class<T> eventClass)
     {
-        synchronized (instance.callbackMap) {
-            final List<Consumer<? extends IEvent>> eventList = instance.callbackMap.remove(eventClass);
+        synchronized (INSTANCE.callbackMap) {
+            final List<Consumer<? extends IEvent>> eventList = INSTANCE.callbackMap.remove(eventClass);
 
             // clear old list
             if (eventList != null) {
@@ -131,17 +131,17 @@ public class EventSystem
      */
     public static void reset()
     {
-        instance.asyncEventQueue.clear();
-        instance.synchronousCallbackMap.clear();
+        INSTANCE.asyncEventQueue.clear();
+        INSTANCE.synchronousCallbackMap.clear();
 
         // remove all async events
-        synchronized (instance.callbackMap) {
-            final Collection<List<Consumer<? extends IEvent>>> listenerLists = instance.callbackMap.values();
+        synchronized (INSTANCE.callbackMap) {
+            final Collection<List<Consumer<? extends IEvent>>> listenerLists = INSTANCE.callbackMap.values();
 
             for (final List<Consumer<? extends IEvent>> listeners : listenerLists)
                 listeners.clear();
 
-            instance.callbackMap.clear();
+            INSTANCE.callbackMap.clear();
         }
     }
 
@@ -156,8 +156,8 @@ public class EventSystem
      */
     public static <T extends IEvent> void sendEvent(final T event)
     {
-        instance.asyncEventQueue.add(event);
-        instance.processAsynchronousEventQueue();
+        INSTANCE.asyncEventQueue.add(event);
+        INSTANCE.processAsynchronousEventQueue();
     }
 
 
@@ -222,8 +222,8 @@ public class EventSystem
      */
     public static <R, T extends ISynchronousEvent<R>> void addSynchronousListener(final Class<T> eventClass, final Function<T, R> callback)
     {
-        synchronized (instance.synchronousCallbackMap) {
-            instance.synchronousCallbackMap.put(eventClass, callback);
+        synchronized (INSTANCE.synchronousCallbackMap) {
+            INSTANCE.synchronousCallbackMap.put(eventClass, callback);
         }
     }
 
@@ -240,8 +240,8 @@ public class EventSystem
      */
     public static <R, T extends ISynchronousEvent<R>> void addSynchronousListener(final Class<T> eventClass, final Supplier<R> callback)
     {
-        synchronized (instance.synchronousCallbackMap) {
-            instance.synchronousCallbackMap.put(eventClass, (final T event) -> callback.get());
+        synchronized (INSTANCE.synchronousCallbackMap) {
+            INSTANCE.synchronousCallbackMap.put(eventClass, (final T event) -> callback.get());
         }
     }
 
@@ -254,8 +254,8 @@ public class EventSystem
      */
     public static <T extends ISynchronousEvent<?>> void removeSynchronousListener(final Class<T> eventClass)
     {
-        synchronized (instance.synchronousCallbackMap) {
-            instance.synchronousCallbackMap.remove(eventClass);
+        synchronized (INSTANCE.synchronousCallbackMap) {
+            INSTANCE.synchronousCallbackMap.remove(eventClass);
         }
     }
 
@@ -273,14 +273,14 @@ public class EventSystem
     @SuppressWarnings("unchecked")
     public static <R, T extends ISynchronousEvent<R>> R sendSynchronousEvent(final T event)
     {
-        synchronized (instance.synchronousCallbackMap) {
+        synchronized (INSTANCE.synchronousCallbackMap) {
             final Function<? extends ISynchronousEvent<?>, ?> callback =
-                instance.synchronousCallbackMap.get(event.getClass());
+                INSTANCE.synchronousCallbackMap.get(event.getClass());
 
-            if (callback != null)
-                return ((Function<T, R>) callback).apply(event);
-            else
+            if (callback == null)
                 return null;
+            else
+                return ((Function<T, R>) callback).apply(event);
         }
     }
 
@@ -292,7 +292,7 @@ public class EventSystem
      */
     public static boolean hasAsynchronousEventListeners()
     {
-        return !instance.callbackMap.isEmpty();
+        return !INSTANCE.callbackMap.isEmpty();
     }
 
 
@@ -303,6 +303,6 @@ public class EventSystem
      */
     public static boolean hasSynchronousEventListeners()
     {
-        return !instance.synchronousCallbackMap.isEmpty();
+        return !INSTANCE.synchronousCallbackMap.isEmpty();
     }
 }

@@ -18,7 +18,6 @@ package de.gerdiproject.harvest.etls.transformers;
 
 import java.util.Iterator;
 
-import de.gerdiproject.harvest.etls.AbstractETL;
 import de.gerdiproject.harvest.etls.extractors.AbstractIteratorExtractor;
 import de.gerdiproject.harvest.etls.extractors.ExtractorException;
 
@@ -32,14 +31,6 @@ import de.gerdiproject.harvest.etls.extractors.ExtractorException;
  */
 public abstract class AbstractIteratorTransformer <T, S> implements ITransformer<Iterator<T>, Iterator<S>>
 {
-
-    @Override
-    public void init(final AbstractETL<?, ?> etl)
-    {
-        // by default, nothing needs to be done
-    }
-
-
     /**
      * Transforms a single element.
      *
@@ -69,6 +60,11 @@ public abstract class AbstractIteratorTransformer <T, S> implements ITransformer
     {
         private final Iterator<T> input;
 
+        /**
+         * Constructor.
+         *
+         * @param input the {@linkplain Iterator} returned by an {@linkplain AbstractIteratorExtractor}
+         */
         public PassThroughIterator(final Iterator<T> input)
         {
             this.input = input;
@@ -87,24 +83,19 @@ public abstract class AbstractIteratorTransformer <T, S> implements ITransformer
 
             try {
                 in = input.next();
-            } catch (final ExtractorException e) {
+            } catch (final ExtractorException e) { // NOPMD handle extractor exceptions differently
                 throw e;
-            } catch (final Exception e) {
+            } catch (final RuntimeException e) { // NOPMD wrap any other exception in an extractor exception
                 throw new ExtractorException(e);
             }
 
             try {
-                return in != null ? transformElement(in) : null;
-            } catch (final Exception e) {
+                return in == null ? null : transformElement(in);
+            } catch (final TransformerException e) { // NOPMD handle transformer exceptions differently
+                throw e;
+            } catch (final RuntimeException e) { // NOPMD wrap any other exception in a transformer exception
                 throw new TransformerException(e);
             }
         }
-    }
-
-
-    @Override
-    public void clear()
-    {
-        // nothing to do here
     }
 }

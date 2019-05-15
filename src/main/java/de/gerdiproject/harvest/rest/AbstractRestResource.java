@@ -136,7 +136,8 @@ public abstract class AbstractRestResource<T extends AbstractRestObject<T, ?>, S
             }
         } catch (final IllegalArgumentException e) {
             return HttpResponseFactory.createBadRequestResponse(e.getMessage());
-        } catch (final Exception e) {
+
+        } catch (final RuntimeException e) { // NOPMD it's up to the implementation which exceptions to throw, but they are all treated equally
             return HttpResponseFactory.createKnownErrorResponse(e.getMessage());
         }
     }
@@ -181,7 +182,7 @@ public abstract class AbstractRestResource<T extends AbstractRestObject<T, ?>, S
 
         try {
             jsonBody = gson.fromJson(jsonRaw,  jsonClass);
-        } catch (JsonSyntaxException | NullPointerException e) {
+        } catch (JsonSyntaxException | NullPointerException e) { // NOPMD NPEs can be thrown due to invalid JSON strings
             jsonBody = null;
         }
 

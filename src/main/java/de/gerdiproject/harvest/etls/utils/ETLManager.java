@@ -18,17 +18,15 @@ package de.gerdiproject.harvest.etls.utils;
 
 import java.io.File;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-import java.util.function.Consumer;
-import java.util.function.Function;
 
 import javax.ws.rs.core.MultivaluedMap;
 
@@ -55,7 +53,6 @@ import de.gerdiproject.harvest.etls.json.ETLManagerJson;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.rest.AbstractRestObject;
 import de.gerdiproject.harvest.scheduler.events.GetSchedulerEvent;
-import de.gerdiproject.harvest.utils.HashGenerator;
 import de.gerdiproject.harvest.utils.data.DiskIO;
 import de.gerdiproject.harvest.utils.file.ICachedObject;
 
@@ -109,7 +106,9 @@ public class ETLManager extends AbstractRestObject<ETLManager, ETLManagerJson> i
             final ETLJson overallInfo = loadedState.getOverallInfo();
             final Map<String, ETLJson> etlInfos = loadedState.getEtlInfos();
 
-            if (overallInfo != null && etlInfos != null) {
+            if (overallInfo == null || etlInfos == null)
+                LOGGER.warn(ETLConstants.ETL_MANAGER_LOAD_ERROR);
+            else {
                 // load the overall hash
                 this.lastHarvestHash = overallInfo.getVersionHash();
 
@@ -121,15 +120,14 @@ public class ETLManager extends AbstractRestObject<ETLManager, ETLManagerJson> i
                     final String etlName = etl.getName();
                     final ETLJson etlInfo = etlInfos.get(etlName);
 
-                    if (etlInfo != null)
-                        etl.loadFromJson(etlInfo);
-                    else
+                    if (etlInfo == null)
                         LOGGER.warn(String.format(ETLConstants.ETL_LOADING_FAILED, etlName));
+                    else
+                        etl.loadFromJson(etlInfo);
                 }
 
                 LOGGER.debug(String.format(ETLConstants.ETL_MANAGER_LOADED, cacheFile));
-            } else
-                LOGGER.warn(ETLConstants.ETL_MANAGER_LOAD_ERROR);
+            }
         }
     }
 
@@ -155,28 +153,33 @@ public class ETLManager extends AbstractRestObject<ETLManager, ETLManagerJson> i
                 totalCurrCount += etl.getHarvestedCount();
                 final int maxCount = etl.getMaxNumberOfDocuments();
 
-                if (maxCount != -1 && totalMaxCount != -1)
-                    totalMaxCount += maxCount;
-                else
+                if (maxCount == -1 || totalMaxCount == -1)
                     totalMaxCount = -1;
+                else
+                    totalMaxCount += maxCount;
             }
         }
 
         final ETLState state = getState();
-        String stateString = state.toString().toLowerCase();
+        final StringBuilder stateStringBuilder = new StringBuilder();
+        stateStringBuilder.append(state.toString().toLowerCase(Locale.ENGLISH));
 
         if (state == ETLState.HARVESTING) {
-            if (totalMaxCount != -1)
-                stateString += String.format(ETLConstants.PROGRESS, Math.round(100f * totalCurrCount / totalMaxCount), totalCurrCount, totalMaxCount);
+            if (totalMaxCount == -1)
+                stateStringBuilder.append(String.format(ETLConstants.PROGRESS_NO_BOUNDS, totalCurrCount));
             else
-                stateString += String.format(ETLConstants.PROGRESS_NO_BOUNDS, totalCurrCount);
+                stateStringBuilder.append(String.format(ETLConstants.PROGRESS, Math.round(100f * totalCurrCount / totalMaxCount), totalCurrCount, totalMaxCount));
         }
 
-        sb.append(String.format(ETLConstants.ETL_PRETTY, ETLConstants.NAME_TOTAL, stateString, getHealth()));
+        sb.append(String.format(ETLConstants.ETL_PRETTY, ETLConstants.NAME_TOTAL, stateStringBuilder.toString(), EtlUtils.getCombinedHealth(etls)));
 
         if (state == ETLState.HARVESTING) {
-            final long remainingMilliSeconds = estimateRemainingHarvestTime(totalCurrCount, totalMaxCount);
-            sb.append(getDurationText(remainingMilliSeconds));
+            final long remainingMilliSeconds = EtlUtils.estimateRemainingHarvestTime(
+                                                   combinedStateHistory.getLatestTimestamp(),
+                                                   state,
+                                                   totalCurrCount,
+                                                   totalMaxCount);
+            sb.append(EtlUtils.formatHarvestTime(remainingMilliSeconds));
         }
 
         return sb.toString();
@@ -189,7 +192,7 @@ public class ETLManager extends AbstractRestObject<ETLManager, ETLManagerJson> i
         final String repositoryName = EventSystem.sendSynchronousEvent(new GetRepositoryNameEvent());
         final int harvestedCount = getHarvestedCount();
         final int maxDocumentCount = getMaxNumberOfDocuments();
-        final long remainingHarvestTime = estimateRemainingHarvestTime(harvestedCount, maxDocumentCount);
+        final long remainingHarvestTime = estimateRemainingHarvestTime();
         final long lastHarvestTimestamp = getLatestHarvestTimestamp();
         final Date nextHarvestDate = EventSystem.sendSynchronousEvent(new GetSchedulerEvent()).getNextHarvestDate();
 
@@ -205,12 +208,12 @@ public class ETLManager extends AbstractRestObject<ETLManager, ETLManagerJson> i
         return new ETLManagerJson(
                    repositoryName,
                    getState(),
-                   getHealth(),
+                   EtlUtils.getCombinedHealth(etls),
                    harvestedCount,
-                   maxDocumentCount != -1 ? maxDocumentCount : null,
-                   remainingHarvestTime != -1 ? remainingHarvestTime : null,
-                   lastHarvestTimestamp != -1 ? new Date(lastHarvestTimestamp).toString() : null,
-                   nextHarvestDate != null ? nextHarvestDate.toString() : null,
+                   maxDocumentCount == -1 ? null : maxDocumentCount,
+                   remainingHarvestTime == -1 ? null : remainingHarvestTime,
+                   lastHarvestTimestamp == -1 ? null : new Date(lastHarvestTimestamp).toString(),
+                   nextHarvestDate == null ? null : nextHarvestDate.toString(),
                    hasEnabledETLs
                );
     }
@@ -229,10 +232,10 @@ public class ETLManager extends AbstractRestObject<ETLManager, ETLManagerJson> i
                    new ETLJson(
                        getClass().getSimpleName(),
                        combinedStateHistory,
-                       new TimestampedList<>(getHealth(), 1),
+                       new TimestampedList<>(EtlUtils.getCombinedHealth(etls), 1),
                        getHarvestedCount(),
                        getMaxNumberOfDocuments(),
-                       getHash()),
+                       EtlUtils.getCombinedHashes(etls)),
                    etls);
     }
 
@@ -247,11 +250,11 @@ public class ETLManager extends AbstractRestObject<ETLManager, ETLManagerJson> i
      *
      * @return the ETL specified by the name-query-parameter
      */
-    public ETLJson getETLAsJson(final MultivaluedMap<String, String> query)
+    public ETLJson getETLAsJson(final MultivaluedMap<String, String> query) throws IllegalArgumentException
     {
-        final List<String> nameList = query != null
-                                      ? query.get(ETLConstants.ETL_NAME_QUERY)
-                                      : null;
+        final List<String> nameList = query == null
+                                      ? null
+                                      : query.get(ETLConstants.ETL_NAME_QUERY);
 
         if (nameList == null || nameList.isEmpty())
             throw new IllegalArgumentException(ETLConstants.ETL_NAME_QUERY_ERROR_EMPTY);
@@ -318,7 +321,7 @@ public class ETLManager extends AbstractRestObject<ETLManager, ETLManagerJson> i
         final ETLState currentStatus = getState();
 
         if (currentStatus == ETLState.IDLE || currentStatus == ETLState.DONE)
-            processETLs((final AbstractETL<?, ?> harvester) -> harvester.update());
+            EtlUtils.processETLs(etls, (final AbstractETL<?, ?> harvester) -> harvester.update());
 
         final int maxDocs = getMaxNumberOfDocuments();
         final int currentDocs = getHarvestedCount();
@@ -327,7 +330,7 @@ public class ETLManager extends AbstractRestObject<ETLManager, ETLManagerJson> i
         if (maxDocs == -1 && currentDocs == 0 || currentDocs < maxDocs)
             return true;
 
-        final String currentHash = getHash();
+        final String currentHash = EtlUtils.getCombinedHashes(etls);
         return currentHash == null || !currentHash.equals(lastHarvestHash);
     }
 
@@ -381,7 +384,7 @@ public class ETLManager extends AbstractRestObject<ETLManager, ETLManagerJson> i
         })
         .thenAccept((final Void v) -> {
             // save to disk only if we were successful
-            this.lastHarvestHash = getHash();
+            this.lastHarvestHash = EtlUtils.getCombinedHashes(etls);
 
             saveToDisk();
 
@@ -404,12 +407,12 @@ public class ETLManager extends AbstractRestObject<ETLManager, ETLManagerJson> i
                 LOGGER.error(ETLConstants.ETLS_FAILED_UNKNOWN_ERROR, reason);
 
             // clean up all ETLs
-            processETLs((final AbstractETL<?, ?> harvester) -> harvester.cancelHarvest());
+            EtlUtils.processETLs(etls, (final AbstractETL<?, ?> harvester) -> harvester.cancelHarvest());
             saveToDisk();
 
             LOGGER.info(ETLConstants.HARVEST_FAILED);
 
-            EventSystem.sendEvent(new HarvestFinishedEvent(false, getHash()));
+            EventSystem.sendEvent(new HarvestFinishedEvent(false, EtlUtils.getCombinedHashes(etls)));
             setStatus(ETLState.IDLE);
 
             return null;
@@ -426,8 +429,8 @@ public class ETLManager extends AbstractRestObject<ETLManager, ETLManagerJson> i
      */
     public int getMaxNumberOfDocuments()
     {
-        final List<Integer> sizes = processETLsAsList((final AbstractETL<?, ?> harvester) ->
-                                                      harvester.getMaxNumberOfDocuments());
+        final List<Integer> sizes = EtlUtils.processETLsAsList(etls, (final AbstractETL<?, ?> harvester) ->
+                                                               harvester.getMaxNumberOfDocuments());
         int total = 0;
 
         for (final int size : sizes) {
@@ -454,45 +457,12 @@ public class ETLManager extends AbstractRestObject<ETLManager, ETLManagerJson> i
         if (currentStatus == ETLState.QUEUED || currentStatus == ETLState.HARVESTING) {
             setStatus(ETLState.ABORTING);
 
-            processETLs((final AbstractETL<?, ?> harvester) -> {
+            EtlUtils.processETLs(etls, (final AbstractETL<?, ?> harvester) -> {
                 if (harvester.getState() == ETLState.HARVESTING || harvester.getState() == ETLState.QUEUED)
                     harvester.abortHarvest();
             });
         } else
             throw new IllegalStateException(String.format(ETLConstants.ABORT_INVALID_STATE, combinedStateHistory.toString()));
-    }
-
-
-    /**
-     * Generates a combined hash over the concatenated hashes of all registered ETLs.
-     *
-     * @return a combined hash over the concatenated hashes of all registered ETLs
-     */
-    public String getHash()
-    {
-        // concatenate all hashes
-        final StringBuffer hashBuilder = new StringBuffer();
-
-        for (final AbstractETL<?, ?> etl : etls) {
-            // skip disabled ETLs
-            if (!etl.isEnabled())
-                continue;
-
-            final String subHash = etl.getHash();
-
-            // if a single hash value is unknown, we cannot generate a combined version hash
-            if (subHash == null)
-                return null;
-
-            hashBuilder.append(subHash);
-        }
-
-        // rare case when no enabled ETLs exist
-        if (hashBuilder.length() == 0)
-            return null;
-
-        final HashGenerator generator = new HashGenerator(StandardCharsets.UTF_8);
-        return generator.getShaHash(hashBuilder.toString());
     }
 
 
@@ -503,9 +473,9 @@ public class ETLManager extends AbstractRestObject<ETLManager, ETLManagerJson> i
      */
     public int getHarvestedCount()
     {
-        return sumUpETLValues(
-                   (final AbstractETL<?, ?> harvester) -> harvester.getHarvestedCount()
-               );
+        return EtlUtils.sumUpETLValues(etls,
+                                       (final AbstractETL<?, ?> harvester) -> harvester.getHarvestedCount()
+                                      );
     }
 
 
@@ -516,36 +486,7 @@ public class ETLManager extends AbstractRestObject<ETLManager, ETLManagerJson> i
      */
     public ETLHealth getHealth()
     {
-        final List<ETLHealth> healthStatuses =
-            processETLsAsList((final AbstractETL<?, ?> harvester) -> harvester.getHealth());
-
-        ETLHealth overallHealth = ETLHealth.OK;
-
-        // highest priority: the initialization of an ETL has failed
-        if (healthStatuses.contains(ETLHealth.INITIALIZATION_FAILED))
-            overallHealth = ETLHealth.INITIALIZATION_FAILED;
-
-        // second highest priority: the overall harvesting process failed
-        else if (healthStatuses.contains(ETLHealth.HARVEST_FAILED))
-            overallHealth = ETLHealth.HARVEST_FAILED;
-
-        else {
-            // if two or more ETLs failed for different reasons, summarize health as HARVEST_FAILED
-            if (healthStatuses.contains(ETLHealth.EXTRACTION_FAILED))
-                overallHealth = ETLHealth.EXTRACTION_FAILED;
-
-            if (healthStatuses.contains(ETLHealth.TRANSFORMATION_FAILED))
-                overallHealth = overallHealth == ETLHealth.OK
-                                ? ETLHealth.TRANSFORMATION_FAILED
-                                : ETLHealth.HARVEST_FAILED;
-
-            if (healthStatuses.contains(ETLHealth.LOADING_FAILED))
-                overallHealth = overallHealth == ETLHealth.OK
-                                ? ETLHealth.LOADING_FAILED
-                                : ETLHealth.HARVEST_FAILED;
-        }
-
-        return overallHealth;
+        return EtlUtils.getCombinedHealth(etls);
     }
 
 
@@ -568,7 +509,11 @@ public class ETLManager extends AbstractRestObject<ETLManager, ETLManagerJson> i
      */
     public long estimateRemainingHarvestTime()
     {
-        return estimateRemainingHarvestTime(getHarvestedCount(), getMaxNumberOfDocuments());
+        return EtlUtils.estimateRemainingHarvestTime(
+                   combinedStateHistory.getLatestTimestamp(),
+                   combinedStateHistory.getLatestValue(),
+                   getHarvestedCount(),
+                   getMaxNumberOfDocuments());
     }
 
 
@@ -603,7 +548,7 @@ public class ETLManager extends AbstractRestObject<ETLManager, ETLManagerJson> i
         setStatus(ETLState.QUEUED);
 
         // count the number of ETLs that were successfully prepared
-        final int preparedCount = sumUpETLValues((final AbstractETL<?, ?> etl) -> {
+        final int preparedCount = EtlUtils.sumUpETLValues(etls, (final AbstractETL<?, ?> etl) -> {
             try
             {
                 // prepareHarvest() can take time, abort as early as possible
@@ -636,89 +581,33 @@ public class ETLManager extends AbstractRestObject<ETLManager, ETLManagerJson> i
         LOGGER.info(ETLConstants.START_ETLS);
         setStatus(ETLState.HARVESTING);
 
-        EventSystem.sendEvent(new HarvestStartedEvent(getHash(), getMaxNumberOfDocuments()));
+        EventSystem.sendEvent(new HarvestStartedEvent(EtlUtils.getCombinedHashes(etls), getMaxNumberOfDocuments()));
 
         // check parameter to see if harvests must run sequentially or not
         if (concurrentParam.getValue()) {
             // run all harvests asynchronously
-            final List<CompletableFuture<?>> asyncHarvests = processETLsAsList(
-                                                                 (final AbstractETL<?, ?> etl) ->
+            final List<CompletableFuture<?>> asyncHarvests =
+                EtlUtils.processETLsAsList(etls, (final AbstractETL<?, ?> etl) ->
             CompletableFuture.runAsync(() -> {
                 if (getState() != ETLState.ABORTING && etl.getState() == ETLState.QUEUED)
                     etl.harvest();
-            })
-                                                             );
+            }));
 
             // wait for all async harvests to complete
             try {
                 final CompletableFuture<?>[] asyncHarvestArray =
-                    asyncHarvests.toArray(new CompletableFuture<?>[asyncHarvests.size()]);
+                    asyncHarvests.toArray(new CompletableFuture<?>[asyncHarvests.size()]); // NOPMD allOf() requires an Array
                 CompletableFuture.allOf(asyncHarvestArray).get();
 
             } catch (InterruptedException | ExecutionException e) {
                 LOGGER.error(ETLConstants.ETL_PROCESSING_ERROR, e);
             }
         } else {
-            processETLs((final AbstractETL<?, ?> etl) -> {
+            EtlUtils.processETLs(etls, (final AbstractETL<?, ?> etl) -> {
                 if (getState() != ETLState.ABORTING && etl.getState() == ETLState.QUEUED)
                     etl.harvest();
             });
         }
-    }
-
-
-    /**
-     * Iterates all registered ETLs sequentially and stores the return
-     * values of a specified function in a list.
-     *
-     * @param function a function that is called on each ETL
-     *
-     * @return a list containing the return values of each ETL
-     */
-    private <T> List<T> processETLsAsList(final Function<AbstractETL<?, ?>, T> function)
-    {
-        final List<T> returnValues = new ArrayList<>(etls.size());
-
-        for (final AbstractETL<?, ?> etl : etls)
-            if (etl.isEnabled())
-                returnValues.add(function.apply(etl));
-
-        return returnValues;
-    }
-
-
-    /**
-     * Sequentially iterates all registered and enabled ETLs and executes a function
-     * on them.
-     *
-     * @param consumer the function that is called on each ETL
-     */
-    private void processETLs(final Consumer<AbstractETL<?, ?>> consumer)
-    {
-        for (final AbstractETL<?, ?> etl : etls)
-            if (etl.isEnabled())
-                consumer.accept(etl);
-    }
-
-
-    /**
-     * Iterates all registered and enabled ETLs sequentially
-     * and sums up the return value of a common function.
-     *
-     * @param intFunction a function that is called on each ETL that returns an integer value
-     *
-     * @return the sum of all return values of the functions
-     */
-    private int sumUpETLValues(final Function<AbstractETL<?, ?>, Integer> intFunction)
-    {
-        final List<Integer> processedData = processETLsAsList(intFunction);
-
-        int total = 0;
-
-        for (final int pd : processedData)
-            total += pd;
-
-        return total;
     }
 
 
@@ -730,62 +619,5 @@ public class ETLManager extends AbstractRestObject<ETLManager, ETLManagerJson> i
     private void setStatus(final ETLState status)
     {
         combinedStateHistory.addValue(status);
-    }
-
-
-    /**
-     * Estimates the remaining harvesting duration in milliseconds.
-     *
-     * @param harvestedDocuments the number of documents that were harvested
-     * @param maxDocuments the total number of harvestable documents, or -1
-     * if unknown
-     *
-     * @return the remaining harvesting duration in milliseconds,
-     * or -1 if it cannot be estimated
-     */
-    private long estimateRemainingHarvestTime(final int harvestedDocuments, final int maxDocuments)
-    {
-        final ETLState currentStatus = combinedStateHistory.getLatestValue();
-
-        // if there is no ongoing harvest, we cannot estimate the time
-        if (currentStatus != ETLState.HARVESTING)
-            return -1;
-
-        // if we do not now how many documents there are, we cannot estimate the time
-        if (maxDocuments == -1)
-            return -1;
-
-        // if nothing was harvested yet, we cannot estimate the time
-        if (harvestedDocuments == 0)
-            return -1;
-
-        // check when the harvest started
-        final long harvestStartTimestamp = combinedStateHistory.getLatestTimestamp();
-
-        // calculate for how many milliseconds the harvest has been going on
-        final long millisSinceHarvestStarted = System.currentTimeMillis() - harvestStartTimestamp;
-
-        // calculate the average milliseconds for harvesting a single document
-        final long averageMillisPerDocument = millisSinceHarvestStarted / harvestedDocuments;
-
-        // estimate how many milliseconds it will take to harvest the remaining documents
-        return averageMillisPerDocument * (maxDocuments - harvestedDocuments);
-    }
-
-
-    /**
-     * Creates a duration string out of a specified number of seconds
-     *
-     * @param milliseconds the time span in milliseconds
-     * @return a formatted duration string, or "unknown" if the duration is
-     *         negative
-     */
-    private static String getDurationText(final long milliseconds)
-    {
-        if (milliseconds < 0 || milliseconds == Long.MAX_VALUE)
-            return ETLConstants.REMAINING_TIME_UNKNOWN;
-
-        final long hours = milliseconds / 3600000;
-        return String.format(ETLConstants.REMAINING_TIME, hours, milliseconds);
     }
 }

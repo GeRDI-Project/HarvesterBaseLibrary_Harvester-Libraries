@@ -17,8 +17,8 @@
 package de.gerdiproject.harvest.scheduler.constants;
 
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
@@ -71,7 +71,7 @@ public class CronConstants
      */
     private static Map<Byte, Byte> createDaysInMonthMap()
     {
-        final Map<Byte, Byte> map = new HashMap<>();
+        final Map<Byte, Byte> map = new ConcurrentHashMap<>();
         map.put((byte) 1, (byte) 31);
         map.put((byte) 2, (byte) 28);
         map.put((byte) 3, (byte) 31);

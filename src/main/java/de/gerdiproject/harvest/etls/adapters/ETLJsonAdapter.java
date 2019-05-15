@@ -43,16 +43,16 @@ public class ETLJsonAdapter implements JsonDeserializer<ETLJson>
         final JsonObject jsonObject = json.getAsJsonObject();
 
         final JsonElement nameEle = jsonObject.get("name");
-        final String name = nameEle != null ? nameEle.getAsString() : null;
+        final String name = nameEle == null ? null : nameEle.getAsString();
 
         final JsonElement versionHashEle = jsonObject.get("versionHash");
-        final String versionHash = versionHashEle != null ? versionHashEle.getAsString() : null;
+        final String versionHash = versionHashEle == null ? null : versionHashEle.getAsString();
 
         final JsonElement harvestedCountEle = jsonObject.get("harvestedCount");
-        final int harvestedCount = harvestedCountEle != null ? harvestedCountEle.getAsInt() : 0;
+        final int harvestedCount = harvestedCountEle == null ? 0 : harvestedCountEle.getAsInt();
 
         final JsonElement maxDocumentCountEle = jsonObject.get("maxDocumentCount");
-        final int maxDocumentCount = maxDocumentCountEle != null ? maxDocumentCountEle.getAsInt() : 1;
+        final int maxDocumentCount = maxDocumentCountEle == null ? 1 : maxDocumentCountEle.getAsInt();
 
         final JsonElement statusHistoryEle = jsonObject.get("statusHistory");
         final Type statusHistoryType = new TypeToken<ETLState>() {} .getType();

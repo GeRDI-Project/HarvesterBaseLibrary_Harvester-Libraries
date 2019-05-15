@@ -83,9 +83,9 @@ public class ETLRestResource extends AbstractRestResource<ETLManager, GetETLMana
         // forward GET request to the object
         try {
             final ETLJson responseObject = restObject.getETLAsJson(uriInfo.getQueryParameters());
-
             return HttpResponseFactory.createOkResponse(gson.toJsonTree(responseObject));
-        } catch (final Exception e) {
+
+        } catch (final RuntimeException e) { // NOPMD handle all exceptions that could happen
             return HttpResponseFactory.createBadRequestResponse(e.getMessage());
         }
     }
@@ -108,9 +108,9 @@ public class ETLRestResource extends AbstractRestResource<ETLManager, GetETLMana
         // forward GET request to the object
         try {
             final ETLInfosJson responseObject = restObject.getETLsAsJson();
-
             return HttpResponseFactory.createOkResponse(gson.toJsonTree(responseObject));
-        } catch (final Exception e) {
+
+        } catch (final RuntimeException e) { // NOPMD handle all exceptions that could happen
             return HttpResponseFactory.createBadRequestResponse(e.getMessage());
         }
     }
@@ -139,9 +139,11 @@ public class ETLRestResource extends AbstractRestResource<ETLManager, GetETLMana
             // start a harvest
             restObject.harvest();
             return HttpResponseFactory.createAcceptedResponse(ETLConstants.HARVEST_STARTED);
+
         } catch (final IllegalStateException e) {
             return HttpResponseFactory.createBusyResponse(e.getMessage(), restObject.estimateRemainingHarvestTime() / 1000L);
-        } catch (final Exception e) {
+
+        } catch (final RuntimeException e) {  // NOPMD handle all other exceptions that could happen
             return HttpResponseFactory.createBadRequestResponse(e.getMessage());
         }
     }
@@ -157,7 +159,7 @@ public class ETLRestResource extends AbstractRestResource<ETLManager, GetETLMana
     @Produces({
         MediaType.APPLICATION_JSON
     })
-    public Response isOutdated()
+    public Response checkIfEtlIssOutdated()
     {
         // abort if object is not initialized, yet
         if (restObject == null)
@@ -229,15 +231,14 @@ public class ETLRestResource extends AbstractRestResource<ETLManager, GetETLMana
     })
     public Response getLog(@QueryParam("date") final String dateString, @QueryParam("level") final String levelString, @QueryParam("class") final String classString)
     {
-        final List<String> dateFilters = dateString == null ? null : Arrays.asList(dateString.split(","));
-        final List<String> levelFilters = levelString == null ? null : Arrays.asList(levelString.split(","));
-        final List<String> classFilters = classString == null ? null : Arrays.asList(classString.split(","));
-
         final HarvesterLog mainLog = EventSystem.sendSynchronousEvent(new GetMainLogEvent());
 
         if (mainLog == null)
             return HttpResponseFactory.createServerErrorResponse();
 
+        final List<String> dateFilters = dateString == null ? null : Arrays.asList(dateString.split(","));
+        final List<String> levelFilters = levelString == null ? null : Arrays.asList(levelString.split(","));
+        final List<String> classFilters = classString == null ? null : Arrays.asList(classString.split(","));
         final String log = mainLog.getLog(dateFilters, levelFilters, classFilters);
 
         if (log == null)

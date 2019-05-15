@@ -53,7 +53,7 @@ public abstract class AbstractURLLoader <S extends IDocument> extends AbstractIt
     private final StringParameter userNameParam;
     private final StringParameter passwordParam;
 
-    private int currentBatchSize = 0;
+    private int currentBatchSize;
 
 
     /**
@@ -182,11 +182,8 @@ public abstract class AbstractURLLoader <S extends IDocument> extends AbstractIt
      * @param documents a map of documentIDs to documents that are to be
      *            loaded, the values may also be null, in which case the
      *            document is to be removed from the index
-     *
-     * @throws Exception any kind of exception that can be thrown by the
-     *             loading process
      */
-    protected abstract void loadBatch(Map<String, IDocument> documents) throws Exception; // NOPMD - Exception is explicitly thrown, because it is up to the implementation which Exception causes the loader to fail
+    protected abstract void loadBatch(Map<String, IDocument> documents);
 
 
     /**
@@ -224,7 +221,7 @@ public abstract class AbstractURLLoader <S extends IDocument> extends AbstractIt
                     String.format(
                         LoaderConstants.LOADED_PARTIAL_OK, numberOfDocs));
             }
-        } catch (final Exception e) {
+        } catch (final RuntimeException e) { // NOPMD exception depends on the implementation of loadBatch
             throw new LoaderException(e);
         }
     }

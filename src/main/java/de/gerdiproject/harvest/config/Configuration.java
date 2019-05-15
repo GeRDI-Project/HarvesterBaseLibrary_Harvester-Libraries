@@ -19,6 +19,7 @@ package de.gerdiproject.harvest.config;
 import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.TreeMap;
@@ -62,6 +63,8 @@ public class Configuration extends AbstractRestObject<Configuration, Configurati
     private transient String cacheFilePath;
 
     private final Map<String, AbstractParameter<?>> parameterMap;
+
+    private final Consumer<UnregisterParameterEvent> onUnregisterParameterCallback = this::onUnregisterParameter;
 
 
     /**
@@ -121,7 +124,7 @@ public class Configuration extends AbstractRestObject<Configuration, Configurati
     {
         super.addEventListeners();
         EventSystem.addSynchronousListener(RegisterParameterEvent.class, this::onRegisterParameter);
-        EventSystem.addListener(UnregisterParameterEvent.class, onUnregisterParameter);
+        EventSystem.addListener(UnregisterParameterEvent.class, onUnregisterParameterCallback);
     }
 
 
@@ -130,7 +133,7 @@ public class Configuration extends AbstractRestObject<Configuration, Configurati
     {
         super.removeEventListeners();
         EventSystem.removeSynchronousListener(RegisterParameterEvent.class);
-        EventSystem.removeListener(UnregisterParameterEvent.class, onUnregisterParameter);
+        EventSystem.removeListener(UnregisterParameterEvent.class, onUnregisterParameterCallback);
     }
 
 
@@ -195,14 +198,7 @@ public class Configuration extends AbstractRestObject<Configuration, Configurati
         }
 
         // read JSON from disk
-        final Configuration loadedConfig;
-
-        try {
-            loadedConfig = diskIo.getObject(cacheFilePath, Configuration.class);
-        } catch (final NullPointerException e) {
-            LOGGER.info(ConfigurationConstants.OUTDATED_CONFIG_FILE_ERROR);
-            return;
-        }
+        final Configuration loadedConfig = diskIo.getObject(cacheFilePath, Configuration.class);
 
         if (loadedConfig == null) {
             LOGGER.info(String.format(ConfigurationConstants.NO_CONFIG_FILE_ERROR, cacheFilePath));
@@ -233,13 +229,13 @@ public class Configuration extends AbstractRestObject<Configuration, Configurati
     @SuppressWarnings("unchecked")  // the cast will succeed, because the value type is compared to the parameterType
     public <T> T getParameterValue(final String compositeKey)
     {
-        final AbstractParameter<?> param = parameterMap.get(compositeKey.toLowerCase());
+        final AbstractParameter<?> param = parameterMap.get(compositeKey.toLowerCase(Locale.ENGLISH));
 
         // check if the parameter exists and if the value matches the parameterType
-        if (param != null && param.getValue() != null)
-            return (T) param.getValue();
-        else
+        if (param == null || param.getValue() == null)
             return null;
+
+        return (T) param.getValue();
     }
 
 
@@ -252,10 +248,10 @@ public class Configuration extends AbstractRestObject<Configuration, Configurati
      */
     public String getParameterStringValue(final String compositeKey)
     {
-        final AbstractParameter<?> param = parameterMap.get(compositeKey.toLowerCase());
+        final AbstractParameter<?> param = parameterMap.get(compositeKey.toLowerCase(Locale.ENGLISH));
 
         // check if the parameter exists
-        return (param != null) ? param.getStringValue() : null;
+        return param == null ? null : param.getStringValue();
     }
 
 
@@ -269,7 +265,7 @@ public class Configuration extends AbstractRestObject<Configuration, Configurati
      */
     public void setParameter(final String compositeKey, final String value) throws IllegalArgumentException
     {
-        final AbstractParameter<?> param = parameterMap.get(compositeKey.toLowerCase());
+        final AbstractParameter<?> param = parameterMap.get(compositeKey.toLowerCase(Locale.ENGLISH));
 
         // change the parameter value or return an error, if it does not exist
         if (param == null || !param.isRegistered())
@@ -297,7 +293,7 @@ public class Configuration extends AbstractRestObject<Configuration, Configurati
      * @throws IllegalArgumentException if the values are empty or non of them are valid
      * @return a message describing if the operations were successful, or if not, why they failed
      */
-    public String setParameters(final Map<String, String> values) throws IllegalArgumentException
+    public String changeParameters(final Map<String, String> values) throws IllegalArgumentException
     {
         if (values == null || values.isEmpty())
             throw new IllegalArgumentException(ConfigurationConstants.SET_NO_PAYLOAD_ERROR);
@@ -437,9 +433,13 @@ public class Configuration extends AbstractRestObject<Configuration, Configurati
 
 
     /**
-     * Callback:<br>
      * Unregisters a parameter so it can no longer be changed via REST.
+     * This is an event callback function.
+     *
+     * @param event the event that triggered the callback
      */
-    private final Consumer<UnregisterParameterEvent> onUnregisterParameter = (final UnregisterParameterEvent event) ->
-                                                                             event.getParameter().setRegistered(false);
+    private void onUnregisterParameter(final UnregisterParameterEvent event)
+    {
+        event.getParameter().setRegistered(false);
+    }
 }

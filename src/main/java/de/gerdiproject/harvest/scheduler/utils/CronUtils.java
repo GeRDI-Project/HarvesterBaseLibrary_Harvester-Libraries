@@ -61,7 +61,7 @@ public class CronUtils
      *
      * @return the first cron-matching date after the current date + one minute
      */
-    public static Date getNextMatchingDate(final String cronTab, final Date earliestPossibleDate) throws IllegalArgumentException
+    public static Date getNextMatchingDate(final String cronTab, final Date earliestPossibleDate) throws IllegalArgumentException // NOPMD yes, the method is long
     {
         final String[] cronFields = cronTab.split(" ");
 
@@ -75,13 +75,8 @@ public class CronUtils
         final byte[] weekDays = CronParser.parseWeekDays(cronFields[4]);
         final byte[] months = CronParser.parseMonths(cronFields[3], monthDays, weekDays);
 
-        // check if month is not *
-        final boolean isMonthDayRestricted = !(monthDays[0] == CronConstants.DAYS_MIN_CRON
-                                         && monthDays[monthDays.length - 1] == CronConstants.DAYS_MAX_CRON);
-
-        // check if the week day is not *
-        final boolean isWeekDayRestricted = !(weekDays[0] == CronConstants.WEEK_DAYS_MIN_CRON
-                                        && weekDays[weekDays.length - 1] == CronConstants.WEEK_DAYS_MAX_CRON);
+        final boolean monthDayRestricted = isMonthDayRestricted(monthDays);
+        final boolean weekDayRestricted = isWeekDayRestricted(weekDays);
 
         // retrieve times from current time stamp
         final Calendar cal = Calendar.getInstance();
@@ -128,7 +123,7 @@ public class CronUtils
 
         // if we have only a month day restriction, calculate the next fitting month and year
         // this is not trivial, because multiple years can be skipped for Feb. the 29th
-        if (!isWeekDayRestricted) {
+        if (!weekDayRestricted) {
             while (getDaysInMonth(nextMonth, nextYear) < nextDay) {
                 final byte prevMonth = nextMonth;
                 nextMonth = getNextMatch(months, ++nextMonth);
@@ -144,8 +139,7 @@ public class CronUtils
             nextHour = hours[0];
 
             // calculate the earliest (week-)day of the month/year combination
-            if (isWeekDayRestricted) {
-
+            if (weekDayRestricted) {
                 // get first week day of the month
                 cal.clear();
                 cal.set(Calendar.YEAR, nextYear);
@@ -160,7 +154,7 @@ public class CronUtils
             }
 
             // if the month days are also restricted, choose what comes earlier
-            if (!isWeekDayRestricted || isMonthDayRestricted && monthDays[0] < nextDay)
+            if (!weekDayRestricted || monthDayRestricted && monthDays[0] < nextDay)
                 nextDay = monthDays[0];
         }
 
@@ -208,12 +202,6 @@ public class CronUtils
         final byte currMonthDay = (byte) cal.get(Calendar.DAY_OF_MONTH);
         final byte currWeekDay = (byte)(cal.get(Calendar.DAY_OF_WEEK) - 1);
 
-        final boolean isMonthDayRestricted = !(monthDays[0] == CronConstants.DAYS_MIN_CRON
-                                               && monthDays[monthDays.length - 1] == CronConstants.DAYS_MAX_CRON);
-
-        final boolean isWeekDayRestricted = !(weekDays[0] == CronConstants.WEEK_DAYS_MIN_CRON
-                                              && weekDays[weekDays.length - 1] == CronConstants.WEEK_DAYS_MAX_CRON);
-
         final int daysInThisMonth = getDaysInMonth(currMonth, currYear);
 
         // find the next matching day of the month
@@ -226,17 +214,12 @@ public class CronUtils
         byte nextDay = nextMonthDay;
 
         // check if week days are (also) restricted
-        if (isWeekDayRestricted) {
+        if (isWeekDayRestricted(weekDays)) {
             // find the next matching week day
             final byte nextWeekDay = getNextMatch(weekDays, currWeekDay);
 
-            // calculate how many days pass until the next viable week day
-            final int daysUntilNextWeekDay = nextWeekDay > currWeekDay || nextWeekDay == currWeekDay && !isOverflowing
-                                       ? nextWeekDay - currWeekDay
-                                       : nextWeekDay + 1 + CronConstants.WEEK_DAYS_MAX_CRON - currWeekDay;
-
             // calculate the day of the month of the matching week day
-            byte nextMonthDay2 = (byte)(currMonthDay + daysUntilNextWeekDay);
+            byte nextMonthDay2 = getNextMonthDay(currMonthDay, currWeekDay, nextWeekDay, isOverflowing);
 
             // wrap the day of the month, if the week day falls into the next month
             if (nextMonthDay2 > currMonthDay && daysInThisMonth < nextMonthDay2)
@@ -248,13 +231,35 @@ public class CronUtils
 
 
             // check if the next week day comes before the next month day, if both are restricted
-            if (!isMonthDayRestricted
+            if (!isMonthDayRestricted(monthDays)
                 || isMonthDayWrapped == isWeekDayWrapped && nextMonthDay2 < nextMonthDay
                 || isMonthDayWrapped)
                 nextDay = nextMonthDay2;
         }
 
         return nextDay;
+    }
+
+
+    /**
+     * Calculates the next month day, taking the week day cron fields into consideration.
+     *
+     * @param currMonthDay the current month day [1,31]
+     * @param currWeekDay the current week day [0,6]
+     * @param nextWeekDay the next matching week day [0,6]
+     * @param isOverflowing if true, the day must already be one day later,
+     * because the earliest matching hour lies within the next day
+     *
+     * @return the next matching month day
+     */
+    private static byte getNextMonthDay(final byte currMonthDay, final byte currWeekDay, final byte nextWeekDay, final boolean isOverflowing)
+    {
+        // calculate how many days pass until the next viable week day
+        final int daysUntilNextWeekDay = nextWeekDay > currWeekDay || nextWeekDay == currWeekDay && !isOverflowing
+                                         ? nextWeekDay - currWeekDay
+                                         : nextWeekDay + 1 + CronConstants.WEEK_DAYS_MAX_CRON - currWeekDay;
+
+        return (byte)(currMonthDay + daysUntilNextWeekDay);
     }
 
 
@@ -280,5 +285,33 @@ public class CronUtils
 
         // assign the found element, or the first one of the array
         return timeArray[i % len];
+    }
+
+
+    /**
+     * Checks if the an array of month days represents a restricted set of days.
+     *
+     * @param monthDays a byte array of days in [1,31]
+     *
+     * @return true if the array does not represent *
+     */
+    private static boolean isMonthDayRestricted(final byte[] monthDays)
+    {
+        return !(monthDays[0] == CronConstants.DAYS_MIN_CRON
+                 && monthDays[monthDays.length - 1] == CronConstants.DAYS_MAX_CRON);
+    }
+
+
+    /**
+     * Checks if the an array of week days represents a restricted set of days.
+     *
+     * @param monthDays a byte array of week days in [0,6]
+     *
+     * @return true if the array does not represent *
+     */
+    private static boolean isWeekDayRestricted(final byte[] weekDays)
+    {
+        return !(weekDays[0] == CronConstants.WEEK_DAYS_MIN_CRON
+                 && weekDays[weekDays.length - 1] == CronConstants.WEEK_DAYS_MAX_CRON);
     }
 }

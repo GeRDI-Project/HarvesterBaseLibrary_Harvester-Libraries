@@ -16,10 +16,10 @@
 package de.gerdiproject.harvest.config.json.adapters;
 
 import java.lang.reflect.Type;
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import com.google.gson.JsonDeserializationContext;
 import com.google.gson.JsonDeserializer;
@@ -64,7 +64,7 @@ public class ConfigurationAdapter implements JsonDeserializer<Configuration>, Js
     @Override
     public JsonElement serialize(final Configuration src, final Type typeOfSrc, final JsonSerializationContext context)
     {
-        final Map<String, ParameterCategoryJson> jsonCategoriesMap = new HashMap<>();
+        final Map<String, ParameterCategoryJson> jsonCategoriesMap = new ConcurrentHashMap<>();
 
         for (final AbstractParameter<?> param : src.getParameters()) {
             final String categoryName = param.getCategory();

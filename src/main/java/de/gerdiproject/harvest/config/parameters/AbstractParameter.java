@@ -15,6 +15,7 @@
  */
 package de.gerdiproject.harvest.config.parameters;
 
+import java.util.Locale;
 import java.util.Map;
 import java.util.function.Function;
 
@@ -23,6 +24,8 @@ import org.slf4j.LoggerFactory;
 
 import de.gerdiproject.harvest.config.Configuration;
 import de.gerdiproject.harvest.config.parameters.constants.ParameterConstants;
+import lombok.Getter;
+import lombok.Setter;
 
 /**
  * Parameters are part of the {@linkplain Configuration}. Each parameter holds some information about how and when it can be changed.
@@ -35,16 +38,35 @@ public abstract class AbstractParameter<V>
 {
     protected static final Logger LOGGER = LoggerFactory.getLogger(AbstractParameter.class);
 
+    /**
+     * The parameter value.
+     */
+    @Getter
     protected V value;
+
+    /**
+     * The key of the parameter that must be unique within its category.
+     */
+    @Getter
     protected final String key;
+
+    /**
+     * The category to which the parameter belongs.
+     */
+    @Getter
     protected final String category;
 
     /**
      * This function maps a String value to the parameter value type.
      */
+    @Getter @Setter
     protected Function<String, V> mappingFunction;
 
-    private boolean isRegistered;
+    /**
+     * This boolean value is true if the parameter is registered at the {@linkplain Configuration}.
+     */
+    @Getter @Setter
+    private boolean registered;
 
 
     /**
@@ -81,17 +103,6 @@ public abstract class AbstractParameter<V>
 
 
     /**
-     * Returns the unique key of the parameter, which is used to change it via REST.
-     *
-     * @return the unique key of the parameter, which is used to change it via REST
-     */
-    public String getKey()
-    {
-        return key;
-    }
-
-
-    /**
      * Returns a unique key consisting of the category and the parameter key.
      *
      * @return a unique key consisting of the category and the parameter key
@@ -100,30 +111,8 @@ public abstract class AbstractParameter<V>
     {
         return String.format(
                    ParameterConstants.COMPOSITE_KEY,
-                   category.toLowerCase(),
-                   key.toLowerCase());
-    }
-
-
-    /**
-     * Returns the category to which the parameter belongs.
-     *
-     * @return the category to which the parameter belongs
-     */
-    public String getCategory()
-    {
-        return category;
-    }
-
-
-    /**
-     * Returns the parameter value.
-     *
-     * @return the parameter value
-     */
-    public final V getValue()
-    {
-        return value;
+                   category.toLowerCase(Locale.ENGLISH),
+                   key.toLowerCase(Locale.ENGLISH));
     }
 
 
@@ -134,29 +123,7 @@ public abstract class AbstractParameter<V>
      */
     public String getStringValue()
     {
-        return value != null ? value.toString() : "";
-    }
-
-
-    /**
-     * Retrieves the function that maps strings to parameter values.
-     *
-     * @return the function that maps strings to parameter values
-     */
-    public Function<String, V> getMappingFunction()
-    {
-        return mappingFunction;
-    }
-
-
-    /**
-     * Changes the function that maps strings to the parameter values.
-     *
-     * @param mappingFunction a function that maps strings to parameter values
-     */
-    public void setMappingFunction(final Function<String, V> mappingFunction)
-    {
-        this.mappingFunction = mappingFunction;
+        return value == null ? "" : value.toString();
     }
 
 
@@ -173,7 +140,7 @@ public abstract class AbstractParameter<V>
         try {
             final V newValue = mappingFunction.apply(value);
             this.value = newValue;
-        } catch (final RuntimeException e) {
+        } catch (final RuntimeException e) { // NOPMD mappingFunction may throw any exception
             throw new IllegalArgumentException(
                 String.format(
                     ParameterConstants.CANNOT_CHANGE_PARAM,
@@ -196,28 +163,6 @@ public abstract class AbstractParameter<V>
 
         if (environmentVariables.containsKey(envVarName))
             setValue(environmentVariables.get(envVarName));
-    }
-
-
-    /**
-     * Returns true if this parameter is registered at the {@linkplain Configuration}.
-     *
-     * @return true if this parameter is registered at the {@linkplain Configuration}
-     */
-    public boolean isRegistered()
-    {
-        return isRegistered;
-    }
-
-
-    /**
-     * Sets a flag that signifies if this parameter is registered at the {@linkplain Configuration}.
-     *
-     * @param isRegistered if true, this parameter is considered to be registered
-     */
-    public void setRegistered(final boolean isRegistered)
-    {
-        this.isRegistered = isRegistered;
     }
 
 

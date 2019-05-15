@@ -16,6 +16,7 @@
 package de.gerdiproject.harvest.etls.loaders;
 
 
+import java.io.IOException;
 import java.lang.reflect.Field;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -27,6 +28,7 @@ import java.util.Map.Entry;
 import java.util.regex.Matcher;
 
 import javax.ws.rs.core.MediaType;
+import javax.xml.ws.http.HTTPException;
 
 import com.google.gson.Gson;
 
@@ -67,7 +69,7 @@ public class ElasticSearchLoader extends AbstractURLLoader<DataCiteJson>
 
 
     @Override
-    protected void loadBatch(final Map<String, IDocument> documents) throws Exception // NOPMD - Exception is explicitly thrown, because it is up to the implementation which Exception causes the loader to fail
+    protected void loadBatch(final Map<String, IDocument> documents)
     {
         // clear previous batch
         final StringBuilder batchRequestBuilder = new StringBuilder();
@@ -80,12 +82,19 @@ public class ElasticSearchLoader extends AbstractURLLoader<DataCiteJson>
         }
 
         // send POST request to Elastic search
-        final String response = webRequester.getRestResponse(
-                                    RestRequestType.POST,
-                                    getUrl(),
-                                    batchRequestBuilder.toString(),
-                                    getCredentials(),
-                                    MediaType.APPLICATION_JSON);
+
+        String response;
+
+        try {
+            response = webRequester.getRestResponse(
+                           RestRequestType.POST,
+                           getUrl(),
+                           batchRequestBuilder.toString(),
+                           getCredentials(),
+                           MediaType.APPLICATION_JSON);
+        } catch (HTTPException | IOException e) {
+            throw new LoaderException(e);
+        }
 
         // parse JSON response
         final ElasticSearchResponse responseJson = gson.fromJson(response, ElasticSearchResponse.class);
@@ -119,8 +128,9 @@ public class ElasticSearchLoader extends AbstractURLLoader<DataCiteJson>
     {
         final List<ElasticSearchIndexWrapper> loadedItems = responseJson.getItems();
         final StringBuilder sb = new StringBuilder();
+        final int len = loadedItems.size();
 
-        for (int i = 0, l = loadedItems.size(); i < l; i++) {
+        for (int i = 0; i < len; i++) {
             final ElasticSearchIndex indexElement = loadedItems.get(i).getIndex();
 
             if (indexElement.getError() != null) {
@@ -147,21 +157,22 @@ public class ElasticSearchLoader extends AbstractURLLoader<DataCiteJson>
     {
         final String bulkInstruction;
 
-        if (doc != null) {
+        if (doc == null)
+            bulkInstruction = String.format(ElasticSearchConstants.BATCH_DELETE_INSTRUCTION, documentId);
+        else {
             // convert document to UTF-8 JSON string and make DateRanges compatible with ElasticSearch
             final String jsonString;
 
-            if (charset != StandardCharsets.UTF_8)
-                jsonString = new String(toElasticSearchJson(doc).getBytes(StandardCharsets.UTF_8), StandardCharsets.UTF_8);
-            else
+            if (charset == StandardCharsets.UTF_8)
                 jsonString = toElasticSearchJson(doc);
+            else
+                jsonString = new String(toElasticSearchJson(doc).getBytes(StandardCharsets.UTF_8), StandardCharsets.UTF_8);
 
             bulkInstruction = String.format(
                                   ElasticSearchConstants.BATCH_INDEX_INSTRUCTION,
                                   documentId,
                                   jsonString);
-        } else
-            bulkInstruction = String.format(ElasticSearchConstants.BATCH_DELETE_INSTRUCTION, documentId);
+        }
 
         return bulkInstruction;
     }
@@ -201,7 +212,7 @@ public class ElasticSearchLoader extends AbstractURLLoader<DataCiteJson>
      */
     private Map<String, IDocument> fixInvalidDocuments(final ElasticSearchResponse response, final Map<String, IDocument> documents)
     {
-        final Map<String, IDocument> fixedDocMap = new HashMap<>();
+        final Map<String, IDocument> fixedDocMap = new HashMap<>(); // NOPMD map is not used concurrently
 
         for (final ElasticSearchIndexWrapper documentFeedback : response.getItems()) {
             final ElasticSearchError docError = documentFeedback.getIndex().getError();
@@ -263,39 +274,50 @@ public class ElasticSearchLoader extends AbstractURLLoader<DataCiteJson>
     @Override
     protected String getUrl()
     {
-        if (urlParam.getValue() != null) {
 
-            final String rawPath;
+        if (urlParam.getValue() == null)
+            return null;
 
-            try {
-                rawPath = new URL(urlParam.getValue()).getPath() + '/';
-            } catch (final MalformedURLException e) {
-                logger.error(String.format(ElasticSearchConstants.INVALID_URL_ERROR, urlParam.getValue()));
-                return null;
-            }
+        final String rawPath;
 
-            final String[] path = rawPath.substring(1).split("/");
-            String bulkSubmitUrl = urlParam.getStringValue();
-
-            // check if the URL already is a bulk submission URL
-            if (path.length == 0 || !path[path.length - 1].equals(ElasticSearchConstants.BULK_SUBMISSION_URL_SUFFIX)) {
-                // extract URL without Query, add a slash if necessary
-                final int queryIndex = bulkSubmitUrl.indexOf('?');
-
-                if (queryIndex != -1)
-                    bulkSubmitUrl = bulkSubmitUrl.substring(0, queryIndex);
-
-                if (bulkSubmitUrl.charAt(bulkSubmitUrl.length() - 1) != '/')
-                    bulkSubmitUrl += '/';
-
-                // add bulk suffix
-                bulkSubmitUrl += ElasticSearchConstants.BULK_SUBMISSION_URL_SUFFIX;
-            }
-
-            return bulkSubmitUrl;
+        try {
+            rawPath = new URL(urlParam.getValue()).getPath() + '/';
+        } catch (final MalformedURLException e) {
+            logger.error(String.format(ElasticSearchConstants.INVALID_URL_ERROR, urlParam.getValue()));
+            return null;
         }
 
-        return null;
+        final String[] path = rawPath.substring(1).split("/");
+        final String rawUrl = urlParam.getStringValue();
+
+        // check if the URL requires the bulk submission suffix
+        if (path.length == 0 || !path[path.length - 1].equals(ElasticSearchConstants.BULK_SUBMISSION_URL_SUFFIX)) {
+            final StringBuilder bulkSubmitUrlBuilder = new StringBuilder();
+
+            // extract URL without Query, add a slash if necessary
+            final int queryIndex = rawUrl.indexOf('?');
+            final char lastChar;
+
+            // remove potential query parameters
+            if (queryIndex == -1) {
+                bulkSubmitUrlBuilder.append(rawUrl);
+                lastChar = rawUrl.charAt(rawUrl.length() - 1);
+            } else {
+                bulkSubmitUrlBuilder.append(rawUrl.substring(0, queryIndex));
+                lastChar = rawUrl.charAt(queryIndex - 1);
+            }
+
+            // add slash if it is missing
+            if (lastChar != '/')
+                bulkSubmitUrlBuilder.append('/');
+
+            // add bulk suffix
+            bulkSubmitUrlBuilder.append(ElasticSearchConstants.BULK_SUBMISSION_URL_SUFFIX);
+
+            // return assembled url
+            return bulkSubmitUrlBuilder.toString();
+        } else
+            return rawUrl;
     }
 
 

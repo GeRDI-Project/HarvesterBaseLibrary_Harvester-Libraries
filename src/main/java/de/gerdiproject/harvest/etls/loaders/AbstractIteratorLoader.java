@@ -80,9 +80,9 @@ public abstract class AbstractIteratorLoader <S> implements ILoader<Iterator<S>>
         try {
             loadElement(document);
             hasLoadedDocuments = true;
-        } catch (ExtractorException | TransformerException | LoaderException e) {
+        } catch (ExtractorException | TransformerException | LoaderException e) { // NOPMD, these exceptions don't need to be wrapped
             throw e;
-        } catch (final Exception e) {
+        } catch (final RuntimeException e) { // NOPMD, wrap every other exception in a LoaderException
             throw new LoaderException(e);
         } finally {
             // even if the loading failed, we processed something, so we increment the counter
