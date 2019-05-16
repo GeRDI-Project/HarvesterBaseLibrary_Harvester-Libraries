@@ -1,6 +1,6 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" 
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
          http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<parent>
@@ -8,14 +8,14 @@
 		<artifactId>GeRDI-parent</artifactId>
 		<version>3.1.0</version>
 	</parent>
-	
+
 	<artifactId>RestfulHarvester-Library</artifactId>
 	<version>7.3.5-SNAPSHOT</version>
     <packaging>jar</packaging>
 	<name>Restful Harvester Library</name>
 	<description>This library provides a skeleton for restful harvesters.</description>
 	<inceptionYear>2017</inceptionYear>
-  
+
 	<properties>
 		<compiler.plugin.version>3.8.0</compiler.plugin.version>
 		<jar.plugin.version>3.1.0</jar.plugin.version>
@@ -26,7 +26,7 @@
 		<javaxservlet.dependency.version>4.0.1</javaxservlet.dependency.version>
 		<javaxwsrs.dependency.version>2.1</javaxwsrs.dependency.version>
 	</properties>
-	
+
 	<build>
         <plugins>
 			<!-- Compile Java -->
@@ -39,7 +39,7 @@
 				  <target>${java.version}</target>
 				</configuration>
 			</plugin>
-			  
+
 			<!-- Generate jar and move it to /target/ folder -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -49,7 +49,7 @@
 				  <outputDirectory>${project.build.directory}</outputDirectory>
 				</configuration>
             </plugin>
-			
+
 			<!-- Add javadoc -->
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
@@ -67,7 +67,7 @@
 					<outputDirectory>${project.build.directory}</outputDirectory>
 				</configuration>
 			</plugin>
-			
+
 			<!-- Add sources -->
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
@@ -87,21 +87,21 @@
 			</plugin>
 		</plugins>
     </build>
-	
+
 	<dependencies>
 		<dependency>
 			<groupId>de.gerdi-project</groupId>
 			<artifactId>GSON</artifactId>
 			<version>${gerdigson.dependency.version}</version>
 		</dependency>
-		
+
 		<!-- https://mvnrepository.com/artifact/javax.servlet/javax.servlet-api -->
 		<dependency>
 			<groupId>javax.servlet</groupId>
 			<artifactId>javax.servlet-api</artifactId>
 			<version>${javaxservlet.dependency.version}</version>
 		</dependency>
-			
+
 		<!-- https://mvnrepository.com/artifact/javax.ws.rs/javax.ws.rs-api -->
 		<dependency>
 			<groupId>javax.ws.rs</groupId>
@@ -109,7 +109,7 @@
 			<version>${javaxwsrs.dependency.version}</version>
 		</dependency>
 	</dependencies>
-	
+
 	<developers>
 		<developer>
 			<name>Robin Weiss</name>
@@ -118,7 +118,7 @@
 			<organizationUrl>http://www.uni-kiel.de/index-e.shtml</organizationUrl>
 		</developer>
 	</developers>
-	
+
 	<!-- Define Sonatype repository for retrieving SNAPSHOT versions -->
 	<repositories>
 		<repository>
