@@ -3,6 +3,7 @@
 		 xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
 		 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
+
 	<parent>
 		<groupId>de.gerdi-project</groupId>
 		<artifactId>GeRDI-parent</artifactId>
@@ -37,13 +38,13 @@
 			<artifactId>javax.ws.rs-api</artifactId>
 			<version>${javaxwsrs.dependency.version}</version>
 		</dependency>
-		
+
 		<dependency>
 			<groupId>de.gerdi-project</groupId>
 			<artifactId>GSON</artifactId>
 			<version>${gerdigson.dependency.version}</version>
 		</dependency>
-		
+
 		<!-- Required by Jetty deployments to process HTTP requests -->
 		<dependency>
 			<groupId>org.glassfish.jersey.containers</groupId>
