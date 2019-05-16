@@ -30,6 +30,7 @@ public class FileConstants
     public static final String TEMP_FILE_EXTENSION = ".tmp";
 
     public static final String CACHE_FOLDER_PATH = "cache/%s/";
+    public static final String CONFIG_FOLDER_PATH = "config/%s/";
 
     public static final String HARVEST_TIME_KEEPER_CACHE_FILE_PATH =
         CACHE_FOLDER_PATH
