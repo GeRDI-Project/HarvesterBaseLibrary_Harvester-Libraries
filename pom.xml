@@ -1,100 +1,30 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
-         http://maven.apache.org/xsd/maven-4.0.0.xsd">
+		 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		 xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+		 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
+
 	<parent>
 		<groupId>de.gerdi-project</groupId>
 		<artifactId>GeRDI-parent</artifactId>
-		<version>3.1.0</version>
+		<version>4.0.0-SNAPSHOT</version>
 	</parent>
 
 	<artifactId>RestfulHarvester-Library</artifactId>
-	<version>7.3.6-SNAPSHOT</version>
-    <packaging>jar</packaging>
+	<version>7.4.0-SNAPSHOT</version>
+	<packaging>jar</packaging>
 	<name>Restful Harvester Library</name>
 	<description>This library provides a skeleton for restful harvesters.</description>
 	<inceptionYear>2017</inceptionYear>
 
 	<properties>
-		<compiler.plugin.version>3.8.0</compiler.plugin.version>
-		<jar.plugin.version>3.1.0</jar.plugin.version>
-		<javadoc.plugin.version>3.0.1</javadoc.plugin.version>
-		<source.plugin.version>3.0.1</source.plugin.version>
-		<bundle.plugin.version>3.0.1</bundle.plugin.version>
-		<gerdigson.dependency.version>5.2.4-SNAPSHOT</gerdigson.dependency.version>
 		<javaxservlet.dependency.version>4.0.1</javaxservlet.dependency.version>
 		<javaxwsrs.dependency.version>2.1</javaxwsrs.dependency.version>
+		<gerdigson.dependency.version>5.2.5-SNAPSHOT</gerdigson.dependency.version>
+		<jersey.dependency.version>2.27</jersey.dependency.version>
 	</properties>
 
-	<build>
-        <plugins>
-			<!-- Compile Java -->
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-compiler-plugin</artifactId>
-				<version>${compiler.plugin.version}</version>
-				<configuration>
-				  <source>${java.version}</source>
-				  <target>${java.version}</target>
-				</configuration>
-			</plugin>
-
-			<!-- Generate jar and move it to /target/ folder -->
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-jar-plugin</artifactId>
-                <version>${jar.plugin.version}</version>
-				<configuration>
-				  <outputDirectory>${project.build.directory}</outputDirectory>
-				</configuration>
-            </plugin>
-
-			<!-- Add javadoc -->
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-javadoc-plugin</artifactId>
-                <version>${javadoc.plugin.version}</version>
-				<executions>
-					<execution>
-						<id>attach-javadocs</id>
-						<goals>
-							<goal>jar</goal>
-						</goals>
-					</execution>
-				</executions>
-				<configuration>
-					<outputDirectory>${project.build.directory}</outputDirectory>
-				</configuration>
-			</plugin>
-
-			<!-- Add sources -->
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-source-plugin</artifactId>
-                <version>${source.plugin.version}</version>
-				<executions>
-					<execution>
-						<id>attach-sources</id>
-						<goals>
-							<goal>jar</goal>
-						</goals>
-					</execution>
-				</executions>
-				<configuration>
-					<outputDirectory>${project.build.directory}</outputDirectory>
-				</configuration>
-			</plugin>
-		</plugins>
-    </build>
-
 	<dependencies>
-		<dependency>
-			<groupId>de.gerdi-project</groupId>
-			<artifactId>GSON</artifactId>
-			<version>${gerdigson.dependency.version}</version>
-		</dependency>
-
 		<!-- https://mvnrepository.com/artifact/javax.servlet/javax.servlet-api -->
 		<dependency>
 			<groupId>javax.servlet</groupId>
@@ -107,6 +37,26 @@
 			<groupId>javax.ws.rs</groupId>
 			<artifactId>javax.ws.rs-api</artifactId>
 			<version>${javaxwsrs.dependency.version}</version>
+		</dependency>
+
+		<dependency>
+			<groupId>de.gerdi-project</groupId>
+			<artifactId>GSON</artifactId>
+			<version>${gerdigson.dependency.version}</version>
+		</dependency>
+
+		<!-- Required by Jetty deployments to process HTTP requests -->
+		<dependency>
+			<groupId>org.glassfish.jersey.containers</groupId>
+			<artifactId>jersey-container-servlet</artifactId>
+			<version>${jersey.dependency.version}</version>
+		</dependency>
+
+		<!-- Required by Jetty deployments to process HTTP requests -->
+		<dependency>
+			<groupId>org.glassfish.jersey.inject</groupId>
+			<artifactId>jersey-hk2</artifactId>
+			<version>${jersey.dependency.version}</version>
 		</dependency>
 	</dependencies>
 

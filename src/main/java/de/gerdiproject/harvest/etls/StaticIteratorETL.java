@@ -42,7 +42,7 @@ public class StaticIteratorETL<T, S> extends AbstractIteratorETL<T, S>
      * @param extractor retrieves an object from the harvested repository
      * @param transformer transforms the extracted object to a document that can be put to the search index
      */
-    public StaticIteratorETL(AbstractIteratorExtractor<T> extractor, AbstractIteratorTransformer<T, S> transformer)
+    public StaticIteratorETL(final AbstractIteratorExtractor<T> extractor, final AbstractIteratorTransformer<T, S> transformer)
     {
         this(null, extractor, transformer);
     }
@@ -55,7 +55,7 @@ public class StaticIteratorETL<T, S> extends AbstractIteratorETL<T, S>
      * @param extractor retrieves an object from the harvested repository
      * @param transformer transforms the extracted object to a document that can be put to the search index
      */
-    public StaticIteratorETL(String name, AbstractIteratorExtractor<T> extractor, AbstractIteratorTransformer<T, S> transformer)
+    public StaticIteratorETL(final String name, final AbstractIteratorExtractor<T> extractor, final AbstractIteratorTransformer<T, S> transformer)
     {
         super(name);
         this.extractor = extractor;

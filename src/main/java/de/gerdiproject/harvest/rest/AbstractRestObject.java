@@ -37,9 +37,10 @@ import de.gerdiproject.harvest.rest.events.GetRestObjectEvent;
  */
 public abstract class AbstractRestObject <T extends AbstractRestObject<T, P>, P> implements IEventListener
 {
-    private Class<? extends GetRestObjectEvent<T>> getterEventClass;
     protected final String moduleName;
 
+    private final Class<? extends GetRestObjectEvent<T>> getterEventClass;
+    private final Consumer<ContextDestroyedEvent> onContextDestroyedCallback;
 
     /**
      * Constructor that requires the moduleName for pretty printing and the class
@@ -48,10 +49,11 @@ public abstract class AbstractRestObject <T extends AbstractRestObject<T, P>, P>
      * @param moduleName the name of the service
      * @param getterEventClass the class of a {@linkplain GetRestObjectEvent}
      */
-    public AbstractRestObject(String moduleName, Class<? extends GetRestObjectEvent<T>> getterEventClass)
+    public AbstractRestObject(final String moduleName, final Class<? extends GetRestObjectEvent<T>> getterEventClass)
     {
         this.moduleName = moduleName;
         this.getterEventClass = getterEventClass;
+        this.onContextDestroyedCallback = this::onContextDestroyed;
     }
 
 
@@ -60,7 +62,7 @@ public abstract class AbstractRestObject <T extends AbstractRestObject<T, P>, P>
     public void addEventListeners()
     {
         EventSystem.addSynchronousListener(getterEventClass, () -> (T) this);
-        EventSystem.addListener(ContextDestroyedEvent.class, onContextDestroyed);
+        EventSystem.addListener(ContextDestroyedEvent.class, onContextDestroyedCallback);
     }
 
 
@@ -68,7 +70,7 @@ public abstract class AbstractRestObject <T extends AbstractRestObject<T, P>, P>
     public void removeEventListeners()
     {
         EventSystem.removeSynchronousListener(getterEventClass);
-        EventSystem.removeListener(ContextDestroyedEvent.class, onContextDestroyed);
+        EventSystem.removeListener(ContextDestroyedEvent.class, onContextDestroyedCallback);
     }
 
 
@@ -85,15 +87,6 @@ public abstract class AbstractRestObject <T extends AbstractRestObject<T, P>, P>
                    moduleName,
                    getClass().getSimpleName(),
                    getPrettyPlainText());
-    }
-
-
-    /**
-     * Cleans up all objects that are used by this object and removes event listeners.
-     */
-    protected void destroy()
-    {
-        removeEventListeners();
     }
 
 
@@ -121,12 +114,12 @@ public abstract class AbstractRestObject <T extends AbstractRestObject<T, P>, P>
     //////////////////////////////
 
     /**
-     * Event callback that is called when the harvester is undeployed from the server. Attempts to clean up
-     * all objects that are in use
+     * Cleans up all objects that are used by this object and removes event listeners.
      *
-     * @param event the event that triggered the callback
+     * @param event the event that triggered the callback function
      */
-    private final Consumer<ContextDestroyedEvent> onContextDestroyed = (ContextDestroyedEvent event) -> {
-        destroy();
-    };
+    protected void onContextDestroyed(final ContextDestroyedEvent event)
+    {
+        removeEventListeners();
+    }
 }

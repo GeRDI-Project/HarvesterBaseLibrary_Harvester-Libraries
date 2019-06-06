@@ -41,7 +41,7 @@ public class MavenUtils
      *
      * @param mainJarClass a class of the harvester jar
      */
-    public MavenUtils(Class<?> mainJarClass)
+    public MavenUtils(final Class<?> mainJarClass)
     {
         URL contextListenerResource =
             mainJarClass.getResource(mainJarClass.getSimpleName() + ".class");
@@ -50,12 +50,13 @@ public class MavenUtils
         if (contextListenerResource == null)
             contextListenerResource = getClass().getResource(mainJarClass.getSimpleName() + ".class");
 
-        if (contextListenerResource != null)
+        if (contextListenerResource == null)
+            this.harvesterJarName = null;
+        else {
             this.harvesterJarName = contextListenerResource.toString().replaceAll(
                                         MavenConstants.MAVEN_JAR_FILE_PATTERN,
                                         MavenConstants.MAVEN_JAR_FILE_NAME_REPLACEMENT);
-        else
-            this.harvesterJarName = null;
+        }
     }
 
 
@@ -67,7 +68,7 @@ public class MavenUtils
      *
      * @return a list of maven dependencies, or null if no versions could be retrieved
      */
-    public List<String> getMavenVersionInfo(String groupId)
+    public List<String> getMavenVersionInfo(final String groupId)
     {
         final List<String> dependencyList = new LinkedList<>();
         final String projectFilter = String.format(
@@ -77,8 +78,9 @@ public class MavenUtils
         try {
             // retrieve all resources that match 'projectFilter'
             final Enumeration<URL> gerdiMavenLibraries =
-                MavenUtils.class
-                .getClassLoader()
+                Thread
+                .currentThread()
+                .getContextClassLoader()
                 .getResources(projectFilter);
 
             // retrieve only the jar names from the resources
@@ -91,7 +93,7 @@ public class MavenUtils
                                            MavenConstants.MAVEN_JAR_FILE_NAME_REPLACEMENT));
                 }
             }
-        } catch (IOException e) {
+        } catch (final IOException e) {
             return null;
         }
 

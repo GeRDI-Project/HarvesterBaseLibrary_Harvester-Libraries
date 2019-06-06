@@ -31,7 +31,7 @@ public class LoaderException extends RuntimeException
      *
      * @param message a message describing the exception
      */
-    public LoaderException(String message)
+    public LoaderException(final String message)
     {
         super(message);
     }
@@ -42,7 +42,7 @@ public class LoaderException extends RuntimeException
      *
      * @param e the exception that caused the failure
      */
-    public LoaderException(Throwable e)
+    public LoaderException(final Throwable e)
     {
         super(e);
     }

@@ -36,7 +36,7 @@ public class HarvestFinishedEvent extends AbstractSucceededOrFailedEvent
      * @param isSuccessful true if the harvest finished successfully
      * @param documentChecksum a hash value over all harvested documents
      */
-    public HarvestFinishedEvent(boolean isSuccessful, String documentChecksum)
+    public HarvestFinishedEvent(final boolean isSuccessful, final String documentChecksum)
     {
         super(isSuccessful);
         this.documentChecksum = documentChecksum;
@@ -51,7 +51,7 @@ public class HarvestFinishedEvent extends AbstractSucceededOrFailedEvent
      * @param documentChecksum a hash value over all harvested documents
      * @param timestamp the time at which the harvest ended
      */
-    public HarvestFinishedEvent(boolean isSuccessful, String documentChecksum, long timestamp)
+    public HarvestFinishedEvent(final boolean isSuccessful, final String documentChecksum, final long timestamp)
     {
         super(isSuccessful);
         this.documentChecksum = documentChecksum;

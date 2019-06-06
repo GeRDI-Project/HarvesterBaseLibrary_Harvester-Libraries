@@ -44,7 +44,7 @@ public class HtmlUtils
      * @return the text inside the first occurrence of a specified tag,
      *          or null if the tag could not be found
      */
-    public static String getString(Element element, String tagName)
+    public static String getString(final Element element, final String tagName)
     {
         final Element stringElement = element.selectFirst(tagName);
         return stringElement == null ? null : stringElement.text();
@@ -60,7 +60,7 @@ public class HtmlUtils
      * @return a {@linkplain List} of {@linkplain String}s
      *          or null if the tag could not be found
      */
-    public static List<String> getStringsFromParent(Element element, String parentTagName)
+    public static List<String> getStringsFromParent(final Element element, final String parentTagName)
     {
         final Element parent = element.selectFirst(parentTagName);
         return parent == null ? null : elementsToStringList(parent.children());
@@ -76,7 +76,7 @@ public class HtmlUtils
      * @return a {@linkplain List} of {@linkplain String}s
      *          or null if no tag could not be found
      */
-    public static List<String> getStrings(Element element, String tagName)
+    public static List<String> getStrings(final Element element, final String tagName)
     {
         return elementsToStringList(element.select(tagName));
     }
@@ -93,7 +93,7 @@ public class HtmlUtils
      *
      * @return an object representation of the tag or null if it does not exist
      */
-    public static <T> T getObject(Element element, String tagName, Function<Element, T> eleToObject)
+    public static <T> T getObject(final Element element, final String tagName, final Function<Element, T> eleToObject)
     {
         final Element requestedTag = element.selectFirst(tagName);
         return requestedTag == null ? null : eleToObject.apply(requestedTag);
@@ -112,7 +112,7 @@ public class HtmlUtils
      * @return a {@linkplain List} of object representations of the tag,
      * or null if no matching tags were found
      */
-    public static <T> List<T> getObjects(Element element, String tagName, Function<Element, T> eleToObject)
+    public static <T> List<T> getObjects(final Element element, final String tagName, final Function<Element, T> eleToObject)
     {
         final Elements eles = element.select(tagName);
         return eles == null ? null : elementsToList(eles, eleToObject);
@@ -130,7 +130,7 @@ public class HtmlUtils
      *
      * @return a {@linkplain List} of objects of the tag or null if it does not exist
      */
-    public static <T> List<T> getObjectsFromParent(Element element, String parentTagName, Function<Element, T> eleToObject)
+    public static <T> List<T> getObjectsFromParent(final Element element, final String parentTagName, final Function<Element, T> eleToObject)
     {
         final Element parent = element.selectFirst(parentTagName);
         return parent == null
@@ -147,7 +147,7 @@ public class HtmlUtils
      *
      * @return the attribute value, or null if no such attribute exists
      */
-    public static String getAttribute(Element element, String attributeKey)
+    public static String getAttribute(final Element element, final String attributeKey)
     {
         final String attr = element.attr(attributeKey);
         return attr.isEmpty() ? null : attr;
@@ -166,14 +166,14 @@ public class HtmlUtils
      * @return the enum representation of the attribute value,
      * or null if the attribute is missing or could not be mapped
      */
-    public static <T extends Enum<T>> T getEnumAttribute(Element element, String attributeKey, Class<T> enumClass)
+    public static <T extends Enum<T>> T getEnumAttribute(final Element element, final String attributeKey, final Class<T> enumClass)
     {
         T returnValue = null;
 
         try {
             if (element.hasAttr(attributeKey))
                 returnValue = Enum.valueOf(enumClass, element.attr(attributeKey).trim());
-        } catch (IllegalArgumentException e) {
+        } catch (final IllegalArgumentException e) {
             returnValue = null;
         }
 
@@ -191,14 +191,14 @@ public class HtmlUtils
      *
      * @return a {@linkplain LinkedList} of objects that were mapped or null if no object could be mapped
      */
-    public static <T> List<T> elementsToList(Collection<Element> elements, Function<Element, T> eleToObject)
+    public static <T> List<T> elementsToList(final Collection<Element> elements, final Function<Element, T> eleToObject)
     {
         if (elements == null || elements.isEmpty())
             return null;
 
         final List<T> list = new LinkedList<>();
 
-        for (Element ele : elements) {
+        for (final Element ele : elements) {
             final T obj = eleToObject.apply(ele);
 
             if (obj != null)
@@ -217,8 +217,8 @@ public class HtmlUtils
      *
      * @return a {@linkplain LinkedList} of {@linkplain String}s
      */
-    public static List<String> elementsToStringList(Collection<Element> elements)
+    public static List<String> elementsToStringList(final Collection<Element> elements)
     {
-        return elementsToList(elements, (Element ele) -> ele.text());
+        return elementsToList(elements, (final Element ele) -> ele.text());
     }
 }

@@ -19,6 +19,7 @@ package de.gerdiproject.harvest.config.parameters.constants;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Collection;
+import java.util.Locale;
 import java.util.function.Function;
 
 import de.gerdiproject.harvest.config.parameters.AbstractParameter;
@@ -37,7 +38,7 @@ import lombok.NoArgsConstructor;
  * @author Robin Weiss
  */
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
-public class ParameterMappingFunctions
+public class ParameterMappingFunctions // NOPMD the class name is fiiine
 {
     /**
      * This function simply forwards the string parameter that was passed to it.
@@ -48,7 +49,7 @@ public class ParameterMappingFunctions
      *
      * @return a string value
      */
-    public static String mapToString(String value)
+    public static String mapToString(final String value)
     {
         return value;
     }
@@ -64,7 +65,7 @@ public class ParameterMappingFunctions
      *
      * @return a non-empty, non-null string value
      */
-    public static String mapToNonEmptyString(String value) throws IllegalArgumentException
+    public static String mapToNonEmptyString(final String value) throws IllegalArgumentException
     {
         if (value == null || value.isEmpty())
             throw new IllegalArgumentException(ParameterConstants.NON_EMPTY_STRING_PARAM_INVALID);
@@ -83,7 +84,7 @@ public class ParameterMappingFunctions
      *
      * @return a boolean value
      */
-    public static Boolean mapToBoolean(String value) throws ClassCastException
+    public static Boolean mapToBoolean(final String value) throws ClassCastException
     {
         if (value == null || value.isEmpty())
             return false;
@@ -106,7 +107,7 @@ public class ParameterMappingFunctions
      *
      * @return an integer value
      */
-    public static Integer mapToInteger(String value) throws ClassCastException
+    public static Integer mapToInteger(final String value) throws ClassCastException
     {
         if (value == null || value.isEmpty())
             return 0;
@@ -121,8 +122,8 @@ public class ParameterMappingFunctions
             try {
                 // try to parse the integer
                 return Integer.parseInt(value);
-            } catch (NumberFormatException e) {
-                throw new ClassCastException(ParameterConstants.INTEGER_ALLOWED_VALUES);
+            } catch (final NumberFormatException e) {
+                throw new ClassCastException(ParameterConstants.INTEGER_ALLOWED_VALUES); // NOPMD we don't care about the stack trace here
             }
         }
     }
@@ -138,7 +139,7 @@ public class ParameterMappingFunctions
      *
      * @return a positive integer value represented by the string
      */
-    public static Integer mapToUnsignedInteger(String value) throws ClassCastException
+    public static Integer mapToUnsignedInteger(final String value) throws ClassCastException
     {
         if (value == null || value.isEmpty())
             return 0;
@@ -152,15 +153,15 @@ public class ParameterMappingFunctions
         else {
             try {
                 // try to parse the integer
-                int intValue = Integer.parseInt(value);
+                final int intValue = Integer.parseInt(value);
 
                 // do not accept negative numbers
                 if (intValue < 0)
                     throw new IllegalArgumentException(ParameterConstants.INTEGER_RANGE_ALLOWED_VALUES);
 
                 return intValue;
-            } catch (NumberFormatException e) {
-                throw new ClassCastException(ParameterConstants.INTEGER_RANGE_ALLOWED_VALUES);
+            } catch (final NumberFormatException e) {
+                throw new ClassCastException(ParameterConstants.INTEGER_RANGE_ALLOWED_VALUES); // NOPMD we don't care about the stack trace here
             }
         }
     }
@@ -175,15 +176,15 @@ public class ParameterMappingFunctions
      *
      * @return a valid URL string
      */
-    public static String mapToUrlString(String value) throws IllegalArgumentException
+    public static String mapToUrlString(final String value) throws IllegalArgumentException
     {
         if (value == null || value.isEmpty())
             return null;
 
         try {
             new URL(value);
-        } catch (MalformedURLException e) {
-            throw new IllegalArgumentException(ParameterConstants.URL_PARAM_INVALID);
+        } catch (final MalformedURLException e) {
+            throw new IllegalArgumentException(ParameterConstants.URL_PARAM_INVALID); // NOPMD we don't care about the stack trace here
         }
 
         return value;
@@ -202,9 +203,9 @@ public class ParameterMappingFunctions
      *
      * @return a mapping function
      */
-    public static <V> Function<String, V> createMapperForETL(Function<String, V> originalMappingFunction, AbstractETL<?, ?> etl)
+    public static <V> Function<String, V> createMapperForETL(final Function<String, V> originalMappingFunction, final AbstractETL<?, ?> etl)
     {
-        return (String value) -> {
+        return (final String value) -> {
             final ETLState etlStatus = etl.getState();
 
             switch (etlStatus)
@@ -216,7 +217,7 @@ public class ParameterMappingFunctions
                     throw new IllegalStateException(String.format(
                                                         ParameterConstants.ETL_PARAM_INVALID_STATE,
                                                         etl.getName(),
-                                                        etlStatus.toString().toLowerCase()));
+                                                        etlStatus.toString().toLowerCase(Locale.ENGLISH)));
 
                 default:
                     return originalMappingFunction.apply(value);
@@ -235,9 +236,9 @@ public class ParameterMappingFunctions
      *
      * @return a mapping function
      */
-    public static <V> Function<String, V> createMapperForETLs(Function<String, V> originalMappingFunction)
+    public static <V> Function<String, V> createMapperForETLs(final Function<String, V> originalMappingFunction)
     {
-        return (String value) -> {
+        return (final String value) -> {
             final ETLManager registry = EventSystem.sendSynchronousEvent(new GetETLManagerEvent());
             final ETLState overallEtlStatus = registry == null ? ETLState.INITIALIZING : registry.getState();
 
@@ -249,7 +250,7 @@ public class ParameterMappingFunctions
                 case CANCELLING:
                     throw new IllegalStateException(String.format(
                                                         ParameterConstants.ETL_REGISTRY_PARAM_INVALID_STATE,
-                                                        overallEtlStatus.toString().toLowerCase()));
+                                                        overallEtlStatus.toString().toLowerCase(Locale.ENGLISH)));
 
                 default:
                     return originalMappingFunction.apply(value);
@@ -267,15 +268,15 @@ public class ParameterMappingFunctions
      *
      * @return a mapping function
      */
-    public static Function<String, String> createStringListMapper(Collection<String> validValues)
+    public static Function<String, String> createStringListMapper(final Collection<String> validValues)
     {
-        return (String value) -> {
+        return (final String value) -> {
             // null values are always returned
             if (value == null || value.isEmpty())
                 return null;
 
             // value is only valid if it is within the list
-            for (String validVal : validValues)
+            for (final String validVal : validValues)
             {
                 if (value.equalsIgnoreCase(validVal))
                     return validVal;
@@ -298,16 +299,16 @@ public class ParameterMappingFunctions
      *
      * @return a mapping function
      */
-    public static Function<String, String> createClassNameListMapper(Collection<Class<?>> validClasses)
+    public static Function<String, String> createClassNameListMapper(final Collection<Class<?>> validClasses)
     {
-        return (String value) -> {
+        return (final String value) -> {
             // null values are always returned
             if (value == null || value.isEmpty())
                 return null;
 
-            StringBuilder allowedValuesStringBuilder = new StringBuilder();
+            final StringBuilder allowedValuesStringBuilder = new StringBuilder();
 
-            for (Class<?> loaderClass : validClasses)
+            for (final Class<?> loaderClass : validClasses)
             {
                 final String className = loaderClass.getSimpleName();
 

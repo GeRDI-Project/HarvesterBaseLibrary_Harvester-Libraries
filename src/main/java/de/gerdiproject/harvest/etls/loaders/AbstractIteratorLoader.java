@@ -39,7 +39,7 @@ public abstract class AbstractIteratorLoader <S> implements ILoader<Iterator<S>>
 
 
     @Override
-    public void init(AbstractETL<?, ?> etl)
+    public void init(final AbstractETL<?, ?> etl)
     {
         if (!(etl instanceof AbstractIteratorETL))
             throw new IllegalStateException(String.format(LoaderConstants.NO_ITER_ETL_ERROR, getClass().getSimpleName()));
@@ -50,7 +50,7 @@ public abstract class AbstractIteratorLoader <S> implements ILoader<Iterator<S>>
 
 
     @Override
-    public void load(Iterator<S> documents) throws LoaderException
+    public void load(final Iterator<S> documents) throws LoaderException
     {
         // only load documents while the harvester is running
         while (documents.hasNext() && dedicatedEtl.getState() == ETLState.HARVESTING) {
@@ -69,7 +69,7 @@ public abstract class AbstractIteratorLoader <S> implements ILoader<Iterator<S>>
      *
      * @throws LoaderException when the load failed
      */
-    protected void loadElementAndIncrement(S document) throws LoaderException
+    protected void loadElementAndIncrement(final S document) throws LoaderException
     {
         // even if nothing was harvested, one source was processed, so we increment the counter
         if (document == null) {
@@ -80,9 +80,9 @@ public abstract class AbstractIteratorLoader <S> implements ILoader<Iterator<S>>
         try {
             loadElement(document);
             hasLoadedDocuments = true;
-        } catch (ExtractorException | TransformerException | LoaderException e) {
+        } catch (ExtractorException | TransformerException | LoaderException e) { // NOPMD, these exceptions don't need to be wrapped
             throw e;
-        } catch (Exception e) {
+        } catch (final RuntimeException e) { // NOPMD, wrap every other exception in a LoaderException
             throw new LoaderException(e);
         } finally {
             // even if the loading failed, we processed something, so we increment the counter

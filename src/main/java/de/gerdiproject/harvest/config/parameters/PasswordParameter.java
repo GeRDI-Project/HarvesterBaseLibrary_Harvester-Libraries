@@ -37,7 +37,7 @@ public class PasswordParameter extends StringParameter
      *
      * @throws IllegalArgumentException thrown if the key contains invalid characters
      */
-    public PasswordParameter(String key, String category, String defaultValue, Function<String, String> customMappingFunction) throws IllegalArgumentException
+    public PasswordParameter(final String key, final String category, final String defaultValue, final Function<String, String> customMappingFunction) throws IllegalArgumentException
     {
         super(key, category, defaultValue, customMappingFunction);
     }
@@ -50,7 +50,7 @@ public class PasswordParameter extends StringParameter
      * @param category the category of the parameter
      * @param defaultValue the default value
      */
-    public PasswordParameter(String key, String category, String defaultValue)
+    public PasswordParameter(final String key, final String category, final String defaultValue)
     {
         super(key, category, defaultValue);
     }

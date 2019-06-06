@@ -38,12 +38,6 @@ import de.gerdiproject.harvest.scheduler.json.ChangeSchedulerRequest;
 @Path("schedule")
 public class SchedulerRestResource extends AbstractRestResource<Scheduler, GetSchedulerEvent>
 {
-    public SchedulerRestResource()
-    {
-        super();
-    }
-
-
     /**
      * Adds a harvesting task with a specified cron tab to the schedule.
      *
@@ -55,7 +49,7 @@ public class SchedulerRestResource extends AbstractRestResource<Scheduler, GetSc
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.TEXT_PLAIN)
-    public Response addTask(String crontab)
+    public Response addTask(final String crontab)
     {
         return changeObject(restObject::addTask, crontab, ChangeSchedulerRequest.class);
     }
@@ -72,7 +66,7 @@ public class SchedulerRestResource extends AbstractRestResource<Scheduler, GetSc
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.TEXT_PLAIN)
-    public Response deleteTask(String crontab)
+    public Response deleteTask(final String crontab)
     {
         return changeObject(restObject::deleteTask, crontab, ChangeSchedulerRequest.class);
     }

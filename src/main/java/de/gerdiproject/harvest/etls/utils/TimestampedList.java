@@ -42,7 +42,7 @@ public class TimestampedList <T> extends LinkedList<TimestampedEntry<T>>
      *
      * @param capacity the max amount of items in the list
      */
-    public TimestampedList(int capacity)
+    public TimestampedList(final int capacity)
     {
         super();
         this.capacity = capacity;
@@ -56,7 +56,7 @@ public class TimestampedList <T> extends LinkedList<TimestampedEntry<T>>
      * @param initialValue the first item on the list
      * @param capacity the max amount of items in the list
      */
-    public TimestampedList(T initialValue, int capacity)
+    public TimestampedList(final T initialValue, final int capacity)
     {
         this(capacity);
         addValue(initialValue);
@@ -68,7 +68,7 @@ public class TimestampedList <T> extends LinkedList<TimestampedEntry<T>>
      *
      * @param value the new value
      */
-    public void addValue(T value)
+    public void addValue(final T value)
     {
         if (size() == capacity)
             removeFirst();
@@ -83,7 +83,7 @@ public class TimestampedList <T> extends LinkedList<TimestampedEntry<T>>
      *
      * @param other the {@linkplain TimestampedList} that is appended
      */
-    public void addAllSorted(Collection<TimestampedEntry<T>> other)
+    public void addAllSorted(final Collection<TimestampedEntry<T>> other)
     {
         if (other != null && !other.isEmpty()) {
             addAll(other);
@@ -122,7 +122,7 @@ public class TimestampedList <T> extends LinkedList<TimestampedEntry<T>>
     {
         final StringBuilder sb = new StringBuilder();
 
-        for (TimestampedEntry<T> entry : this) {
+        for (final TimestampedEntry<T> entry : this) {
             if (sb.length() != 0)
                 sb.append('\n');
 

@@ -48,7 +48,7 @@ class ParameterCategoryJson
      *
      * @param parameter an {@linkplain AbstractParameter} that is to be added
      */
-    public void addParameter(AbstractParameter<?> parameter)
+    public void addParameter(final AbstractParameter<?> parameter)
     {
         parameters.add(new ParameterJson(parameter));
     }
@@ -61,11 +61,11 @@ class ParameterCategoryJson
      *
      * @return all {@linkplain AbstractParameter}s that belong to this category
      */
-    public List<AbstractParameter<?>> getParameters(String category)
+    public List<AbstractParameter<?>> getParameters(final String category)
     {
         final List<AbstractParameter<?>> deserializedParameters = new LinkedList<>();
 
-        for (ParameterJson jsonParam : parameters) {
+        for (final ParameterJson jsonParam : parameters) {
             final AbstractParameter<?> deserializedParam = jsonParam.toAbstractParameter(category);
 
             if (deserializedParam != null)

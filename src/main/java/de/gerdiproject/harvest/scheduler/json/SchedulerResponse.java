@@ -27,7 +27,7 @@ import de.gerdiproject.harvest.scheduler.rest.SchedulerRestResource;
  */
 public class SchedulerResponse
 {
-    private Set<String> scheduledHarvestTasks;
+    private final Set<String> scheduledHarvestTasks;
 
 
     /**
@@ -35,7 +35,7 @@ public class SchedulerResponse
      *
      * @param scheduledHarvestTasks a set of all cron tabs of scheduled harvests
      */
-    public SchedulerResponse(Set<String> scheduledHarvestTasks)
+    public SchedulerResponse(final Set<String> scheduledHarvestTasks)
     {
         this.scheduledHarvestTasks = scheduledHarvestTasks;
     }

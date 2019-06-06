@@ -19,6 +19,7 @@ package de.gerdiproject.harvest.etls;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Locale;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
@@ -67,6 +68,7 @@ import de.gerdiproject.harvest.utils.HashGenerator;
  *
  * @author Robin Weiss
  */
+@SuppressWarnings("PMD.GodClass")
 public abstract class AbstractETL <T, S> implements IEventListener
 {
     protected IExtractor<T> extractor;
@@ -84,6 +86,12 @@ public abstract class AbstractETL <T, S> implements IEventListener
     protected final TimestampedList<ETLHealth> healthHistory;
     protected final TimestampedList<ETLState> stateHistory;
 
+    // event listener callback functions
+    private final Consumer<ResetContextEvent> onResetContextCallback = this::onResetContext;
+    private final Consumer<HarvestFinishedEvent> onHarvestFinishedCallback = this::onHarvestFinished;
+    private final Consumer<ParameterChangedEvent> onParameterChangedCallback = this::onParameterChanged;
+    private final Consumer<ContextDestroyedEvent> onContextDestroyedCallback = this::onContextDestroyed;
+
 
     /**
      * Constructor that initializes helper classes and fields.
@@ -100,13 +108,13 @@ public abstract class AbstractETL <T, S> implements IEventListener
      *
      * @param name the name of this ETL
      */
-    public AbstractETL(String name)
+    public AbstractETL(final String name)
     {
         this.stateHistory = new TimestampedList<>(ETLState.INITIALIZING, 10);
         this.healthHistory = new TimestampedList<>(ETLHealth.OK, 1);
 
         // set the name to camel case
-        this.name = name != null ? name : getClass().getSimpleName();
+        this.name = name == null ? getClass().getSimpleName() : name;
 
         this.logger = LoggerFactory.getLogger(getName());
         this.maxDocumentCount = new AtomicInteger(0);
@@ -144,7 +152,7 @@ public abstract class AbstractETL <T, S> implements IEventListener
         try {
             return (ILoader<S>) EventSystem.sendSynchronousEvent(new CreateLoaderEvent());
 
-        } catch (ClassCastException e) {
+        } catch (final ClassCastException e) {
             logger.error(e.getMessage());
             return null;
         }
@@ -190,7 +198,7 @@ public abstract class AbstractETL <T, S> implements IEventListener
      *
      * @param json a simplified JSON representation of the ETL
      */
-    public void loadFromJson(ETLJson json)
+    public void loadFromJson(final ETLJson json)
     {
         this.stateHistory.addAllSorted(json.getStateHistory());
 
@@ -283,18 +291,21 @@ public abstract class AbstractETL <T, S> implements IEventListener
      * Computes a hash value of the files that are to be harvested, which is
      * used for checking if the files have changed.
      *
-     * @return a hash as a checksum of the data which is to be harvested
+     * @return a hash as a checksum of the data which is to be harvested,
+     * or null if no hash could be retrieved
      */
     protected String initHash()
     {
+        if (extractor == null)
+            return null;
+
         final String versionString = extractor.getUniqueVersionString();
 
-        if (versionString != null) {
-            final HashGenerator generator = new HashGenerator(StandardCharsets.UTF_8);
-            return generator.getShaHash(versionString);
-        }
+        if (versionString == null)
+            return null;
 
-        return null;
+        final HashGenerator generator = new HashGenerator(StandardCharsets.UTF_8);
+        return generator.getShaHash(versionString);
     }
 
 
@@ -308,20 +319,15 @@ public abstract class AbstractETL <T, S> implements IEventListener
         try {
             extractor = createExtractor();
             extractor.init(this);
-        } catch (ETLPreconditionException e) {
+        } catch (final ETLPreconditionException e) { // NOPMD forward precondition exceptions
             throw e;
 
-        } catch (RuntimeException e) {
+        } catch (final RuntimeException e) { // NOPMD wrap any other exception
             throw new ETLPreconditionException(String.format(ETLConstants.EXTRACTOR_CREATE_ERROR, getName()), e);
         }
 
         // calculate hash
-        try {
-            hash = initHash();
-        } catch (NullPointerException e) {
-            logger.error(String.format(ETLConstants.HASH_CREATION_FAILED, getName()), e);
-            hash = null;
-        }
+        hash = initHash();
 
         // calculate number of documents
         maxDocumentCount.set(initMaxNumberOfDocuments());
@@ -372,13 +378,13 @@ public abstract class AbstractETL <T, S> implements IEventListener
             errorMessage = ETLConstants.LOADER_CREATE_ERROR;
             loader.init(this);
 
-        } catch (ETLPreconditionException e) {
+        } catch (final ETLPreconditionException e) {
             // update ETL status
             setStatus(ETLState.DONE);
             setHealth(ETLHealth.HARVEST_FAILED);
             throw e;
 
-        } catch (RuntimeException e) {
+        } catch (final RuntimeException e) { // NOPMD catch any runtime exception to improve stability
             // update ETL status
             setStatus(ETLState.DONE);
             setHealth(ETLHealth.HARVEST_FAILED);
@@ -448,7 +454,7 @@ public abstract class AbstractETL <T, S> implements IEventListener
                 logger.info(String.format(ETLConstants.ETL_FINISHED, getName()));
 
             setStatus(ETLState.DONE);
-        } catch (Exception e) {
+        } catch (final RuntimeException e) { // NOPMD catch any runtime exception to improve stability
             finishHarvestExceptionally(e);
         }
     }
@@ -460,7 +466,7 @@ public abstract class AbstractETL <T, S> implements IEventListener
     *
     * @param reason the exception that caused the harvest to fail
     */
-    protected void finishHarvestExceptionally(Throwable reason)
+    protected void finishHarvestExceptionally(final Throwable reason)
     {
         if (getState() == ETLState.ABORTING)
             logger.info(String.format(ETLConstants.ETL_ABORTED, getName()));
@@ -518,7 +524,7 @@ public abstract class AbstractETL <T, S> implements IEventListener
      * Changes the status that represents what the ETL is currently doing.
      * @param state a new status
      */
-    public void setStatus(ETLState state)
+    public void setStatus(final ETLState state)
     {
         this.stateHistory.addValue(state);
     }
@@ -539,7 +545,7 @@ public abstract class AbstractETL <T, S> implements IEventListener
      * Changes the health status.
      * @param health the new health status value
      */
-    public void setHealth(ETLHealth health)
+    public void setHealth(final ETLHealth health)
     {
         this.healthHistory.addValue(health);
     }
@@ -571,7 +577,7 @@ public abstract class AbstractETL <T, S> implements IEventListener
      *
      * @param name the new name of the ETL
      */
-    public final void setName(String name)
+    public final void setName(final String name)
     {
         this.name = name;
     }
@@ -602,19 +608,33 @@ public abstract class AbstractETL <T, S> implements IEventListener
     @Override
     public String toString()
     {
-        String etlStatus = getState().toString().toLowerCase();
+        final ETLState state = getState();
+        final String etlStatus;
 
-        if (!enabledParameter.getValue())
+        // check if the ETL is enabled
+        if (enabledParameter.getValue()) {
+            final StringBuilder sb = new StringBuilder(state.toString().toLowerCase(Locale.ENGLISH));
+
+            // add more info if the ETL is harvesting
+            if (state == ETLState.HARVESTING) {
+                final int currCount = getHarvestedCount();
+                final int maxCount = getMaxNumberOfDocuments();
+
+                if (maxCount == -1)
+                    sb.append(String.format(ETLConstants.PROGRESS_NO_BOUNDS, currCount));
+                else {
+                    sb.append(String.format(
+                                  ETLConstants.PROGRESS,
+                                  Math.round(100f * currCount / maxCount),
+                                  currCount,
+                                  maxCount));
+                }
+            }
+
+            etlStatus = sb.toString();
+
+        } else
             etlStatus = ETLConstants.ETL_DISABLED;
-        else if (getState() == ETLState.HARVESTING) {
-            final int currCount = getHarvestedCount();
-            final int maxCount = getMaxNumberOfDocuments();
-
-            if (maxCount != -1)
-                etlStatus += String.format(ETLConstants.PROGRESS, Math.round(100f * currCount / maxCount), currCount, maxCount);
-            else
-                etlStatus += String.format(ETLConstants.PROGRESS_NO_BOUNDS, currCount);
-        }
 
         return String.format(ETLConstants.ETL_PRETTY, getName(), etlStatus, getHealth().toString());
     }
@@ -625,40 +645,24 @@ public abstract class AbstractETL <T, S> implements IEventListener
     //////////////////////////////
 
     /**
-     * Event callback that is called when all the service is reset.
-     *
-     * @see AbstractETL#onResetContext()
-     */
-    private final Consumer<ResetContextEvent> onResetContextCallback =
-        (ResetContextEvent event) -> onResetContext();
-
-
-    /**
      * The implementation of the service reset callback.
      * Attempts to cancel ongoing harvests.
+     *
+     * @param event the event that triggered the callback
      */
-    protected void onResetContext()
+    protected void onResetContext(final ResetContextEvent event)
     {
         cancelHarvest();
     }
 
 
     /**
-     * Event callback that is called when all ETLs finished harvesting.
-     *
-     * @see AbstractETL#onHarvestFinished(boolean)
-     */
-    private final Consumer<HarvestFinishedEvent> onHarvestFinishedCallback =
-        (HarvestFinishedEvent event) -> onHarvestFinished(event.isSuccessful());
-
-
-    /**
      * The implementation of the harvest finished callback.
      * Sets the status to IDLE if it is DONE.
      *
-     * @param wasSuccessful if true, the harvest was a success
+     * @param event the event that triggered the callback
      */
-    protected void onHarvestFinished(boolean wasSuccessful)
+    protected void onHarvestFinished(final HarvestFinishedEvent event)
     {
         if (getState() == ETLState.DONE)
             setStatus(ETLState.IDLE);
@@ -666,21 +670,14 @@ public abstract class AbstractETL <T, S> implements IEventListener
 
 
     /**
-     * Event callback for changing the loader.
-     *
-     * @see AbstractETL#onParameterChanged(AbstractParameter)
-     */
-    private final Consumer<ParameterChangedEvent> onParameterChangedCallback =
-        (ParameterChangedEvent event) -> onParameterChanged(event.getParameter());
-
-
-    /**
      * The implementation of the parameter changed callback.
      *
-     * @param param the parameter that has changed
+     * @param event the event that triggered the callback
      */
-    protected void onParameterChanged(AbstractParameter<?> param)
+    protected void onParameterChanged(final ParameterChangedEvent event)
     {
+        final AbstractParameter<?> param = event.getParameter();
+
         if (param.getKey().equals(LoaderConstants.LOADER_TYPE_PARAM_KEY)
             && param.getCategory().equals(LoaderConstants.PARAMETER_CATEGORY)) {
 
@@ -693,18 +690,11 @@ public abstract class AbstractETL <T, S> implements IEventListener
 
 
     /**
-     * Event callback that is called when the service is shut down.
-     *
-     * @see AbstractETL#onContextDestroyed()
-     */
-    private final Consumer<ContextDestroyedEvent> onContextDestroyedCallback =
-        (ContextDestroyedEvent event) -> onContextDestroyed();
-
-
-    /**
      * The implementation of the context destroyed callback.
+     *
+     * @param event the event that triggered the callback
      */
-    protected void onContextDestroyed()
+    protected void onContextDestroyed(final ContextDestroyedEvent event)
     {
         cancelHarvest();
     }

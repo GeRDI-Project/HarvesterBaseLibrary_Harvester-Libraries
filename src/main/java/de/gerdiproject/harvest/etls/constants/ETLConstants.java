@@ -68,7 +68,6 @@ public class ETLConstants
 
 
     // HASH GENERATION
-    public static final String HASH_CREATION_FAILED = "Failed to create hash for %s!";
     public static final String OCTET_FORMAT = "%02x";
     public static final String SHA_HASH_ALGORITHM = "SHA";
 

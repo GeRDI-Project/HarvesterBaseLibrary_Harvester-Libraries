@@ -26,7 +26,7 @@ import de.gerdiproject.harvest.scheduler.Scheduler;
  */
 public class ChangeSchedulerRequest
 {
-    private String cronTab;
+    private final String cronTab;
 
 
     /**
@@ -34,7 +34,7 @@ public class ChangeSchedulerRequest
      *
      * @param crontab  the crontab that is to be changed
      */
-    public ChangeSchedulerRequest(String crontab)
+    public ChangeSchedulerRequest(final String crontab)
     {
         this.cronTab = crontab;
     }

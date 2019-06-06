@@ -25,22 +25,19 @@ import org.slf4j.LoggerFactory;
 import de.gerdiproject.harvest.application.constants.ApplicationConstants;
 import de.gerdiproject.harvest.application.events.ServiceInitializedEvent;
 import de.gerdiproject.harvest.config.Configuration;
-import de.gerdiproject.harvest.config.constants.ConfigurationConstants;
 import de.gerdiproject.harvest.etls.AbstractETL;
-import de.gerdiproject.harvest.etls.ETLPreconditionException;
 import de.gerdiproject.harvest.etls.events.GetRepositoryNameEvent;
 import de.gerdiproject.harvest.etls.loaders.ILoader;
 import de.gerdiproject.harvest.etls.loaders.utils.LoaderRegistry;
 import de.gerdiproject.harvest.etls.utils.ETLManager;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.scheduler.Scheduler;
-import de.gerdiproject.harvest.scheduler.constants.SchedulerConstants;
 import de.gerdiproject.harvest.utils.CancelableFuture;
 import de.gerdiproject.harvest.utils.logger.HarvesterLog;
-import de.gerdiproject.harvest.utils.logger.constants.LoggerConstants;
 import de.gerdiproject.harvest.utils.logger.events.GetMainLogEvent;
 import de.gerdiproject.harvest.utils.maven.MavenUtils;
 import de.gerdiproject.harvest.utils.maven.events.GetMavenUtilsEvent;
+import lombok.Value;
 
 
 /**
@@ -49,13 +46,14 @@ import de.gerdiproject.harvest.utils.maven.events.GetMavenUtilsEvent;
  *
  * @author Robin Weiss
  */
-public class MainContext
+@Value
+public final class MainContext
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(MainContext.class);
-    private static volatile MainContext instance = null;
+    private static volatile MainContext instance;
 
-    private static boolean hasFailed;
-    private static boolean isInitialized;
+    private static boolean failed;
+    private static boolean initialized;
 
     private final HarvesterLog log;
     private final String moduleName;
@@ -82,25 +80,25 @@ public class MainContext
      * @see de.gerdiproject.harvest.etls.AbstractETL
      */
     private MainContext(
-        Class<? extends ContextListener> callerClass,
-        Supplier<String> repositoryNameSupplier,
-        Supplier<List<? extends AbstractETL<?, ?>>> etlSupplier,
-        List<Class<? extends ILoader<?>>> loaderClasses) throws InstantiationException, IllegalAccessException
+        final Class<? extends ContextListener> callerClass,
+        final Supplier<String> repositoryNameSupplier,
+        final Supplier<List<? extends AbstractETL<?, ?>>> etlSupplier,
+        final List<Class<? extends ILoader<?>>> loaderClasses) throws InstantiationException, IllegalAccessException
     {
         this.moduleName = repositoryNameSupplier.get().replaceAll(" ", "") + ApplicationConstants.HARVESTER_SERVICE_NAME_SUFFIX;
         EventSystem.addSynchronousListener(GetRepositoryNameEvent.class, repositoryNameSupplier);
 
-        this.log = createLog(moduleName);
-        EventSystem.addSynchronousListener(GetMainLogEvent.class, this::getMainLog);
+        this.log = MainContextUtils.createLog(moduleName);
+        EventSystem.addSynchronousListener(GetMainLogEvent.class, this::getLog);
 
-        this.configuration = createConfiguration(moduleName);
+        this.configuration = MainContextUtils.createConfiguration(moduleName);
 
-        this.mavenUtils = createMavenUtils(callerClass);
+        this.mavenUtils = MainContextUtils.createMavenUtils(callerClass);
         EventSystem.addSynchronousListener(GetMavenUtilsEvent.class, this::getMavenUtils);
 
-        this.loaderRegistry = createLoaderFactory(loaderClasses);
-        this.etlManager = createEtlManager(moduleName, etlSupplier);
-        this.scheduler = createScheduler(moduleName);
+        this.loaderRegistry = MainContextUtils.createLoaderRegistry(loaderClasses);
+        this.etlManager = MainContextUtils.createEtlManager(moduleName, etlSupplier);
+        this.scheduler = MainContextUtils.createScheduler(moduleName);
     }
 
 
@@ -113,16 +111,16 @@ public class MainContext
      * @param loaderClasses a list of {@linkplain ILoader} classes for loading documents to a search index
      */
     public static void init(
-        Class<? extends ContextListener> callerClass,
-        Supplier<String> repositoryNameSupplier,
-        Supplier<List<? extends AbstractETL<?, ?>>> etlSupplier,
-        List<Class<? extends ILoader<?>>> loaderClasses)
+        final Class<? extends ContextListener> callerClass,
+        final Supplier<String> repositoryNameSupplier,
+        final Supplier<List<? extends AbstractETL<?, ?>>> etlSupplier,
+        final List<Class<? extends ILoader<?>>> loaderClasses)
     {
         LOGGER.info(ApplicationConstants.INIT_SERVICE);
-        hasFailed = false;
-        isInitialized = false;
+        failed = false;
+        initialized = false;
 
-        CancelableFuture<Boolean> initProcess = new CancelableFuture<>(() -> {
+        final CancelableFuture<Boolean> initProcess = new CancelableFuture<>(() -> {
             // clear old instance if necessary
             destroy();
 
@@ -143,7 +141,7 @@ public class MainContext
      */
     public static boolean isInitialized()
     {
-        return isInitialized;
+        return initialized;
     }
 
     /**
@@ -153,14 +151,14 @@ public class MainContext
      */
     public static boolean hasFailed()
     {
-        return hasFailed;
+        return failed;
     }
 
 
     /**
      * Clears the current Singleton instance if it exists and nullifies it.
      */
-    public static void destroy()
+    public static synchronized void destroy() // NOPMD synchronized fixes another issue here
     {
         if (instance != null) {
             instance.removeEventListeners();
@@ -168,8 +166,8 @@ public class MainContext
             instance = null;
         }
 
-        hasFailed = false;
-        isInitialized = false;
+        failed = false;
+        initialized = false;
     }
 
 
@@ -187,179 +185,6 @@ public class MainContext
 
 
     /**
-     * Callback function for the {@linkplain GetMainLogEvent}.
-     * Returns the main log of the service.
-     *
-     * @return the main log of the service
-     */
-    private HarvesterLog getMainLog()
-    {
-        return log;
-    }
-
-
-    /**
-     * Callback function for the {@linkplain GetMavenUtilsEvent}.
-     * Returns Maven utilities.
-     *
-     * @return Maven utilities
-     */
-    private MavenUtils getMavenUtils()
-    {
-        return mavenUtils;
-    }
-
-
-    /**
-     * Creates a {@linkplain LoaderRegistry}, and registers all loader classes.
-     *
-     * @param loaderClasses a list of {@linkplain ILoader} classes for
-     *         loading documents to a search index
-     *
-     * @return a new {@linkplain LoaderRegistry}
-     */
-    private LoaderRegistry createLoaderFactory(List<Class<? extends ILoader<?>>> loaderClasses)
-    {
-        LOGGER.info(String.format(ApplicationConstants.INIT_FIELD, LoaderRegistry.class.getSimpleName()));
-
-        final LoaderRegistry registry = new LoaderRegistry();
-        registry.addEventListeners();
-
-        for (Class<? extends ILoader<?>> s : loaderClasses)
-            registry.registerLoader(s);
-
-        LOGGER.info(String.format(ApplicationConstants.INIT_FIELD_SUCCESS, LoaderRegistry.class.getSimpleName()));
-
-        return registry;
-    }
-
-
-    /**
-     * Creates a {@linkplain HarvesterLog} and assigns it to this context.
-     *
-     * @param moduleName the name of this service
-     *
-     * @return a new {@linkplain HarvesterLog} for this context
-     */
-    private HarvesterLog createLog(String moduleName)
-    {
-        LOGGER.info(String.format(ApplicationConstants.INIT_FIELD, HarvesterLog.class.getSimpleName()));
-
-        HarvesterLog serviceLog = new HarvesterLog(String.format(LoggerConstants.LOG_FILE_PATH, moduleName));
-        serviceLog.registerLogger();
-
-        LOGGER.info(String.format(ApplicationConstants.INIT_FIELD_SUCCESS, HarvesterLog.class.getSimpleName()));
-
-        return serviceLog;
-    }
-
-
-    /**
-     * Creates a {@linkplain MavenUtils} and assigns it to this context.
-     *
-     * @param harvesterClass the class of the main harvester
-     *
-     * @return a new {@linkplain MavenUtils} for this context
-     */
-    private MavenUtils createMavenUtils(Class<?> harvesterClass)
-    {
-        LOGGER.info(String.format(ApplicationConstants.INIT_FIELD, MavenUtils.class.getSimpleName()));
-
-        MavenUtils utils = new MavenUtils(harvesterClass);
-
-        LOGGER.info(String.format(ApplicationConstants.INIT_FIELD_SUCCESS, MavenUtils.class.getSimpleName()));
-
-        return utils;
-    }
-
-
-    /**
-     * Creates the {@linkplain ETLManager} with all {@linkplain AbstractETL}s and assigns it to this context.
-     *
-     * @param moduleName the name of this service
-     * @param etlSupplier all {@linkplain AbstractETL}s required for harvesting
-     *
-     * @return a new {@linkplain ETLManager} for this context
-     */
-    private ETLManager createEtlManager(String moduleName, Supplier<List<? extends AbstractETL<?, ?>>> etlSupplier)
-    throws InstantiationException, IllegalAccessException
-    {
-        LOGGER.info(String.format(ApplicationConstants.INIT_FIELD, ETLManager.class.getSimpleName()));
-
-        final ETLManager manager = new ETLManager(moduleName);
-
-        // construct harvesters
-        final List<? extends AbstractETL<?, ?>> etlComponents = etlSupplier.get();
-
-        // initialize and register harvesters
-        for (AbstractETL<?, ?> etl : etlComponents) {
-            manager.register(etl);
-
-            LOGGER.info(String.format(ApplicationConstants.INIT_FIELD, etl.getName()));
-
-            etl.init(moduleName);
-
-            try {
-                etl.update();
-            } catch (ETLPreconditionException e) { // NOPMD - Ignore exceptions, because we do not need to harvest yet
-            }
-
-            LOGGER.info(String.format(ApplicationConstants.INIT_FIELD_SUCCESS, etl.getName()));
-        }
-
-        manager.loadFromDisk();
-        manager.addEventListeners();
-
-        LOGGER.info(String.format(ApplicationConstants.INIT_FIELD_SUCCESS, ETLManager.class.getSimpleName()));
-
-        return manager;
-    }
-
-
-    /**
-     * Creates a {@linkplain Scheduler} and assigns it to this context.
-     *
-     * @param moduleName the name of this service
-     *
-     * @return a new {@linkplain Scheduler} for this context
-     */
-    private Scheduler createScheduler(String moduleName)
-    {
-        LOGGER.info(String.format(ApplicationConstants.INIT_FIELD, Scheduler.class.getSimpleName()));
-
-        final String schedulerCachePath = String.format(SchedulerConstants.CACHE_PATH, moduleName);
-        Scheduler sched = new Scheduler(moduleName, schedulerCachePath);
-        sched.loadFromDisk();
-        sched.addEventListeners();
-
-        LOGGER.info(String.format(ApplicationConstants.INIT_FIELD_SUCCESS, Scheduler.class.getSimpleName()));
-        return sched;
-    }
-
-
-    /**
-     * Creates a {@linkplain Configuration} and assigns it to this context.
-     *
-     * @param moduleName the name of this service
-     *
-     * @return a new {@linkplain Configuration} for this context
-     */
-    private Configuration createConfiguration(String moduleName)
-    {
-        LOGGER.info(String.format(ApplicationConstants.INIT_FIELD, Configuration.class.getSimpleName()));
-
-        Configuration config = new Configuration(moduleName);
-        config.setCacheFilePath(String.format(ConfigurationConstants.CONFIG_PATH, moduleName));
-        config.loadFromDisk();
-        config.addEventListeners();
-
-        LOGGER.info(String.format(ApplicationConstants.INIT_FIELD_SUCCESS, Configuration.class.getSimpleName()));
-
-        return config;
-    }
-
-
-    /**
      * This function is called when the asynchronous harvester initialization
      * completes successfully. It logs the success and changes the state
      * machine's current state.
@@ -368,10 +193,10 @@ public class MainContext
      *
      * @return true, if the harvester was initialized successfully
      */
-    private static Boolean onHarvesterInitializedSuccess(Boolean state)
+    private static Boolean onHarvesterInitializedSuccess(final Boolean state)
     {
-        hasFailed = false;
-        isInitialized = true;
+        failed = false;
+        initialized = true;
 
         // change state
         EventSystem.sendEvent(new ServiceInitializedEvent(state));
@@ -392,10 +217,10 @@ public class MainContext
      *
      * @return false
      */
-    private static Boolean onHarvesterInitializedFailed(Throwable reason)
+    private static Boolean onHarvesterInitializedFailed(final Throwable reason)
     {
-        hasFailed = true;
-        isInitialized = true;
+        failed = true;
+        initialized = true;
 
         // log exception that caused the failure
         LOGGER.error(ApplicationConstants.INIT_SERVICE_FAILED, reason.getCause());

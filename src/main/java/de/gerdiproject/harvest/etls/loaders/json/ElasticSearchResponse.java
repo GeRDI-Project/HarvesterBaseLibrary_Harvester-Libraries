@@ -32,11 +32,16 @@ public class ElasticSearchResponse
 {
     private int took;
 
-    @Getter(value = AccessLevel.PRIVATE)
+    @Getter(AccessLevel.PRIVATE)
     private boolean errors;
     private List<ElasticSearchIndexWrapper> items;
 
 
+    /**
+     * Returns true if the Elasticsearch response was erroneous.
+     *
+     * @return true if there were errors
+     */
     public boolean hasErrors()
     {
         return errors;

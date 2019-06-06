@@ -15,11 +15,8 @@
  */
 package de.gerdiproject.harvest.etls.loaders;
 
-import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.OutputStreamWriter;
 import java.util.Iterator;
 
 import com.google.gson.Gson;
@@ -79,24 +76,22 @@ public class DiskLoader extends AbstractIteratorLoader<DataCiteJson>
 
 
     @Override
-    public void load(Iterator<DataCiteJson> documents) throws LoaderException
+    public void load(final Iterator<DataCiteJson> documents) throws LoaderException
     {
         try {
             super.load(documents);
-        } catch (ExtractorException | TransformerException | LoaderException e) {
+        } catch (ExtractorException | TransformerException | LoaderException e) { // NOPMD, these exceptions don't need to be wrapped
             throw e;
-        } catch (Exception e) {
+        } catch (final RuntimeException e) { // NOPMD, every other exception must be wrapped
             throw new LoaderException(e);
         }
     }
 
 
     @Override
-    public void init(AbstractETL<?, ?> etl)
+    public void init(final AbstractETL<?, ?> etl)
     {
         super.init(etl);
-
-        final String sourceHash = etl.getHash();
 
         // create empty file
         final String fileName = etl.getName() + DiskLoaderConstants.JSON_EXTENSION;
@@ -109,7 +104,7 @@ public class DiskLoader extends AbstractIteratorLoader<DataCiteJson>
 
         // create JSON writer
         try {
-            writer = new JsonWriter(new BufferedWriter(new OutputStreamWriter(new FileOutputStream(targetFile), etl.getCharset())));
+            writer = new JsonWriter(FileUtils.getWriter(targetFile, etl.getCharset()));
             writer.beginObject();
 
             // write the current timestamp
@@ -117,6 +112,8 @@ public class DiskLoader extends AbstractIteratorLoader<DataCiteJson>
             writer.value(System.currentTimeMillis());
 
             // write the hash
+            final String sourceHash = etl.getHash();
+
             if (sourceHash != null) {
                 writer.name(DiskLoaderConstants.SOURCE_HASH_JSON);
                 writer.value(sourceHash);
@@ -124,7 +121,7 @@ public class DiskLoader extends AbstractIteratorLoader<DataCiteJson>
 
             writer.name(DiskLoaderConstants.DOCUMENTS_JSON);
             writer.beginArray();
-        } catch (IOException e) {
+        } catch (final IOException e) {
             throw new IllegalStateException(e);
         }
     }
@@ -146,7 +143,7 @@ public class DiskLoader extends AbstractIteratorLoader<DataCiteJson>
             writer.endObject();
             writer.close();
             writer = null;
-        } catch (IOException e) {
+        } catch (final IOException e) {
             throw new LoaderException(e);
         }
 
@@ -156,12 +153,12 @@ public class DiskLoader extends AbstractIteratorLoader<DataCiteJson>
 
 
     @Override
-    public void loadElement(DataCiteJson document) throws LoaderException
+    public void loadElement(final DataCiteJson document) throws LoaderException
     {
         if (document != null) {
             try {
                 gson.toJson(document, document.getClass(), writer);
-            } catch (JsonIOException e) {
+            } catch (final JsonIOException e) {
                 throw new LoaderException(e);
             }
         }

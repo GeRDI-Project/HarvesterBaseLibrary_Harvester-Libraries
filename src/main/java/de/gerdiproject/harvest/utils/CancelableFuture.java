@@ -43,8 +43,9 @@ public class CancelableFuture<T> extends CompletableFuture<T>
      * @param executor
      *            the thread pool that handles the asynchronous task
      */
-    public CancelableFuture(Callable<T> task, ExecutorService executor)
+    public CancelableFuture(final Callable<T> task, final ExecutorService executor)
     {
+        super();
         this.inner = executor.submit(() -> complete(task));
     }
 
@@ -56,9 +57,10 @@ public class CancelableFuture<T> extends CompletableFuture<T>
      * @param task
      *            the task to be executed asynchronously
      */
-    public CancelableFuture(Callable<T> task)
+    public CancelableFuture(final Callable<T> task)
     {
-        ExecutorService executor = ForkJoinPool.commonPool();
+        super();
+        final ExecutorService executor = ForkJoinPool.commonPool();
         this.inner = executor.submit(() -> complete(task));
     }
 
@@ -68,20 +70,20 @@ public class CancelableFuture<T> extends CompletableFuture<T>
      * an exception, the future will complete with that exception. Otherwise,
      * the future will complete with the value returned from the callable.
      */
-    private void complete(Callable<T> callable)
+    private void complete(final Callable<T> callable)
     {
         try {
-            T result = callable.call();
+            final T result = callable.call();
             complete(result);
 
-        } catch (Exception e) {
+        } catch (final Exception e) { // NOPMD required
             completeExceptionally(e);
         }
     }
 
 
     @Override
-    public boolean cancel(boolean mayInterrupt)
+    public boolean cancel(final boolean mayInterrupt)
     {
         return inner.cancel(mayInterrupt) && super.cancel(true);
     }

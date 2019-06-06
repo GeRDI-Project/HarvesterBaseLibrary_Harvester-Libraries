@@ -41,7 +41,7 @@ class ParameterJson
      *
      * @param parameter the {@linkplain AbstractParameter} of which a JSON object is to be created
      */
-    public ParameterJson(AbstractParameter<?> parameter)
+    public ParameterJson(final AbstractParameter<?> parameter)
     {
         this.key = parameter.getKey();
         this.value = parameter.getValue() == null ? null : parameter.getValue().toString();
@@ -56,7 +56,7 @@ class ParameterJson
      *
      * @return an {@linkplain AbstractParameter} that mirrors this class
      */
-    public AbstractParameter<?> toAbstractParameter(String category)
+    public AbstractParameter<?> toAbstractParameter(final String category)
     {
         AbstractParameter<?> param = null;
 

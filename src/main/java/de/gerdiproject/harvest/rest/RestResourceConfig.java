@@ -32,7 +32,7 @@ public class RestResourceConfig extends Application
     @Override
     public Set<Class<?>> getClasses()
     {
-        Set<Class<?>> resources = new java.util.HashSet<>();
+        final Set<Class<?>> resources = new java.util.HashSet<>();
         addRestResourceClasses(resources);
 
         return resources;
@@ -44,7 +44,7 @@ public class RestResourceConfig extends Application
      * populated with all resources defined in the project. If required, comment
      * out calling this method in getClasses().
      */
-    private void addRestResourceClasses(Set<Class<?>> resources)
+    private void addRestResourceClasses(final Set<Class<?>> resources)
     {
         resources.add(de.gerdiproject.harvest.etls.rest.ETLRestResource.class);
         resources.add(de.gerdiproject.harvest.config.rest.ConfigurationRestResource.class);
