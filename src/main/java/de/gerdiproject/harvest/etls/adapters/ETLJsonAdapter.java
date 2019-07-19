@@ -38,21 +38,21 @@ import de.gerdiproject.harvest.etls.utils.TimestampedList;
 public class ETLJsonAdapter implements JsonDeserializer<ETLJson>
 {
     @Override
-    public ETLJson deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context) throws JsonParseException
+    public ETLJson deserialize(final JsonElement json, final Type typeOfT, final JsonDeserializationContext context) throws JsonParseException
     {
         final JsonObject jsonObject = json.getAsJsonObject();
 
         final JsonElement nameEle = jsonObject.get("name");
-        final String name = nameEle != null ? nameEle.getAsString() : null;
+        final String name = nameEle == null ? null : nameEle.getAsString();
 
         final JsonElement versionHashEle = jsonObject.get("versionHash");
-        final String versionHash = versionHashEle != null ? versionHashEle.getAsString() : null;
+        final String versionHash = versionHashEle == null ? null : versionHashEle.getAsString();
 
         final JsonElement harvestedCountEle = jsonObject.get("harvestedCount");
-        final int harvestedCount = harvestedCountEle != null ? harvestedCountEle.getAsInt() : 0;
+        final int harvestedCount = harvestedCountEle == null ? 0 : harvestedCountEle.getAsInt();
 
         final JsonElement maxDocumentCountEle = jsonObject.get("maxDocumentCount");
-        final int maxDocumentCount = maxDocumentCountEle != null ? maxDocumentCountEle.getAsInt() : 1;
+        final int maxDocumentCount = maxDocumentCountEle == null ? 1 : maxDocumentCountEle.getAsInt();
 
         final JsonElement statusHistoryEle = jsonObject.get("statusHistory");
         final Type statusHistoryType = new TypeToken<ETLState>() {} .getType();

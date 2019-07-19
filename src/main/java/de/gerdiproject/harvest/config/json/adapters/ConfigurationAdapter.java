@@ -16,10 +16,10 @@
 package de.gerdiproject.harvest.config.json.adapters;
 
 import java.lang.reflect.Type;
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import com.google.gson.JsonDeserializationContext;
 import com.google.gson.JsonDeserializer;
@@ -44,13 +44,13 @@ public class ConfigurationAdapter implements JsonDeserializer<Configuration>, Js
 
 
     @Override
-    public Configuration deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context) throws JsonParseException
+    public Configuration deserialize(final JsonElement json, final Type typeOfT, final JsonDeserializationContext context) throws JsonParseException
     {
         final Map<String, ParameterCategoryJson> jsonCategories = context.deserialize(json, PARAM_MAP_TYPE);
 
         // add all parameters to a single list
         final List<AbstractParameter<?>> parameters = new LinkedList<>();
-        jsonCategories.forEach((String categoryName, ParameterCategoryJson jsonCat) ->
+        jsonCategories.forEach((final String categoryName, final ParameterCategoryJson jsonCat) ->
                                parameters.addAll(jsonCat.getParameters(categoryName)));
 
         // convert list to array
@@ -62,11 +62,11 @@ public class ConfigurationAdapter implements JsonDeserializer<Configuration>, Js
 
 
     @Override
-    public JsonElement serialize(Configuration src, Type typeOfSrc, JsonSerializationContext context)
+    public JsonElement serialize(final Configuration src, final Type typeOfSrc, final JsonSerializationContext context)
     {
-        final Map<String, ParameterCategoryJson> jsonCategoriesMap = new HashMap<>();
+        final Map<String, ParameterCategoryJson> jsonCategoriesMap = new ConcurrentHashMap<>();
 
-        for (AbstractParameter<?> param : src.getParameters()) {
+        for (final AbstractParameter<?> param : src.getParameters()) {
             final String categoryName = param.getCategory();
             ParameterCategoryJson category = jsonCategoriesMap.get(categoryName);
 

@@ -18,9 +18,7 @@ package de.gerdiproject.harvest.utils.logger;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
@@ -44,7 +42,7 @@ import de.gerdiproject.harvest.utils.logger.constants.LoggerConstants;
  */
 public class HarvesterLog
 {
-    private static org.slf4j.Logger LOGGER = LoggerFactory.getLogger(HarvesterLog.class);
+    private static final org.slf4j.Logger LOGGER = LoggerFactory.getLogger(HarvesterLog.class);
 
     private final FileAppender<ILoggingEvent> fileAppender;
     private final Charset charset;
@@ -80,7 +78,7 @@ public class HarvesterLog
      */
     public void clearLog()
     {
-        boolean wasStarted = fileAppender.isStarted();
+        final boolean wasStarted = fileAppender.isStarted();
 
         // stop logging and delete the log file
         fileAppender.stop();
@@ -128,23 +126,21 @@ public class HarvesterLog
      *
      * @return all log messages that fit the filter criteria
      */
-    public String getLog(List<String> dateFilters, List<String> levelFilters, List<String> classFilters)
+    public String getLog(final List<String> dateFilters, final List<String> levelFilters, final List<String> classFilters)
     {
         final StringBuilder logBuilder = new StringBuilder();
 
         try
-            (BufferedReader reader = new BufferedReader(
-                new InputStreamReader(
-                    new FileInputStream(fileAppender.getFile()), charset))) {
+            (BufferedReader bufferedReader = FileUtils.getReader(fileAppender.getFile(), charset)) {
 
             if (dateFilters == null && levelFilters == null && classFilters == null)
-                logBuilder.append(reader.lines().collect(Collectors.joining("\n")));
+                logBuilder.append(bufferedReader.lines().collect(Collectors.joining("\n")));
             else {
 
-                String line;
                 boolean shouldAddLine = false;
 
-                while ((line = reader.readLine()) != null) {
+                while (bufferedReader.ready()) {
+                    final String line = bufferedReader.readLine();
                     final Matcher lineMatch = LoggerConstants.PARSE_LOG_PATTERN.matcher(line);
 
                     if (lineMatch.matches())
@@ -157,7 +153,7 @@ public class HarvesterLog
                         logBuilder.append(line).append('\n');
                 }
             }
-        } catch (IOException e) {
+        } catch (final IOException e) {
             LOGGER.error(String.format(LoggerConstants.ERROR_READING_LOG, fileAppender.getFile()), e);
             return null;
         }

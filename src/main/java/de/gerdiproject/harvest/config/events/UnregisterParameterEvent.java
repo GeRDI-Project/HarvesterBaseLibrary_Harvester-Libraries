@@ -36,7 +36,7 @@ public class UnregisterParameterEvent implements IEvent
      *
      * @param param the parameter that is to be unregistered from the {@linkplain Configuration}.
      */
-    public UnregisterParameterEvent(AbstractParameter<?> param)
+    public UnregisterParameterEvent(final AbstractParameter<?> param)
     {
         this.param = param;
     }

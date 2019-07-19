@@ -37,7 +37,7 @@ public class HarvestStartedEvent implements IEvent
      * @param harvesterHash a hash value representing the current state of the source data
      * @param maxHarvestableDocuments the maximum number of expected documents
      */
-    public HarvestStartedEvent(String harvesterHash, int maxHarvestableDocuments)
+    public HarvestStartedEvent(final String harvesterHash, final int maxHarvestableDocuments)
     {
         this(harvesterHash, maxHarvestableDocuments, Instant.now().toEpochMilli());
     }
@@ -50,7 +50,7 @@ public class HarvestStartedEvent implements IEvent
      * @param maxHarvestableDocuments the maximum number of expected documents
      * @param timestamp the time at wich the harvest started
      */
-    public HarvestStartedEvent(String harvesterHash, int maxHarvestableDocuments, long timestamp)
+    public HarvestStartedEvent(final String harvesterHash, final int maxHarvestableDocuments, final long timestamp)
     {
         this.harvesterHash = harvesterHash;
         this.maxHarvestableDocuments = maxHarvestableDocuments;

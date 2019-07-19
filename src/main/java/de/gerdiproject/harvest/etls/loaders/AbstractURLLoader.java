@@ -32,7 +32,6 @@ import de.gerdiproject.harvest.config.parameters.StringParameter;
 import de.gerdiproject.harvest.etls.AbstractETL;
 import de.gerdiproject.harvest.etls.loaders.constants.LoaderConstants;
 import de.gerdiproject.harvest.utils.HashGenerator;
-import de.gerdiproject.json.datacite.DataCiteJson;
 
 /**
  * This abstract class offers a basis for sending documents to a search index
@@ -42,7 +41,7 @@ import de.gerdiproject.json.datacite.DataCiteJson;
  *
  * @author Robin Weiss
  */
-public abstract class AbstractURLLoader <S extends DataCiteJson> extends AbstractIteratorLoader<S>
+public abstract class AbstractURLLoader <S extends IDocument> extends AbstractIteratorLoader<S>
 {
     protected final Logger logger; // NOPMD - we want to retrieve the type of the inheriting class
     protected final Map<String, IDocument> batchMap;
@@ -54,7 +53,7 @@ public abstract class AbstractURLLoader <S extends DataCiteJson> extends Abstrac
     private final StringParameter userNameParam;
     private final StringParameter passwordParam;
 
-    private int currentBatchSize = 0;
+    private int currentBatchSize;
 
 
     /**
@@ -85,7 +84,7 @@ public abstract class AbstractURLLoader <S extends DataCiteJson> extends Abstrac
 
 
     @Override
-    public void init(AbstractETL<?, ?> etl)
+    public void init(final AbstractETL<?, ?> etl)
     {
         super.init(etl);
 
@@ -102,7 +101,7 @@ public abstract class AbstractURLLoader <S extends DataCiteJson> extends Abstrac
 
 
     @Override
-    public void load(Iterator<S> documents) throws LoaderException
+    public void load(final Iterator<S> documents) throws LoaderException
     {
         super.load(documents);
 
@@ -115,13 +114,13 @@ public abstract class AbstractURLLoader <S extends DataCiteJson> extends Abstrac
 
 
     @Override
-    public void loadElement(S document) throws LoaderException
+    public void loadElement(final S document) throws LoaderException
     {
         if (document == null)
             return;
 
         final String documentId = hashGenerator.getShaHash(document.getSourceId());
-        int documentSize = getSizeOfDocument(documentId, document);
+        final int documentSize = getSizeOfDocument(documentId, document);
 
         // check if the document alone is bigger than the maximum load request size
         if (currentBatchSize == 0 && documentSize > maxBatchSizeParam.getValue()) {
@@ -153,7 +152,7 @@ public abstract class AbstractURLLoader <S extends DataCiteJson> extends Abstrac
         if (!batchMap.isEmpty()) {
             try {
                 tryLoadingBatch();
-            } catch (LoaderException e) {
+            } catch (final LoaderException e) {
                 logger.warn(LoaderConstants.CLEAN_LOAD_ERROR, e);
             }
 
@@ -183,11 +182,8 @@ public abstract class AbstractURLLoader <S extends DataCiteJson> extends Abstrac
      * @param documents a map of documentIDs to documents that are to be
      *            loaded, the values may also be null, in which case the
      *            document is to be removed from the index
-     *
-     * @throws Exception any kind of exception that can be thrown by the
-     *             loading process
      */
-    protected abstract void loadBatch(Map<String, IDocument> documents) throws Exception; // NOPMD - Exception is explicitly thrown, because it is up to the implementation which Exception causes the loader to fail
+    protected abstract void loadBatch(Map<String, IDocument> documents);
 
 
     /**
@@ -213,7 +209,7 @@ public abstract class AbstractURLLoader <S extends DataCiteJson> extends Abstrac
      */
     protected void tryLoadingBatch() throws LoaderException
     {
-        int numberOfDocs = batchMap.size();
+        final int numberOfDocs = batchMap.size();
 
         try {
             // attempt to load the batch
@@ -225,7 +221,7 @@ public abstract class AbstractURLLoader <S extends DataCiteJson> extends Abstrac
                     String.format(
                         LoaderConstants.LOADED_PARTIAL_OK, numberOfDocs));
             }
-        } catch (Exception e) {
+        } catch (final RuntimeException e) { // NOPMD exception depends on the implementation of loadBatch
             throw new LoaderException(e);
         }
     }

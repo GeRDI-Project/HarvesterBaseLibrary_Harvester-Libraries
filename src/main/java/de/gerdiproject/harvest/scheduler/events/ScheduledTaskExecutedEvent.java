@@ -35,7 +35,7 @@ public class ScheduledTaskExecutedEvent implements IEvent
      *
      * @param executedTask the task that finished executing
      */
-    public ScheduledTaskExecutedEvent(TimerTask executedTask)
+    public ScheduledTaskExecutedEvent(final TimerTask executedTask)
     {
         this.executedTask = executedTask;
     }

@@ -51,7 +51,7 @@ public class HarvestingTimerTask extends TimerTask
             // start a harvest
             etlManager.harvest();
             status = ETLConstants.HARVEST_STARTED;
-        } catch (ETLPreconditionException e) {
+        } catch (final ETLPreconditionException e) {
             status = e.getMessage();
         }
 

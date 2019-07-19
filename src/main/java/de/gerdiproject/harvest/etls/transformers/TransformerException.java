@@ -32,7 +32,7 @@ public class TransformerException extends RuntimeException
      *
      * @param message a message describing the cause of the exception
      */
-    public TransformerException(String message)
+    public TransformerException(final String message)
     {
         super(message);
     }
@@ -43,7 +43,7 @@ public class TransformerException extends RuntimeException
      *
      * @param e the exception that caused the failure
      */
-    public TransformerException(Throwable e)
+    public TransformerException(final Throwable e)
     {
         super(e);
     }

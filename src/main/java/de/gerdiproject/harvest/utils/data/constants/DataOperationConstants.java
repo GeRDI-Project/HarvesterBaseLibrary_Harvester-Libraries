@@ -71,8 +71,8 @@ public class DataOperationConstants
         ParameterMappingFunctions::mapToUnsignedInteger);
     public static final String RETRY = "Could not reach %s! Retrying in %d s.";
 
-    public static final String HTTPS = "https";
-    public static final String HTTP = "http";
+    public static final String HTTPS = "https:";
+    public static final String HTTP = "http:";
 
     public static final String GZIP_ENCODING = "gzip";
 }

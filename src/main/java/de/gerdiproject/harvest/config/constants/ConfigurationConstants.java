@@ -34,7 +34,7 @@ public class ConfigurationConstants
     public static final String SET_UNKNOWN_PARAM_ERROR = "Cannot change parameter '%s'. Unknown parameter!";
     public static final String GET_UNKNOWN_PARAM_ERROR = "Unknown parameter '%s'!";
 
-    public static final String CONFIG_PATH = FileConstants.CACHE_FOLDER_PATH + "config.json";
+    public static final String CONFIG_PATH = FileConstants.CONFIG_FOLDER_PATH + "config.json";
 
     public static final String REGISTERED_PARAM = "Added new %s '%s' with value '%s' to the config.";
     public static final String LOADED_PARAM = "Loaded %s '%s' with value '%s'.";

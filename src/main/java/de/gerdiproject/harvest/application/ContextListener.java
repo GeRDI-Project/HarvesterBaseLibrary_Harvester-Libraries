@@ -113,7 +113,7 @@ public abstract class ContextListener implements ServletContextListener
      * @see de.gerdiproject.harvest.application.MainContext
      */
     @Override
-    public void contextInitialized(ServletContextEvent sce)
+    public void contextInitialized(final ServletContextEvent sce)
     {
         EventSystem.addListener(ResetContextEvent.class, this::onResetContext);
 
@@ -134,12 +134,12 @@ public abstract class ContextListener implements ServletContextListener
      * @param sce the servlet context event that was destroyed
      */
     @Override
-    public void contextDestroyed(ServletContextEvent sce)
+    public void contextDestroyed(final ServletContextEvent sce)
     {
         EventSystem.sendEvent(new ContextDestroyedEvent());
         MainContext.destroy();
 
-        String goodbyeMsg = String.format(ApplicationConstants.CONTEXT_DESTROYED, getServiceName());
+        final String goodbyeMsg = String.format(ApplicationConstants.CONTEXT_DESTROYED, getServiceName());
         System.out.println(goodbyeMsg); // NOPMD The logger does not work at this point
     }
 
@@ -149,9 +149,9 @@ public abstract class ContextListener implements ServletContextListener
      *
      * @param event the event that triggered the callback
      */
-    protected void onResetContext(ResetContextEvent event)
+    protected void onResetContext(final ResetContextEvent event)
     {
-        String resetMsg = String.format(ApplicationConstants.CONTEXT_RESET, getServiceName());
+        final String resetMsg = String.format(ApplicationConstants.CONTEXT_RESET, getServiceName());
         LOGGER.info(resetMsg);
 
         EventSystem.reset();

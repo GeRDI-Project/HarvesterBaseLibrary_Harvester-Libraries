@@ -31,6 +31,7 @@ import org.slf4j.LoggerFactory;
 
 import com.google.gson.Gson;
 
+import de.gerdiproject.harvest.application.events.ContextDestroyedEvent;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.rest.AbstractRestObject;
 import de.gerdiproject.harvest.scheduler.constants.SchedulerConstants;
@@ -56,6 +57,8 @@ public class Scheduler extends AbstractRestObject<Scheduler, SchedulerResponse> 
     private final DiskIO diskIo;
     private final String cacheFilePath;
 
+    private final Consumer<ScheduledTaskExecutedEvent> onTaskExecutedCallback = this::onTaskExecuted;
+
 
     /**
      * Constructor that initializes the timer and task registry.
@@ -64,7 +67,7 @@ public class Scheduler extends AbstractRestObject<Scheduler, SchedulerResponse> 
      * @param cacheFilePath the path to the cache file in which
      *         the JSON representation of this class is cached
      */
-    public Scheduler(String moduleName, String cacheFilePath)
+    public Scheduler(final String moduleName, final String cacheFilePath)
     {
         super(moduleName, GetSchedulerEvent.class);
 
@@ -79,7 +82,7 @@ public class Scheduler extends AbstractRestObject<Scheduler, SchedulerResponse> 
     public void addEventListeners()
     {
         super.addEventListeners();
-        EventSystem.addListener(ScheduledTaskExecutedEvent.class, onTaskExecuted);
+        EventSystem.addListener(ScheduledTaskExecutedEvent.class, onTaskExecutedCallback);
     }
 
 
@@ -87,7 +90,7 @@ public class Scheduler extends AbstractRestObject<Scheduler, SchedulerResponse> 
     public void removeEventListeners()
     {
         super.removeEventListeners();
-        EventSystem.removeListener(ScheduledTaskExecutedEvent.class, onTaskExecuted);
+        EventSystem.removeListener(ScheduledTaskExecutedEvent.class, onTaskExecutedCallback);
     }
 
 
@@ -107,16 +110,16 @@ public class Scheduler extends AbstractRestObject<Scheduler, SchedulerResponse> 
     @Override
     public void loadFromDisk()
     {
-        String[] cachedCronTabs = diskIo.getObject(cacheFilePath, String[].class);
+        final String[] cachedCronTabs = diskIo.getObject(cacheFilePath, String[].class);
 
         if (cachedCronTabs != null) {
 
             registeredTasks.clear();
 
-            for (String cronTab : cachedCronTabs) {
+            for (final String cronTab : cachedCronTabs) {
                 try {
                     scheduleTask(cronTab);
-                } catch (IllegalArgumentException e) {
+                } catch (final IllegalArgumentException e) {
                     LOGGER.error(String.format(SchedulerConstants.ERROR_LOAD, cronTab), e);
                 }
             }
@@ -147,7 +150,7 @@ public class Scheduler extends AbstractRestObject<Scheduler, SchedulerResponse> 
     {
         long nextTimestamp = Long.MAX_VALUE;
 
-        for (TimerTask scheduledTask : registeredTasks.values())
+        for (final TimerTask scheduledTask : registeredTasks.values())
             nextTimestamp = Math.min(nextTimestamp, scheduledTask.scheduledExecutionTime());
 
         return nextTimestamp == Long.MAX_VALUE
@@ -165,7 +168,7 @@ public class Scheduler extends AbstractRestObject<Scheduler, SchedulerResponse> 
      * @throws IllegalArgumentException thrown when the cron tab could not be parsed
      * @throws IllegalStateException thrown when the scheduler is being destroyed
      */
-    private void scheduleTask(String cronTab) throws IllegalArgumentException, IllegalStateException
+    private void scheduleTask(final String cronTab) throws IllegalArgumentException, IllegalStateException
     {
         final TimerTask oldTask = registeredTasks.get(cronTab);
 
@@ -186,35 +189,13 @@ public class Scheduler extends AbstractRestObject<Scheduler, SchedulerResponse> 
 
 
     /**
-     * Reschedules a task, calculating a next fitting date.
-     *
-     * @param rescheduledTask the task that is to be rescheduled
-     */
-    private void rescheduleTask(TimerTask rescheduledTask)
-    {
-        registeredTasks.forEach((String cronTab, TimerTask task) -> {
-            if (task == rescheduledTask)
-            {
-                try {
-                    scheduleTask(cronTab);
-                } catch (IllegalArgumentException e) {
-                    LOGGER.error(
-                        String.format(SchedulerConstants.ERROR_RESCHEDULE, cronTab),
-                        e);
-                }
-            }
-        });
-    }
-
-
-    /**
      * Removes event listeners, cancels the timer and removes
      * all registered tasks.
      */
     @Override
-    protected void destroy()
+    protected void onContextDestroyed(final ContextDestroyedEvent event)
     {
-        super.destroy();
+        super.onContextDestroyed(event);
 
         // stop all running task threads
         timer.cancel();
@@ -231,7 +212,7 @@ public class Scheduler extends AbstractRestObject<Scheduler, SchedulerResponse> 
         if (registeredTasks.isEmpty())
             sb.append('-');
         else {
-            for (String cronTab : registeredTasks.keySet()) {
+            for (final String cronTab : registeredTasks.keySet()) {
                 if (sb.length() != 0)
                     sb.append('\n');
 
@@ -246,13 +227,20 @@ public class Scheduler extends AbstractRestObject<Scheduler, SchedulerResponse> 
 
 
     @Override
-    public SchedulerResponse getAsJson(MultivaluedMap<String, String> query)
+    public SchedulerResponse getAsJson(final MultivaluedMap<String, String> query)
     {
         return new SchedulerResponse(registeredTasks.keySet());
     }
 
 
-    public String addTask(ChangeSchedulerRequest addRequest)
+    /**
+     * Adds a new task to the scheduler.
+     *
+     * @param addRequest the request that is to add a new task
+     *
+     * @return a feedback String
+     */
+    public String addTask(final ChangeSchedulerRequest addRequest)
     {
         final String cronTab = addRequest.getCronTab();
 
@@ -281,7 +269,7 @@ public class Scheduler extends AbstractRestObject<Scheduler, SchedulerResponse> 
      *
      * @return a feedback message
      */
-    public String deleteTask(ChangeSchedulerRequest deleteRequest) throws IllegalArgumentException
+    public String deleteTask(final ChangeSchedulerRequest deleteRequest) throws IllegalArgumentException
     {
         final String cronTab = deleteRequest.getCronTab();
 
@@ -326,12 +314,23 @@ public class Scheduler extends AbstractRestObject<Scheduler, SchedulerResponse> 
     //////////////////////////////
 
     /**
-     * Event callback that is called when a scheduled task is executed. Reschedules the excuted task with an updated
-     * date.
+     * Reschedules a task, calculating a next fitting date.
      *
-     * @param event the event that triggered the callback
+     * @param rescheduledTask the task that is to be rescheduled
      */
-    private final Consumer<ScheduledTaskExecutedEvent> onTaskExecuted = (ScheduledTaskExecutedEvent event) -> {
-        rescheduleTask(event.getExecutedTask());
-    };
+    private void onTaskExecuted(final ScheduledTaskExecutedEvent event)
+    {
+        registeredTasks.forEach((final String cronTab, final TimerTask task) -> {
+            if (task.equals(event.getExecutedTask()))
+            {
+                try {
+                    scheduleTask(cronTab);
+                } catch (final IllegalArgumentException e) {
+                    LOGGER.error(
+                        String.format(SchedulerConstants.ERROR_RESCHEDULE, cronTab),
+                        e);
+                }
+            }
+        });
+    }
 }

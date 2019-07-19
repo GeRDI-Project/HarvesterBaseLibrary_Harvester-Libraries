@@ -30,7 +30,7 @@ public class TimestampedEntryComparator implements Comparator<TimestampedEntry<?
 
 
     @Override
-    public int compare(TimestampedEntry<?> o1, TimestampedEntry<?> o2)
+    public int compare(final TimestampedEntry<?> o1, final TimestampedEntry<?> o2)
     {
         return Long.compare(o1.getTimestamp(), o2.getTimestamp());
     }

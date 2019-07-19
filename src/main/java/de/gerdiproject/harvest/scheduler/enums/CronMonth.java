@@ -22,5 +22,5 @@ package de.gerdiproject.harvest.scheduler.enums;
  * @author Robin Weiss
  */
 public enum CronMonth {
-    invalid, JAN, FEB, MAR, APR, MAY, JUN, JUL, AUG, SEP, OCT, NOV, DEC
+    INVALID, JAN, FEB, MAR, APR, MAY, JUN, JUL, AUG, SEP, OCT, NOV, DEC
 }

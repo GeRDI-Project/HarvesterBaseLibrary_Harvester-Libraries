@@ -40,13 +40,13 @@ public class HashGenerator
      *
      * @param charset the charset used to decode input strings
      */
-    public HashGenerator(Charset charset)
+    public HashGenerator(final Charset charset)
     {
         MessageDigest temp;
 
         try {
             temp = MessageDigest.getInstance("SHA");
-        } catch (NoSuchAlgorithmException e) {
+        } catch (final NoSuchAlgorithmException e) {
             temp = null;
         }
 

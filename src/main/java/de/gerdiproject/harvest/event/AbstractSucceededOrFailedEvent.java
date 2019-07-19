@@ -22,16 +22,16 @@ package de.gerdiproject.harvest.event;
  */
 public abstract class AbstractSucceededOrFailedEvent implements IEvent
 {
-    private final boolean isSuccessful;
+    private final boolean successful;
 
     /**
      * Simple Constructor.
      *
-     * @param isSuccessful true if the event marks something that succeeded
+     * @param successful true if the event marks something that succeeded
      */
-    public AbstractSucceededOrFailedEvent(boolean isSuccessful)
+    public AbstractSucceededOrFailedEvent(final boolean successful)
     {
-        this.isSuccessful = isSuccessful;
+        this.successful = successful;
     }
 
     /**
@@ -41,6 +41,6 @@ public abstract class AbstractSucceededOrFailedEvent implements IEvent
      */
     public boolean isSuccessful()
     {
-        return isSuccessful;
+        return successful;
     }
 }

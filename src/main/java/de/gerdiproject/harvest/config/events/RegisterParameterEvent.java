@@ -38,7 +38,7 @@ public class RegisterParameterEvent implements ISynchronousEvent<AbstractParamet
      *
      * @param param the parameter that is to be registered in the {@linkplain Configuration}.
      */
-    public RegisterParameterEvent(AbstractParameter<?> param)
+    public RegisterParameterEvent(final AbstractParameter<?> param)
     {
         this.param = param;
     }

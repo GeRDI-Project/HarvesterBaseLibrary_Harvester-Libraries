@@ -37,7 +37,7 @@ public class TimestampedEntry<T>
      * @param value the value that is stored
      * @param timestamp the time at which the value was stored
      */
-    public TimestampedEntry(T value, long timestamp)
+    public TimestampedEntry(final T value, final long timestamp)
     {
         this.value = value;
         this.timestamp = timestamp;
@@ -49,7 +49,7 @@ public class TimestampedEntry<T>
      *
      * @param value the value that is stored
      */
-    public TimestampedEntry(T value)
+    public TimestampedEntry(final T value)
     {
         this(value, System.currentTimeMillis());
     }

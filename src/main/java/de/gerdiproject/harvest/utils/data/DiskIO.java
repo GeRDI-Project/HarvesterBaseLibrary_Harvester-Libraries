@@ -18,15 +18,11 @@ package de.gerdiproject.harvest.utils.data;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
 import java.io.Reader;
 import java.lang.reflect.Type;
 import java.nio.charset.Charset;
+import java.nio.file.NoSuchFileException;
 import java.util.stream.Collectors;
 
 import org.jsoup.Jsoup;
@@ -39,6 +35,7 @@ import com.google.gson.JsonIOException;
 import com.google.gson.JsonSyntaxException;
 
 import de.gerdiproject.harvest.utils.data.constants.DataOperationConstants;
+import de.gerdiproject.harvest.utils.file.FileUtils;
 
 /**
  * This class provides methods for reading files from disk.
@@ -59,7 +56,7 @@ public class DiskIO implements IDataRetriever
      * @param gson the GSON (de-)serializer for reading and writing JSON objects
      * @param charset the charset of the files to be read and written
      */
-    public DiskIO(Gson gson, Charset charset)
+    public DiskIO(final Gson gson, final Charset charset)
     {
         this.gson = gson;
         this.charset = charset;
@@ -71,7 +68,7 @@ public class DiskIO implements IDataRetriever
      *
      * @param other the {@linkplain DiskIO} of which the settings are copied
      */
-    public DiskIO(DiskIO other)
+    public DiskIO(final DiskIO other)
     {
         this.gson = other.gson;
         this.charset = other.charset;
@@ -87,7 +84,7 @@ public class DiskIO implements IDataRetriever
      *
      * @return a String that describes the status of the operation
      */
-    public String writeStringToFile(String filePath, String fileContent)
+    public String writeStringToFile(final String filePath, final String fileContent)
     {
         return writeStringToFile(new File(filePath), fileContent);
     }
@@ -101,7 +98,7 @@ public class DiskIO implements IDataRetriever
      *
      * @return a String that describes the status of the operation
      */
-    public String writeStringToFile(File file, String fileContent)
+    public String writeStringToFile(final File file, final String fileContent)
     {
         final String filePath = file.getAbsolutePath();
 
@@ -109,16 +106,12 @@ public class DiskIO implements IDataRetriever
         boolean isSuccessful = false;
 
         // create directories
-        boolean isDirectoryCreated = file.getParentFile().exists() || file.getParentFile().mkdirs();
+        final boolean isDirectoryCreated = file.getParentFile().exists() || file.getParentFile().mkdirs();
 
-        if (!isDirectoryCreated)
-            statusMessage = String.format(
-                                DataOperationConstants.SAVE_FAILED_NO_FOLDERS,
-                                filePath);
-        else {
+        if (isDirectoryCreated) {
             // write content to file
             try
-                (BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file), charset))) {
+                (BufferedWriter writer = FileUtils.getWriter(file,  charset)) {
                 writer.write(fileContent);
 
                 // set status message
@@ -129,7 +122,10 @@ public class DiskIO implements IDataRetriever
                 LOGGER.warn(String.format(DataOperationConstants.SAVE_FAILED, filePath), e);
                 statusMessage = String.format(DataOperationConstants.SAVE_FAILED, filePath);
             }
-
+        } else {
+            statusMessage = String.format(
+                                DataOperationConstants.SAVE_FAILED_NO_FOLDERS,
+                                filePath);
         }
 
         // log the status
@@ -151,9 +147,9 @@ public class DiskIO implements IDataRetriever
      *
      * @return a String that describes the status of the operation
      */
-    public String writeObjectToFile(String filePath, Object obj)
+    public String writeObjectToFile(final String filePath, final Object obj)
     {
-        String jsonString = (obj == null) ? "{}" : gson.toJson(obj);
+        final String jsonString = (obj == null) ? "{}" : gson.toJson(obj);
         return writeStringToFile(filePath, jsonString);
     }
 
@@ -167,9 +163,9 @@ public class DiskIO implements IDataRetriever
      *
      * @return a String that describes the status of the operation
      */
-    public String writeObjectToFile(File file, Object obj)
+    public String writeObjectToFile(final File file, final Object obj)
     {
-        String jsonString = (obj == null) ? "{}" : gson.toJson(obj);
+        final String jsonString = (obj == null) ? "{}" : gson.toJson(obj);
         return writeStringToFile(file, jsonString);
     }
 
@@ -180,17 +176,17 @@ public class DiskIO implements IDataRetriever
      * @param file the file that is to be parsed
      * @return a string, or null if the file could not be parsed
      */
-    public String getString(File file)
+    public String getString(final File file)
     {
         String fileContent = null;
 
         try
-            (BufferedReader reader = new BufferedReader(createDiskReader(file))) {
+            (BufferedReader reader = FileUtils.getReader(file, charset)) {
             fileContent = reader.lines().collect(Collectors.joining("\n"));
 
-        } catch (FileNotFoundException e) { // NOPMD if the file is not found, do not log anything
+        } catch (final NoSuchFileException e) { // NOPMD if the file is not found, do not log anything
 
-        } catch (IOException e) {
+        } catch (final IOException e) {
             LOGGER.warn(String.format(DataOperationConstants.LOAD_FAILED, file.getAbsolutePath()), e);
         }
 
@@ -207,15 +203,15 @@ public class DiskIO implements IDataRetriever
      *
      * @return an object, or null if the file could not be parsed
      */
-    public <T> T getObject(File file, Class<T> targetClass)
+    public <T> T getObject(final File file, final Class<T> targetClass)
     {
         T object = null;
 
         try
-            (Reader reader = createDiskReader(file)) {
+            (Reader reader = FileUtils.getReader(file, charset)) {
             object = gson.fromJson(reader, targetClass);
 
-        } catch (FileNotFoundException e) { // NOPMD if the file is not found, do not log anything
+        } catch (final NoSuchFileException e) { // NOPMD if the file is not found, do not log anything
 
         } catch (IOException | IllegalStateException | JsonIOException | JsonSyntaxException e) {
             LOGGER.warn(String.format(DataOperationConstants.LOAD_FAILED, file.getAbsolutePath()), e);
@@ -234,15 +230,15 @@ public class DiskIO implements IDataRetriever
      *
      * @return an object, or null if the file could not be parsed
      */
-    public <T> T getObject(File file, Type targetType)
+    public <T> T getObject(final File file, final Type targetType)
     {
         T object = null;
 
         try
-            (Reader reader = createDiskReader(file)) {
+            (Reader reader = FileUtils.getReader(file, charset)) {
             object = gson.fromJson(reader, targetType);
 
-        } catch (FileNotFoundException e) { // NOPMD if the file is not found, do not log anything
+        } catch (final NoSuchFileException e) { // NOPMD if the file is not found, do not log anything
 
         } catch (IOException | IllegalStateException | JsonIOException | JsonSyntaxException e) {
             LOGGER.warn(String.format(DataOperationConstants.LOAD_FAILED, file.getAbsolutePath()), e);
@@ -253,32 +249,32 @@ public class DiskIO implements IDataRetriever
 
 
     @Override
-    public String getString(String filePath)
+    public String getString(final String filePath)
     {
         return getString(new File(filePath));
     }
 
 
     @Override
-    public <T> T getObject(String filePath, Class<T> targetClass)
+    public <T> T getObject(final String filePath, final Class<T> targetClass)
     {
         return getObject(new File(filePath), targetClass);
     }
 
 
     @Override
-    public <T> T getObject(String filePath, Type targetType)
+    public <T> T getObject(final String filePath, final Type targetType)
     {
         return getObject(new File(filePath), targetType);
     }
 
 
     @Override
-    public Document getHtml(String filePath)
+    public Document getHtml(final String filePath)
     {
         Document htmlResponse = null;
 
-        String fileContent = getString(filePath);
+        final String fileContent = getString(filePath);
 
         if (fileContent != null)
             htmlResponse = Jsoup.parse(fileContent);
@@ -288,24 +284,8 @@ public class DiskIO implements IDataRetriever
 
 
     @Override
-    public void setCharset(Charset charset)
+    public void setCharset(final Charset charset)
     {
         this.charset = charset;
-    }
-
-
-    /**
-     * Reads a file.
-     * @param file
-     *      the file that is to be read
-     * @return a reader
-     *      that can parse the file
-     * @throws FileNotFoundException
-     *      this exception is thrown if the specified file does not exist
-     */
-    private Reader createDiskReader(File file) throws FileNotFoundException
-    {
-        // try to read from disk
-        return new InputStreamReader(new FileInputStream(file), charset);
     }
 }

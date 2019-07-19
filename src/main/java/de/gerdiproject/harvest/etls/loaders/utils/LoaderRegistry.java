@@ -16,6 +16,7 @@
  */
 package de.gerdiproject.harvest.etls.loaders.utils;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
@@ -66,7 +67,7 @@ public class LoaderRegistry implements IEventListener
      *
      * @param loaderClass the class of the loader that is to be registered
      */
-    public void registerLoader(Class<? extends ILoader<?>> loaderClass)
+    public void registerLoader(final Class<? extends ILoader<?>> loaderClass)
     {
         final String loaderName = loaderClass.getSimpleName();
         loaderMap.put(loaderName, loaderClass);
@@ -109,8 +110,13 @@ public class LoaderRegistry implements IEventListener
         final Class<? extends ILoader<?>> loaderClass = loaderMap.get(loaderParam.getValue());
 
         try {
-            return loaderClass.newInstance();
-        } catch (InstantiationException | IllegalAccessException e) {
+            return loaderClass.getDeclaredConstructor().newInstance();
+        } catch (InstantiationException
+                     | IllegalAccessException
+                     | IllegalArgumentException
+                     | InvocationTargetException
+                     | NoSuchMethodException
+                     | SecurityException e) {
             return null;
         }
     }

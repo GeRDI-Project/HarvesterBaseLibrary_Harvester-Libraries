@@ -18,6 +18,8 @@ package de.gerdiproject.harvest.rest.events;
 
 import de.gerdiproject.harvest.event.ISynchronousEvent;
 import de.gerdiproject.harvest.rest.AbstractRestObject;
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
 
 /**
  * This class is a stricted version of {@linkplain ISynchronousEvent}s that only allow
@@ -25,13 +27,7 @@ import de.gerdiproject.harvest.rest.AbstractRestObject;
  *
  * @author Robin Weiss
  */
-public abstract class GetRestObjectEvent <T extends AbstractRestObject<T, ?>> implements ISynchronousEvent<T>
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+public class GetRestObjectEvent <T extends AbstractRestObject<T, ?>> implements ISynchronousEvent<T>
 {
-    /**
-     * Sub-classes must implement a no-args constructor.
-     */
-    public GetRestObjectEvent()
-    {
-
-    }
 }

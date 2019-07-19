@@ -21,6 +21,7 @@ import java.util.Iterator;
 import java.util.List;
 
 import de.gerdiproject.application.ContextListenerTest;
+import de.gerdiproject.harvest.etls.AbstractETL;
 import de.gerdiproject.harvest.etls.StaticIteratorETL;
 import de.gerdiproject.harvest.etls.extractors.AbstractIteratorExtractor;
 import de.gerdiproject.harvest.etls.transformers.AbstractIteratorTransformer;
@@ -100,6 +101,12 @@ public class MockedETL extends StaticIteratorETL<String, DataCiteJson>
         {
             return mockedList.iterator();
         }
+
+        @Override
+        public void clear()
+        {
+
+        }
     }
 
 
@@ -111,6 +118,22 @@ public class MockedETL extends StaticIteratorETL<String, DataCiteJson>
             DataCiteJson mockedDocument = new DataCiteJson("source: " + source);
             mockedDocument.addTitles(Arrays.asList(new Title("title: " + source)));
             return mockedDocument;
+        }
+
+
+        @Override
+        public void init(AbstractETL<?, ?> etl)
+        {
+            // nothing to do
+
+        }
+
+
+        @Override
+        public void clear()
+        {
+            // nothing to do
+
         }
     }
 

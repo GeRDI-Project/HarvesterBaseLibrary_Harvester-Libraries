@@ -20,10 +20,12 @@ import java.util.Iterator;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import de.gerdiproject.harvest.config.Configuration;
-import de.gerdiproject.harvest.config.parameters.AbstractParameter;
+import de.gerdiproject.harvest.config.events.ParameterChangedEvent;
 import de.gerdiproject.harvest.config.parameters.IntegerParameter;
 import de.gerdiproject.harvest.config.parameters.constants.ParameterMappingFunctions;
 import de.gerdiproject.harvest.etls.constants.ETLConstants;
+import de.gerdiproject.harvest.etls.enums.ETLHealth;
+import de.gerdiproject.harvest.etls.enums.ETLState;
 import de.gerdiproject.harvest.etls.extractors.AbstractIteratorExtractor;
 import de.gerdiproject.harvest.etls.json.ETLJson;
 import de.gerdiproject.harvest.etls.loaders.AbstractIteratorLoader;
@@ -60,7 +62,7 @@ public abstract class AbstractIteratorETL<T, S> extends AbstractETL<Iterator<T>,
      *
      * @param name the name of this ETL
      */
-    public AbstractIteratorETL(String name)
+    public AbstractIteratorETL(final String name)
     {
         super(name);
     }
@@ -88,7 +90,7 @@ public abstract class AbstractIteratorETL<T, S> extends AbstractETL<Iterator<T>,
 
 
     @Override
-    public void loadFromJson(ETLJson json)
+    public void loadFromJson(final ETLJson json)
     {
         super.loadFromJson(json);
         this.harvestedCount.set(json.getHarvestedCount());
@@ -101,18 +103,25 @@ public abstract class AbstractIteratorETL<T, S> extends AbstractETL<Iterator<T>,
         super.prepareHarvest();
 
         if (getStartIndex() == getEndIndex()) {
+            setStatus(ETLState.DONE);
             throw new ETLPreconditionException(
                 String.format(ETLConstants.ETL_SKIPPED_OUT_OF_RANGE, getName()));
         }
 
-        if (!(extractor instanceof AbstractIteratorExtractor))
-            throw new ETLPreconditionException(ETLConstants.INVALID_ITER_EXTRACTOR_ERROR);
+        try {
+            if (!(extractor instanceof AbstractIteratorExtractor))
+                throw new ETLPreconditionException(ETLConstants.INVALID_ITER_EXTRACTOR_ERROR);
 
-        if (!(transformer instanceof AbstractIteratorTransformer))
-            throw new ETLPreconditionException(ETLConstants.INVALID_ITER_TRANSFORMER_ERROR);
+            if (!(transformer instanceof AbstractIteratorTransformer))
+                throw new ETLPreconditionException(ETLConstants.INVALID_ITER_TRANSFORMER_ERROR);
 
-        if (!(loader instanceof AbstractIteratorLoader))
-            throw new ETLPreconditionException(ETLConstants.INVALID_ITER_LOADER_ERROR);
+            if (!(loader instanceof AbstractIteratorLoader))
+                throw new ETLPreconditionException(ETLConstants.INVALID_ITER_LOADER_ERROR);
+        } catch (final ETLPreconditionException e) {
+            setStatus(ETLState.DONE);
+            setHealth(ETLHealth.HARVEST_FAILED);
+            throw e;
+        }
 
         harvestedCount.set(0);
     }
@@ -137,9 +146,9 @@ public abstract class AbstractIteratorETL<T, S> extends AbstractETL<Iterator<T>,
         final int unrestrictedMaxDocs = super.getMaxNumberOfDocuments();
 
         if (unrestrictedMaxDocs == -1) {
-            return getEndIndex() != Integer.MAX_VALUE
-                   ? getEndIndex() - getStartIndex()
-                   : -1;
+            return getEndIndex() == Integer.MAX_VALUE
+                   ? -1
+                   : getEndIndex() - getStartIndex();
         } else
             return Math.min(unrestrictedMaxDocs, getEndIndex()) - getStartIndex();
     }
@@ -152,7 +161,7 @@ public abstract class AbstractIteratorETL<T, S> extends AbstractETL<Iterator<T>,
      */
     public int getStartIndex()
     {
-        int index = startIndexParameter.getValue();
+        final int index = startIndexParameter.getValue();
 
         if (index < 0)
             return 0;
@@ -168,7 +177,7 @@ public abstract class AbstractIteratorETL<T, S> extends AbstractETL<Iterator<T>,
      */
     public int getEndIndex()
     {
-        int index = endIndexParameter.getValue();
+        final int index = endIndexParameter.getValue();
 
         if (index < 0)
             return 0;
@@ -192,11 +201,11 @@ public abstract class AbstractIteratorETL<T, S> extends AbstractETL<Iterator<T>,
     //////////////////////////////
 
     @Override
-    protected void onParameterChanged(AbstractParameter<?> param)
+    protected void onParameterChanged(final ParameterChangedEvent event)
     {
-        super.onParameterChanged(param);
+        super.onParameterChanged(event);
 
-        final String paramKey = param.getCompositeKey();
+        final String paramKey = event.getParameter().getCompositeKey();
 
         // if the range changed, re-init the extractor to recalculate the max
         // number of harvestable documents

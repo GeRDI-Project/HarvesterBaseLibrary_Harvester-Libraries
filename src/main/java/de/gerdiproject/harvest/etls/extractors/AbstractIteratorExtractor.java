@@ -36,7 +36,7 @@ public abstract class AbstractIteratorExtractor <T> implements IExtractor<Iterat
 
 
     @Override
-    public void init(AbstractETL<?, ?> etl)
+    public void init(final AbstractETL<?, ?> etl)
     {
         if (etl instanceof AbstractIteratorETL) {
             final AbstractIteratorETL<?, ?> iterHarvester = (AbstractIteratorETL<?, ?>) etl;
@@ -87,10 +87,14 @@ public abstract class AbstractIteratorExtractor <T> implements IExtractor<Iterat
      */
     private class RangeRestrictedIterator implements Iterator<T>
     {
-        final Iterator<T> completeIterator;
-        int index;
+        private final Iterator<T> completeIterator;
+        private int index;
 
-        public RangeRestrictedIterator(Iterator<T> completeIterator)
+        /**
+         * Constructor.
+         * @param completeIterator an {@linkplain Iterator} that iterates over the entire set of harvestable data
+         */
+        public RangeRestrictedIterator(final Iterator<T> completeIterator)
         {
             this.completeIterator = completeIterator;
             index = 0;
@@ -115,16 +119,9 @@ public abstract class AbstractIteratorExtractor <T> implements IExtractor<Iterat
 
             try {
                 return completeIterator.next();
-            } catch (Exception e) {
+            } catch (final RuntimeException e) { // NOPMD depending on the implementation, anything could happen
                 throw new ExtractorException(e);
             }
         }
-    }
-
-
-    @Override
-    public void clear()
-    {
-        // nothing to clean up
     }
 }

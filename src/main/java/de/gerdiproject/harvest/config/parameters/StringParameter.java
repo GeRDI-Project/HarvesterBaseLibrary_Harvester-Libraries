@@ -36,7 +36,7 @@ public class StringParameter extends AbstractParameter<String>
      *
      * @throws IllegalArgumentException thrown if the key contains invalid characters
      */
-    public StringParameter(String key, String category, String defaultValue, Function<String, String> customMappingFunction) throws IllegalArgumentException
+    public StringParameter(final String key, final String category, final String defaultValue, final Function<String, String> customMappingFunction) throws IllegalArgumentException
     {
         super(key, category, defaultValue, customMappingFunction);
     }
@@ -49,7 +49,7 @@ public class StringParameter extends AbstractParameter<String>
      * @param category the category of the parameter
      * @param defaultValue the default value
      */
-    public StringParameter(String key, String category, String defaultValue)
+    public StringParameter(final String key, final String category, final String defaultValue)
     {
         super(key, category, defaultValue, ParameterMappingFunctions::mapToString);
     }

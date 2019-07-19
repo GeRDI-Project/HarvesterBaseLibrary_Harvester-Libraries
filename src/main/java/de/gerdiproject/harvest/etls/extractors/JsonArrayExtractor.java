@@ -16,15 +16,16 @@
  */
 package de.gerdiproject.harvest.etls.extractors;
 
-import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
 import com.google.gson.Gson;
-import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
+import com.google.gson.JsonSyntaxException;
+import com.google.gson.reflect.TypeToken;
 
 import de.gerdiproject.harvest.etls.AbstractETL;
 import de.gerdiproject.harvest.utils.HashGenerator;
@@ -41,11 +42,7 @@ import de.gerdiproject.harvest.utils.data.HttpRequester;
  */
 public class JsonArrayExtractor<T> extends AbstractIteratorExtractor<T>
 {
-    // this warning is suppressed, because the only generic Superclass MUST be T. The cast will always succeed.
-    @SuppressWarnings("unchecked")
-    private final Class<T> outputClass =
-        (Class<T>)((ParameterizedType) getClass().getGenericSuperclass()).getActualTypeArguments()[0];
-
+    private final Type listType;
     private final Gson gson;
     private final String jsonQuery;
     private final HttpRequester httpRequester;
@@ -62,8 +59,11 @@ public class JsonArrayExtractor<T> extends AbstractIteratorExtractor<T>
      * @param gson used to parse the JSON response
      * @param jsonQuery a dot separated object structure at which the JSON array is expected
      */
-    public JsonArrayExtractor(Gson gson, String jsonQuery)
+    public JsonArrayExtractor(final Gson gson, final String jsonQuery)
     {
+        super();
+
+        this.listType = new TypeToken<List<T>>() {} .getType();
         this.jsonQuery = jsonQuery;
         this.httpRequester = new HttpRequester(gson, StandardCharsets.UTF_8);
         this.gson = gson;
@@ -76,7 +76,7 @@ public class JsonArrayExtractor<T> extends AbstractIteratorExtractor<T>
      *
      * @param gson used to parse the JSON response
      */
-    public JsonArrayExtractor(Gson gson)
+    public JsonArrayExtractor(final Gson gson)
     {
         this(gson, null);
     }
@@ -98,14 +98,14 @@ public class JsonArrayExtractor<T> extends AbstractIteratorExtractor<T>
      *
      * @param url the new URL
      */
-    public void setUrl(String url)
+    public void setUrl(final String url)
     {
         this.url = url;
     }
 
 
     @Override
-    public void init(AbstractETL<?, ?> etl)
+    public void init(final AbstractETL<?, ?> etl)
     {
         super.init(etl);
         final JsonElement jsonResponse = httpRequester.getObjectFromUrl(url, JsonElement.class);
@@ -142,7 +142,7 @@ public class JsonArrayExtractor<T> extends AbstractIteratorExtractor<T>
      *
      * @return a hash value representing the current state of the object
      */
-    protected String getHashFromJson(JsonElement json)
+    protected String getHashFromJson(final JsonElement json)
     {
         final HashGenerator gen = new HashGenerator(StandardCharsets.UTF_8);
         return gen.getShaHash(json.toString());
@@ -153,31 +153,29 @@ public class JsonArrayExtractor<T> extends AbstractIteratorExtractor<T>
      * Parses a JSON object to retrieve a JSON array
      * and converts the array to a {@linkplain LinkedList}.
      *
-     * @param json the JSON object of which the list is retrieved
+     * @param inputJson the JSON object of which the list is retrieved
      *
      * @throws ExtractorException thrown when the extraction fails
      *
      * @return a list containing the elements of a JSON array
      */
-    protected List<T> getListFromJson(JsonElement json) throws ExtractorException
+    protected List<T> getListFromJson(final JsonElement inputJson) throws ExtractorException
     {
+        JsonElement json = inputJson;
+
         // retrieve the JsonArray from the JsonObject via the provided query
-        if (jsonQuery != null) {
-            for (String q : jsonQuery.split("\\."))
+        if (this.jsonQuery != null) {
+            final String[] splitJsonQuery = jsonQuery.split("\\.");
+
+            for (final String q : splitJsonQuery)
                 json = json.getAsJsonObject().get(q);
         }
 
-        if (!json.isJsonArray())
-            throw new ExtractorException("%s did not yield a JSON-Array at '%s'!");
-
-        final List<T> list = new LinkedList<>();
-
-        final JsonArray sourceArray = json.getAsJsonArray();
-
-        for (JsonElement ele : sourceArray)
-            list.add(gson.fromJson(ele, outputClass));
-
-        return list;
+        try {
+            return gson.fromJson(json, listType);
+        } catch (final JsonSyntaxException e) {
+            throw new ExtractorException(e);
+        }
     }
 
 
@@ -186,6 +184,4 @@ public class JsonArrayExtractor<T> extends AbstractIteratorExtractor<T>
     {
         // nothing to clear up
     }
-
-
 }

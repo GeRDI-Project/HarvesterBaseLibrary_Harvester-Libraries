@@ -40,7 +40,7 @@ public interface Procedure
      * @return a new {@linkplain Procedure} that sequentially executes
      * both {@linkplain Procedure}s
      */
-default Procedure andThen(Procedure after) {
+default Procedure andThen(final Procedure after) {
         return () -> {
             this.run();
             after.run();
@@ -56,7 +56,7 @@ default Procedure andThen(Procedure after) {
      * @return a new {@linkplain Procedure} that sequentially executes
      * both {@linkplain Procedure}s
      */
-default Procedure compose(Procedure before) {
+default Procedure compose(final Procedure before) {
         return () -> {
             before.run();
             this.run();
