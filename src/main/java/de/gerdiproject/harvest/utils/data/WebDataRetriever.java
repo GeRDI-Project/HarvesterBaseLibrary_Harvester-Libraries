@@ -449,7 +449,9 @@ public class WebDataRetriever implements IDataRetriever
      */
     public InputStream getInputStream(final HttpURLConnection connection) throws IOException
     {
-        if (DataOperationConstants.GZIP_ENCODING.equals(connection.getContentEncoding()))
+        // if encoding is gzip and is not a HEAD request (SAI-1607), use the GZIP stream
+        if (DataOperationConstants.GZIP_ENCODING.equals(connection.getContentEncoding())
+            && !DataOperationConstants.HEAD_REQUEST.equals(connection.getRequestMethod()))
             return new GZIPInputStream(connection.getInputStream());
 
         return connection.getInputStream();
