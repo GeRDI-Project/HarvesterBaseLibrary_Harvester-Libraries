@@ -342,15 +342,20 @@ public class WebDataRetriever implements IDataRetriever
                 final String redirectedUrl =
                     connection.getHeaderField(DataOperationConstants.REDIRECT_LOCATION_HEADER);
 
-                // make sure there is a url to redirect to
-                if (redirectedUrl != null) {
-                    // disallow redirect from HTTPS to HTTP
-                    final boolean isCurrentlyHttps = urlString.startsWith(DataOperationConstants.HTTPS);
-                    final boolean isRedirectingToHttps = redirectedUrl.startsWith(DataOperationConstants.HTTPS);
+                final boolean canRedirect;
 
-                    if (!isCurrentlyHttps || isRedirectingToHttps)
-                        return sendWebRequest(method, redirectedUrl, body, authorization, contentType, retries);
+                // check if there is a redirection URL
+                if (redirectedUrl == null)
+                    canRedirect = false;
+                else {
+                    // disallow redirects from HTTPS to HTTP
+                    canRedirect = !urlString.startsWith(DataOperationConstants.HTTPS)
+                                  || redirectedUrl.startsWith(DataOperationConstants.HTTPS);
                 }
+
+                // redirect only if all above conditions are met
+                if (canRedirect)
+                    return sendWebRequest(method, redirectedUrl, body, authorization, contentType, retries);
 
             }
 
