@@ -236,38 +236,33 @@ public class WebDataRetriever implements IDataRetriever
     public String getRestResponse(final RestRequestType method, final String url, final String body, final String authorization, final String contentType) throws HTTPException, IOException
     {
         final HttpURLConnection connection = sendWebRequest(method, url, body, authorization, contentType, retriesParam.getValue());
-
-        // create a reader for the HTTP response
-        final InputStream response = this.getInputStream(connection);
-        final BufferedReader reader = new BufferedReader(new InputStreamReader(response, charset));
-
-        // read the first line of the response
-        String line = reader.readLine();
         String responseText = null;
 
-        // make sure we got a response
-        if (line != null) {
-            final StringBuilder responseBuilder = new StringBuilder(line);
+        // create a reader for the HTTP response
+        try
+            (InputStream response = this.getInputStream(connection);
+             BufferedReader reader = new BufferedReader(new InputStreamReader(response, charset))) {
 
-            // read subsequent lines of the response
-            line = reader.readLine();
+            final char[] readBuffer = new char[1024];
+            final StringBuilder responseBuilder = new StringBuilder();
 
-            while (line != null) {
-                // add linebreak before appending the next line
-                responseBuilder.append('\n').append(line);
-                line = reader.readLine();
+            int readBytes;
+
+            while (true) {
+                readBytes = reader.read(readBuffer, 0, 1024);
+
+                if (readBytes == -1)
+                    break;
+
+                responseBuilder.append(readBuffer, 0, readBytes);
             }
 
             responseText = responseBuilder.toString();
         }
 
-        // close the response reader
-        reader.close();
-
         // combine the read lines to a single string
         return responseText;
     }
-
 
     /**
      * Sends an authorized REST request with a specified body and returns the
@@ -326,22 +321,24 @@ public class WebDataRetriever implements IDataRetriever
         try {
             final int responseCode = connection.getResponseCode();
 
-            if (responseCode >= 500) {
+            if (responseCode >= 300)
                 connection.disconnect();
+
+            if (responseCode >= 500) {
                 mustRetry = retries != 0;
 
                 // throw an error if the request is not to be reattempted
                 if (!mustRetry) {
-                    final String errorMessage = String.format(
-                                                    DataOperationConstants.WEB_ERROR_REST_HTTP,
-                                                    method.toString(),
-                                                    urlString,
-                                                    body,
-                                                    responseCode);
+                    final String errorMessage =
+                        String.format(
+                            DataOperationConstants.WEB_ERROR_REST_HTTP,
+                            method.toString(),
+                            urlString,
+                            body,
+                            responseCode);
                     throw new HttpStatusException(errorMessage, responseCode, urlString);
                 }
             } else if (responseCode >= 400) {
-                connection.disconnect();
                 final String redirectedUrl =
                     connection.getHeaderField(DataOperationConstants.REDIRECT_LOCATION_HEADER);
 
@@ -355,8 +352,7 @@ public class WebDataRetriever implements IDataRetriever
                         return sendWebRequest(method, redirectedUrl, body, authorization, contentType, retries);
                 }
 
-            } else if (responseCode >= 300)
-                connection.disconnect();
+            }
 
         } catch (final SocketTimeoutException e) {
             // if we time out, try again
