@@ -11,7 +11,7 @@
 	</parent>
 
 	<artifactId>RestfulHarvester-Library</artifactId>
-	<version>7.4.0</version>
+	<version>7.4.1-SNAPSHOT</version>
 	<packaging>jar</packaging>
 	<name>Restful Harvester Library</name>
 	<description>This library provides a skeleton for restful harvesters.</description>
