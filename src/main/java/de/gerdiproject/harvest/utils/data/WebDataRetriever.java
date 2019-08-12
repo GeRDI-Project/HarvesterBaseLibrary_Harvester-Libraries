@@ -236,38 +236,33 @@ public class WebDataRetriever implements IDataRetriever
     public String getRestResponse(final RestRequestType method, final String url, final String body, final String authorization, final String contentType) throws HTTPException, IOException
     {
         final HttpURLConnection connection = sendWebRequest(method, url, body, authorization, contentType, retriesParam.getValue());
-
-        // create a reader for the HTTP response
-        final InputStream response = this.getInputStream(connection);
-        final BufferedReader reader = new BufferedReader(new InputStreamReader(response, charset));
-
-        // read the first line of the response
-        String line = reader.readLine();
         String responseText = null;
 
-        // make sure we got a response
-        if (line != null) {
-            final StringBuilder responseBuilder = new StringBuilder(line);
+        // create a reader for the HTTP response
+        try
+            (InputStream response = this.getInputStream(connection);
+             BufferedReader reader = new BufferedReader(new InputStreamReader(response, charset))) {
 
-            // read subsequent lines of the response
-            line = reader.readLine();
+            final char[] readBuffer = new char[1024];
+            final StringBuilder responseBuilder = new StringBuilder();
 
-            while (line != null) {
-                // add linebreak before appending the next line
-                responseBuilder.append('\n').append(line);
-                line = reader.readLine();
+            int readBytes;
+
+            while (true) {
+                readBytes = reader.read(readBuffer, 0, 1024);
+
+                if (readBytes == -1)
+                    break;
+
+                responseBuilder.append(readBuffer, 0, readBytes);
             }
 
             responseText = responseBuilder.toString();
         }
 
-        // close the response reader
-        reader.close();
-
         // combine the read lines to a single string
         return responseText;
     }
-
 
     /**
      * Sends an authorized REST request with a specified body and returns the
@@ -326,37 +321,43 @@ public class WebDataRetriever implements IDataRetriever
         try {
             final int responseCode = connection.getResponseCode();
 
-            if (responseCode >= 500) {
+            if (responseCode >= 300)
                 connection.disconnect();
+
+            if (responseCode >= 500) {
                 mustRetry = retries != 0;
 
                 // throw an error if the request is not to be reattempted
                 if (!mustRetry) {
-                    final String errorMessage = String.format(
-                                                    DataOperationConstants.WEB_ERROR_REST_HTTP,
-                                                    method.toString(),
-                                                    urlString,
-                                                    body,
-                                                    responseCode);
+                    final String errorMessage =
+                        String.format(
+                            DataOperationConstants.WEB_ERROR_REST_HTTP,
+                            method.toString(),
+                            urlString,
+                            body,
+                            responseCode);
                     throw new HttpStatusException(errorMessage, responseCode, urlString);
                 }
             } else if (responseCode >= 400) {
-                connection.disconnect();
                 final String redirectedUrl =
                     connection.getHeaderField(DataOperationConstants.REDIRECT_LOCATION_HEADER);
 
-                // make sure there is a url to redirect to
-                if (redirectedUrl != null) {
-                    // disallow redirect from HTTPS to HTTP
-                    final boolean isCurrentlyHttps = urlString.startsWith(DataOperationConstants.HTTPS);
-                    final boolean isRedirectingToHttps = redirectedUrl.startsWith(DataOperationConstants.HTTPS);
+                final boolean canRedirect;
 
-                    if (!isCurrentlyHttps || isRedirectingToHttps)
-                        return sendWebRequest(method, redirectedUrl, body, authorization, contentType, retries);
+                // check if there is a redirection URL
+                if (redirectedUrl == null)
+                    canRedirect = false;
+                else {
+                    // disallow redirects from HTTPS to HTTP
+                    canRedirect = !urlString.startsWith(DataOperationConstants.HTTPS)
+                                  || redirectedUrl.startsWith(DataOperationConstants.HTTPS);
                 }
 
-            } else if (responseCode >= 300)
-                connection.disconnect();
+                // redirect only if all above conditions are met
+                if (canRedirect)
+                    return sendWebRequest(method, redirectedUrl, body, authorization, contentType, retries);
+
+            }
 
         } catch (final SocketTimeoutException e) {
             // if we time out, try again
@@ -449,7 +450,9 @@ public class WebDataRetriever implements IDataRetriever
      */
     public InputStream getInputStream(final HttpURLConnection connection) throws IOException
     {
-        if (DataOperationConstants.GZIP_ENCODING.equals(connection.getContentEncoding()))
+        // if encoding is gzip and is not a HEAD request (SAI-1607), use the GZIP stream
+        if (DataOperationConstants.GZIP_ENCODING.equals(connection.getContentEncoding())
+            && !DataOperationConstants.HEAD_REQUEST.equals(connection.getRequestMethod()))
             return new GZIPInputStream(connection.getInputStream());
 
         return connection.getInputStream();

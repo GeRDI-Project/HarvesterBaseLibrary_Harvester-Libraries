@@ -19,6 +19,7 @@ import de.gerdiproject.harvest.config.parameters.BooleanParameter;
 import de.gerdiproject.harvest.config.parameters.IntegerParameter;
 import de.gerdiproject.harvest.config.parameters.constants.ParameterMappingFunctions;
 import de.gerdiproject.harvest.utils.data.HttpRequester;
+import de.gerdiproject.harvest.utils.data.enums.RestRequestType;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 
@@ -75,4 +76,5 @@ public class DataOperationConstants
     public static final String HTTP = "http:";
 
     public static final String GZIP_ENCODING = "gzip";
+    public static final String HEAD_REQUEST = RestRequestType.HEAD.toString();
 }
