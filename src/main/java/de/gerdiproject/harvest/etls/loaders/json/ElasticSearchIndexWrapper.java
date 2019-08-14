@@ -15,15 +15,15 @@
  */
 package de.gerdiproject.harvest.etls.loaders.json;
 
-import lombok.Data;
+import lombok.Value;
 
 /**
  * This JSON object is part of an ElasticSearch submission response.
  *
  * @author Robin Weiss
  */
-@Data
+@Value
 public class ElasticSearchIndexWrapper
 {
-    private ElasticSearchIndex index;
+    private final ElasticSearchIndex index;
 }

@@ -19,34 +19,20 @@ package de.gerdiproject.harvest.scheduler.json;
 import java.util.Set;
 
 import de.gerdiproject.harvest.scheduler.rest.SchedulerRestResource;
+import lombok.Value;
 
 /**
  * This class represents a JSON response from a .json GET request of the {@linkplain SchedulerRestResource}.
  *
  * @author Robin Weiss
  */
+@Value
 public class SchedulerResponse
 {
-    private final Set<String> scheduledHarvestTasks;
-
-
     /**
-     * Constructor that requires all cron tabs of scheduled harvests.
-     *
-     * @param scheduledHarvestTasks a set of all cron tabs of scheduled harvests
-     */
-    public SchedulerResponse(final Set<String> scheduledHarvestTasks)
-    {
-        this.scheduledHarvestTasks = scheduledHarvestTasks;
-    }
-
-    /**
+     * -- GETTER --
      * Returns all cron tabs of scheduled harvests.
-     *
      * @return a set of all cron tabs of scheduled harvests
      */
-    public Set<String> getScheduledHarvests()
-    {
-        return scheduledHarvestTasks;
-    }
+    private final Set<String> scheduledHarvests;
 }

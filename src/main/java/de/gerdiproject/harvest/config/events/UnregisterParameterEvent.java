@@ -19,6 +19,7 @@ package de.gerdiproject.harvest.config.events;
 import de.gerdiproject.harvest.config.Configuration;
 import de.gerdiproject.harvest.config.parameters.AbstractParameter;
 import de.gerdiproject.harvest.event.IEvent;
+import lombok.Value;
 
 /**
  * This event aims to unregister a parameter from the {@linkplain Configuration}.
@@ -26,29 +27,13 @@ import de.gerdiproject.harvest.event.IEvent;
  * @author Robin Weiss
  *
  */
+@Value
 public class UnregisterParameterEvent implements IEvent
 {
-    private final AbstractParameter<?> param;
-
-
     /**
-     * Constructor that sets up the payload.
-     *
-     * @param param the parameter that is to be unregistered from the {@linkplain Configuration}.
-     */
-    public UnregisterParameterEvent(final AbstractParameter<?> param)
-    {
-        this.param = param;
-    }
-
-
-    /**
+     * -- GETTER --
      * Returns the parameter that is to be unregistered from the {@linkplain Configuration}.
-     *
      * @return the parameter that is to be unregistered from the {@linkplain Configuration}.
      */
-    public AbstractParameter<?> getParameter()
-    {
-        return param;
-    }
+    private final AbstractParameter<?> parameter;
 }

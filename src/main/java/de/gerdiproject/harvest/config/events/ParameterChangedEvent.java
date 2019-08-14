@@ -18,51 +18,27 @@ package de.gerdiproject.harvest.config.events;
 
 import de.gerdiproject.harvest.config.parameters.AbstractParameter;
 import de.gerdiproject.harvest.event.IEvent;
+import lombok.Value;
 
 /**
  * This event is dispatched when the value of a parameter has changed.
  *
  * @author Robin Weiss
  */
+@Value
 public class ParameterChangedEvent implements IEvent
 {
-    private final AbstractParameter<?> param;
-    private final Object oldValue;
-
-
     /**
-     * Constructor that requires the signal payload.
-     *
-     * @param param the parameter that has changed
-     * @param oldValue the previous value of the parameter
-     */
-    public ParameterChangedEvent(final AbstractParameter<?> param, final Object oldValue)
-    {
-        this.param = param;
-        this.oldValue = oldValue;
-    }
-
-
-    /**
+     * -- GETTER --
      * Retrieves the parameter that has changed.
-     *
      * @return the parameter that has changed
      */
-    public AbstractParameter<?> getParameter()
-    {
-        return param;
-    }
-
+    private final AbstractParameter<?> parameter;
 
     /**
+     * -- GETTER --
      * Retrieves the value of the parameter prior to its change.
-     *
      * @return the value of the parameter prior to its change
      */
-    public Object getOldValue()
-    {
-        return oldValue;
-    }
-
-
+    private final Object oldValue;
 }

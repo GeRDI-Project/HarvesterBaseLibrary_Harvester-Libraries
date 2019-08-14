@@ -23,7 +23,7 @@ import de.gerdiproject.harvest.etls.enums.ETLHealth;
 import de.gerdiproject.harvest.etls.enums.ETLState;
 import de.gerdiproject.harvest.etls.utils.ETLManager;
 import de.gerdiproject.harvest.etls.utils.TimestampedEntry;
-import lombok.Data;
+import lombok.Value;
 
 /**
  * This class represents a JSON object containing details
@@ -31,7 +31,7 @@ import lombok.Data;
  *
  * @author Robin Weiss
  */
-@Data
+@Value
 public class ETLJson
 {
     private final String name;

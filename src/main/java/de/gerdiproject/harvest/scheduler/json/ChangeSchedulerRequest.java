@@ -17,6 +17,7 @@
 package de.gerdiproject.harvest.scheduler.json;
 
 import de.gerdiproject.harvest.scheduler.Scheduler;
+import lombok.Value;
 
 /**
  * This JSON object represents a REST request that can delete/add/change
@@ -24,29 +25,13 @@ import de.gerdiproject.harvest.scheduler.Scheduler;
  *
  * @author Robin Weiss
  */
+@Value
 public class ChangeSchedulerRequest
 {
-    private final String cronTab;
-
-
     /**
-     * Constructor that requires the crontab to be changed.
-     *
-     * @param crontab  the crontab that is to be changed
-     */
-    public ChangeSchedulerRequest(final String crontab)
-    {
-        this.cronTab = crontab;
-    }
-
-
-    /**
+     * -- GETTER --
      * Returns the crontab that is to be changed.
-     *
      * @return the crontab that is to be changed
      */
-    public String getCronTab()
-    {
-        return cronTab;
-    }
+    private final String cronTab;
 }

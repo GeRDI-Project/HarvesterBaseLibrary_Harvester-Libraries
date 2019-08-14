@@ -15,32 +15,22 @@
  */
 package de.gerdiproject.harvest.event;
 
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+
 /**
  * This event marks something that can either succeed or fail.
  *
  * @author Robin Weiss
  */
+@RequiredArgsConstructor
 public abstract class AbstractSucceededOrFailedEvent implements IEvent
 {
-    private final boolean successful;
-
     /**
-     * Simple Constructor.
-     *
-     * @param successful true if the event marks something that succeeded
-     */
-    public AbstractSucceededOrFailedEvent(final boolean successful)
-    {
-        this.successful = successful;
-    }
-
-    /**
+     * -- GETTER --
      * Returns true if the event marks something that succeeded.
-     *
      * @return true if the event marks something that succeeded
      */
-    public boolean isSuccessful()
-    {
-        return successful;
-    }
+    @Getter
+    private final boolean successful;
 }

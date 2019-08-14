@@ -30,6 +30,8 @@ import com.google.gson.reflect.TypeToken;
 import de.gerdiproject.harvest.etls.AbstractETL;
 import de.gerdiproject.harvest.utils.HashGenerator;
 import de.gerdiproject.harvest.utils.data.HttpRequester;
+import lombok.Getter;
+import lombok.Setter;
 
 
 /**
@@ -46,10 +48,22 @@ public class JsonArrayExtractor<T> extends AbstractIteratorExtractor<T>
     private final Gson gson;
     private final String jsonQuery;
     private final HttpRequester httpRequester;
-    private String url;
 
     private String hash;
     private List<T> extractedList;
+
+
+    /**
+     * -- GETTER --
+     * Retrieves the URL that is used to retrieve the JSON response.
+     * @return the URL that is used to retrieve the JSON response
+     *
+     * -- SETTER --
+     * Changes the URL that is used to retrieve the JSON response.
+     * @param url the new URL
+     */
+    @Getter @Setter
+    private String url;
 
 
     /**
@@ -79,28 +93,6 @@ public class JsonArrayExtractor<T> extends AbstractIteratorExtractor<T>
     public JsonArrayExtractor(final Gson gson)
     {
         this(gson, null);
-    }
-
-
-    /**
-     * Retrieves the URL that is used to retrieve the JSON response.
-     *
-     * @return the URL that is used to retrieve the JSON response
-     */
-    public String getUrl()
-    {
-        return url;
-    }
-
-
-    /**
-     * Changes the URL that is used to retrieve the JSON response.
-     *
-     * @param url the new URL
-     */
-    public void setUrl(final String url)
-    {
-        this.url = url;
     }
 
 

@@ -18,21 +18,21 @@ package de.gerdiproject.harvest.etls.loaders.json;
 import com.google.gson.annotations.SerializedName;
 
 import de.gerdiproject.harvest.etls.loaders.constants.ElasticSearchConstants;
-import lombok.Data;
+import lombok.Value;
 
 /**
  * This JSON object is part of an ElasticSearch submission response if an error appears.
  *
  * @author Robin Weiss
  */
-@Data
+@Value
 public class ElasticSearchError
 {
-    private String type;
-    private String reason;
+    private final String type;
+    private final String reason;
 
     @SerializedName("caused_by")
-    private ElasticSearchErrorCause causedBy;
+    private final ElasticSearchErrorCause causedBy;
 
 
     @Override

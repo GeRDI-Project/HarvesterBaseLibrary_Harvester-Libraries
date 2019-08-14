@@ -19,35 +19,20 @@ package de.gerdiproject.harvest.scheduler.events;
 import java.util.TimerTask;
 
 import de.gerdiproject.harvest.event.IEvent;
+import lombok.Value;
 
 /**
  * This event singnifies that a task has finished executing.
  *
  * @author Robin Weiss
  */
+@Value
 public class ScheduledTaskExecutedEvent implements IEvent
 {
-    private final TimerTask executedTask;
-
-
     /**
-     * Constructor that sets the payload.
-     *
-     * @param executedTask the task that finished executing
-     */
-    public ScheduledTaskExecutedEvent(final TimerTask executedTask)
-    {
-        this.executedTask = executedTask;
-    }
-
-
-    /**
+     * -- GETTER --
      * Returns the task that finished executing.
-     *
      * @return the task that finished executing
      */
-    public TimerTask getExecutedTask()
-    {
-        return executedTask;
-    }
+    private final TimerTask executedTask;
 }

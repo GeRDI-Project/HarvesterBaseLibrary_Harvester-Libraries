@@ -56,6 +56,7 @@ public final class MainContext
     private static boolean initialized;
 
     private final HarvesterLog log;
+
     private final String moduleName;
     private final ETLManager etlManager;
     private final Configuration configuration;

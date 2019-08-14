@@ -18,15 +18,30 @@ package de.gerdiproject.harvest.etls.events;
 import java.time.Instant;
 
 import de.gerdiproject.harvest.event.AbstractSucceededOrFailedEvent;
+import lombok.EqualsAndHashCode;
+import lombok.ToString;
+import lombok.Value;
 
 /**
  * This event signifies that a harvest has been completed.
  *
  * @author Robin Weiss
  */
+@Value @EqualsAndHashCode(callSuper = true) @ToString(callSuper = true)
 public class HarvestFinishedEvent extends AbstractSucceededOrFailedEvent
 {
+    /**
+     * -- GETTER --
+     * Returns a hash value over all harvested documents.
+     * @return a hash value over all harvested documents
+     */
     private final String documentChecksum;
+
+    /**
+     * -- GETTER --
+     * Returns the unix timestamp at which the event was created.
+     * @return the unix timestamp at which the event was created
+     */
     private final long endTimestamp;
 
 
@@ -56,27 +71,5 @@ public class HarvestFinishedEvent extends AbstractSucceededOrFailedEvent
         super(isSuccessful);
         this.documentChecksum = documentChecksum;
         this.endTimestamp = timestamp;
-    }
-
-
-    /**
-     * Returns a hash value over all harvested documents.
-     *
-     * @return a hash value over all harvested documents
-     */
-    public String getDocumentChecksum()
-    {
-        return documentChecksum;
-    }
-
-
-    /**
-     * Returns the unix timestamp at which the event was created.
-     *
-     * @return the unix timestamp at which the event was created
-     */
-    public long getEndTimestamp()
-    {
-        return endTimestamp;
     }
 }

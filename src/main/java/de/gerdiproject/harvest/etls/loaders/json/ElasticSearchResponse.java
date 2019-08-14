@@ -18,8 +18,8 @@ package de.gerdiproject.harvest.etls.loaders.json;
 import java.util.List;
 
 import lombok.AccessLevel;
-import lombok.Data;
 import lombok.Getter;
+import lombok.Value;
 
 
 /**
@@ -27,14 +27,15 @@ import lombok.Getter;
  *
  * @author Robin Weiss
  */
-@Data
+@Value
 public class ElasticSearchResponse
 {
-    private int took;
+    private final int took;
 
     @Getter(AccessLevel.PRIVATE)
-    private boolean errors;
-    private List<ElasticSearchIndexWrapper> items;
+    private final boolean errors;
+
+    private final List<ElasticSearchIndexWrapper> items;
 
 
     /**
