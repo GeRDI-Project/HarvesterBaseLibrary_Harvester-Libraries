@@ -24,7 +24,7 @@ import lombok.RequiredArgsConstructor;
  * @author Robin Weiss
  */
 @RequiredArgsConstructor
-public abstract class AbstractSucceededOrFailedEvent implements IEvent
+public abstract class AbstractSucceededOrFailedEvent implements IEvent // NOPMD the constructor is defined via Lombok
 {
     /**
      * -- GETTER --
