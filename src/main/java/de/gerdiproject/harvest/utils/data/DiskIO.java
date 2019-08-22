@@ -36,6 +36,7 @@ import com.google.gson.JsonSyntaxException;
 
 import de.gerdiproject.harvest.utils.data.constants.DataOperationConstants;
 import de.gerdiproject.harvest.utils.file.FileUtils;
+import lombok.Setter;
 
 /**
  * This class provides methods for reading files from disk.
@@ -46,6 +47,8 @@ public class DiskIO implements IDataRetriever
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(DiskIO.class);
     private final Gson gson;
+
+    @Setter
     private Charset charset;
 
 
@@ -280,12 +283,5 @@ public class DiskIO implements IDataRetriever
             htmlResponse = Jsoup.parse(fileContent);
 
         return htmlResponse;
-    }
-
-
-    @Override
-    public void setCharset(final Charset charset)
-    {
-        this.charset = charset;
     }
 }

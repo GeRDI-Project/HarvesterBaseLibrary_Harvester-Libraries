@@ -15,16 +15,16 @@
  */
 package de.gerdiproject.harvest.etls.loaders.json;
 
-import lombok.Data;
+import lombok.Value;
 
 /**
  * This JSON object is part of an ElasticSearch submission response if an error appears.
  *
  * @author Robin Weiss
  */
-@Data
+@Value
 public class ElasticSearchErrorCause
 {
-    private String type;
-    private String reason;
+    private final String type;
+    private final String reason;
 }

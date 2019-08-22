@@ -19,7 +19,7 @@ package de.gerdiproject.harvest.etls.json;
 import de.gerdiproject.harvest.etls.enums.ETLHealth;
 import de.gerdiproject.harvest.etls.enums.ETLState;
 import de.gerdiproject.harvest.etls.utils.ETLManager;
-import lombok.Data;
+import lombok.Value;
 
 /**
  * This class represents a JSON object containing details
@@ -27,7 +27,7 @@ import lombok.Data;
  *
  * @author Robin Weiss
  */
-@Data
+@Value
 public class ETLManagerJson
 {
     private final String repositoryName;

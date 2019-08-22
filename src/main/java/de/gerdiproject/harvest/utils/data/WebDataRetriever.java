@@ -49,6 +49,7 @@ import de.gerdiproject.harvest.config.parameters.IntegerParameter;
 import de.gerdiproject.harvest.rest.constants.RestConstants;
 import de.gerdiproject.harvest.utils.data.constants.DataOperationConstants;
 import de.gerdiproject.harvest.utils.data.enums.RestRequestType;
+import lombok.Setter;
 
 /**
  * This class provides methods for reading files from the web.
@@ -60,8 +61,11 @@ public class WebDataRetriever implements IDataRetriever
     private static final Logger LOGGER = LoggerFactory.getLogger(WebDataRetriever.class);
     private final Gson gson;
     private final IntegerParameter retriesParam;
+
+    @Setter
     private int timeout;
 
+    @Setter
     private Charset charset;
 
 
@@ -196,24 +200,6 @@ public class WebDataRetriever implements IDataRetriever
             LOGGER.warn(String.format(DataOperationConstants.WEB_ERROR_JSON, url), e);
             return null;
         }
-    }
-
-
-    @Override
-    public void setCharset(final Charset charset)
-    {
-        this.charset = charset;
-    }
-
-
-    /**
-     * Changes the request timeout in milliseconds.
-     *
-     * @param timeout the request timeout in milliseconds
-     */
-    public void setTimeout(final int timeout)
-    {
-        this.timeout = timeout;
     }
 
 

@@ -36,18 +36,24 @@ import lombok.Data;
 public class ETLInfosJson
 {
     /**
-     * An info summary of all registered ETLs combined.
+     * -- GETTER --
+     * Returns an info summary of all registered ETLs combined.
+     * @return an info summary of all registered ETLs combined
      */
     private final ETLJson overallInfo;
 
     /**
-     * A map of ETL names to {@linkplain ETLJson}s of
+     * -- GETTER --
+     * Returns a map of ETL names to {@linkplain ETLJson}s of
      * all registered {@linkplain AbstractETL}s.
+     * @return a map of ETL names to {@linkplain ETLJson}s
      */
     private final Map<String, ETLJson> etlInfos;
 
     /**
-     * The name of the harvested repository, or null if it is unknown.
+     * -- GETTER --
+     * Returns the name of the harvested repository, or null if it is unknown.
+     * @return the name of the harvested repository, or null if it is unknown
      */
     private final String repositoryName;
 

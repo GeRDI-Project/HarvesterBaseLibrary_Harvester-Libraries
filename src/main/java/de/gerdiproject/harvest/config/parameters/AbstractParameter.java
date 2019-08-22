@@ -39,31 +39,53 @@ public abstract class AbstractParameter<V>
     protected static final Logger LOGGER = LoggerFactory.getLogger(AbstractParameter.class);
 
     /**
-     * The parameter value.
+     * -- GETTER --
+     * Retrieves the parameter value.
+     * @return the parameter value
      */
     @Getter
     protected V value;
 
+
     /**
-     * The key of the parameter that must be unique within its category.
+     * -- GETTER --
+     * Retrieves the key of the parameter. The key must be unique within the category.
+     * @return the key of the parameter
      */
     @Getter
     protected final String key;
 
+
     /**
-     * The category to which the parameter belongs.
+     * -- GETTER --
+     * Retrieves the name of the category to which the parameter belongs.
+     * @return the name of the category to which the parameter belongs
      */
     @Getter
     protected final String category;
 
+
     /**
-     * This function maps a String value to the parameter value type.
+     * -- GETTER --
+     * Retrieves a function that maps a {@linkplain String} value to {@linkplain V}.
+     * @return a function that maps a {@linkplain String} value to {@linkplain V}
+     *
+     * -- SETTER --
+     * Sets the function that maps a {@linkplain String} value to {@linkplain V}.
+     * @param mappingFunction a function that maps a {@linkplain String} value to {@linkplain V}
      */
     @Getter @Setter
     protected Function<String, V> mappingFunction;
 
+
     /**
-     * This boolean value is true if the parameter is registered at the {@linkplain Configuration}.
+     * -- GETTER --
+     * Returns true if the parameter is registered at the {@linkplain Configuration}.
+     * @return true if the parameter is registered at the {@linkplain Configuration}
+     *
+     * -- SETTER --
+     * Determines if the parameter is registered at the {@linkplain Configuration}.
+     * @param registered true if the parameter is registered at the {@linkplain Configuration}
      */
     @Getter @Setter
     private boolean registered;

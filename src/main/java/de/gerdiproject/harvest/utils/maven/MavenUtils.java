@@ -24,6 +24,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 import de.gerdiproject.harvest.utils.maven.constants.MavenConstants;
+import lombok.Getter;
 
 /**
  * This class contains utility functions for retrieving Maven values.
@@ -32,6 +33,12 @@ import de.gerdiproject.harvest.utils.maven.constants.MavenConstants;
  */
 public class MavenUtils
 {
+    /**
+     * -- GETTER --
+     * Returns the name of the main jar of this service.
+     * @return the name of the main jar of this service
+     */
+    @Getter
     private final String harvesterJarName;
 
 
@@ -101,16 +108,5 @@ public class MavenUtils
         Collections.sort(dependencyList, String.CASE_INSENSITIVE_ORDER);
 
         return dependencyList;
-    }
-
-
-    /**
-     * Returns the name of the main jar of this service.
-     *
-     * @return the name of the main jar of this service
-     */
-    public String getHarvesterJarName()
-    {
-        return harvesterJarName;
     }
 }

@@ -18,37 +18,36 @@ package de.gerdiproject.harvest.etls.loaders.json;
 import com.google.gson.annotations.SerializedName;
 
 import de.gerdiproject.harvest.etls.loaders.constants.ElasticSearchConstants;
-import lombok.Data;
+import lombok.Value;
 
 /**
  * This JSON object is part of an ElasticSearch submission response.
  *
  * @author Robin Weiss
  */
-@Data
+@Value
 public class ElasticSearchIndex
 {
     @SerializedName("_index")
-    private String index;
+    private final String index;
 
 
     @SerializedName("_type")
-    private String type;
-
+    private final String type;
 
     @SerializedName("_id")
-    private String id;
+    private final String id;
 
     @SerializedName("_version")
-    private int version;
+    private final int version;
 
     @SerializedName("_shards")
-    private ElasticSearchShard shards;
+    private final ElasticSearchShard shards;
 
-    private String result;
-    private String status;
-    private boolean created;
-    private ElasticSearchError error;
+    private final String result;
+    private final String status;
+    private final boolean created;
+    private final ElasticSearchError error;
 
 
     /**

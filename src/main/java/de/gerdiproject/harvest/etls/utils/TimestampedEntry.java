@@ -18,6 +18,9 @@ package de.gerdiproject.harvest.etls.utils;
 
 import java.time.Instant;
 
+import lombok.RequiredArgsConstructor;
+import lombok.Value;
+
 /**
  * This class serves as an entry in the {@linkplain TimestampedList}.
  *
@@ -25,23 +28,23 @@ import java.time.Instant;
  *
  * @author Robin Weiss
  */
+@Value @RequiredArgsConstructor
 public class TimestampedEntry<T>
 {
+    /**
+     * -- GETTER --
+     * Retrieves the stored value.
+     * @return the stored value
+     */
     private final T value;
-    private final long timestamp;
 
 
     /**
-     * Constructor that sets all fields.
-     *
-     * @param value the value that is stored
-     * @param timestamp the time at which the value was stored
+     * -- GETTER --
+     * Retrieves the time at which the value was stored.
+     * @return the time at which the value was stored
      */
-    public TimestampedEntry(final T value, final long timestamp)
-    {
-        this.value = value;
-        this.timestamp = timestamp;
-    }
+    private final long timestamp;
 
 
     /**
@@ -52,28 +55,6 @@ public class TimestampedEntry<T>
     public TimestampedEntry(final T value)
     {
         this(value, System.currentTimeMillis());
-    }
-
-
-    /**
-     * Retrieves the stored value.
-     *
-     * @return the stored value
-     */
-    public T getValue()
-    {
-        return value;
-    }
-
-
-    /**
-     * Retrieves the time at which the value was stored.
-     *
-     * @return the time at which the value was stored
-     */
-    public long getTimestamp()
-    {
-        return timestamp;
     }
 
 
