@@ -29,13 +29,13 @@ import javax.xml.ws.http.HTTPException;
 import org.jsoup.nodes.Document;
 
 import com.google.gson.Gson;
+import com.vividsolutions.jts.geom.Geometry;
 
 import de.gerdiproject.harvest.config.Configuration;
 import de.gerdiproject.harvest.config.parameters.BooleanParameter;
 import de.gerdiproject.harvest.utils.data.constants.DataOperationConstants;
 import de.gerdiproject.harvest.utils.data.enums.RestRequestType;
 import de.gerdiproject.json.GsonUtils;
-import de.gerdiproject.json.geo.GeoJson;
 
 
 /**
@@ -54,7 +54,7 @@ public class HttpRequester
 
     /**
      * Constructor that uses an UTF-8 charset, and a {@linkplain Gson}
-     * implementation that can parse {@linkplain GeoJson} objects.
+     * implementation that can parse {@linkplain Geometry} objects.
      */
     public HttpRequester()
     {
