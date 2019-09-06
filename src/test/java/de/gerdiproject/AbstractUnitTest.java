@@ -29,6 +29,7 @@ import org.junit.Before;
 
 import ch.qos.logback.classic.Level;
 import de.gerdiproject.harvest.application.MainContext;
+import de.gerdiproject.harvest.application.constants.ApplicationConstants;
 import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.event.IEvent;
 import de.gerdiproject.harvest.utils.CancelableFuture;
@@ -59,6 +60,10 @@ public abstract class AbstractUnitTest
     @Before
     public void before() throws InstantiationException
     {
+        System.setProperty(
+            ApplicationConstants.DEPLOYMENT_TYPE,
+            ApplicationConstants.DEPLOYMENT_TYPE_TEST);
+
         setLoggerEnabled(isLoggingEnabledDuringTests());
     }
 

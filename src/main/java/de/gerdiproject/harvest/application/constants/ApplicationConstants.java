@@ -38,4 +38,11 @@ public class ApplicationConstants
 
     public static final String INIT_FIELD = "Initializing %s...";
     public static final String INIT_FIELD_SUCCESS = "Successfully initialized %s!";
+
+    public static final String LOG_DEPLOYMENT_TYPE = "Deployment Type: %s";
+    public static final String DEPLOYMENT_TYPE = "DEPLOYMENT_TYPE";
+    public static final String DEPLOYMENT_TYPE_DOCKER = "docker";
+    public static final String DEPLOYMENT_TYPE_JETTY = "jetty";
+    public static final String DEPLOYMENT_TYPE_TEST = "unit-test";
+    public static final String DEPLOYMENT_TYPE_OTHER = "other";
 }

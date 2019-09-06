@@ -55,6 +55,7 @@ public final class MainContext
     private static boolean failed;
     private static boolean initialized;
 
+    private final String deploymentType;
     private final HarvesterLog log;
 
     private final String moduleName;
@@ -86,6 +87,12 @@ public final class MainContext
         final Supplier<List<? extends AbstractETL<?, ?>>> etlSupplier,
         final List<Class<? extends ILoader<?>>> loaderClasses) throws InstantiationException, IllegalAccessException
     {
+        // find out how the application was deployed
+        this.deploymentType = System.getProperty(
+                                  ApplicationConstants.DEPLOYMENT_TYPE,
+                                  ApplicationConstants.DEPLOYMENT_TYPE_OTHER);
+        LOGGER.info(String.format(ApplicationConstants.LOG_DEPLOYMENT_TYPE, deploymentType));
+
         this.moduleName = repositoryNameSupplier.get().replaceAll(" ", "") + ApplicationConstants.HARVESTER_SERVICE_NAME_SUFFIX;
         EventSystem.addSynchronousListener(GetRepositoryNameEvent.class, repositoryNameSupplier);
 
