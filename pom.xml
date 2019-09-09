@@ -3,7 +3,6 @@
 		 xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
 		 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
-
 	<parent>
 		<groupId>de.gerdi-project</groupId>
 		<artifactId>GeRDI-parent</artifactId>
@@ -20,7 +19,7 @@
 	<properties>
 		<javaxservlet.dependency.version>4.0.1</javaxservlet.dependency.version>
 		<javaxwsrs.dependency.version>2.1</javaxwsrs.dependency.version>
-		<gerdigson.dependency.version>6.0.0</gerdigson.dependency.version>
+		<gerdigson.dependency.version>6.0.1</gerdigson.dependency.version>
 		<jersey.dependency.version>2.27</jersey.dependency.version>
 	</properties>
 
