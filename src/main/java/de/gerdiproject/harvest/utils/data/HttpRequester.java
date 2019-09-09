@@ -16,6 +16,7 @@
 package de.gerdiproject.harvest.utils.data;
 
 
+import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Type;
 import java.nio.charset.Charset;
@@ -31,11 +32,15 @@ import org.jsoup.nodes.Document;
 import com.google.gson.Gson;
 import com.vividsolutions.jts.geom.Geometry;
 
+import de.gerdiproject.harvest.application.events.GetCacheFolderEvent;
 import de.gerdiproject.harvest.config.Configuration;
 import de.gerdiproject.harvest.config.parameters.BooleanParameter;
+import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.utils.data.constants.DataOperationConstants;
 import de.gerdiproject.harvest.utils.data.enums.RestRequestType;
 import de.gerdiproject.json.GsonUtils;
+import lombok.Getter;
+import lombok.Setter;
 
 
 /**
@@ -47,7 +52,9 @@ public class HttpRequester
 {
     private final DiskIO diskIO;
     private final WebDataRetriever webDataRetriever;
-    private String cacheFolder;
+
+    @Getter @Setter
+    private File cacheFolder;
     private final BooleanParameter readFromDisk;
     private final BooleanParameter writeToDisk;
 
@@ -86,7 +93,8 @@ public class HttpRequester
         this.diskIO = new DiskIO(gson, httpCharset);
         this.webDataRetriever = new WebDataRetriever(gson, httpCharset);
 
-        setCacheFolder(DataOperationConstants.CACHE_FOLDER_PATH);
+        final File cacheRootFolder = EventSystem.sendSynchronousEvent(new GetCacheFolderEvent());
+        setCacheFolder(new File(cacheRootFolder, DataOperationConstants.CACHE_FOLDER_PATH));
     }
 
 
@@ -123,7 +131,7 @@ public class HttpRequester
 
         // read json file from disk, if the option is enabled
         if (isReadingFromDisk())
-            htmlResponse = diskIO.getHtml(urlToFilePath(url, DataOperationConstants.FILE_ENDING_HTML));
+            htmlResponse = diskIO.getHtml(urlToFilePath(url));
 
         // request json from web, if it has not been read from disk already
         if (htmlResponse == null) {
@@ -136,7 +144,7 @@ public class HttpRequester
             // deliberately write an empty object to disk, if the response could
             // not be retrieved
             final String responseText = (htmlResponse == null) ? "" : htmlResponse.toString();
-            diskIO.writeStringToFile(urlToFilePath(url, DataOperationConstants.FILE_ENDING_HTML), responseText);
+            diskIO.writeStringToFile(urlToFilePath(url), responseText);
         }
 
         return htmlResponse;
@@ -161,7 +169,7 @@ public class HttpRequester
 
         // read json file from disk, if the option is enabled
         if (isReadingFromDisk())
-            targetObject = diskIO.getObject(urlToFilePath(url, DataOperationConstants.FILE_ENDING_JSON), targetClass);
+            targetObject = diskIO.getObject(urlToFilePath(url), targetClass);
 
         // request json from web, if it has not been read from disk already
         if (targetObject == null) {
@@ -173,7 +181,7 @@ public class HttpRequester
         if (isResponseReadFromWeb && isWritingToDisk()) {
             // deliberately write an empty object to disk, if the response could
             // not be retrieved
-            diskIO.writeObjectToFile(urlToFilePath(url, DataOperationConstants.FILE_ENDING_JSON), targetObject);
+            diskIO.writeObjectToFile(urlToFilePath(url), targetObject);
         }
 
         return targetObject;
@@ -198,7 +206,7 @@ public class HttpRequester
 
         // read json file from disk, if the option is enabled
         if (isReadingFromDisk())
-            targetObject = diskIO.getObject(urlToFilePath(url, DataOperationConstants.FILE_ENDING_JSON), targetType);
+            targetObject = diskIO.getObject(urlToFilePath(url), targetType);
 
         // request json from web, if it has not been read from disk already
         if (targetObject == null) {
@@ -210,7 +218,7 @@ public class HttpRequester
         if (isResponseReadFromWeb && isWritingToDisk()) {
             // deliberately write an empty object to disk, if the response could
             // not be retrieved
-            diskIO.writeObjectToFile(urlToFilePath(url, DataOperationConstants.FILE_ENDING_JSON), targetObject);
+            diskIO.writeObjectToFile(urlToFilePath(url), targetObject);
         }
 
         return targetObject;
@@ -226,7 +234,7 @@ public class HttpRequester
      *            the file type
      * @return a file-path on disk
      */
-    private String urlToFilePath(final String url, final String fileEnding)
+    private String urlToFilePath(final String url)
     {
         String path = url;
 
@@ -243,12 +251,15 @@ public class HttpRequester
         path = path.replace("?", "%query%/");
         path = path.replace("*", "%star%");
 
-        // add slash at the end
-        if (path.charAt(path.length() - 1) != '/')
-            path += '/';// NOPMD StringBuffer does not pay off for a single operation
+        // remove slash at the end
+        if (path.charAt(path.length() - 1) == '/')
+            path = path.substring(0, path.length() - 1);
+
+        // add file extension
+        path += DataOperationConstants.RESPONSE_FILE_ENDING; // NOPMD StringBuffer does not pay off here
 
         // assemble the complete file name
-        return String.format(DataOperationConstants.FILE_PATH, cacheFolder, path, fileEnding);
+        return new File(cacheFolder, path).toString();
     }
 
 
@@ -331,30 +342,6 @@ public class HttpRequester
                                                    final String authorization, final String contentType) throws HTTPException, IOException
     {
         return webDataRetriever.getRestHeader(method, url, body, authorization, contentType);
-    }
-
-
-    /**
-     * Returns the top folder where HTTP responses can be cached.
-     *
-     * @return the top folder where HTTP responses can be cached
-     */
-    public String getCacheFolder()
-    {
-        return cacheFolder;
-    }
-
-
-    /**
-     * Changes the folder were responses are cached when the writeToDisk parameter is set.
-     * @param cacheFolder the folder were responses can be cached
-     */
-    public void setCacheFolder(final String cacheFolder)
-    {
-        if (cacheFolder == null || cacheFolder.endsWith("/"))
-            this.cacheFolder = cacheFolder;
-        else
-            this.cacheFolder = cacheFolder + '/';
     }
 
 

@@ -7,11 +7,11 @@
 	<parent>
 		<groupId>de.gerdi-project</groupId>
 		<artifactId>GeRDI-parent</artifactId>
-		<version>4.0.3</version>
+		<version>4.1.0</version>
 	</parent>
 
 	<artifactId>RestfulHarvester-Library</artifactId>
-	<version>8.0.1</version>
+	<version>8.1.0</version>
 	<packaging>jar</packaging>
 	<name>Restful Harvester Library</name>
 	<description>This library provides a skeleton for restful harvesters.</description>

@@ -88,7 +88,7 @@ public class DiskLoaderTest extends AbstractFileSystemUnitTest<DiskLoader>
 
         // read file
         final DiskIO diskReader = new DiskIO(new Gson(), StandardCharsets.UTF_8);
-        final JsonObject fileContent = diskReader.getObject(testedObject.getTargetFile(), JsonObject.class);
+        final JsonObject fileContent = diskReader.getObject(testedObject.createTargetFile(etl.getName()), JsonObject.class);
         final JsonArray loadedDocuments = fileContent.get(DiskLoaderConstants.DOCUMENTS_JSON).getAsJsonArray();
 
         // publication year is the index of the document, but JsonArrays are unsorted
@@ -118,7 +118,7 @@ public class DiskLoaderTest extends AbstractFileSystemUnitTest<DiskLoader>
 
         // read file
         final DiskIO diskReader = new DiskIO(new Gson(), StandardCharsets.UTF_8);
-        final JsonObject fileContent = diskReader.getObject(testedObject.getTargetFile(), JsonObject.class);
+        final JsonObject fileContent = diskReader.getObject(testedObject.createTargetFile(etl.getName()), JsonObject.class);
 
         assertEquals(String.format(ASSERT_JSON_MESSAGE, DiskLoaderConstants.SOURCE_HASH_JSON),
                      sourceHash,
@@ -142,7 +142,7 @@ public class DiskLoaderTest extends AbstractFileSystemUnitTest<DiskLoader>
         testedObject.clear();
 
         assertFalse("Expected that no file was to be created when no documents were harvested!",
-                    testedObject.getTargetFile().exists());
+                    testedObject.createTargetFile(etl.getName()).exists());
     }
 
 

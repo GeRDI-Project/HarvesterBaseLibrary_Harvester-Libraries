@@ -16,6 +16,7 @@
 package de.gerdiproject.harvest.application;
 
 
+import java.io.File;
 import java.util.List;
 import java.util.function.Supplier;
 
@@ -23,6 +24,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import de.gerdiproject.harvest.application.constants.ApplicationConstants;
+import de.gerdiproject.harvest.application.enums.DeploymentType;
+import de.gerdiproject.harvest.application.events.GetCacheFolderEvent;
 import de.gerdiproject.harvest.application.events.ServiceInitializedEvent;
 import de.gerdiproject.harvest.config.Configuration;
 import de.gerdiproject.harvest.etls.AbstractETL;
@@ -55,7 +58,10 @@ public final class MainContext
     private static boolean failed;
     private static boolean initialized;
 
-    private final String deploymentType;
+    private final DeploymentType deploymentType;
+    private final File cacheFolder;
+    private final File logFile;
+
     private final HarvesterLog log;
 
     private final String moduleName;
@@ -88,25 +94,27 @@ public final class MainContext
         final List<Class<? extends ILoader<?>>> loaderClasses) throws InstantiationException, IllegalAccessException
     {
         // find out how the application was deployed
-        this.deploymentType = System.getProperty(
-                                  ApplicationConstants.DEPLOYMENT_TYPE,
-                                  ApplicationConstants.DEPLOYMENT_TYPE_OTHER);
+        this.deploymentType = MainContextUtils.initDeploymentType();
         LOGGER.info(String.format(ApplicationConstants.LOG_DEPLOYMENT_TYPE, deploymentType));
 
         this.moduleName = repositoryNameSupplier.get().replaceAll(" ", "") + ApplicationConstants.HARVESTER_SERVICE_NAME_SUFFIX;
         EventSystem.addSynchronousListener(GetRepositoryNameEvent.class, repositoryNameSupplier);
 
-        this.log = MainContextUtils.createLog(moduleName);
+        this.cacheFolder = MainContextUtils.initCacheDirectory(deploymentType);
+        EventSystem.addSynchronousListener(GetCacheFolderEvent.class, this::getCacheFolder);
+
+        this.logFile = MainContextUtils.initLogFile(deploymentType, moduleName);
+        this.log = MainContextUtils.createLog(logFile);
         EventSystem.addSynchronousListener(GetMainLogEvent.class, this::getLog);
 
-        this.configuration = MainContextUtils.createConfiguration(moduleName);
+        this.configuration = MainContextUtils.createConfiguration(moduleName, cacheFolder);
 
         this.mavenUtils = MainContextUtils.createMavenUtils(callerClass);
         EventSystem.addSynchronousListener(GetMavenUtilsEvent.class, this::getMavenUtils);
 
         this.loaderRegistry = MainContextUtils.createLoaderRegistry(loaderClasses);
-        this.etlManager = MainContextUtils.createEtlManager(moduleName, etlSupplier);
-        this.scheduler = MainContextUtils.createScheduler(moduleName);
+        this.etlManager = MainContextUtils.createEtlManager(moduleName, etlSupplier, cacheFolder);
+        this.scheduler = MainContextUtils.createScheduler(moduleName, cacheFolder);
     }
 
 
@@ -140,6 +148,9 @@ public final class MainContext
         .thenApply(MainContext::onHarvesterInitializedSuccess)
         .exceptionally(MainContext::onHarvesterInitializedFailed);
     }
+
+
+
 
 
     /**

@@ -70,10 +70,10 @@ public class MavenUtils
     /**
      * Returns a list of dependencies of this service's classpath.
      *
-     * @param groupId a maven groupId that can be used to filter the maven projects,
-     *         or null if not filter is to be applied
+     * @param groupId a Maven groupId that can be used to filter the Maven projects,
+     *         or null if no filter is to be applied
      *
-     * @return a list of maven dependencies, or null if no versions could be retrieved
+     * @return a list of Maven dependencies, or null if no versions could be retrieved
      */
     public List<String> getMavenVersionInfo(final String groupId)
     {

@@ -23,12 +23,14 @@ import com.google.gson.Gson;
 import com.google.gson.JsonIOException;
 import com.google.gson.stream.JsonWriter;
 
+import de.gerdiproject.harvest.application.events.GetCacheFolderEvent;
 import de.gerdiproject.harvest.config.Configuration;
 import de.gerdiproject.harvest.config.parameters.StringParameter;
 import de.gerdiproject.harvest.etls.AbstractETL;
 import de.gerdiproject.harvest.etls.extractors.ExtractorException;
 import de.gerdiproject.harvest.etls.loaders.constants.DiskLoaderConstants;
 import de.gerdiproject.harvest.etls.transformers.TransformerException;
+import de.gerdiproject.harvest.event.EventSystem;
 import de.gerdiproject.harvest.utils.file.FileUtils;
 import de.gerdiproject.json.GsonUtils;
 import de.gerdiproject.json.datacite.DataCiteJson;
@@ -43,8 +45,8 @@ public class DiskLoader extends AbstractIteratorLoader<DataCiteJson>
     private final Gson gson;
     private final StringParameter saveFolderParam;
 
-    private JsonWriter writer;
     private File targetFile;
+    private JsonWriter writer;
 
     /**
      * Constructor that sets the parser and save folder.
@@ -66,12 +68,19 @@ public class DiskLoader extends AbstractIteratorLoader<DataCiteJson>
 
     /**
      * Returns the file to which the documents are saved.
+     * The file location is determined by the deployment specific
+     * cache folder root and the subfolder determined by a {@linkplain StringParameter}.
      *
-     * @return the file to which the documents are saved, or null if init() was not called before
+     * @param fileName the name of the file without extension
+     *
+     * @return the {@linkplain File} to which the documents are saved, or null if init() was not called before
      */
-    public File getTargetFile()
+    public File createTargetFile(final String fileName)
     {
-        return targetFile;
+        final File cacheFolderRoot = EventSystem.sendSynchronousEvent(new GetCacheFolderEvent());
+        final File cacheFolder = new File(cacheFolderRoot, saveFolderParam.getStringValue());
+
+        return new File(cacheFolder, fileName + DiskLoaderConstants.JSON_EXTENSION);
     }
 
 
@@ -94,13 +103,12 @@ public class DiskLoader extends AbstractIteratorLoader<DataCiteJson>
         super.init(etl);
 
         // create empty file
-        final String fileName = etl.getName() + DiskLoaderConstants.JSON_EXTENSION;
-        this.targetFile = new File(saveFolderParam.getStringValue(), fileName);
-        FileUtils.createEmptyFile(targetFile);
+        this.targetFile = createTargetFile(etl.getName());
+        FileUtils.createEmptyFile(this.targetFile);
 
         // abort if the file could not be created or cleaned up
-        if (!targetFile.exists() || targetFile.length() != 0)
-            throw new IllegalStateException(String.format(DiskLoaderConstants.SAVE_FAILED_CANNOT_CREATE, targetFile));
+        if (!this.targetFile.exists() || this.targetFile.length() != 0)
+            throw new IllegalStateException(String.format(DiskLoaderConstants.SAVE_FAILED_CANNOT_CREATE, this.targetFile));
 
         // create JSON writer
         try {
@@ -148,7 +156,7 @@ public class DiskLoader extends AbstractIteratorLoader<DataCiteJson>
         }
 
         if (!hasLoadedDocuments)
-            FileUtils.deleteFile(getTargetFile());
+            FileUtils.deleteFile(this.targetFile);
     }
 
 
