@@ -150,9 +150,6 @@ public final class MainContext
     }
 
 
-
-
-
     /**
      * Checks if the initialization phase of the MainContext has finished.
      *
@@ -163,6 +160,7 @@ public final class MainContext
         return initialized;
     }
 
+    
     /**
      * Checks if the initialization of the MainContext has failed.
      *
