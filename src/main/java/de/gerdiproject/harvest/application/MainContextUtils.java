@@ -104,7 +104,7 @@ class MainContextUtils
                 break;
 
             default:
-                projectRootPath = "";
+                projectRootPath = new File("").getAbsolutePath();
                 subDirPath = "";
                 break;
         }
