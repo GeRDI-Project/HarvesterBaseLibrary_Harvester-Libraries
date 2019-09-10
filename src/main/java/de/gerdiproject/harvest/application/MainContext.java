@@ -160,7 +160,7 @@ public final class MainContext
         return initialized;
     }
 
-    
+
     /**
      * Checks if the initialization of the MainContext has failed.
      *

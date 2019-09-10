@@ -39,6 +39,7 @@ import de.gerdiproject.harvest.scheduler.constants.SchedulerConstants;
 import de.gerdiproject.harvest.utils.logger.HarvesterLog;
 import de.gerdiproject.harvest.utils.logger.constants.LoggerConstants;
 import de.gerdiproject.harvest.utils.maven.MavenUtils;
+import de.gerdiproject.harvest.utils.maven.constants.MavenConstants;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 
@@ -95,17 +96,17 @@ class MainContextUtils
         switch (deploymentType) {
             case UNIT_TEST:
                 projectRootPath = getProjectRootDirectory();
-                subDirPath = "debug/unit-tests";
+                subDirPath = ApplicationConstants.CACHE_DIR_UNIT_TESTS;
                 break;
 
             case JETTY:
                 projectRootPath = getProjectRootDirectory();
-                subDirPath = "debug";
+                subDirPath = ApplicationConstants.CACHE_DIR_JETTY;
                 break;
 
             default:
-                projectRootPath = new File("").getAbsolutePath();
-                subDirPath = "";
+                projectRootPath = ApplicationConstants.CACHE_ROOT_DIR_OTHER;
+                subDirPath = ApplicationConstants.CACHE_DIR_OTHER;
                 break;
         }
 
@@ -167,7 +168,7 @@ class MainContextUtils
             return "";
         }
 
-        return jarPath.substring(0, jarPath.lastIndexOf(File.separator + "target")) ;
+        return jarPath.substring(0, jarPath.lastIndexOf(MavenConstants.TARGET_FOLDER)) ;
     }
 
 
