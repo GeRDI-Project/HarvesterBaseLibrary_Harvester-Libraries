@@ -44,6 +44,7 @@ import de.gerdiproject.harvest.config.Configuration;
 import de.gerdiproject.harvest.utils.data.HttpRequester;
 import de.gerdiproject.harvest.utils.data.constants.DataOperationConstants;
 import de.gerdiproject.harvest.utils.data.enums.RestRequestType;
+import de.gerdiproject.harvest.utils.file.FileUtils;
 
 /**
  * This class provides test cases for the {@linkplain HttpRequester}.
@@ -56,12 +57,10 @@ import de.gerdiproject.harvest.utils.data.enums.RestRequestType;
 @RunWith(Parameterized.class)
 public class HttpRequesterTest extends AbstractFileSystemUnitTest<HttpRequester>
 {
-    private static final String MOCKED_RESPONSE_CACHE_FOLDER = "src/test/java/de/gerdiproject/utils/examples/httprequester/";
-    private static final String JSON_OBJECT_URL = "http://fenixservices.fao.org/faostat/api/v1/en/documents/RFB/";
-    private static final String DEFAULT_URL = "https://www.gerdi-project.eu/";
+    private static final String JSON_OBJECT_URL = "http://fenixservices.fao.org/faostat/api/v1/en/documents/RFB";
+    private static final String TEST_RESOURCE_FOLDER = "src/test/java/de/gerdiproject/utils/examples/httprequester";
+    private static final String DEFAULT_URL = "https://www.gerdi-project.eu";
     private static final String UNEXPECTED_FILE_ERROR = "This file should not exist: ";
-    private static final String CACHED_JSON = "response.json";
-    private static final String CACHED_HTML = "response.html";
     private static final String MOCKED_RESPONSE_FOLDER = "mocked";
     private static final String READ_FROM_DISK_KEY = DataOperationConstants.READ_FROM_DISK_PARAM.getCompositeKey();
     private static final String WRITE_TO_DISK_KEY = DataOperationConstants.WRITE_TO_DISK_PARAM.getCompositeKey();
@@ -97,10 +96,15 @@ public class HttpRequesterTest extends AbstractFileSystemUnitTest<HttpRequester>
         config.addEventListeners();
 
         final HttpRequester requester = new HttpRequester(new Gson(), StandardCharsets.UTF_8);
-        requester.setCacheFolder(testFolder.getPath());
+        requester.setCacheFolder(testFolder);
 
         config.setParameter(READ_FROM_DISK_KEY, String.valueOf(isCachingEnabled));
         config.setParameter(WRITE_TO_DISK_KEY, String.valueOf(isCachingEnabled));
+
+        if (isCachingEnabled) {
+            // copy mocked resources to the expected default folder
+            FileUtils.copyFile(new File(TEST_RESOURCE_FOLDER), requester.getCacheFolder());
+        }
 
         return requester;
     }
@@ -152,7 +156,7 @@ public class HttpRequesterTest extends AbstractFileSystemUnitTest<HttpRequester>
         testedObject = createReadOnlyExampleHttpRequester();
 
         final String requestUrl = isCachingEnabled
-                                  ? DEFAULT_URL + MOCKED_RESPONSE_FOLDER
+                                  ? DEFAULT_URL + '/' + MOCKED_RESPONSE_FOLDER
                                   : DEFAULT_URL;
         Document htmlObject = testedObject.getHtmlFromUrl(requestUrl);
 
@@ -197,7 +201,7 @@ public class HttpRequesterTest extends AbstractFileSystemUnitTest<HttpRequester>
             new File(
             testedObject.getCacheFolder()
             + DEFAULT_URL.substring(7)
-            + CACHED_HTML);
+            + DataOperationConstants.RESPONSE_FILE_ENDING);
 
         if (cachedResponse.exists())
             throw new IOException(UNEXPECTED_FILE_ERROR + cachedResponse.getAbsolutePath());
@@ -217,7 +221,7 @@ public class HttpRequesterTest extends AbstractFileSystemUnitTest<HttpRequester>
         final File cachedResponse = new File(
             testedObject.getCacheFolder()
             + DEFAULT_URL.substring(7)
-            + CACHED_HTML);
+            + DataOperationConstants.RESPONSE_FILE_ENDING);
 
         // no need to check if the file already exists, as this is done in before()
 
@@ -265,7 +269,7 @@ public class HttpRequesterTest extends AbstractFileSystemUnitTest<HttpRequester>
         final File cachedResponse =
             new File(testedObject.getCacheFolder()
                      + JSON_OBJECT_URL.substring(7)
-                     + CACHED_JSON);
+                     + DataOperationConstants.RESPONSE_FILE_ENDING);
 
         if (cachedResponse.exists())
             throw new IOException(UNEXPECTED_FILE_ERROR + cachedResponse.getAbsolutePath());
@@ -279,7 +283,6 @@ public class HttpRequesterTest extends AbstractFileSystemUnitTest<HttpRequester>
     }
 
 
-
     /**
      * Tests if a JSON object response is cached on disk if the 'writeToDisk' flag is true.
      */
@@ -289,7 +292,7 @@ public class HttpRequesterTest extends AbstractFileSystemUnitTest<HttpRequester>
         final File cachedResponse = new File(
             testFolder,
             JSON_OBJECT_URL.substring(7)
-            + CACHED_JSON);
+            + DataOperationConstants.RESPONSE_FILE_ENDING);
 
         // no need to check if the file already exists, as this is done in before()
 
@@ -351,7 +354,7 @@ public class HttpRequesterTest extends AbstractFileSystemUnitTest<HttpRequester>
         config.setParameter(DataOperationConstants.WRITE_TO_DISK_PARAM.getCompositeKey(), String.valueOf(false));
 
         final HttpRequester requester = new HttpRequester(new Gson(), StandardCharsets.UTF_8);
-        requester.setCacheFolder(MOCKED_RESPONSE_CACHE_FOLDER);
+        requester.setCacheFolder(testFolder);
 
         return requester;
     }

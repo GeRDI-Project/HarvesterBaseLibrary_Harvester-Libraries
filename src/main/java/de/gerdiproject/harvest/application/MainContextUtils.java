@@ -16,13 +16,17 @@
  */
 package de.gerdiproject.harvest.application;
 
+import java.io.File;
+import java.net.URISyntaxException;
 import java.util.List;
+import java.util.Locale;
 import java.util.function.Supplier;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import de.gerdiproject.harvest.application.constants.ApplicationConstants;
+import de.gerdiproject.harvest.application.enums.DeploymentType;
 import de.gerdiproject.harvest.config.Configuration;
 import de.gerdiproject.harvest.config.constants.ConfigurationConstants;
 import de.gerdiproject.harvest.etls.AbstractETL;
@@ -35,17 +39,137 @@ import de.gerdiproject.harvest.scheduler.constants.SchedulerConstants;
 import de.gerdiproject.harvest.utils.logger.HarvesterLog;
 import de.gerdiproject.harvest.utils.logger.constants.LoggerConstants;
 import de.gerdiproject.harvest.utils.maven.MavenUtils;
+import de.gerdiproject.harvest.utils.maven.constants.MavenConstants;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 
 /**
- * @author Robin Weiss
+ * This utility class offers static functions for initializing {@linkplain MainContext}
+ * related classes.
  *
+ * @author Robin Weiss
  */
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 class MainContextUtils
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(MainContextUtils.class);
+
+    /**
+     * Reads a system variable to determine the {@linkplain DeploymentType} of the
+     * harvester service.
+     *
+     * @return the {@linkplain DeploymentType} of the harvester service
+     */
+    protected static DeploymentType initDeploymentType()
+    {
+        final String deploymentTypeSystemProperty =
+            System.getProperty(ApplicationConstants.DEPLOYMENT_TYPE, null);
+
+        DeploymentType deploymentType;
+
+        if (deploymentTypeSystemProperty == null)
+            deploymentType = DeploymentType.OTHER;
+        else {
+            try {
+                deploymentType = DeploymentType.valueOf(deploymentTypeSystemProperty.toUpperCase(Locale.ENGLISH));
+            } catch (final IllegalArgumentException e) {
+                deploymentType = DeploymentType.OTHER;
+            }
+        }
+
+        return deploymentType;
+    }
+
+
+    /**
+     * Initializes a {@linkplain File} that points to the topmost directory in which
+     * harvester service files are cached.
+     *
+     * @param deploymentType the {@linkplain DeploymentType} of the harvester service
+     * @return the topmost directory in which harvester service files are cached
+     */
+    protected static File initCacheDirectory(final DeploymentType deploymentType)
+    {
+        String projectRootPath;
+        String subDirPath;
+
+        switch (deploymentType) {
+            case UNIT_TEST:
+                projectRootPath = getProjectRootDirectory();
+                subDirPath = ApplicationConstants.CACHE_DIR_UNIT_TESTS;
+                break;
+
+            case JETTY:
+                projectRootPath = getProjectRootDirectory();
+                subDirPath = ApplicationConstants.CACHE_DIR_JETTY;
+                break;
+
+            default:
+                projectRootPath = ApplicationConstants.CACHE_ROOT_DIR_OTHER;
+                subDirPath = ApplicationConstants.CACHE_DIR_OTHER;
+                break;
+        }
+
+        return new File(projectRootPath, subDirPath);
+    }
+
+
+    /**
+     * Assembles a {@linkplain File} in which logs are to be saved.
+     *
+     * @param deploymentType the {@linkplain DeploymentType} of the harvester service
+     * @param moduleName the name of the harvester service
+     *
+     * @return a {@linkplain File} in which logs are to be saved
+     */
+    protected static File initLogFile(final DeploymentType deploymentType, final String moduleName)
+    {
+        String logPathFormat;
+
+        switch (deploymentType) {
+            case UNIT_TEST:
+                logPathFormat = getProjectRootDirectory() + File.separatorChar + LoggerConstants.LOG_PATH_UNIT_TESTS;
+                break;
+
+            case JETTY:
+                logPathFormat = getProjectRootDirectory() + File.separatorChar + LoggerConstants.LOG_PATH_JETTY;
+                break;
+
+            case DOCKER:
+                logPathFormat = LoggerConstants.LOG_PATH_DOCKER;
+                break;
+
+            default:
+                logPathFormat = LoggerConstants.LOG_PATH_OTHER;
+                break;
+        }
+
+        return new File(String.format(logPathFormat, moduleName));
+    }
+
+
+    /**
+     * Returns the harvester project directory.
+     *
+     * @return the harvester project directory
+     */
+    private static String getProjectRootDirectory()
+    {
+        String jarPath;
+
+        try {
+            jarPath = new File(
+                MainContextUtils.class
+                .getProtectionDomain()
+                .getCodeSource()
+                .getLocation()
+                .toURI()).getPath();
+        } catch (URISyntaxException e) {
+            return "";
+        }
+
+        return jarPath.substring(0, jarPath.lastIndexOf(MavenConstants.TARGET_FOLDER)) ;
+    }
 
 
     /**
@@ -75,15 +199,15 @@ class MainContextUtils
     /**
      * Creates a {@linkplain HarvesterLog} and assigns it to this context.
      *
-     * @param moduleName the name of this service
+     * @param logPath the path to the file to which the logs are written
      *
      * @return a new {@linkplain HarvesterLog} for this context
      */
-    protected static HarvesterLog createLog(final String moduleName)
+    protected static HarvesterLog createLog(final File logPath)
     {
         LOGGER.info(String.format(ApplicationConstants.INIT_FIELD, HarvesterLog.class.getSimpleName()));
 
-        final HarvesterLog serviceLog = new HarvesterLog(String.format(LoggerConstants.LOG_FILE_PATH, moduleName));
+        final HarvesterLog serviceLog = new HarvesterLog(logPath.toString());
         serviceLog.registerLogger();
 
         LOGGER.info(String.format(ApplicationConstants.INIT_FIELD_SUCCESS, HarvesterLog.class.getSimpleName()));
@@ -116,15 +240,18 @@ class MainContextUtils
      *
      * @param moduleName the name of this service
      * @param etlSupplier all {@linkplain AbstractETL}s required for harvesting
+     * @param cacheFolder the root folder of harvester cache files
      *
      * @return a new {@linkplain ETLManager} for this context
      */
-    protected static ETLManager createEtlManager(final String moduleName, final Supplier<List<? extends AbstractETL<?, ?>>> etlSupplier)
+    protected static ETLManager createEtlManager(final String moduleName,
+                                                 final Supplier<List<? extends AbstractETL<?, ?>>> etlSupplier,
+                                                 final File cacheFolder)
     throws InstantiationException, IllegalAccessException
     {
         LOGGER.info(String.format(ApplicationConstants.INIT_FIELD, ETLManager.class.getSimpleName()));
 
-        final ETLManager manager = new ETLManager(moduleName);
+        final ETLManager manager = new ETLManager(moduleName, cacheFolder);
 
         // construct harvesters
         final List<? extends AbstractETL<?, ?>> etlComponents = etlSupplier.get();
@@ -158,15 +285,16 @@ class MainContextUtils
      * Creates a {@linkplain Scheduler} and assigns it to this context.
      *
      * @param moduleName the name of this service
+     * @param cacheFolder the root folder of harvester cache files
      *
      * @return a new {@linkplain Scheduler} for this context
      */
-    protected static Scheduler createScheduler(final String moduleName)
+    protected static Scheduler createScheduler(final String moduleName, final File cacheFolder)
     {
         LOGGER.info(String.format(ApplicationConstants.INIT_FIELD, Scheduler.class.getSimpleName()));
 
-        final String schedulerCachePath = String.format(SchedulerConstants.CACHE_PATH, moduleName);
-        final Scheduler sched = new Scheduler(moduleName, schedulerCachePath);
+        final File schedulerCachePath = new File(cacheFolder, String.format(SchedulerConstants.CACHE_PATH, moduleName));
+        final Scheduler sched = new Scheduler(moduleName, schedulerCachePath.toString());
         sched.loadFromDisk();
         sched.addEventListeners();
 
@@ -179,15 +307,17 @@ class MainContextUtils
      * Creates a {@linkplain Configuration} and assigns it to this context.
      *
      * @param moduleName the name of this service
+     * @param cacheFolder the root folder of harvester cache files
      *
      * @return a new {@linkplain Configuration} for this context
      */
-    protected static Configuration createConfiguration(final String moduleName)
+    protected static Configuration createConfiguration(final String moduleName, final File cacheFolder)
     {
         LOGGER.info(String.format(ApplicationConstants.INIT_FIELD, Configuration.class.getSimpleName()));
 
         final Configuration config = new Configuration(moduleName);
-        config.setCacheFilePath(String.format(ConfigurationConstants.CONFIG_PATH, moduleName));
+        final File configCachePath = new File(cacheFolder, String.format(ConfigurationConstants.CONFIG_PATH, moduleName));
+        config.setCacheFilePath(configCachePath.toString());
         config.loadFromDisk();
         config.addEventListeners();
 

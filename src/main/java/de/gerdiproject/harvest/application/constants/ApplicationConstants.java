@@ -15,6 +15,8 @@
  */
 package de.gerdiproject.harvest.application.constants;
 
+import java.io.File;
+
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 
@@ -38,4 +40,13 @@ public class ApplicationConstants
 
     public static final String INIT_FIELD = "Initializing %s...";
     public static final String INIT_FIELD_SUCCESS = "Successfully initialized %s!";
+
+    public static final String LOG_DEPLOYMENT_TYPE = "Deployment Type: %s";
+    public static final String DEPLOYMENT_TYPE = "DEPLOYMENT_TYPE";
+
+    public static final String CACHE_ROOT_DIR_OTHER = new File("").getAbsolutePath();
+
+    public static final String CACHE_DIR_JETTY = "debug/";
+    public static final String CACHE_DIR_UNIT_TESTS = "debug/unit-tests/";
+    public static final String CACHE_DIR_OTHER = "";
 }

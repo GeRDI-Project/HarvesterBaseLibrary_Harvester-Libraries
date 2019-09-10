@@ -3,15 +3,14 @@
 		 xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
 		 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
-
 	<parent>
 		<groupId>de.gerdi-project</groupId>
 		<artifactId>GeRDI-parent</artifactId>
-		<version>4.0.3</version>
+		<version>4.1.0</version>
 	</parent>
 
 	<artifactId>RestfulHarvester-Library</artifactId>
-	<version>8.0.1</version>
+	<version>8.1.0</version>
 	<packaging>jar</packaging>
 	<name>Restful Harvester Library</name>
 	<description>This library provides a skeleton for restful harvesters.</description>
@@ -20,7 +19,7 @@
 	<properties>
 		<javaxservlet.dependency.version>4.0.1</javaxservlet.dependency.version>
 		<javaxwsrs.dependency.version>2.1</javaxwsrs.dependency.version>
-		<gerdigson.dependency.version>6.0.0</gerdigson.dependency.version>
+		<gerdigson.dependency.version>6.0.1</gerdigson.dependency.version>
 		<jersey.dependency.version>2.27</jersey.dependency.version>
 	</properties>
 

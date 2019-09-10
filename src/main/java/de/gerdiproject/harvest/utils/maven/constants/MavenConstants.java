@@ -16,6 +16,8 @@
  */
 package de.gerdiproject.harvest.utils.maven.constants;
 
+import java.io.File;
+
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 
@@ -35,4 +37,6 @@ public class MavenConstants
     public static final String MAVEN_JAR_META_INF_FOLDER = "META-INF/maven/%s";
     public static final String DEFAULT_GERDI_NAMESPACE = "de.gerdi-project";
     public static final String JAR_PREFIX = "jar:";
+
+    public static final String TARGET_FOLDER = File.separator + "target";
 }

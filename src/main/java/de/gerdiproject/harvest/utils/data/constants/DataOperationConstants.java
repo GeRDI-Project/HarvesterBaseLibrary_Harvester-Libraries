@@ -37,9 +37,7 @@ public class DataOperationConstants
     public static final String LOAD_FAILED = "Could not load file: %s";
 
     public static final String CACHE_FOLDER_PATH = "savedHttpResponses";
-    public static final String FILE_PATH = "%s/%sresponse.%s";
-    public static final String FILE_ENDING_JSON = "json";
-    public static final String FILE_ENDING_HTML = "html";
+    public static final String RESPONSE_FILE_ENDING = ".response";
 
     public static final String WEB_ERROR_JSON = "Could not load and parse from web: %s";
 

@@ -22,6 +22,7 @@ import org.slf4j.LoggerFactory;
 
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
+import de.gerdiproject.harvest.application.constants.ApplicationConstants;
 import de.gerdiproject.harvest.utils.logger.HarvesterLog;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
@@ -37,7 +38,11 @@ public class LoggerConstants
     public static final Logger ROOT_LOGGER = (Logger) LoggerFactory.getLogger(org.slf4j.Logger.ROOT_LOGGER_NAME);
     public static final Level DEFAULT_LOG_LEVEL = Level.ALL;
 
-    public static final String LOG_FILE_PATH = "/var/log/harvester/%s.log";
+    public static final String LOG_PATH_DOCKER = "/var/log/harvester/%s.log";
+    public static final String LOG_PATH_JETTY = ApplicationConstants.CACHE_DIR_JETTY + "%s.log";
+    public static final String LOG_PATH_OTHER = "%s.log";
+    public static final String LOG_PATH_UNIT_TESTS = ApplicationConstants.CACHE_DIR_UNIT_TESTS + "%s.log";
+
     public static final String LOG_PATTERN = "%date %logger{0} %level %msg%n";
     public static final Pattern PARSE_LOG_PATTERN = Pattern.compile("^([^ ]+) [^ ]+ ([^ ]+) (\\w+?) [\\d\\D]*$");
     public static final String ERROR_READING_LOG = "Could not read log file: %s";

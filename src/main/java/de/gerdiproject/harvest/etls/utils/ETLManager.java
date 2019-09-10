@@ -81,8 +81,9 @@ public class ETLManager extends AbstractRestObject<ETLManager, ETLManagerJson> i
      * Constructor.
      *
      * @param moduleName the name of the harvester service
+     * @param cacheFolder the project's cache folder
      */
-    public ETLManager(final String moduleName)
+    public ETLManager(final String moduleName, final File cacheFolder)
     {
         super(moduleName, GetETLManagerEvent.class);
         this.combinedStateHistory = new TimestampedList<>(ETLState.INITIALIZING, 10);
@@ -90,7 +91,7 @@ public class ETLManager extends AbstractRestObject<ETLManager, ETLManagerJson> i
         this.etls = new LinkedList<>();
         this.concurrentParam = Configuration.registerParameter(ETLConstants.CONCURRENT_PARAM);
         this.forceHarvestParameter = Configuration.registerParameter(ETLConstants.FORCED_PARAM);
-        this.cacheFile = new File(String.format(ETLConstants.ETL_MANAGER_CACHE_PATH, moduleName));
+        this.cacheFile = new File(cacheFolder, String.format(ETLConstants.ETL_MANAGER_CACHE_PATH, moduleName));
         this.diskIo = new DiskIO(new Gson(), StandardCharsets.UTF_8);
 
         setStatus(ETLState.IDLE);

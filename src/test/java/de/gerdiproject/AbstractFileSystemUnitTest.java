@@ -18,6 +18,7 @@ package de.gerdiproject;
 
 import java.io.File;
 
+import de.gerdiproject.harvest.application.constants.ApplicationConstants;
 import de.gerdiproject.harvest.utils.file.FileUtils;
 
 /**
@@ -29,7 +30,7 @@ import de.gerdiproject.harvest.utils.file.FileUtils;
  */
 public abstract class AbstractFileSystemUnitTest<T> extends AbstractObjectUnitTest<T>
 {
-    public static final File TEST_FOLDER = new File("mocked");
+    public static final File TEST_FOLDER = new File(ApplicationConstants.CACHE_DIR_UNIT_TESTS);
     private static final String CLEANUP_ERROR = "Could not delete temporary test directory: " + TEST_FOLDER;
 
     protected final File testFolder = new File(TEST_FOLDER, getTestedClass().getSimpleName());
