@@ -19,6 +19,7 @@ package de.gerdiproject.harvest.etls.rest;
 import java.util.Arrays;
 import java.util.List;
 
+import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
@@ -47,6 +48,7 @@ import de.gerdiproject.harvest.rest.AbstractRestResource;
 import de.gerdiproject.harvest.rest.HttpResponseFactory;
 import de.gerdiproject.harvest.rest.constants.RestConstants;
 import de.gerdiproject.harvest.utils.logger.HarvesterLog;
+import de.gerdiproject.harvest.utils.logger.constants.LoggerConstants;
 import de.gerdiproject.harvest.utils.logger.events.GetMainLogEvent;
 import de.gerdiproject.harvest.utils.maven.MavenUtils;
 import de.gerdiproject.harvest.utils.maven.constants.MavenConstants;
@@ -245,6 +247,28 @@ public class ETLRestResource extends AbstractRestResource<ETLManager, GetETLMana
             return HttpResponseFactory.createServerErrorResponse();
         else
             return HttpResponseFactory.createPlainTextOkResponse(log);
+    }
+
+
+    /**
+     * Clears the log of the harvester service.
+     *
+     * @return a feedback message
+     */
+    @DELETE
+    @Path("log")
+    @Produces({
+        MediaType.TEXT_PLAIN
+    })
+    public Response clearLog()
+    {
+        final HarvesterLog mainLog = EventSystem.sendSynchronousEvent(new GetMainLogEvent());
+
+        if (mainLog == null)
+            return HttpResponseFactory.createServerErrorResponse();
+
+        mainLog.clearLog();
+        return HttpResponseFactory.createOkResponse(LoggerConstants.LOG_CLEAR_RESPONSE);
     }
 
 

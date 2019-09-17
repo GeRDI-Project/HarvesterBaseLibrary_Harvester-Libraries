@@ -46,4 +46,6 @@ public class LoggerConstants
     public static final String LOG_PATTERN = "%date %logger{0} %level %msg%n";
     public static final Pattern PARSE_LOG_PATTERN = Pattern.compile("^([^ ]+) [^ ]+ ([^ ]+) (\\w+?) [\\d\\D]*$");
     public static final String ERROR_READING_LOG = "Could not read log file: %s";
+
+    public static final String LOG_CLEAR_RESPONSE = "Log has been deleted.";
 }
