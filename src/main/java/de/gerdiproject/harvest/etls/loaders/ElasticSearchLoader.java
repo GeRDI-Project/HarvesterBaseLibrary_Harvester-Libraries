@@ -63,7 +63,7 @@ public class ElasticSearchLoader extends AbstractURLLoader<DataCiteJson>
     {
         super();
 
-        this.gson = GsonUtils.createGerdiDocumentGsonBuilder().create();
+        this.gson = GsonUtils.createGerdiDocumentGsonBuilder(ElasticSearchConstants.GEO_SHAPE_PRECISION).create();
         this.webRequester = new WebDataRetriever(gson, StandardCharsets.UTF_8);
     }
 
@@ -82,7 +82,6 @@ public class ElasticSearchLoader extends AbstractURLLoader<DataCiteJson>
         }
 
         // send POST request to Elastic search
-
         String response;
 
         try {

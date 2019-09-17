@@ -49,6 +49,7 @@ public class ElasticSearchConstants
     public static final String DATE_RANGE_REPLACEMENT = "\"value\":\\{\"gte\":\"$1\",\"lte\":\"$2\"\\}";
     public static final String EMPTY_DATE_RANGE_REGEX = "(\"gte\":\"\",)|(,\"lte\":\"\")";
     public static final String EMPTY_DATE_RANGE_REPLACEMENT = "";
+    public static final int GEO_SHAPE_PRECISION = 7;
 
     // SERVER RESPONSE JSON
     public static final String LOAD_DOCUMENT_ERROR = "Loader Error: Document %s%n%s";
