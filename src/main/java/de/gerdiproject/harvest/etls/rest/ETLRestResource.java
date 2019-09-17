@@ -19,7 +19,6 @@ package de.gerdiproject.harvest.etls.rest;
 import java.util.Arrays;
 import java.util.List;
 
-import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
@@ -255,10 +254,10 @@ public class ETLRestResource extends AbstractRestResource<ETLManager, GetETLMana
      *
      * @return a feedback message
      */
-    @DELETE
-    @Path("log")
+    @POST
+    @Path("log/_delete")
     @Produces({
-        MediaType.TEXT_PLAIN
+        MediaType.APPLICATION_JSON
     })
     public Response clearLog()
     {
