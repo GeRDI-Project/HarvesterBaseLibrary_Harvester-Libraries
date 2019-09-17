@@ -87,6 +87,8 @@ public class HarvesterLog
         // restore logging if it was running
         if (wasStarted)
             fileAppender.start();
+
+        LOGGER.info(LoggerConstants.LOG_CLEAR_RESPONSE);
     }
 
 

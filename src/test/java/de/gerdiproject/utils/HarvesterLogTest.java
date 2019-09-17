@@ -66,7 +66,10 @@ public class HarvesterLogTest extends AbstractFileSystemUnitTest<HarvesterLog>
     public void after()
     {
         testedObject.unregisterLogger();
+        
+        setLoggerEnabled(false);
         testedObject.clearLog();
+        setLoggerEnabled(isLoggingEnabledDuringTests());
 
         super.after();
     }
