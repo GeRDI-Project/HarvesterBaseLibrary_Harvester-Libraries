@@ -19,7 +19,7 @@
 	<properties>
 		<javaxservlet.dependency.version>4.0.1</javaxservlet.dependency.version>
 		<javaxwsrs.dependency.version>2.1</javaxwsrs.dependency.version>
-		<gerdigson.dependency.version>6.0.3</gerdigson.dependency.version>
+		<gerdigson.dependency.version>6.0.4</gerdigson.dependency.version>
 		<jersey.dependency.version>2.27</jersey.dependency.version>
 	</properties>
 
