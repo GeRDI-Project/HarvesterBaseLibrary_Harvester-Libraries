@@ -10,7 +10,7 @@
 	</parent>
 
 	<artifactId>RestfulHarvester-Library</artifactId>
-	<version>8.1.2</version>
+	<version>8.1.3</version>
 	<packaging>jar</packaging>
 	<name>Restful Harvester Library</name>
 	<description>This library provides a skeleton for restful harvesters.</description>
