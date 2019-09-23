@@ -324,7 +324,7 @@ public class WebDataRetriever implements IDataRetriever
                             responseCode);
                     throw new HttpStatusException(errorMessage, responseCode, urlString);
                 }
-            } else if (responseCode >= 400) {
+            } else if (responseCode < 400) {
                 final String redirectedUrl =
                     connection.getHeaderField(DataOperationConstants.REDIRECT_LOCATION_HEADER);
 
