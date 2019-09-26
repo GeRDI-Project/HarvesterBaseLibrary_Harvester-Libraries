@@ -44,8 +44,6 @@ public class DataOperationConstants
     public static final String WEB_ERROR_HEADER = "Could retrieve %s-request header from URL: %s";
     public static final String WEB_ERROR_REST_RESPONSE = "%s-request error for URL '%s' with body '%s'.";
     public static final String WEB_ERROR_REST_HTTP = "%s-request for URL '%s' with body '%s' returned HTTP Status-Code %d.";
-    public static final String REQUEST_PROPERTY_CHARSET = "charset";
-    public static final String REDIRECT_LOCATION_HEADER = "Location";
     public static final int NO_TIMEOUT = -1;
 
     public static final String HTTP_CATEGORY = "HttpRequests";
