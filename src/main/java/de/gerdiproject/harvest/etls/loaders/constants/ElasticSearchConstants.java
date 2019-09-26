@@ -37,8 +37,9 @@ public class ElasticSearchConstants
 
     // INVALID FIELD HANDLING
     public static final String DOCUMENTS_RESUBMIT = "Resubmitting documents after removing invalid fields.";
-    public static final Pattern PARSE_ERROR_REASON_PATTERN = Pattern.compile("failed to parse \\[([^.]+)[A-Za-z.]*\\]");
+    public static final Pattern PARSE_ERROR_REASON_PATTERN = Pattern.compile("failed to parse field \\[([^.]+)[A-Za-z.]*\\]");
     public static final String CANNOT_FIX_INVALID_DOCUMENT_ERROR = "Could not remove invalid field '%s' from Document %s!";
+    public static final String FIXED_INVALID_DOCUMENT = "Removed invalid field '%s' from Document %s!";
 
     // DATE RANGE FIX
     public static final String DATE_REGEX = "\"value\":(\"\\d\\d\\d\\d-\\d\\d-\\d\\dT\\d\\d:\\d\\d[^\"/]*Z\")";
