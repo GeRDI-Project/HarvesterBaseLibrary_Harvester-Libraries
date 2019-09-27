@@ -44,7 +44,7 @@ import de.gerdiproject.harvest.utils.HashGenerator;
 public abstract class AbstractURLLoader <S extends IDocument> extends AbstractIteratorLoader<S>
 {
     protected final Logger logger; // NOPMD - we want to retrieve the type of the inheriting class
-    protected final Map<String, IDocument> batchMap;
+    protected final Map<String, S> batchMap;
     protected final IntegerParameter maxBatchSizeParam;
     protected final StringParameter urlParam;
     protected final HashGenerator hashGenerator;
@@ -119,7 +119,7 @@ public abstract class AbstractURLLoader <S extends IDocument> extends AbstractIt
         if (document == null)
             return;
 
-        final String documentId = hashGenerator.getShaHash(document.getSourceId());
+        final String documentId = getDocumentId(document);
         final int documentSize = getSizeOfDocument(documentId, document);
 
         // check if the document alone is bigger than the maximum load request size
@@ -144,6 +144,17 @@ public abstract class AbstractURLLoader <S extends IDocument> extends AbstractIt
     }
 
 
+    /**
+     * Retrieves a unique identifier of a document that is to be submitted.
+     *
+     * @param document the document that is to be submitted
+     *
+     * @return a uinque identifier of the document
+     */
+    protected String getDocumentId(final S document)
+    {
+        return hashGenerator.getShaHash(document.getSourceId());
+    }
 
 
     @Override
@@ -183,7 +194,7 @@ public abstract class AbstractURLLoader <S extends IDocument> extends AbstractIt
      *            loaded, the values may also be null, in which case the
      *            document is to be removed from the index
      */
-    protected abstract void loadBatch(Map<String, IDocument> documents);
+    protected abstract void loadBatch(Map<String, S> documents);
 
 
     /**

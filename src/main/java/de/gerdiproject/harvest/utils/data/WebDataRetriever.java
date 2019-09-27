@@ -27,6 +27,7 @@ import java.net.SocketTimeoutException;
 import java.net.URL;
 import java.nio.charset.Charset;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.zip.GZIPInputStream;
 
@@ -326,7 +327,7 @@ public class WebDataRetriever implements IDataRetriever
                 }
             } else if (responseCode < 400) {
                 final String redirectedUrl =
-                    connection.getHeaderField(DataOperationConstants.REDIRECT_LOCATION_HEADER);
+                    connection.getHeaderField(HttpHeaders.LOCATION);
 
                 final boolean canRedirect;
 
@@ -342,9 +343,7 @@ public class WebDataRetriever implements IDataRetriever
                 // redirect only if all above conditions are met
                 if (canRedirect)
                     return sendWebRequest(method, redirectedUrl, body, authorization, contentType, retries);
-
             }
-
         } catch (final SocketTimeoutException e) {
             // if we time out, try again
             if (retries == 0)
@@ -394,9 +393,9 @@ public class WebDataRetriever implements IDataRetriever
         connection.setInstanceFollowRedirects(true);
         connection.setUseCaches(false);
         connection.setRequestMethod(method.toString());
-        connection.setRequestProperty(HttpHeaders.CONTENT_TYPE, contentType);
-        connection.setRequestProperty(DataOperationConstants.REQUEST_PROPERTY_CHARSET, charset.displayName());
+        connection.setRequestProperty(HttpHeaders.ACCEPT_CHARSET, charset.displayName().toLowerCase(Locale.ENGLISH));
         connection.setRequestProperty(HttpHeaders.ACCEPT_ENCODING, DataOperationConstants.GZIP_ENCODING);
+        connection.setRequestProperty(HttpHeaders.CONTENT_TYPE, contentType);
 
         // set timeout
         if (timeout != DataOperationConstants.NO_TIMEOUT) {

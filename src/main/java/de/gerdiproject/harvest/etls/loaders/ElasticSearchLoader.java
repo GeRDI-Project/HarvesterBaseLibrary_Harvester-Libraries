@@ -69,13 +69,13 @@ public class ElasticSearchLoader extends AbstractURLLoader<DataCiteJson>
 
 
     @Override
-    protected void loadBatch(final Map<String, IDocument> documents)
+    protected void loadBatch(final Map<String, DataCiteJson> documents)
     {
         // clear previous batch
         final StringBuilder batchRequestBuilder = new StringBuilder();
 
         // build a string for bulk-posting to Elastic search
-        for (final Entry<String, IDocument> entry : documents.entrySet()) {
+        for (final Entry<String, DataCiteJson> entry : documents.entrySet()) {
             final String documentAddInstruction =
                 createBulkInstruction(entry.getKey(), entry.getValue());
             batchRequestBuilder.append(documentAddInstruction);
@@ -104,7 +104,7 @@ public class ElasticSearchLoader extends AbstractURLLoader<DataCiteJson>
             logger.error(getSubmissionErrorText(responseJson));
 
             // try to fix documents that could not be parsed entirely
-            final Map<String, IDocument> fixedDocuments = fixInvalidDocuments(responseJson, documents);
+            final Map<String, DataCiteJson> fixedDocuments = fixInvalidDocuments(responseJson, documents);
 
             // if documents can be fixed, attepmt to resubmit them
             if (!fixedDocuments.isEmpty()) {
@@ -209,16 +209,16 @@ public class ElasticSearchLoader extends AbstractURLLoader<DataCiteJson>
      *
      * @return a map of documents with removed invalid fields
      */
-    private Map<String, IDocument> fixInvalidDocuments(final ElasticSearchResponse response, final Map<String, IDocument> documents)
+    private Map<String, DataCiteJson> fixInvalidDocuments(final ElasticSearchResponse response, final Map<String, DataCiteJson> documents)
     {
-        final Map<String, IDocument> fixedDocMap = new HashMap<>(); // NOPMD map is not used concurrently
+        final Map<String, DataCiteJson> fixedDocMap = new HashMap<>(); // NOPMD map is not used concurrently
 
         for (final ElasticSearchIndexWrapper documentFeedback : response.getItems()) {
             final ElasticSearchError docError = documentFeedback.getIndex().getError();
 
             if (docError != null) {
                 final String documentId = documentFeedback.getIndex().getId();
-                final IDocument doc = documents.get(documentId);
+                final DataCiteJson doc = documents.get(documentId);
 
                 if (doc != null && tryFixInvalidDocument(doc, docError))
                     fixedDocMap.put(documentId, doc);
@@ -236,9 +236,9 @@ public class ElasticSearchLoader extends AbstractURLLoader<DataCiteJson>
      * @param errorDocument the document that could not be submitted
      * @param docError a JSON error object containing error details
      *
-     * @return the erroneous document with all fields removed that caused errors
+     * @return true if an error was found and fixed, otherwise false
      */
-    private boolean tryFixInvalidDocument(final IDocument errorDocument, final ElasticSearchError docError)
+    private boolean tryFixInvalidDocument(final DataCiteJson errorDocument, final ElasticSearchError docError)
     {
         // check if a specific field could not be parsed
         final Matcher errorReasonMatcher =
@@ -257,12 +257,16 @@ public class ElasticSearchLoader extends AbstractURLLoader<DataCiteJson>
                 invalidField.set(errorDocument, null);
                 invalidField.setAccessible(accessibility);
 
+                logger.debug(String.format(
+                                 ElasticSearchConstants.FIXED_INVALID_DOCUMENT,
+                                 invalidFieldName,
+                                 getDocumentId(errorDocument)));
                 return true;
             } catch (NoSuchFieldException | SecurityException | IllegalArgumentException | IllegalAccessException e) {
                 logger.warn(String.format(
                                 ElasticSearchConstants.CANNOT_FIX_INVALID_DOCUMENT_ERROR,
                                 invalidFieldName,
-                                errorDocument.getSourceId()));
+                                getDocumentId(errorDocument)));
             }
         }
 
