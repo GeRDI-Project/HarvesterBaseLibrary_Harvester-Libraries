@@ -34,26 +34,30 @@ import de.gerdiproject.harvest.etls.AbstractIteratorETL;
 import de.gerdiproject.harvest.etls.ETLPreconditionException;
 import de.gerdiproject.harvest.etls.extractors.ExtractorException;
 import de.gerdiproject.harvest.etls.transformers.AbstractIteratorTransformer;
-import de.gerdiproject.harvest.etls.transformers.ITransformer;
 import de.gerdiproject.harvest.event.EventSystem;
-import de.gerdiproject.json.GsonUtils;
 
 /**
- * This abstract class offers unit tests for concrete {@linkplain ITransformer} implementations.
+ * This abstract class offers unit tests for concrete {@linkplain AbstractIteratorTransformer} implementations.
  *
  * @author Robin Weiss
  */
 public abstract class AbstractIteratorTransformerTest <T extends AbstractIteratorTransformer<R, S>, R, S> extends AbstractObjectUnitTest<T>
 {
     private static final int INIT_TIMEOUT = 5000;
-    private static final String WRONG_OBJECT_ERROR = "Expected the %s to return the following %s:%n%s";
+    private static final String WRONG_OBJECT_ERROR = "The transformed object from %s is unexpected:%n%s";
     private static final String NON_NULL_OBJECT_ERROR = "Expected the %s to return an empty iterator when transforming an empty iterator!";
 
-    private final AbstractIteratorETL<R, S> etl;
-    private final T transformer;
+    protected final AbstractIteratorETL<R, S> etl;
+    protected final T transformer;
 
 
-
+    /**
+     * Constructor that requires an instance of the tested
+     * transformer, as well as its corresponding ETL.
+     *
+     * @param etl the {@linkplain AbstractIteratorETL} to which the transformer belongs
+     * @param transformer the tested transformer
+     */
     public AbstractIteratorTransformerTest(final AbstractIteratorETL<R, S> etl, final T transformer)
     {
         this.etl = etl;
@@ -61,9 +65,42 @@ public abstract class AbstractIteratorTransformerTest <T extends AbstractIterato
     }
 
 
+    /**
+     * Returns an optional {@linkplain String} {@linkplain Map} of
+     * parameter/value pairs in order to simulate a pre-loaded {@linkplain Configuration}.
+     * If no parameters are required, null is returned.
+     *
+     * @return a {@linkplain String} {@linkplain Map} of
+     * parameter/value pairs or null, if no parameters need to be set
+     */
     protected abstract Map<String, String> getParameterValues();
+
+
+    /**
+     * Returns the {@linkplain ContextListener} implementation of the
+     * tested harvester service.
+     *
+     * @return  the {@linkplain ContextListener} implementation of the
+     * tested harvester service
+     */
     protected abstract ContextListener getContextListener();
+
+
+    /**
+     * Returns a mocked object that is to be transformed by the
+     * tested {@linkplain AbstractIteratorTransformer}.
+     *
+     * @return a mocked object that is to be transformed
+     */
     protected abstract R getMockedInput();
+
+
+    /**
+     * Returns an object that is expected to be the transformation result
+     * of the object returned by {@linkplain #getMockedInput()}.
+     *
+     * @return the expected transformation result
+     */
     protected abstract S getExpectedOutput();
 
 
@@ -87,9 +124,6 @@ public abstract class AbstractIteratorTransformerTest <T extends AbstractIterato
         final Map<String, String> paramValues = getParameterValues();
 
         if (paramValues != null && !paramValues.isEmpty()) {
-            //this.config = new Configuration(MODULE_NAME, paramValues);
-            //this.config.addEventListeners();
-
             final Configuration config = EventSystem.sendSynchronousEvent(new GetConfigurationEvent());
             config.changeParameters(paramValues);
         }
@@ -101,7 +135,8 @@ public abstract class AbstractIteratorTransformerTest <T extends AbstractIterato
 
 
     /**
-     * Checks if the {@linkplain ITransformer} implementation transforms a mocked input value to the expected output.
+     * Checks if the {@linkplain AbstractIteratorTransformer} implementation
+     * transforms a mocked input value to the expected output.
      */
     @Test
     public void testTransformedValue()
@@ -113,14 +148,15 @@ public abstract class AbstractIteratorTransformerTest <T extends AbstractIterato
         assertEquals(String.format(
                          WRONG_OBJECT_ERROR,
                          testedObject.getClass().getSimpleName(),
-                         expectedOutput.getClass().getSimpleName(), GsonUtils.createGerdiDocumentGsonBuilder().create().toJson(expectedOutput)),
+                         actualOutput),
                      expectedOutput,
                      actualOutput);
     }
 
 
     /**
-     * Checks if the {@linkplain ITransformer} implementation transforms an empty {@linkplain Iterator} to an empty {@linkplain Iterator}.
+     * Checks if the {@linkplain AbstractIteratorTransformer} implementation
+     * transforms an empty {@linkplain Iterator} to an empty {@linkplain Iterator}.
      */
     @Test
     public void testTransformEmptyIterator()
@@ -134,7 +170,8 @@ public abstract class AbstractIteratorTransformerTest <T extends AbstractIterato
 
 
     /**
-     * Checks if the {@linkplain ITransformer} implementation throws an {@linkplain ExtractorException} when transforming a null value.
+     * Checks if the {@linkplain AbstractIteratorTransformer} implementation throws
+     * an {@linkplain ExtractorException} when transforming a null value.
      */
     @Test(expected = ExtractorException.class)
     public void testTransformNull()

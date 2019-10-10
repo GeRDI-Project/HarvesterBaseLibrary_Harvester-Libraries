@@ -275,7 +275,6 @@ public class MainContextUtils
     protected static ETLManager createEtlManager(final String moduleName,
                                                  final Supplier<List<? extends AbstractETL<?, ?>>> etlSupplier,
                                                  final File cacheFolder)
-    throws InstantiationException, IllegalAccessException
     {
         LOGGER.info(String.format(ApplicationConstants.INIT_FIELD, ETLManager.class.getSimpleName()));
 
