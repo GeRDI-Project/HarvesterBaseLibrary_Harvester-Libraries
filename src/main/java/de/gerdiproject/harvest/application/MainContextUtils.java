@@ -50,7 +50,7 @@ import lombok.NoArgsConstructor;
  * @author Robin Weiss
  */
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
-class MainContextUtils
+public class MainContextUtils
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(MainContextUtils.class);
 
@@ -60,7 +60,7 @@ class MainContextUtils
      *
      * @return the {@linkplain DeploymentType} of the harvester service
      */
-    protected static DeploymentType initDeploymentType()
+    protected static DeploymentType getDeploymentType()
     {
         final String deploymentTypeSystemProperty =
             System.getProperty(ApplicationConstants.DEPLOYMENT_TYPE, null);
@@ -82,93 +82,121 @@ class MainContextUtils
 
 
     /**
-     * Initializes a {@linkplain File} that points to the topmost directory in which
+     * Retrieves a {@linkplain File} that points to the topmost directory in which
      * harvester service files are cached.
      *
-     * @param deploymentType the {@linkplain DeploymentType} of the harvester service
+     * @param projectSpecificClass a class from the project of which the cache directory is to be determined
+     *
      * @return the topmost directory in which harvester service files are cached
      */
-    protected static File initCacheDirectory(final DeploymentType deploymentType)
+    public static File getCacheDirectory(final Class<?> projectSpecificClass)
     {
-        String projectRootPath;
-        String subDirPath;
+        File cacheDir;
+
+        final DeploymentType deploymentType = getDeploymentType();
 
         switch (deploymentType) {
             case UNIT_TEST:
-                projectRootPath = getProjectRootDirectory();
-                subDirPath = ApplicationConstants.CACHE_DIR_UNIT_TESTS;
+                cacheDir = new File(
+                    getProjectRootDirectory(projectSpecificClass),
+                    ApplicationConstants.CACHE_DIR_UNIT_TESTS);
                 break;
 
             case JETTY:
-                projectRootPath = getProjectRootDirectory();
-                subDirPath = ApplicationConstants.CACHE_DIR_JETTY;
+                cacheDir = new File(
+                    getProjectRootDirectory(projectSpecificClass),
+                    ApplicationConstants.CACHE_DIR_JETTY);
                 break;
 
             default:
-                projectRootPath = ApplicationConstants.CACHE_ROOT_DIR_OTHER;
-                subDirPath = ApplicationConstants.CACHE_DIR_OTHER;
+                cacheDir = new File(
+                    ApplicationConstants.CACHE_ROOT_DIR_OTHER,
+                    ApplicationConstants.CACHE_DIR_OTHER);
                 break;
         }
 
-        return new File(projectRootPath, subDirPath);
-    }
-
-
-    /**
-     * Assembles a {@linkplain File} in which logs are to be saved.
-     *
-     * @param deploymentType the {@linkplain DeploymentType} of the harvester service
-     * @param moduleName the name of the harvester service
-     *
-     * @return a {@linkplain File} in which logs are to be saved
-     */
-    protected static File initLogFile(final DeploymentType deploymentType, final String moduleName)
-    {
-        String logPathFormat;
-
-        switch (deploymentType) {
-            case UNIT_TEST:
-                logPathFormat = getProjectRootDirectory() + File.separatorChar + LoggerConstants.LOG_PATH_UNIT_TESTS;
-                break;
-
-            case JETTY:
-                logPathFormat = getProjectRootDirectory() + File.separatorChar + LoggerConstants.LOG_PATH_JETTY;
-                break;
-
-            case DOCKER:
-                logPathFormat = LoggerConstants.LOG_PATH_DOCKER;
-                break;
-
-            default:
-                logPathFormat = LoggerConstants.LOG_PATH_OTHER;
-                break;
-        }
-
-        return new File(String.format(logPathFormat, moduleName));
+        return cacheDir;
     }
 
 
     /**
      * Returns the harvester project directory.
      *
+     * @param projectSpecificClass a class from the project of which the root directory is to be determined
+     *
      * @return the harvester project directory
      */
-    private static String getProjectRootDirectory()
+    public static File getProjectRootDirectory(final Class<?> projectSpecificClass)
     {
-        String jarPath;
+        String rootPath;
 
         try {
-            jarPath = new File(
-                MainContextUtils.class
+            final String jarPath = new File(
+                projectSpecificClass
                 .getProtectionDomain()
                 .getCodeSource()
                 .getLocation()
                 .toURI()).getPath();
+            rootPath = jarPath.substring(0, jarPath.lastIndexOf(MavenConstants.TARGET_FOLDER));
         } catch (URISyntaxException e) {
-            return "";
+            rootPath = "";
         }
 
-        return jarPath.substring(0, jarPath.lastIndexOf(MavenConstants.TARGET_FOLDER)) ;
+        return new File(rootPath);
+    }
+
+
+    /**
+     * Assembles a {@linkplain File} to which logs are written.
+     *
+     * @param moduleName the name of the harvester service
+     * @param projectSpecificClass a class from the project of which the log file is to be determined
+     *
+     * @return a {@linkplain File} to which logs are written
+     */
+    public static File getLogFile(final String moduleName, final Class<?> projectSpecificClass)
+    {
+        File logFile;
+
+        final DeploymentType deploymentType = getDeploymentType();
+
+        switch (deploymentType) {
+            case UNIT_TEST:
+                logFile = new File(
+                    getProjectRootDirectory(projectSpecificClass),
+                    String.format(LoggerConstants.LOG_PATH_UNIT_TESTS, moduleName));
+                break;
+
+            case JETTY:
+                logFile = new File(
+                    getProjectRootDirectory(projectSpecificClass),
+                    String.format(LoggerConstants.LOG_PATH_JETTY, moduleName));
+                break;
+
+            case DOCKER:
+                logFile = new File(String.format(LoggerConstants.LOG_PATH_DOCKER, moduleName));
+                break;
+
+            default:
+                logFile = new File(String.format(LoggerConstants.LOG_PATH_OTHER, moduleName));
+                break;
+        }
+
+        return logFile;
+    }
+
+
+    /**
+     * Assembles a {@linkplain File} in which the {@linkplain Configuration} can be saved.
+     *
+     * @param moduleName the name of the harvester service
+     * @param projectSpecificClass a class from the project of which the config file is to be determined
+     *
+     * @return a {@linkplain File} in which the configuration is saved
+     */
+    public static File getConfigurationFile(final String moduleName, final Class<?> projectSpecificClass)
+    {
+        return new File(getCacheDirectory(projectSpecificClass), String.format(ConfigurationConstants.CONFIG_PATH, moduleName));
     }
 
 
@@ -307,16 +335,16 @@ class MainContextUtils
      * Creates a {@linkplain Configuration} and assigns it to this context.
      *
      * @param moduleName the name of this service
-     * @param cacheFolder the root folder of harvester cache files
+     * @param projectSpecificClass a class from the project for which the configuration is to be created
      *
      * @return a new {@linkplain Configuration} for this context
      */
-    protected static Configuration createConfiguration(final String moduleName, final File cacheFolder)
+    protected static Configuration createConfiguration(final String moduleName, final Class<?> projectSpecificClass)
     {
         LOGGER.info(String.format(ApplicationConstants.INIT_FIELD, Configuration.class.getSimpleName()));
 
         final Configuration config = new Configuration(moduleName);
-        final File configCachePath = new File(cacheFolder, String.format(ConfigurationConstants.CONFIG_PATH, moduleName));
+        final File configCachePath = getConfigurationFile(moduleName, projectSpecificClass);
         config.setCacheFilePath(configCachePath.toString());
         config.loadFromDisk();
         config.addEventListeners();

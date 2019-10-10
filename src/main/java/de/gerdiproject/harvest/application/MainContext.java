@@ -24,7 +24,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import de.gerdiproject.harvest.application.constants.ApplicationConstants;
-import de.gerdiproject.harvest.application.enums.DeploymentType;
 import de.gerdiproject.harvest.application.events.GetCacheFolderEvent;
 import de.gerdiproject.harvest.application.events.ServiceInitializedEvent;
 import de.gerdiproject.harvest.config.Configuration;
@@ -58,7 +57,6 @@ public final class MainContext
     private static boolean failed;
     private static boolean initialized;
 
-    private final DeploymentType deploymentType;
     private final File cacheFolder;
     private final File logFile;
 
@@ -94,20 +92,19 @@ public final class MainContext
         final List<Class<? extends ILoader<?>>> loaderClasses) throws InstantiationException, IllegalAccessException
     {
         // find out how the application was deployed
-        this.deploymentType = MainContextUtils.initDeploymentType();
-        LOGGER.info(String.format(ApplicationConstants.LOG_DEPLOYMENT_TYPE, deploymentType));
+        LOGGER.info(String.format(ApplicationConstants.LOG_DEPLOYMENT_TYPE, MainContextUtils.getDeploymentType()));
 
         this.moduleName = repositoryNameSupplier.get().replaceAll(" ", "") + ApplicationConstants.HARVESTER_SERVICE_NAME_SUFFIX;
         EventSystem.addSynchronousListener(GetRepositoryNameEvent.class, repositoryNameSupplier);
 
-        this.cacheFolder = MainContextUtils.initCacheDirectory(deploymentType);
+        this.cacheFolder = MainContextUtils.getCacheDirectory(callerClass);
         EventSystem.addSynchronousListener(GetCacheFolderEvent.class, this::getCacheFolder);
 
-        this.logFile = MainContextUtils.initLogFile(deploymentType, moduleName);
+        this.logFile = MainContextUtils.getLogFile(moduleName, callerClass);
         this.log = MainContextUtils.createLog(logFile);
         EventSystem.addSynchronousListener(GetMainLogEvent.class, this::getLog);
 
-        this.configuration = MainContextUtils.createConfiguration(moduleName, cacheFolder);
+        this.configuration = MainContextUtils.createConfiguration(moduleName, callerClass);
 
         this.mavenUtils = MainContextUtils.createMavenUtils(callerClass);
         EventSystem.addSynchronousListener(GetMavenUtilsEvent.class, this::getMavenUtils);
