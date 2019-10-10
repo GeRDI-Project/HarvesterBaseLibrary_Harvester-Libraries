@@ -26,7 +26,7 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import de.gerdiproject.harvest.AbstractFileSystemUnitTest;
+import de.gerdiproject.harvest.AbstractObjectUnitTest;
 import de.gerdiproject.harvest.utils.logger.HarvesterLog;
 
 
@@ -35,12 +35,12 @@ import de.gerdiproject.harvest.utils.logger.HarvesterLog;
  *
  * @author Robin Weiss
  */
-public class HarvesterLogTest extends AbstractFileSystemUnitTest<HarvesterLog>
+public class HarvesterLogTest extends AbstractObjectUnitTest<HarvesterLog>
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(HarvesterLogTest.class);
     private static final String EXAMPLE_LOG = "This log is created by the HarvesterLog unit tests.";
 
-    private final File logFile = new File(testFolder, "test.log");
+    private final File logFile = new File(getTemporaryTestDirectory(), "test.log");
 
 
     @Override

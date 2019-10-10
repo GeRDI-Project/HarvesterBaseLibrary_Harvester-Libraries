@@ -39,7 +39,7 @@ import org.junit.runners.Parameterized.Parameters;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 
-import de.gerdiproject.harvest.AbstractFileSystemUnitTest;
+import de.gerdiproject.harvest.AbstractObjectUnitTest;
 import de.gerdiproject.harvest.config.Configuration;
 import de.gerdiproject.harvest.utils.data.HttpRequester;
 import de.gerdiproject.harvest.utils.data.constants.DataOperationConstants;
@@ -55,7 +55,7 @@ import de.gerdiproject.harvest.utils.file.FileUtils;
  * @author Robin Weiss
  */
 @RunWith(Parameterized.class)
-public class HttpRequesterTest extends AbstractFileSystemUnitTest<HttpRequester>
+public class HttpRequesterTest extends AbstractObjectUnitTest<HttpRequester>
 {
     private static final String JSON_OBJECT_URL = "http://fenixservices.fao.org/faostat/api/v1/en/documents/RFB";
     private static final String DEFAULT_URL = "https://www.gerdi-project.eu";
@@ -95,7 +95,7 @@ public class HttpRequesterTest extends AbstractFileSystemUnitTest<HttpRequester>
         config.addEventListeners();
 
         final HttpRequester requester = new HttpRequester(new Gson(), StandardCharsets.UTF_8);
-        requester.setCacheFolder(testFolder);
+        requester.setCacheFolder(getTemporaryTestDirectory());
 
         config.setParameter(READ_FROM_DISK_KEY, String.valueOf(isCachingEnabled));
         config.setParameter(WRITE_TO_DISK_KEY, String.valueOf(isCachingEnabled));
@@ -289,7 +289,7 @@ public class HttpRequesterTest extends AbstractFileSystemUnitTest<HttpRequester>
     public void testCachingObject() throws IOException
     {
         final File cachedResponse = new File(
-            testFolder,
+            getTemporaryTestDirectory(),
             JSON_OBJECT_URL.substring(7)
             + DataOperationConstants.RESPONSE_FILE_ENDING);
 
@@ -353,7 +353,7 @@ public class HttpRequesterTest extends AbstractFileSystemUnitTest<HttpRequester>
         config.setParameter(DataOperationConstants.WRITE_TO_DISK_PARAM.getCompositeKey(), String.valueOf(false));
 
         final HttpRequester requester = new HttpRequester(new Gson(), StandardCharsets.UTF_8);
-        requester.setCacheFolder(testFolder);
+        requester.setCacheFolder(getTemporaryTestDirectory());
 
         return requester;
     }

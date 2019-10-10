@@ -27,7 +27,7 @@ import org.junit.Test;
 
 import com.google.gson.Gson;
 
-import de.gerdiproject.harvest.AbstractFileSystemUnitTest;
+import de.gerdiproject.harvest.AbstractObjectUnitTest;
 import de.gerdiproject.harvest.utils.data.DiskIO;
 import de.gerdiproject.harvest.utils.examples.diskio.MockedObject;
 
@@ -37,14 +37,14 @@ import de.gerdiproject.harvest.utils.examples.diskio.MockedObject;
  *
  * @author Robin Weiss
  */
-public class DiskIOTest extends AbstractFileSystemUnitTest<DiskIO>
+public class DiskIOTest extends AbstractObjectUnitTest<DiskIO>
 {
     private static final String TEST_STRING = "Döner macht schöner!";
     private static final int OBJECT_TEST_INT = 1337;
     private static final String OBJECT_TEST_STRING = "Test String in Map";
 
-    private final File testStringFile = new File(testFolder, "testDiskIoString.json");
-    private final File testObjectFile = new File(testFolder, "testDiskIoObject.json");
+    private final File testStringFile = new File(getTemporaryTestDirectory(), "testDiskIoString.json");
+    private final File testObjectFile = new File(getTemporaryTestDirectory(), "testDiskIoObject.json");
 
 
     @Override

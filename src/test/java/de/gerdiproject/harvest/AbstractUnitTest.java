@@ -49,14 +49,11 @@ import de.gerdiproject.harvest.utils.logger.constants.LoggerConstants;
 public abstract class AbstractUnitTest
 {
     // initialize test folder
-    public static final File TEST_FOLDER;
     static
     {
         System.setProperty(
             ApplicationConstants.DEPLOYMENT_TYPE,
             DeploymentType.UNIT_TEST.toString());
-
-        TEST_FOLDER = MainContextUtils.getCacheDirectory(AbstractUnitTest.class);
     }
 
 
@@ -90,7 +87,7 @@ public abstract class AbstractUnitTest
     protected File getResourceDirectory()
     {
         final File resourceRoot = new File(MainContextUtils.getProjectRootDirectory(getClass()), "src/test/resources");
-        return new File(resourceRoot, getClass().getPackage().getName().replace('.', '/'));
+        return new File(resourceRoot, getClass().getName().replace('.', '/'));
     }
 
 

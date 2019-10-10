@@ -25,10 +25,9 @@ import java.io.File;
 
 import org.junit.Test;
 
-import de.gerdiproject.harvest.AbstractFileSystemUnitTest;
+import de.gerdiproject.harvest.AbstractObjectUnitTest;
 import de.gerdiproject.harvest.application.events.ContextDestroyedEvent;
 import de.gerdiproject.harvest.event.EventSystem;
-import de.gerdiproject.harvest.scheduler.Scheduler;
 import de.gerdiproject.harvest.scheduler.json.ChangeSchedulerRequest;
 import de.gerdiproject.harvest.scheduler.json.SchedulerResponse;
 
@@ -37,14 +36,14 @@ import de.gerdiproject.harvest.scheduler.json.SchedulerResponse;
  *
  * @author Robin Weiss
  */
-public class SchedulerTest extends AbstractFileSystemUnitTest<Scheduler>
+public class SchedulerTest extends AbstractObjectUnitTest<Scheduler>
 {
     private static final String INVALID_CRON = "abc";
     private static final String RANDOM_CRON_TAB = "%d 0 1 1 *";
     private static final String SOME_CRON_TAB = "0 0 1 1 *";
     private static final String ASSERT_EXCEPTION_MESSAGE = "Expected an " + IllegalArgumentException.class.getSimpleName() + " to be thrown when the same task is added twice!";
 
-    private final File scheduleFile = new File(testFolder, "schedule.json");
+    private final File scheduleFile = new File(getTemporaryTestDirectory(), "schedule.json");
 
 
     @Override

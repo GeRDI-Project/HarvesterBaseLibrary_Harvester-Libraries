@@ -43,59 +43,58 @@ import de.gerdiproject.harvest.utils.file.constants.FileConstants;
  */
 public class FileUtilsTest extends AbstractUnitTest
 {
-    // TODO private static final File FILE_TEST_FOLDER = new File(TEST_FOLDER, FileUtils.class.getSimpleName());
-    private static final File TEST_MULTI_DIRECTORY = new File(FILE_TEST_FOLDER, "moarTests/moar");
-
-    private static final File TEST_FILE = new File(FILE_TEST_FOLDER, "fileUtilsTest.file");
-
-    private static final File COPY_TEST_SOURCE_DIR = new File(FILE_TEST_FOLDER, "copyTestFrom/aaa/");
-    private static final File COPY_TEST_TARGET_DIR = new File(FILE_TEST_FOLDER, "copyTestTo/bbb/");
-
-    private static final File COPY_TEST_SOURCE_FILE = new File(COPY_TEST_SOURCE_DIR, "fileUtilsCopyTestSource.file");
-    private static final File COPY_TEST_TARGET_FILE = new File(COPY_TEST_TARGET_DIR, "fileUtilsCopyTestTarget.file");
-
-
-    private static final String COPY_TEST_TEXT = "Milch macht müde Männer munter.";
-    private static final String COPY_TEST_OVERWRITE_TEXT = "Ohne Krimi geht die Mimi nie ins Bett.";
-
-    private static final File MERGE_TEST_SOURCE_DIR = new File(FILE_TEST_FOLDER, "mergeTestFrom");
-    private static final File MERGE_TEST_TARGET_DIR = new File(FILE_TEST_FOLDER, "mergeTestTo");
-
-    private static final List<File> MERGE_TEST_SOURCE_FILES =
-        Collections.unmodifiableList(
-            Arrays.asList(
-                new File(FILE_TEST_FOLDER, "mergeTestFrom/aaa/first.file"),
-                new File(FILE_TEST_FOLDER, "mergeTestFrom/ccc/fifth.file"),
-                new File(FILE_TEST_FOLDER, "mergeTestFrom/ccc/sixth.file")));
-
-    private static final List<File> MERGE_TEST_MERGED_SOURCE_FILES =
-        Collections.unmodifiableList(
-            Arrays.asList(
-                new File(FILE_TEST_FOLDER, "mergeTestTo/aaa/first.file"),
-                new File(FILE_TEST_FOLDER, "mergeTestTo/ccc/fifth.file"),
-                new File(FILE_TEST_FOLDER, "mergeTestTo/ccc/sixth.file")));
-
-    private static final List<File> MERGE_TEST_TARGET_FILES =
-        Collections.unmodifiableList(
-            Arrays.asList(
-                new File(FILE_TEST_FOLDER, "mergeTestTo/aaa/first.file"),
-                new File(FILE_TEST_FOLDER, "mergeTestTo/aaa/second.file"),
-                new File(FILE_TEST_FOLDER, "mergeTestTo/bbb/third.file"),
-                new File(FILE_TEST_FOLDER, "mergeTestTo/bbb/fourth.file")));
-
-    private static final List<File> MERGE_TEST_EXPECTED_TARGET_FILES =
-        Collections.unmodifiableList(
-            Arrays.asList(
-                new File(FILE_TEST_FOLDER, "mergeTestTo/aaa/first.file"),
-                new File(FILE_TEST_FOLDER, "mergeTestTo/aaa/second.file"),
-                new File(FILE_TEST_FOLDER, "mergeTestTo/bbb/third.file"),
-                new File(FILE_TEST_FOLDER, "mergeTestTo/bbb/fourth.file"),
-                new File(FILE_TEST_FOLDER, "mergeTestTo/ccc/fifth.file"),
-                new File(FILE_TEST_FOLDER, "mergeTestTo/ccc/sixth.file")));
-
     private static final String DUPLICATE_DIR_ERROR = "Creating directories that already exist, should not cause exceptions";
     private static final String DELETE_DIR_ERROR = "Deleting non-existing directories, should not cause exceptions";
     private static final String DELETE_FILE_ERROR = "Deleting non-existing files, should not cause exceptions";
+
+    private final File fileTestFolder = getTemporaryTestDirectory();
+    private final File multiTestDir = new File(fileTestFolder, "moarTests/moar");
+
+    private final File testFile = new File(fileTestFolder, "fileUtilsTest.file");
+
+    private final File copyTestSourceDir = new File(fileTestFolder, "copyTestFrom/aaa/");
+    private final File copyTestTargetDir = new File(fileTestFolder, "copyTestTo/bbb/");
+
+    private final File copyTestSourceFile = new File(copyTestSourceDir, "fileUtilsCopyTestSource.file");
+    private final File copyTestTargetFile = new File(copyTestTargetDir, "fileUtilsCopyTestTarget.file");
+
+    private final String copyTestText = "Milch macht müde Männer munter.";
+    private final String copyTestOverwriteText = "Ohne Krimi geht die Mimi nie ins Bett.";
+
+    private final File mergeTestSourceDir = new File(fileTestFolder, "mergeTestFrom");
+    private final File mergeTestTargetDir = new File(fileTestFolder, "mergeTestTo");
+
+    private final List<File> mergeTestSourceFiles =
+        Collections.unmodifiableList(
+            Arrays.asList(
+                new File(fileTestFolder, "mergeTestFrom/aaa/first.file"),
+                new File(fileTestFolder, "mergeTestFrom/ccc/fifth.file"),
+                new File(fileTestFolder, "mergeTestFrom/ccc/sixth.file")));
+
+    private final List<File> mergeTestMergedSourceFiles =
+        Collections.unmodifiableList(
+            Arrays.asList(
+                new File(fileTestFolder, "mergeTestTo/aaa/first.file"),
+                new File(fileTestFolder, "mergeTestTo/ccc/fifth.file"),
+                new File(fileTestFolder, "mergeTestTo/ccc/sixth.file")));
+
+    private final List<File> mergeTestTargetFiles =
+        Collections.unmodifiableList(
+            Arrays.asList(
+                new File(fileTestFolder, "mergeTestTo/aaa/first.file"),
+                new File(fileTestFolder, "mergeTestTo/aaa/second.file"),
+                new File(fileTestFolder, "mergeTestTo/bbb/third.file"),
+                new File(fileTestFolder, "mergeTestTo/bbb/fourth.file")));
+
+    private final List<File> mergeTestExpectedTargetFiles =
+        Collections.unmodifiableList(
+            Arrays.asList(
+                new File(fileTestFolder, "mergeTestTo/aaa/first.file"),
+                new File(fileTestFolder, "mergeTestTo/aaa/second.file"),
+                new File(fileTestFolder, "mergeTestTo/bbb/third.file"),
+                new File(fileTestFolder, "mergeTestTo/bbb/fourth.file"),
+                new File(fileTestFolder, "mergeTestTo/ccc/fifth.file"),
+                new File(fileTestFolder, "mergeTestTo/ccc/sixth.file")));
 
 
     ///////////////////////
@@ -109,9 +108,9 @@ public class FileUtilsTest extends AbstractUnitTest
     @Test
     public void testFileCreation()
     {
-        FileUtils.createEmptyFile(TEST_FILE);
+        FileUtils.createEmptyFile(testFile);
         assertTrue("The method createEmptyFile() should create an empty file, duh!",
-                   TEST_FILE.exists() && TEST_FILE.isFile());
+                   testFile.exists() && testFile.isFile());
     }
 
 
@@ -123,14 +122,14 @@ public class FileUtilsTest extends AbstractUnitTest
     {
         // write something to a file
         final DiskIO diskIo = new DiskIO(new Gson(), StandardCharsets.UTF_8);
-        diskIo.writeStringToFile(TEST_FILE, COPY_TEST_TEXT);
+        diskIo.writeStringToFile(testFile, copyTestText);
 
         // overwrite full file with an empty one
-        FileUtils.createEmptyFile(TEST_FILE);
+        FileUtils.createEmptyFile(testFile);
 
         assertEquals("The method createEmptyFile() should overwrite existing files!",
                      0L,
-                     TEST_FILE.length());
+                     testFile.length());
     }
 
 
@@ -140,11 +139,11 @@ public class FileUtilsTest extends AbstractUnitTest
     @Test
     public void testFileDeletion()
     {
-        FileUtils.createEmptyFile(TEST_FILE);
-        FileUtils.deleteFile(TEST_FILE);
+        FileUtils.createEmptyFile(testFile);
+        FileUtils.deleteFile(testFile);
 
         assertFalse("The method deleteFile() should remove files from the file system!",
-                    TEST_FILE.exists());
+                    testFile.exists());
     }
 
 
@@ -155,7 +154,7 @@ public class FileUtilsTest extends AbstractUnitTest
     public void testFileDeletionNonExisting()
     {
         try {
-            FileUtils.deleteFile(TEST_FILE);
+            FileUtils.deleteFile(testFile);
         } catch (Exception e) {
             fail(DELETE_FILE_ERROR);
         }
@@ -171,13 +170,13 @@ public class FileUtilsTest extends AbstractUnitTest
     {
         // create source file
         final DiskIO diskIo = new DiskIO(new Gson(), StandardCharsets.UTF_8);
-        diskIo.writeStringToFile(COPY_TEST_SOURCE_FILE, COPY_TEST_TEXT);
+        diskIo.writeStringToFile(copyTestSourceFile, copyTestText);
 
-        FileUtils.copyFile(COPY_TEST_SOURCE_FILE, COPY_TEST_TARGET_FILE);
+        FileUtils.copyFile(copyTestSourceFile, copyTestTargetFile);
 
         assertEquals("The method copyFile() should create new files if the target destination does not exist!",
-                     COPY_TEST_TEXT,
-                     diskIo.getString(COPY_TEST_TARGET_FILE));
+                     copyTestText,
+                     diskIo.getString(copyTestTargetFile));
     }
 
 
@@ -188,10 +187,10 @@ public class FileUtilsTest extends AbstractUnitTest
     @Test
     public void testFileCopyingWithoutSource()
     {
-        FileUtils.copyFile(COPY_TEST_SOURCE_FILE, COPY_TEST_TARGET_FILE);
+        FileUtils.copyFile(copyTestSourceFile, copyTestTargetFile);
 
         assertFalse("The method copyFile() should not create files if the source file does not exist!",
-                    COPY_TEST_TARGET_FILE.exists());
+                    copyTestTargetFile.exists());
     }
 
 
@@ -204,15 +203,15 @@ public class FileUtilsTest extends AbstractUnitTest
     {
         // create two files
         final DiskIO diskIo = new DiskIO(new Gson(), StandardCharsets.UTF_8);
-        diskIo.writeStringToFile(COPY_TEST_SOURCE_FILE, COPY_TEST_TEXT);
-        diskIo.writeStringToFile(COPY_TEST_TARGET_FILE, COPY_TEST_OVERWRITE_TEXT);
+        diskIo.writeStringToFile(copyTestSourceFile, copyTestText);
+        diskIo.writeStringToFile(copyTestTargetFile, copyTestOverwriteText);
 
-        FileUtils.copyFile(COPY_TEST_SOURCE_FILE, COPY_TEST_TARGET_FILE);
+        FileUtils.copyFile(copyTestSourceFile, copyTestTargetFile);
 
         assertEquals(
             "The method copyFile() should overwrite existing target files!",
-            COPY_TEST_TEXT,
-            diskIo.getString(COPY_TEST_TARGET_FILE));
+            copyTestText,
+            diskIo.getString(copyTestTargetFile));
     }
 
 
@@ -224,13 +223,13 @@ public class FileUtilsTest extends AbstractUnitTest
     {
         // create two files
         final DiskIO diskIo = new DiskIO(new Gson(), StandardCharsets.UTF_8);
-        diskIo.writeStringToFile(COPY_TEST_SOURCE_FILE, COPY_TEST_TEXT);
-        diskIo.writeStringToFile(COPY_TEST_TARGET_FILE, COPY_TEST_OVERWRITE_TEXT);
+        diskIo.writeStringToFile(copyTestSourceFile, copyTestText);
+        diskIo.writeStringToFile(copyTestTargetFile, copyTestOverwriteText);
 
-        FileUtils.replaceFile(COPY_TEST_TARGET_FILE, COPY_TEST_SOURCE_FILE);
+        FileUtils.replaceFile(copyTestTargetFile, copyTestSourceFile);
 
         assertFalse("The method replaceFile() should remove the source file!",
-                    COPY_TEST_SOURCE_FILE.exists());
+                    copyTestSourceFile.exists());
     }
 
 
@@ -242,14 +241,14 @@ public class FileUtilsTest extends AbstractUnitTest
     {
         // create two files
         final DiskIO diskIo = new DiskIO(new Gson(), StandardCharsets.UTF_8);
-        diskIo.writeStringToFile(COPY_TEST_SOURCE_FILE, COPY_TEST_TEXT);
-        diskIo.writeStringToFile(COPY_TEST_TARGET_FILE, COPY_TEST_OVERWRITE_TEXT);
+        diskIo.writeStringToFile(copyTestSourceFile, copyTestText);
+        diskIo.writeStringToFile(copyTestTargetFile, copyTestOverwriteText);
 
-        FileUtils.replaceFile(COPY_TEST_TARGET_FILE, COPY_TEST_SOURCE_FILE);
+        FileUtils.replaceFile(copyTestTargetFile, copyTestSourceFile);
 
         assertEquals("The method replaceFile() should overwrite existing target files!",
-                     COPY_TEST_TEXT,
-                     diskIo.getString(COPY_TEST_TARGET_FILE));
+                     copyTestText,
+                     diskIo.getString(copyTestTargetFile));
     }
 
 
@@ -261,14 +260,14 @@ public class FileUtilsTest extends AbstractUnitTest
     {
         // create two files
         final DiskIO diskIo = new DiskIO(new Gson(), StandardCharsets.UTF_8);
-        diskIo.writeStringToFile(COPY_TEST_SOURCE_FILE, COPY_TEST_TEXT);
-        diskIo.writeStringToFile(COPY_TEST_TARGET_FILE, COPY_TEST_OVERWRITE_TEXT);
+        diskIo.writeStringToFile(copyTestSourceFile, copyTestText);
+        diskIo.writeStringToFile(copyTestTargetFile, copyTestOverwriteText);
 
-        FileUtils.replaceFile(COPY_TEST_TARGET_FILE, COPY_TEST_SOURCE_FILE);
+        FileUtils.replaceFile(copyTestTargetFile, copyTestSourceFile);
 
         // check if backup file has been removed
         assertFalse("The method replaceFile() should remove the backup files created during execution of the method!",
-                    new File(COPY_TEST_TARGET_FILE.getPath() + FileConstants.TEMP_FILE_EXTENSION).exists());
+                    new File(copyTestTargetFile.getPath() + FileConstants.TEMP_FILE_EXTENSION).exists());
     }
 
 
@@ -280,13 +279,13 @@ public class FileUtilsTest extends AbstractUnitTest
     {
         // create two files
         final DiskIO diskIo = new DiskIO(new Gson(), StandardCharsets.UTF_8);
-        diskIo.writeStringToFile(COPY_TEST_SOURCE_FILE, COPY_TEST_TEXT);
+        diskIo.writeStringToFile(copyTestSourceFile, copyTestText);
 
-        FileUtils.replaceFile(COPY_TEST_TARGET_FILE, COPY_TEST_SOURCE_FILE);
+        FileUtils.replaceFile(copyTestTargetFile, copyTestSourceFile);
 
         assertEquals("The method replaceFile() should create target files if they are missing!",
-                     COPY_TEST_TEXT,
-                     diskIo.getString(COPY_TEST_TARGET_FILE));
+                     copyTestText,
+                     diskIo.getString(copyTestTargetFile));
     }
 
 
@@ -297,10 +296,10 @@ public class FileUtilsTest extends AbstractUnitTest
     @Test
     public void testFileReplacementWithoutSource()
     {
-        FileUtils.replaceFile(COPY_TEST_TARGET_FILE, COPY_TEST_SOURCE_FILE);
+        FileUtils.replaceFile(copyTestTargetFile, copyTestSourceFile);
 
         assertFalse("The method replaceFile() should not alter the file system if the source file is missing!",
-                    COPY_TEST_TARGET_FILE.exists());
+                    copyTestTargetFile.exists());
     }
 
 
@@ -316,9 +315,9 @@ public class FileUtilsTest extends AbstractUnitTest
     @Test
     public void testDirectoryCreation()
     {
-        FileUtils.createDirectories(TEST_MULTI_DIRECTORY);
+        FileUtils.createDirectories(multiTestDir);
         assertTrue("The method createDirectories() should create directories!",
-                   TEST_MULTI_DIRECTORY.exists() && TEST_MULTI_DIRECTORY.isDirectory());
+                   multiTestDir.exists() && multiTestDir.isDirectory());
     }
 
 
@@ -329,10 +328,10 @@ public class FileUtilsTest extends AbstractUnitTest
     @Test
     public void testDirectoryCreationExisting()
     {
-        FileUtils.createDirectories(TEST_MULTI_DIRECTORY);
+        FileUtils.createDirectories(multiTestDir);
 
         try {
-            FileUtils.createDirectories(TEST_MULTI_DIRECTORY);
+            FileUtils.createDirectories(multiTestDir);
         } catch (Exception e) {
             fail(DUPLICATE_DIR_ERROR);
         }
@@ -346,7 +345,7 @@ public class FileUtilsTest extends AbstractUnitTest
     @Test
     public void testDirectoryDeletion()
     {
-        FileUtils.createDirectories(TEST_MULTI_DIRECTORY);
+        FileUtils.createDirectories(multiTestDir);
         final File tempDir = getTemporaryTestDirectory();
         FileUtils.deleteFile(tempDir);
 
@@ -379,14 +378,14 @@ public class FileUtilsTest extends AbstractUnitTest
     {
         // create source file
         final DiskIO diskIo = new DiskIO(new Gson(), StandardCharsets.UTF_8);
-        diskIo.writeStringToFile(COPY_TEST_SOURCE_FILE, COPY_TEST_TEXT);
+        diskIo.writeStringToFile(copyTestSourceFile, copyTestText);
 
         // copy the folder in which the source file resides
-        FileUtils.copyFile(COPY_TEST_SOURCE_DIR, COPY_TEST_TARGET_DIR);
+        FileUtils.copyFile(copyTestSourceDir, copyTestTargetDir);
 
-        final File targetFile = new File(COPY_TEST_TARGET_DIR, COPY_TEST_SOURCE_FILE.getName());
+        final File targetFile = new File(copyTestTargetDir, copyTestSourceFile.getName());
         assertEquals("The method copyFile() should create target directories if they are missing!",
-                     COPY_TEST_TEXT,
+                     copyTestText,
                      diskIo.getString(targetFile));
     }
 
@@ -398,10 +397,10 @@ public class FileUtilsTest extends AbstractUnitTest
     @Test
     public void testDirectoryCopyingWithoutSource()
     {
-        FileUtils.copyFile(COPY_TEST_SOURCE_DIR, COPY_TEST_TARGET_DIR);
+        FileUtils.copyFile(copyTestSourceDir, copyTestTargetDir);
 
         assertFalse("The method copyFile() should not create directories if there are no source directories!",
-                    COPY_TEST_TARGET_DIR.exists());
+                    copyTestTargetDir.exists());
     }
 
 
@@ -412,17 +411,17 @@ public class FileUtilsTest extends AbstractUnitTest
     @Test
     public void testDirectoryCopyingWithTarget()
     {
-        final File targetFile = new File(COPY_TEST_TARGET_DIR, COPY_TEST_SOURCE_FILE.getName());
+        final File targetFile = new File(copyTestTargetDir, copyTestSourceFile.getName());
 
         // create two files
         final DiskIO diskIo = new DiskIO(new Gson(), StandardCharsets.UTF_8);
-        diskIo.writeStringToFile(COPY_TEST_SOURCE_FILE, COPY_TEST_TEXT);
-        diskIo.writeStringToFile(targetFile, COPY_TEST_OVERWRITE_TEXT);
+        diskIo.writeStringToFile(copyTestSourceFile, copyTestText);
+        diskIo.writeStringToFile(targetFile, copyTestOverwriteText);
 
-        FileUtils.copyFile(COPY_TEST_SOURCE_DIR, COPY_TEST_TARGET_DIR);
+        FileUtils.copyFile(copyTestSourceDir, copyTestTargetDir);
 
         assertEquals("The method copyFile(), if applied to directories, should overwrite existing directories!",
-                     COPY_TEST_TEXT, diskIo.getString(targetFile));
+                     copyTestText, diskIo.getString(targetFile));
     }
 
 
@@ -432,17 +431,17 @@ public class FileUtilsTest extends AbstractUnitTest
     @Test
     public void testDirectoryReplacementFileOverwrite()
     {
-        final File targetFile = new File(COPY_TEST_TARGET_FILE.getParentFile(), COPY_TEST_SOURCE_FILE.getName());
+        final File targetFile = new File(copyTestTargetFile.getParentFile(), copyTestSourceFile.getName());
 
         // create two files
         final DiskIO diskIo = new DiskIO(new Gson(), StandardCharsets.UTF_8);
-        diskIo.writeStringToFile(COPY_TEST_SOURCE_FILE, COPY_TEST_TEXT);
-        diskIo.writeStringToFile(targetFile, COPY_TEST_OVERWRITE_TEXT);
+        diskIo.writeStringToFile(copyTestSourceFile, copyTestText);
+        diskIo.writeStringToFile(targetFile, copyTestOverwriteText);
 
-        FileUtils.replaceFile(targetFile.getParentFile(), COPY_TEST_SOURCE_FILE.getParentFile());
+        FileUtils.replaceFile(targetFile.getParentFile(), copyTestSourceFile.getParentFile());
 
         assertEquals("The method replaceFile() should overwrite existing files in a targeted directory!",
-                     COPY_TEST_TEXT, diskIo.getString(targetFile));
+                     copyTestText, diskIo.getString(targetFile));
     }
 
     /**
@@ -451,17 +450,17 @@ public class FileUtilsTest extends AbstractUnitTest
     @Test
     public void testDirectoryReplacementSourceDeletion()
     {
-        final File targetFile = new File(COPY_TEST_TARGET_FILE.getParentFile(), COPY_TEST_SOURCE_FILE.getName());
+        final File targetFile = new File(copyTestTargetFile.getParentFile(), copyTestSourceFile.getName());
 
         // create two files
         final DiskIO diskIo = new DiskIO(new Gson(), StandardCharsets.UTF_8);
-        diskIo.writeStringToFile(COPY_TEST_SOURCE_FILE, COPY_TEST_TEXT);
-        diskIo.writeStringToFile(targetFile, COPY_TEST_OVERWRITE_TEXT);
+        diskIo.writeStringToFile(copyTestSourceFile, copyTestText);
+        diskIo.writeStringToFile(targetFile, copyTestOverwriteText);
 
-        FileUtils.replaceFile(targetFile.getParentFile(), COPY_TEST_SOURCE_FILE.getParentFile());
+        FileUtils.replaceFile(targetFile.getParentFile(), copyTestSourceFile.getParentFile());
 
         assertFalse("The method replaceFile(), when applied to a directory, should delete the source directory!",
-                    COPY_TEST_SOURCE_FILE.getParentFile().exists());
+                    copyTestSourceFile.getParentFile().exists());
     }
 
     /**
@@ -470,14 +469,14 @@ public class FileUtilsTest extends AbstractUnitTest
     @Test
     public void testDirectoryReplacementCleanUp()
     {
-        final File targetFile = new File(COPY_TEST_TARGET_FILE.getParentFile(), COPY_TEST_SOURCE_FILE.getName());
+        final File targetFile = new File(copyTestTargetFile.getParentFile(), copyTestSourceFile.getName());
 
         // create two files
         final DiskIO diskIo = new DiskIO(new Gson(), StandardCharsets.UTF_8);
-        diskIo.writeStringToFile(COPY_TEST_SOURCE_FILE, COPY_TEST_TEXT);
-        diskIo.writeStringToFile(targetFile, COPY_TEST_OVERWRITE_TEXT);
+        diskIo.writeStringToFile(copyTestSourceFile, copyTestText);
+        diskIo.writeStringToFile(targetFile, copyTestOverwriteText);
 
-        FileUtils.replaceFile(targetFile.getParentFile(), COPY_TEST_SOURCE_FILE.getParentFile());
+        FileUtils.replaceFile(targetFile.getParentFile(), copyTestSourceFile.getParentFile());
 
         // check if backup file has been removed
         assertFalse("The method replaceFile() should clean up all backup files created in the process!",
@@ -491,16 +490,16 @@ public class FileUtilsTest extends AbstractUnitTest
     @Test
     public void testDirectoryReplacementWithoutTarget()
     {
-        final File targetFile = new File(COPY_TEST_TARGET_DIR, COPY_TEST_SOURCE_FILE.getName());
+        final File targetFile = new File(copyTestTargetDir, copyTestSourceFile.getName());
 
         // create two files
         final DiskIO diskIo = new DiskIO(new Gson(), StandardCharsets.UTF_8);
-        diskIo.writeStringToFile(COPY_TEST_SOURCE_FILE, COPY_TEST_TEXT);
+        diskIo.writeStringToFile(copyTestSourceFile, copyTestText);
 
-        FileUtils.replaceFile(COPY_TEST_TARGET_DIR, COPY_TEST_SOURCE_DIR);
+        FileUtils.replaceFile(copyTestTargetDir, copyTestSourceDir);
 
         assertEquals("The method replaceFile() should create a target directory if it is missing!",
-                     COPY_TEST_TEXT,
+                     copyTestText,
                      diskIo.getString(targetFile));
     }
 
@@ -512,10 +511,10 @@ public class FileUtilsTest extends AbstractUnitTest
     @Test
     public void testDirectoryReplacementWithoutSource()
     {
-        FileUtils.replaceFile(COPY_TEST_TARGET_DIR, COPY_TEST_SOURCE_DIR);
+        FileUtils.replaceFile(copyTestTargetDir, copyTestSourceDir);
 
         assertFalse("The method replaceFile() should not create directories if the source directory is missing!",
-                    COPY_TEST_TARGET_DIR.exists());
+                    copyTestTargetDir.exists());
     }
 
 
@@ -550,15 +549,15 @@ public class FileUtilsTest extends AbstractUnitTest
     {
         final DiskIO diskIo = new DiskIO(new Gson(), StandardCharsets.UTF_8);
 
-        for (File sourceFile : MERGE_TEST_SOURCE_FILES)
-            diskIo.writeStringToFile(sourceFile, COPY_TEST_TEXT);
+        for (File sourceFile : mergeTestSourceFiles)
+            diskIo.writeStringToFile(sourceFile, copyTestText);
 
-        FileUtils.integrateDirectory(MERGE_TEST_SOURCE_DIR, MERGE_TEST_TARGET_DIR, false);
+        FileUtils.integrateDirectory(mergeTestSourceDir, mergeTestTargetDir, false);
 
-        for (File targetFile : MERGE_TEST_MERGED_SOURCE_FILES)
+        for (File targetFile : mergeTestMergedSourceFiles)
             assertEquals(
                 "The method integrateDirectory() should create target directories if they are missing!",
-                COPY_TEST_TEXT,
+                copyTestText,
                 diskIo.getString(targetFile));
     }
 
@@ -572,12 +571,12 @@ public class FileUtilsTest extends AbstractUnitTest
     {
         final DiskIO diskIo = new DiskIO(new Gson(), StandardCharsets.UTF_8);
 
-        for (File sourceFile : MERGE_TEST_SOURCE_FILES)
-            diskIo.writeStringToFile(sourceFile, COPY_TEST_TEXT);
+        for (File sourceFile : mergeTestSourceFiles)
+            diskIo.writeStringToFile(sourceFile, copyTestText);
 
-        FileUtils.integrateDirectory(MERGE_TEST_SOURCE_DIR, MERGE_TEST_TARGET_DIR, false);
+        FileUtils.integrateDirectory(mergeTestSourceDir, mergeTestTargetDir, false);
 
-        for (File sourceFile : MERGE_TEST_SOURCE_FILES)
+        for (File sourceFile : mergeTestSourceFiles)
             assertFalse("The method integrateDirectory() should remove all source files!",
                         sourceFile.exists());
     }
@@ -590,10 +589,10 @@ public class FileUtilsTest extends AbstractUnitTest
     @Test
     public void testDirectoryMergeWithoutSource()
     {
-        FileUtils.integrateDirectory(MERGE_TEST_SOURCE_DIR, MERGE_TEST_TARGET_DIR, false);
+        FileUtils.integrateDirectory(mergeTestSourceDir, mergeTestTargetDir, false);
 
         assertFalse("The method integrateDirectory() should not create directories if the source does not exist!",
-                    MERGE_TEST_TARGET_DIR.exists());
+                    mergeTestTargetDir.exists());
     }
 
 
@@ -606,15 +605,15 @@ public class FileUtilsTest extends AbstractUnitTest
     {
         final DiskIO diskIo = new DiskIO(new Gson(), StandardCharsets.UTF_8);
 
-        for (File sourceFile : MERGE_TEST_SOURCE_FILES)
-            diskIo.writeStringToFile(sourceFile, COPY_TEST_TEXT);
+        for (File sourceFile : mergeTestSourceFiles)
+            diskIo.writeStringToFile(sourceFile, copyTestText);
 
-        for (File targetFile : MERGE_TEST_TARGET_FILES)
-            diskIo.writeStringToFile(targetFile, COPY_TEST_OVERWRITE_TEXT);
+        for (File targetFile : mergeTestTargetFiles)
+            diskIo.writeStringToFile(targetFile, copyTestOverwriteText);
 
-        FileUtils.integrateDirectory(MERGE_TEST_SOURCE_DIR, MERGE_TEST_TARGET_DIR, false);
+        FileUtils.integrateDirectory(mergeTestSourceDir, mergeTestTargetDir, false);
 
-        for (File targetFile : MERGE_TEST_EXPECTED_TARGET_FILES)
+        for (File targetFile : mergeTestExpectedTargetFiles)
             assertTrue("The method integrateDirectory() should merge all directories and files to a target directory!",
                        targetFile.exists());
     }
@@ -633,16 +632,16 @@ public class FileUtilsTest extends AbstractUnitTest
     {
         final DiskIO diskIo = new DiskIO(new Gson(), StandardCharsets.UTF_8);
 
-        for (File sourceFile : MERGE_TEST_SOURCE_FILES)
-            diskIo.writeStringToFile(sourceFile, COPY_TEST_TEXT);
+        for (File sourceFile : mergeTestSourceFiles)
+            diskIo.writeStringToFile(sourceFile, copyTestText);
 
-        for (File targetFile : MERGE_TEST_TARGET_FILES)
-            diskIo.writeStringToFile(targetFile, COPY_TEST_OVERWRITE_TEXT);
+        for (File targetFile : mergeTestTargetFiles)
+            diskIo.writeStringToFile(targetFile, copyTestOverwriteText);
 
-        FileUtils.integrateDirectory(MERGE_TEST_SOURCE_DIR, MERGE_TEST_TARGET_DIR, replaceFiles);
+        FileUtils.integrateDirectory(mergeTestSourceDir, mergeTestTargetDir, replaceFiles);
 
-        final File possiblyReplacedFile = MERGE_TEST_TARGET_FILES.get(0);
-        final String expectedFileContent = replaceFiles ? COPY_TEST_TEXT : COPY_TEST_OVERWRITE_TEXT;
+        final File possiblyReplacedFile = mergeTestTargetFiles.get(0);
+        final String expectedFileContent = replaceFiles ? copyTestText : copyTestOverwriteText;
         assertEquals("The method integrateDirectory() should merge all files to the target directory!",
                      expectedFileContent,
                      diskIo.getString(possiblyReplacedFile));

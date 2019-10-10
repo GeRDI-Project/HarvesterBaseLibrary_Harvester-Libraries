@@ -31,12 +31,11 @@ import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 
-import de.gerdiproject.harvest.AbstractFileSystemUnitTest;
+import de.gerdiproject.harvest.AbstractObjectUnitTest;
 import de.gerdiproject.harvest.config.Configuration;
 import de.gerdiproject.harvest.config.parameters.AbstractParameter;
 import de.gerdiproject.harvest.etls.enums.ETLState;
 import de.gerdiproject.harvest.etls.events.HarvestStartedEvent;
-import de.gerdiproject.harvest.etls.loaders.DiskLoader;
 import de.gerdiproject.harvest.etls.loaders.constants.DiskLoaderConstants;
 import de.gerdiproject.harvest.utils.data.DiskIO;
 import de.gerdiproject.harvest.utils.examples.MockedETL;
@@ -47,7 +46,7 @@ import de.gerdiproject.json.datacite.DataCiteJson;
  *
  * @author Robin Weiss
  */
-public class DiskLoaderTest extends AbstractFileSystemUnitTest<DiskLoader>
+public class DiskLoaderTest extends AbstractObjectUnitTest<DiskLoader>
 {
     private static final String SOURCE_ID = "source";
     private static final String HARVESTER_HASH = "ABC";
@@ -61,7 +60,7 @@ public class DiskLoaderTest extends AbstractFileSystemUnitTest<DiskLoader>
     {
         // make sure the DiskLoader writes to the 'mocked' folder
         AbstractParameter<?> filePathParam = DiskLoaderConstants.FILE_PATH_PARAM.copy();
-        filePathParam.setValue(TEST_FOLDER.toString());
+        filePathParam.setValue(getTemporaryTestDirectory().toString());
 
         this.config = new Configuration(MODULE_NAME, filePathParam);
         this.config.addEventListeners();

@@ -32,8 +32,7 @@ import org.junit.Test;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
-import de.gerdiproject.harvest.AbstractFileSystemUnitTest;
-import de.gerdiproject.harvest.config.Configuration;
+import de.gerdiproject.harvest.AbstractObjectUnitTest;
 import de.gerdiproject.harvest.config.json.adapters.ConfigurationAdapter;
 import de.gerdiproject.harvest.config.parameters.AbstractParameter;
 import de.gerdiproject.harvest.config.parameters.BooleanParameter;
@@ -50,7 +49,7 @@ import de.gerdiproject.harvest.utils.data.DiskIO;
  *
  * @author Robin Weiss
  */
-public class ConfigurationTest extends AbstractFileSystemUnitTest<Configuration>
+public class ConfigurationTest extends AbstractObjectUnitTest<Configuration>
 {
     private static final String MODULE_NAME = "mocked";
     private static final String PARAM_KEY = "customParam";
@@ -65,7 +64,7 @@ public class ConfigurationTest extends AbstractFileSystemUnitTest<Configuration>
     private static final String ERROR_ARGUMENTS_MUST_DIFFER = "The old and new value of parameter change tests must differ!";
     private static final String ERROR_MISSING_LOADED_PARAM  = "Expected parameter '%s' to be loaded after being saved!";
 
-    private final File configFile = new File(testFolder, "config.json");
+    private final File configFile = new File(getTemporaryTestDirectory(), "config.json");
     private StringParameter testedParam;
 
 
