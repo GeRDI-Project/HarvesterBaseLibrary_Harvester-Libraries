@@ -14,76 +14,61 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package de.gerdiproject.harvest;
+package de.gerdiproject.harvest.etls.transformers;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 
+import java.io.File;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 
 import org.junit.Test;
 
+import de.gerdiproject.harvest.AbstractObjectUnitTest;
 import de.gerdiproject.harvest.application.ContextListener;
+import de.gerdiproject.harvest.application.ContextListenerTestWrapper;
 import de.gerdiproject.harvest.application.events.ServiceInitializedEvent;
-import de.gerdiproject.harvest.config.Configuration;
-import de.gerdiproject.harvest.config.events.GetConfigurationEvent;
 import de.gerdiproject.harvest.etls.AbstractIteratorETL;
-import de.gerdiproject.harvest.etls.ETLPreconditionException;
+import de.gerdiproject.harvest.etls.EtlUnitTestUtils;
 import de.gerdiproject.harvest.etls.extractors.ExtractorException;
-import de.gerdiproject.harvest.etls.transformers.AbstractIteratorTransformer;
-import de.gerdiproject.harvest.event.EventSystem;
+import de.gerdiproject.harvest.utils.file.FileUtils;
 
 /**
  * This abstract class offers unit tests for concrete {@linkplain AbstractIteratorTransformer} implementations.
  *
  * @author Robin Weiss
  */
-public abstract class AbstractIteratorTransformerTest <T extends AbstractIteratorTransformer<R, S>, R, S> extends AbstractObjectUnitTest<T>
+public abstract class AbstractIteratorTransformerTest <R, S> extends AbstractObjectUnitTest<AbstractIteratorTransformer<R, S>>
 {
     private static final int INIT_TIMEOUT = 5000;
     private static final String WRONG_OBJECT_ERROR = "The transformed object from %s is unexpected:%n%s";
     private static final String NON_NULL_OBJECT_ERROR = "Expected the %s to return an empty iterator when transforming an empty iterator!";
-
-    protected final AbstractIteratorETL<R, S> etl;
-    protected final T transformer;
+    private static final String NULL_INPUT_ERROR = "Expected the mocked input value to not be null!";
 
 
     /**
-     * Constructor that requires an instance of the tested
-     * transformer, as well as its corresponding ETL.
+     * Returns the {@linkplain AbstractIteratorETL} to which the tested {@linkplain AbstractIteratorTransformer}
+     * belongs.
      *
-     * @param etl the {@linkplain AbstractIteratorETL} to which the transformer belongs
-     * @param transformer the tested transformer
+     * @return the {@linkplain AbstractIteratorETL} to which the tested {@linkplain AbstractIteratorTransformer}
+     * belongs
      */
-    public AbstractIteratorTransformerTest(final AbstractIteratorETL<R, S> etl, final T transformer)
+    protected abstract AbstractIteratorETL<R, S> getEtl();
+
+
+    /**
+     * Returns an optional configuration {@linkplain File} that is
+     * required to test the {@linkplain AbstractIteratorTransformer}.
+     *
+     * @return a configuration {@linkplain File} or null, if no parameters need to be set
+     */
+    protected File getConfigFile()
     {
-        this.etl = etl;
-        this.transformer = transformer;
+        return getResource("config.json");
     }
-
-
-    /**
-     * Returns an optional {@linkplain String} {@linkplain Map} of
-     * parameter/value pairs in order to simulate a pre-loaded {@linkplain Configuration}.
-     * If no parameters are required, null is returned.
-     *
-     * @return a {@linkplain String} {@linkplain Map} of
-     * parameter/value pairs or null, if no parameters need to be set
-     */
-    protected abstract Map<String, String> getParameterValues();
-
-
-    /**
-     * Returns the {@linkplain ContextListener} implementation of the
-     * tested harvester service.
-     *
-     * @return  the {@linkplain ContextListener} implementation of the
-     * tested harvester service
-     */
-    protected abstract ContextListener getContextListener();
 
 
     /**
@@ -103,33 +88,36 @@ public abstract class AbstractIteratorTransformerTest <T extends AbstractIterato
      */
     protected abstract S getExpectedOutput();
 
+    protected abstract ContextListener getContextListener();
+
 
     @Override
-    protected T setUpTestObjects()
+    @SuppressWarnings("unchecked")
+    protected AbstractIteratorTransformer<R, S> setUpTestObjects()
     {
+        final ContextListenerTestWrapper<? extends AbstractIteratorETL<R, S>> contextInitializer =
+            new ContextListenerTestWrapper<>(getContextListener(), this::getEtl);
+
+        // copy over configuration file
+        final File configFileResource = getConfigFile();
+
+        if (configFileResource != null && configFileResource.exists()) {
+            final File configFile = contextInitializer.getConfigFile();
+            FileUtils.copyFile(configFileResource, configFile);
+        }
+
         // initialize harvester service
         waitForEvent(
             ServiceInitializedEvent.class,
             INIT_TIMEOUT,
-            () -> getContextListener().contextInitialized(null));
+            () -> contextInitializer.initializeContext());
 
-        etl.init("MockedHarvesterService");
+        // retrieve transformer from ETL
+        final AbstractIteratorTransformer<R, S> transformer =
+            (AbstractIteratorTransformer<R, S>) EtlUnitTestUtils.getTransformer(contextInitializer.getEtl());
 
-        try {
-            etl.update();
-        } catch (final ETLPreconditionException e) { // NOPMD - Ignore exceptions, because we do not need to harvest yet
-        }
-
-        // overwrite configuration
-        final Map<String, String> paramValues = getParameterValues();
-
-        if (paramValues != null && !paramValues.isEmpty()) {
-            final Configuration config = EventSystem.sendSynchronousEvent(new GetConfigurationEvent());
-            config.changeParameters(paramValues);
-        }
-
-        // initialize transformer
-        transformer.init(etl);
+        // initialize and return transformer
+        transformer.init(contextInitializer.getEtl());
         return transformer;
     }
 
@@ -139,10 +127,21 @@ public abstract class AbstractIteratorTransformerTest <T extends AbstractIterato
      * transforms a mocked input value to the expected output.
      */
     @Test
-    public void testTransformedValue()
+    public void testMockedInput()
     {
-        final Iterator<R> mockedInput = Arrays.asList(getMockedInput()).iterator();
-        final S actualOutput = testedObject.transform(mockedInput).next();
+        assertNotNull(NULL_INPUT_ERROR, getMockedInput());
+    }
+
+
+    /**
+     * Checks if the {@linkplain AbstractIteratorTransformer} implementation
+     * transforms a mocked input value to the expected output.
+     */
+    @Test
+    public void testTransformElement()
+    {
+        final R mockedInput = getMockedInput();
+        final S actualOutput = testedObject.transformElement(mockedInput);
         final S expectedOutput = getExpectedOutput();
 
         assertEquals(String.format(

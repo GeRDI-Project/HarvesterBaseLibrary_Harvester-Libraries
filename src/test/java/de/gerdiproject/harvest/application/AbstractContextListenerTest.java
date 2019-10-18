@@ -14,7 +14,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package de.gerdiproject.harvest;
+package de.gerdiproject.harvest.application;
 
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
@@ -26,6 +26,7 @@ import javax.servlet.annotation.WebListener;
 
 import org.junit.Test;
 
+import de.gerdiproject.harvest.AbstractObjectUnitTest;
 import de.gerdiproject.harvest.application.ContextListener;
 import de.gerdiproject.harvest.application.MainContext;
 import de.gerdiproject.harvest.application.events.ServiceInitializedEvent;

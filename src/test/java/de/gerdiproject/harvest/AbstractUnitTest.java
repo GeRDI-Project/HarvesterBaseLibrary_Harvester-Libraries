@@ -92,6 +92,20 @@ public abstract class AbstractUnitTest
 
 
     /**
+     * Returns a {@linkplain File} from the resource directory.
+     * @see {@linkplain AbstractUnitTest#getResourceDirectory()}
+     *
+     * @param resourceName the path of the resource to be retrieved, relative to the resource directory
+     *
+     * @return a {@linkplain File} from the resource directory
+     */
+    protected final File getResource(final String resourceName)
+    {
+        return new File(getResourceDirectory(), resourceName);
+    }
+
+
+    /**
      * Sets up a following test.
      *
      * @throws InstantiationException thrown when the test setup failed
