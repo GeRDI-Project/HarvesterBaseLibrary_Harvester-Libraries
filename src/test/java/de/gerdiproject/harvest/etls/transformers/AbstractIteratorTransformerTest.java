@@ -41,7 +41,7 @@ import de.gerdiproject.harvest.utils.file.FileUtils;
  *
  * @author Robin Weiss
  */
-public abstract class AbstractIteratorTransformerTest <R, S> extends AbstractObjectUnitTest<AbstractIteratorTransformer<R, S>>
+public abstract class AbstractIteratorTransformerTest <T, S> extends AbstractObjectUnitTest<AbstractIteratorTransformer<T, S>>
 {
     private static final int INIT_TIMEOUT = 5000;
     private static final String WRONG_OBJECT_ERROR = "The transformed object from %s is unexpected:%n%s";
@@ -56,7 +56,7 @@ public abstract class AbstractIteratorTransformerTest <R, S> extends AbstractObj
      * @return the {@linkplain AbstractIteratorETL} to which the tested {@linkplain AbstractIteratorTransformer}
      * belongs
      */
-    protected abstract AbstractIteratorETL<R, S> getEtl();
+    protected abstract AbstractIteratorETL<T, S> getEtl();
 
 
     /**
@@ -77,7 +77,7 @@ public abstract class AbstractIteratorTransformerTest <R, S> extends AbstractObj
      *
      * @return a mocked object that is to be transformed
      */
-    protected abstract R getMockedInput();
+    protected abstract T getMockedInput();
 
 
     /**
@@ -88,14 +88,19 @@ public abstract class AbstractIteratorTransformerTest <R, S> extends AbstractObj
      */
     protected abstract S getExpectedOutput();
 
+
+    /**
+     * Returns the harvester specific {@linkplain ContextListener} subclass.
+     *
+     * @return the harvester specific {@linkplain ContextListener} subclass
+     */
     protected abstract ContextListener getContextListener();
 
 
     @Override
-    @SuppressWarnings("unchecked")
-    protected AbstractIteratorTransformer<R, S> setUpTestObjects()
+    protected AbstractIteratorTransformer<T, S> setUpTestObjects()
     {
-        final ContextListenerTestWrapper<? extends AbstractIteratorETL<R, S>> contextInitializer =
+        final ContextListenerTestWrapper<? extends AbstractIteratorETL<T, S>> contextInitializer =
             new ContextListenerTestWrapper<>(getContextListener(), this::getEtl);
 
         // copy over configuration file
@@ -113,8 +118,8 @@ public abstract class AbstractIteratorTransformerTest <R, S> extends AbstractObj
             () -> contextInitializer.initializeContext());
 
         // retrieve transformer from ETL
-        final AbstractIteratorTransformer<R, S> transformer =
-            (AbstractIteratorTransformer<R, S>) EtlUnitTestUtils.getTransformer(contextInitializer.getEtl());
+        final AbstractIteratorTransformer<T, S> transformer =
+            (AbstractIteratorTransformer<T, S>) EtlUnitTestUtils.getTransformer(contextInitializer.getEtl());
 
         // initialize and return transformer
         transformer.init(contextInitializer.getEtl());
@@ -140,7 +145,7 @@ public abstract class AbstractIteratorTransformerTest <R, S> extends AbstractObj
     @Test
     public void testTransformElement()
     {
-        final R mockedInput = getMockedInput();
+        final T mockedInput = getMockedInput();
         final S actualOutput = testedObject.transformElement(mockedInput);
         final S expectedOutput = getExpectedOutput();
 
@@ -160,7 +165,7 @@ public abstract class AbstractIteratorTransformerTest <R, S> extends AbstractObj
     @Test
     public void testTransformEmptyIterator()
     {
-        final List<R> emptyInput = Arrays.asList();
+        final List<T> emptyInput = Arrays.asList();
         final Iterator<S> emptyOutput = testedObject.transform(emptyInput.iterator());
 
         assertFalse(String.format(NON_NULL_OBJECT_ERROR, testedObject.getClass().getSimpleName()),
