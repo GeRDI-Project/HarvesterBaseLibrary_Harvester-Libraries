@@ -44,7 +44,7 @@ import de.gerdiproject.harvest.utils.file.FileUtils;
 public abstract class AbstractIteratorTransformerTest <T, S> extends AbstractObjectUnitTest<AbstractIteratorTransformer<T, S>>
 {
     private static final int INIT_TIMEOUT = 5000;
-    private static final String WRONG_OBJECT_ERROR = "The transformed object from %s is unexpected:%n%s";
+    private static final String WRONG_OBJECT_ERROR = "The transformed object from %s is not as expected!";
     private static final String NON_NULL_OBJECT_ERROR = "Expected the %s to return an empty iterator when transforming an empty iterator!";
     private static final String NULL_INPUT_ERROR = "Expected the mocked input value to not be null!";
 
@@ -151,8 +151,7 @@ public abstract class AbstractIteratorTransformerTest <T, S> extends AbstractObj
 
         assertEquals(String.format(
                          WRONG_OBJECT_ERROR,
-                         testedObject.getClass().getSimpleName(),
-                         actualOutput),
+                         testedObject.getClass().getSimpleName()),
                      expectedOutput,
                      actualOutput);
     }

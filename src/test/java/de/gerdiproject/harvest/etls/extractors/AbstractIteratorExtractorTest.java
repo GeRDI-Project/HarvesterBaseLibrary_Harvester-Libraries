@@ -31,7 +31,6 @@ import de.gerdiproject.harvest.etls.AbstractIteratorETL;
 import de.gerdiproject.harvest.etls.EtlUnitTestUtils;
 import de.gerdiproject.harvest.utils.data.constants.DataOperationConstants;
 import de.gerdiproject.harvest.utils.file.FileUtils;
-import de.gerdiproject.json.GsonUtils;
 
 /**
  * This abstract class offers unit tests for concrete {@linkplain AbstractIteratorExtractor} implementations.
@@ -41,7 +40,7 @@ import de.gerdiproject.json.GsonUtils;
 public abstract class AbstractIteratorExtractorTest <T> extends AbstractObjectUnitTest<AbstractIteratorExtractor<T>>
 {
     private static final int INIT_TIMEOUT = 5000;
-    private static final String WRONG_OBJECT_ERROR = "The extracted object from %s is unexpected:%n%s";
+    private static final String WRONG_OBJECT_ERROR = "The extracted object from %s is not as expected!";
 
 
     /**
@@ -84,16 +83,16 @@ public abstract class AbstractIteratorExtractorTest <T> extends AbstractObjectUn
     protected AbstractIteratorExtractor<T> setUpTestObjects()
     {
         final File httpResourceFolder = getMockedHttpResponseFolder();
-        
-        if(httpResourceFolder != null) {
+
+        if (httpResourceFolder != null) {
             // copy mocked HTTP responses to the cache folder to drastically speed up the testing
             final File httpCacheFolder = new File(
                 MainContextUtils.getCacheDirectory(getClass()),
                 DataOperationConstants.CACHE_FOLDER_PATH);
-            
+
             FileUtils.copyFile(httpResourceFolder, httpCacheFolder);
         }
-        
+
         final ContextListenerTestWrapper<? extends AbstractIteratorETL<T, ?>> contextInitializer =
             new ContextListenerTestWrapper<>(getContextListener(), this::getEtl);
 
@@ -119,17 +118,17 @@ public abstract class AbstractIteratorExtractorTest <T> extends AbstractObjectUn
         extractor.init(contextInitializer.getEtl());
         return extractor;
     }
-    
-    
+
+
     /**
      * Returns a resource path that points to a folder that contains
      * cached HTTP responses, required for simulating an extraction.
-     * 
+     *
      * @return a resource path that points to a folder that contains
      * cached HTTP responses
      */
     protected abstract File getMockedHttpResponseFolder();
-    
+
 
     /**
      * Checks if the {@linkplain AbstractIteratorExtractor} implementation
@@ -140,12 +139,10 @@ public abstract class AbstractIteratorExtractorTest <T> extends AbstractObjectUn
     {
         final T actualOutput = testedObject.extract().next();
         final T expectedOutput = getExpectedOutput();
-        System.out.println(GsonUtils.createGerdiDocumentGsonBuilder().create().toJson(actualOutput));
 
         assertEquals(String.format(
                          WRONG_OBJECT_ERROR,
-                         testedObject.getClass().getSimpleName(),
-                         actualOutput),
+                         testedObject.getClass().getSimpleName()),
                      expectedOutput,
                      actualOutput);
     }
