@@ -27,8 +27,6 @@ import javax.servlet.annotation.WebListener;
 import org.junit.Test;
 
 import de.gerdiproject.harvest.AbstractObjectUnitTest;
-import de.gerdiproject.harvest.application.ContextListener;
-import de.gerdiproject.harvest.application.MainContext;
 import de.gerdiproject.harvest.application.events.ServiceInitializedEvent;
 import de.gerdiproject.harvest.etls.AbstractETL;
 import de.gerdiproject.harvest.etls.events.GetETLManagerEvent;
@@ -47,8 +45,6 @@ import de.gerdiproject.harvest.event.EventSystem;
  */
 public abstract class AbstractContextListenerTest <T extends ContextListener> extends AbstractObjectUnitTest<T>
 {
-    private static final int INIT_TIMEOUT = 5000;
-
     @SuppressWarnings("unchecked")
     protected final Class<T> contextListenerClass = (Class<T>)((ParameterizedType)getClass().getGenericSuperclass()).getActualTypeArguments()[0];
 
@@ -61,6 +57,18 @@ public abstract class AbstractContextListenerTest <T extends ContextListener> ex
         } catch (InstantiationException | IllegalAccessException e) {
             throw new IllegalArgumentException(contextListenerClass.getSimpleName() + " must have a no-args constructor!", e);
         }
+    }
+
+
+    /**
+     * Retrieves the maximum number of milliseconds that the initialization
+     * process should require.
+     *
+     * @return the maximum number of milliseconds of the initialization process
+     */
+    protected int getMaxInitializationTime()
+    {
+        return 5000;
     }
 
 
@@ -87,7 +95,7 @@ public abstract class AbstractContextListenerTest <T extends ContextListener> ex
         // initialize MainContext to see if the ContextListener passes on its values
         waitForEvent(
             ServiceInitializedEvent.class,
-            INIT_TIMEOUT,
+            getMaxInitializationTime(),
             () -> testedObject.contextInitialized(null));
 
         final ETLManager etlManager = EventSystem.sendSynchronousEvent(new GetETLManagerEvent());
@@ -110,7 +118,7 @@ public abstract class AbstractContextListenerTest <T extends ContextListener> ex
         // initialize MainContext to see if the ContextListener passes on its values
         waitForEvent(
             ServiceInitializedEvent.class,
-            INIT_TIMEOUT,
+            getMaxInitializationTime(),
             () -> testedObject.contextInitialized(null));
 
         final String repositoryName = EventSystem.sendSynchronousEvent(new GetRepositoryNameEvent());
@@ -132,7 +140,7 @@ public abstract class AbstractContextListenerTest <T extends ContextListener> ex
         // initialize MainContext to see if the ContextListener passes on its values
         waitForEvent(
             ServiceInitializedEvent.class,
-            INIT_TIMEOUT,
+            getMaxInitializationTime(),
             () -> testedObject.contextInitialized(null));
 
         final ILoader<?> loader = EventSystem.sendSynchronousEvent(new CreateLoaderEvent());

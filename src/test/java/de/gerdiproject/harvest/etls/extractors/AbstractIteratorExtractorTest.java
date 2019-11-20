@@ -40,7 +40,7 @@ import de.gerdiproject.harvest.utils.file.FileUtils;
 public abstract class AbstractIteratorExtractorTest <T> extends AbstractObjectUnitTest<AbstractIteratorExtractor<T>>
 {
     private static final int INIT_TIMEOUT = 5000;
-    private static final String WRONG_OBJECT_ERROR = "The extracted object from %s is not as expected!";
+    protected static final String WRONG_OBJECT_ERROR = "The extracted object from %s is not as expected!";
 
 
     /**
@@ -140,6 +140,18 @@ public abstract class AbstractIteratorExtractorTest <T> extends AbstractObjectUn
         final T actualOutput = testedObject.extract().next();
         final T expectedOutput = getExpectedOutput();
 
+        assertExpectedOutput(expectedOutput, actualOutput);
+    }
+
+
+    /**
+     * Asserts that the extracted output equals the expected output.
+     *
+     * @param expectedOutput the object that was extracted
+     * @param actualOutput the object that was expected to be extracted
+     */
+    protected void assertExpectedOutput(final T expectedOutput, final T actualOutput)
+    {
         assertEquals(String.format(
                          WRONG_OBJECT_ERROR,
                          testedObject.getClass().getSimpleName()),
