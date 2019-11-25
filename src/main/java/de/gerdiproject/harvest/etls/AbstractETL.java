@@ -601,7 +601,7 @@ public abstract class AbstractETL <T, S> implements IEventListener
      */
     public boolean isEnabled()
     {
-        return enabledParameter.getValue() && getHealth() != ETLHealth.INITIALIZATION_FAILED;
+        return enabledParameter != null && enabledParameter.getValue() && getHealth() != ETLHealth.INITIALIZATION_FAILED;
     }
 
 
@@ -612,7 +612,7 @@ public abstract class AbstractETL <T, S> implements IEventListener
         final String etlStatus;
 
         // check if the ETL is enabled
-        if (enabledParameter.getValue()) {
+        if (enabledParameter != null && enabledParameter.getValue()) {
             final StringBuilder sb = new StringBuilder(state.toString().toLowerCase(Locale.ENGLISH));
 
             // add more info if the ETL is harvesting

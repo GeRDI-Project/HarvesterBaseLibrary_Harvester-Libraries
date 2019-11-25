@@ -131,7 +131,7 @@ public class HttpRequester
 
         // read json file from disk, if the option is enabled
         if (isReadingFromDisk())
-            htmlResponse = diskIO.getHtml(urlToFilePath(url));
+            htmlResponse = diskIO.getHtml(HttpRequesterUtils.urlToFilePath(url, cacheFolder).toString());
 
         // request json from web, if it has not been read from disk already
         if (htmlResponse == null) {
@@ -144,7 +144,7 @@ public class HttpRequester
             // deliberately write an empty object to disk, if the response could
             // not be retrieved
             final String responseText = (htmlResponse == null) ? "" : htmlResponse.toString();
-            diskIO.writeStringToFile(urlToFilePath(url), responseText);
+            diskIO.writeStringToFile(HttpRequesterUtils.urlToFilePath(url, cacheFolder), responseText);
         }
 
         return htmlResponse;
@@ -169,7 +169,7 @@ public class HttpRequester
 
         // read json file from disk, if the option is enabled
         if (isReadingFromDisk())
-            targetObject = diskIO.getObject(urlToFilePath(url), targetClass);
+            targetObject = diskIO.getObject(HttpRequesterUtils.urlToFilePath(url, cacheFolder), targetClass);
 
         // request json from web, if it has not been read from disk already
         if (targetObject == null) {
@@ -181,7 +181,7 @@ public class HttpRequester
         if (isResponseReadFromWeb && isWritingToDisk()) {
             // deliberately write an empty object to disk, if the response could
             // not be retrieved
-            diskIO.writeObjectToFile(urlToFilePath(url), targetObject);
+            diskIO.writeObjectToFile(HttpRequesterUtils.urlToFilePath(url, cacheFolder), targetObject);
         }
 
         return targetObject;
@@ -206,7 +206,7 @@ public class HttpRequester
 
         // read json file from disk, if the option is enabled
         if (isReadingFromDisk())
-            targetObject = diskIO.getObject(urlToFilePath(url), targetType);
+            targetObject = diskIO.getObject(HttpRequesterUtils.urlToFilePath(url, cacheFolder), targetType);
 
         // request json from web, if it has not been read from disk already
         if (targetObject == null) {
@@ -218,48 +218,10 @@ public class HttpRequester
         if (isResponseReadFromWeb && isWritingToDisk()) {
             // deliberately write an empty object to disk, if the response could
             // not be retrieved
-            diskIO.writeObjectToFile(urlToFilePath(url), targetObject);
+            diskIO.writeObjectToFile(HttpRequesterUtils.urlToFilePath(url, cacheFolder), targetObject);
         }
 
         return targetObject;
-    }
-
-
-    /**
-     * Converts a web URL to a path on disk from which a file can be read
-     *
-     * @param url
-     *            the original webr equest url
-     * @param fileEnding
-     *            the file type
-     * @return a file-path on disk
-     */
-    private String urlToFilePath(final String url)
-    {
-        String path = url;
-
-        // remove the scheme
-        int schemeEnd = path.indexOf("://");
-        schemeEnd = (schemeEnd == -1) ? 0 : schemeEnd + 3;
-        path = path.substring(schemeEnd);
-
-        // remove double slashes
-        path = path.replace("//", "/");
-
-        // filter out :?*
-        path = path.replace(":", "%colon%");
-        path = path.replace("?", "%query%/");
-        path = path.replace("*", "%star%");
-
-        // remove slash at the end
-        if (path.charAt(path.length() - 1) == '/')
-            path = path.substring(0, path.length() - 1);
-
-        // add file extension
-        path += DataOperationConstants.RESPONSE_FILE_ENDING; // NOPMD StringBuffer does not pay off here
-
-        // assemble the complete file name
-        return new File(cacheFolder, path).toString();
     }
 
 

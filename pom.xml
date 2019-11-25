@@ -10,7 +10,7 @@
 	</parent>
 
 	<artifactId>RestfulHarvester-Library</artifactId>
-	<version>8.1.4</version>
+	<version>8.1.5</version>
 	<packaging>jar</packaging>
 	<name>Restful Harvester Library</name>
 	<description>This library provides a skeleton for restful harvesters.</description>
@@ -19,9 +19,45 @@
 	<properties>
 		<javaxservlet.dependency.version>4.0.1</javaxservlet.dependency.version>
 		<javaxwsrs.dependency.version>2.1</javaxwsrs.dependency.version>
-		<gerdigson.dependency.version>6.0.5</gerdigson.dependency.version>
+		<gerdigson.dependency.version>6.0.6</gerdigson.dependency.version>
 		<jersey.dependency.version>2.27</jersey.dependency.version>
 	</properties>
+	
+	<profiles>
+		<profile>
+			<id>jar</id>
+			<activation>
+				<file>
+					<missing>Dockerfile</missing>
+				</file>
+			</activation>
+			<build>
+				<plugins>
+					<!-- Generate jar and move it to /target/ folder -->
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-jar-plugin</artifactId>
+						<version>${jar.plugin.version}</version>
+						<configuration>
+							<outputDirectory>${project.build.directory}</outputDirectory>
+							<excludes>
+								<exclude>**/de/gerdiproject/generator/**</exclude>
+							</excludes>
+						</configuration>
+						<executions>
+							<execution>
+								<id>Jar Tests Package</id>
+								<phase>package</phase>
+								<goals>
+									<goal>test-jar</goal>
+								</goals>
+							</execution>
+						</executions>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+	</profiles>
 
 	<dependencies>
 		<!-- https://mvnrepository.com/artifact/javax.servlet/javax.servlet-api -->
