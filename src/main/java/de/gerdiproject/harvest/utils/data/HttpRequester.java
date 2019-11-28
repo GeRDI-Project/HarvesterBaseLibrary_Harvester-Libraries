@@ -50,8 +50,8 @@ import lombok.Setter;
  */
 public class HttpRequester
 {
-    private final DiskIO diskIO;
-    private final WebDataRetriever webDataRetriever;
+    protected final DiskIO diskIO;
+    protected final WebDataRetriever webDataRetriever;
 
     @Getter @Setter
     private File cacheFolder;
