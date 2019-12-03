@@ -17,117 +17,84 @@
 package de.gerdiproject.harvest.etls.extractors;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 import java.io.File;
+import java.lang.reflect.ParameterizedType;
+import java.nio.charset.StandardCharsets;
 
+import org.jsoup.nodes.Element;
 import org.junit.Test;
 
-import de.gerdiproject.harvest.AbstractObjectUnitTest;
-import de.gerdiproject.harvest.application.ContextListener;
+import de.gerdiproject.harvest.AbstractETLUnitTest;
 import de.gerdiproject.harvest.application.ContextListenerTestWrapper;
-import de.gerdiproject.harvest.application.MainContextUtils;
-import de.gerdiproject.harvest.application.events.ServiceInitializedEvent;
 import de.gerdiproject.harvest.etls.AbstractIteratorETL;
 import de.gerdiproject.harvest.etls.EtlUnitTestUtils;
-import de.gerdiproject.harvest.utils.data.constants.DataOperationConstants;
-import de.gerdiproject.harvest.utils.file.FileUtils;
+import de.gerdiproject.harvest.utils.data.DiskIO;
+import de.gerdiproject.json.GsonUtils;
 
 /**
  * This abstract class offers unit tests for concrete {@linkplain AbstractIteratorExtractor} implementations.
  *
  * @author Robin Weiss
  */
-public abstract class AbstractIteratorExtractorTest <T> extends AbstractObjectUnitTest<AbstractIteratorExtractor<T>>
+public abstract class AbstractIteratorExtractorTest <T> extends AbstractETLUnitTest<AbstractIteratorExtractor<T>, T>
 {
-    private static final int INIT_TIMEOUT = 5000;
     protected static final String WRONG_OBJECT_ERROR = "The extracted object from %s is not as expected!";
 
-
-    /**
-     * Returns the {@linkplain AbstractIteratorETL} to which the tested {@linkplain AbstractIteratorExtractor}
-     * belongs.
-     *
-     * @return the {@linkplain AbstractIteratorETL} to which the tested {@linkplain AbstractIteratorExtractor}
-     * belongs
-     */
-    protected abstract AbstractIteratorETL<T, ?> getEtl();
+    protected final DiskIO diskIo = new DiskIO(GsonUtils.createGerdiDocumentGsonBuilder().create(), StandardCharsets.UTF_8);
 
 
     /**
-     * Returns an optional configuration {@linkplain File} that is
-     * required to test the {@linkplain AbstractIteratorExtractor}.
+     * Returns the class of the extracted objects.
      *
-     * @return a configuration {@linkplain File} or null, if no parameters need to be set
+     * @return the class of the extracted objects
      */
-    protected abstract File getConfigFile();
-
-
-    /**
-     * Returns an object that is expected to be the transformation result
-     * of the object returned by {@linkplain #getMockedInput()}.
-     *
-     * @return the expected transformation result
-     */
-    protected abstract T getExpectedOutput();
-
-
-    /**
-     * Returns the harvester specific {@linkplain ContextListener} subclass.
-     *
-     * @return the harvester specific {@linkplain ContextListener} subclass
-     */
-    protected abstract ContextListener getContextListener();
-
-
-    @Override
-    protected AbstractIteratorExtractor<T> setUpTestObjects()
+    @SuppressWarnings("unchecked") // NOPMD the cast will always succeed
+    protected Class<T> getExtractedClass()
     {
-        final File httpResourceFolder = getMockedHttpResponseFolder();
+        Class<?> thisClass = getClass();
 
-        if (httpResourceFolder != null) {
-            // copy mocked HTTP responses to the cache folder to drastically speed up the testing
-            final File httpCacheFolder = new File(
-                MainContextUtils.getCacheDirectory(getClass()),
-                DataOperationConstants.CACHE_FOLDER_PATH);
+        while (!(thisClass.getSuperclass().equals(AbstractIteratorExtractorTest.class)))
+            thisClass = thisClass.getSuperclass();
 
-            FileUtils.copyFile(httpResourceFolder, httpCacheFolder);
-        }
-
-        final ContextListenerTestWrapper<? extends AbstractIteratorETL<T, ?>> contextInitializer =
-            new ContextListenerTestWrapper<>(getContextListener(), this::getEtl);
-
-        // copy over configuration file
-        final File configFileResource = getConfigFile();
-
-        if (configFileResource != null && configFileResource.exists()) {
-            final File configFile = contextInitializer.getConfigFile();
-            FileUtils.copyFile(configFileResource, configFile);
-        }
-
-        // initialize harvester service
-        waitForEvent(
-            ServiceInitializedEvent.class,
-            INIT_TIMEOUT,
-            () -> contextInitializer.initializeContext());
-
-        // retrieve transformer from ETL
-        final AbstractIteratorExtractor<T> extractor =
-            (AbstractIteratorExtractor<T>) EtlUnitTestUtils.getExtractor(contextInitializer.getEtl());
-
-        // initialize and return transformer
-        extractor.init(contextInitializer.getEtl());
-        return extractor;
+        return (Class<T>)((ParameterizedType) thisClass.getGenericSuperclass()).getActualTypeArguments()[0];
     }
 
 
     /**
-     * Returns a resource path that points to a folder that contains
-     * cached HTTP responses, required for simulating an extraction.
+     * Returns an object that is expected to be the expected result
+     * of the extraction process.
      *
-     * @return a resource path that points to a folder that contains
-     * cached HTTP responses
+     * @return the expected extraction result
      */
-    protected abstract File getMockedHttpResponseFolder();
+    @SuppressWarnings("unchecked")
+    protected T getExpectedOutput()
+    {
+        final Class<T> extractedClass = getExtractedClass();
+
+        // check if object is HTML
+        if (Element.class.isAssignableFrom(extractedClass)) {
+            final File resource = getResource("output.html");
+            return (T) diskIo.getHtml(resource.toString());
+        } else {
+            final File resource = getResource("output.json");
+            return diskIo.getObject(resource, extractedClass);
+        }
+    }
+
+
+    /**
+     * Checks if the {@linkplain AbstractIteratorExtractor} implementation
+     * extracts the non-null output.
+     */
+    @Test
+    public void testExtractElementNonNull()
+    {
+        final T actualOutput = testedObject.extract().next();
+        assertNotNull(actualOutput);
+    }
 
 
     /**
@@ -144,6 +111,19 @@ public abstract class AbstractIteratorExtractorTest <T> extends AbstractObjectUn
     }
 
 
+    @Override
+    protected AbstractIteratorExtractor<T> setUpTestedObjectFromContextInitializer(
+        ContextListenerTestWrapper<? extends AbstractIteratorETL<T, ?>> contextInitializer)
+    {
+        final AbstractIteratorExtractor<T> extractor =
+            (AbstractIteratorExtractor<T>) EtlUnitTestUtils.getExtractor(contextInitializer.getEtl());
+
+        // initialize and return extractor
+        extractor.init(contextInitializer.getEtl());
+        return extractor;
+    }
+
+
     /**
      * Asserts that the extracted output equals the expected output.
      *
@@ -152,10 +132,14 @@ public abstract class AbstractIteratorExtractorTest <T> extends AbstractObjectUn
      */
     protected void assertExpectedOutput(final T expectedOutput, final T actualOutput)
     {
-        assertEquals(String.format(
-                         WRONG_OBJECT_ERROR,
-                         testedObject.getClass().getSimpleName()),
-                     expectedOutput,
-                     actualOutput);
+        // determine assertion by the extracted type
+        if (Element.class.isAssignableFrom(getExtractedClass())) {
+            assertTrue(String.format(WRONG_OBJECT_ERROR, testedObject.getClass().getSimpleName()),
+                       ((Element)expectedOutput).hasSameValue(actualOutput));
+        } else {
+            assertEquals(String.format(WRONG_OBJECT_ERROR, testedObject.getClass().getSimpleName()),
+                         expectedOutput,
+                         actualOutput);
+        }
     }
 }

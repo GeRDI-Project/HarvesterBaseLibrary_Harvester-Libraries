@@ -36,6 +36,7 @@ import com.google.gson.JsonSyntaxException;
 
 import de.gerdiproject.harvest.utils.data.constants.DataOperationConstants;
 import de.gerdiproject.harvest.utils.file.FileUtils;
+import lombok.Getter;
 import lombok.Setter;
 
 /**
@@ -48,7 +49,7 @@ public class DiskIO implements IDataRetriever
     private static final Logger LOGGER = LoggerFactory.getLogger(DiskIO.class);
     private final Gson gson;
 
-    @Setter
+    @Getter @Setter
     private Charset charset;
 
 

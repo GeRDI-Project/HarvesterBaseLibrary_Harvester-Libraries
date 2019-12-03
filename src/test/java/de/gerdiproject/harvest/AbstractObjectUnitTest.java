@@ -65,7 +65,7 @@ public abstract class AbstractObjectUnitTest<T> extends AbstractUnitTest
 
     /**
      * Tests if event listeners are added when the
-     * addEventListeners() function is called.
+     * {@linkplain IEventListener#addEventListeners()} function is called.
      */
     @Test
     public void testAddingEventListeners()
@@ -73,39 +73,17 @@ public abstract class AbstractObjectUnitTest<T> extends AbstractUnitTest
         Assume.assumeTrue(String.format(SKIP_EVENT_TESTS_MESSAGE, testedObject.getClass().getSimpleName()),
                           testedObject instanceof IEventListener);
 
-        // if there is a config, remove its listeners to not falsify the result
-        if (config != null)
-            config.removeEventListeners();
-
+        EventSystem.reset();
         ((IEventListener) testedObject).addEventListeners();
 
-        assertTrue("The method addEventListeners() is not adding any event listeners!", EventSystem.hasSynchronousEventListeners()
-                   || EventSystem.hasAsynchronousEventListeners());
-    }
-
-
-    /**
-     * Tests if there are no event listeners after the tested object
-     * was constructed.
-     */
-    @Test
-    public void testForNoInitialEventListeners()
-    {
-        Assume.assumeTrue(String.format(SKIP_EVENT_TESTS_MESSAGE, testedObject.getClass().getSimpleName()),
-                          testedObject instanceof IEventListener);
-
-        // if there is a config, remove its listeners to not falsify the result
-        if (config != null)
-            config.removeEventListeners();
-
-        assertFalse("Event listeners should not be added in the constructor!", EventSystem.hasSynchronousEventListeners()
-                    || EventSystem.hasAsynchronousEventListeners());
+        assertTrue("The method addEventListeners() is not adding any event listeners!",
+                   EventSystem.hasSynchronousEventListeners() || EventSystem.hasAsynchronousEventListeners());
     }
 
 
     /**
      * Tests if all event listeners are removed when the
-     * removeEventListeners() function is called.
+     * {@linkplain IEventListener#removeEventListeners()} function is called.
      */
     @Test
     public void testRemovingEventListeners()
@@ -113,9 +91,7 @@ public abstract class AbstractObjectUnitTest<T> extends AbstractUnitTest
         Assume.assumeTrue(String.format(SKIP_EVENT_TESTS_MESSAGE, testedObject.getClass().getSimpleName()),
                           testedObject instanceof IEventListener);
 
-        // if there is a config, remove its listeners to not falsify the result
-        if (config != null)
-            config.removeEventListeners();
+        EventSystem.reset();
 
         ((IEventListener) testedObject).addEventListeners();
         ((IEventListener) testedObject).removeEventListeners();
