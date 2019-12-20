@@ -31,14 +31,30 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class HttpRequesterUtils
 {
+    private static final int WINDOWS_MAX_FILE_NAME_LENGTH = 240;
+
     /**
-     * Converts a web URL to a path on disk from which a file can be read
+     * Converts a web URL to a path on disk from which a file can be read.
      *
      * @param url the URL that is to be converted to a file path
      * @param parentFilePath the parent folder structure with which the converted path will start
      * @return a file path on disk
      */
     public static File urlToFilePath(final String url, final File parentFilePath)
+    {
+        return urlToFilePath(url, parentFilePath, DataOperationConstants.RESPONSE_FILE_ENDING);
+    }
+
+
+    /**
+     * Converts a web URL to a path on disk from which a file can be read.
+     *
+     * @param url the URL that is to be converted to a file path
+     * @param parentFilePath the parent folder structure with which the converted path will start
+     * @param fileExtension the file extension
+     * @return a file path on disk
+     */
+    public static File urlToFilePath(final String url, final File parentFilePath, final String fileExtension)
     {
         String path = url;
 
@@ -61,7 +77,29 @@ public class HttpRequesterUtils
             path = path.substring(0, path.length() - 1);
 
         // add file extension
-        path += DataOperationConstants.RESPONSE_FILE_ENDING; // NOPMD StringBuffer does not pay off here
+        path = path + '.' + fileExtension; // NOPMD StringBuffer does not pay off here
+
+        // rare edge case: file or folder names can be too long, split them if necessary
+        int previousSlash = 0;
+        int currentSlash = path.indexOf('/');
+
+        while (true) {
+            // insert slash into segments that are too long
+            if (currentSlash - previousSlash > WINDOWS_MAX_FILE_NAME_LENGTH) {
+                path = path.substring(0, previousSlash + WINDOWS_MAX_FILE_NAME_LENGTH) + '/' + path.substring(previousSlash + WINDOWS_MAX_FILE_NAME_LENGTH);
+                previousSlash += WINDOWS_MAX_FILE_NAME_LENGTH;
+            } else
+                previousSlash = currentSlash;
+
+            // abort if the end of the path is reached
+            if (previousSlash == path.length())
+                break;
+
+            currentSlash = path.indexOf('/', previousSlash + 1);
+
+            if (currentSlash == -1)
+                currentSlash = path.length();
+        }
 
         // assemble the complete file name
         return new File(parentFilePath, path);

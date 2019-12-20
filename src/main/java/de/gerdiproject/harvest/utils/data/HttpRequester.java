@@ -239,7 +239,7 @@ public class HttpRequester
      */
     public String getRestResponse(final RestRequestType method, final String url, final String body) throws HTTPException, IOException
     {
-        return webDataRetriever.getRestResponse(method, url, body, null, MediaType.TEXT_PLAIN);
+        return getRestResponse(method, url, body, null, MediaType.TEXT_PLAIN);
     }
 
 
@@ -261,7 +261,20 @@ public class HttpRequester
      */
     public String getRestResponse(final RestRequestType method, final String url, final String body, final String authorization, final String contentType) throws HTTPException, IOException
     {
-        return webDataRetriever.getRestResponse(method, url, body, authorization, contentType);
+        String response = null;
+
+        // read json file from disk, if the option is enabled
+        if (isReadingFromDisk())
+            response = diskIO.getString(HttpRequesterUtils.urlToFilePath(url, cacheFolder, method.name()));
+
+        if (response == null) {
+            response = webDataRetriever.getRestResponse(method, url, body, authorization, contentType);
+
+            if (isWritingToDisk())
+                diskIO.writeStringToFile(HttpRequesterUtils.urlToFilePath(url, cacheFolder, method.name()), response);
+        }
+
+        return response;
     }
 
 
@@ -280,7 +293,7 @@ public class HttpRequester
      */
     public Map<String, List<String>> getRestHeader(final RestRequestType method, final String url, final String body) throws HTTPException, IOException
     {
-        return webDataRetriever.getRestHeader(method, url, body, null, MediaType.TEXT_PLAIN);
+        return getRestHeader(method, url, body, null, MediaType.TEXT_PLAIN);
     }
 
 
@@ -303,7 +316,24 @@ public class HttpRequester
     public Map<String, List<String>> getRestHeader(final RestRequestType method, final String url, final String body,
                                                    final String authorization, final String contentType) throws HTTPException, IOException
     {
-        return webDataRetriever.getRestHeader(method, url, body, authorization, contentType);
+        Map<String, List<String>> header = null;
+
+        // read json file from disk, if the option is enabled
+        if (isReadingFromDisk())
+            header = diskIO.getObject(
+                         HttpRequesterUtils.urlToFilePath(url, cacheFolder, method + DataOperationConstants.HEADER_FILE_ENDING),
+                         DataOperationConstants.HEADER_TYPE);
+
+        if (header == null) {
+            header = webDataRetriever.getRestHeader(method, url, body, authorization, contentType);
+
+            if (isWritingToDisk())
+                diskIO.writeObjectToFile(
+                    HttpRequesterUtils.urlToFilePath(url, cacheFolder, method + DataOperationConstants.HEADER_FILE_ENDING),
+                    header);
+        }
+
+        return header;
     }
 
 
