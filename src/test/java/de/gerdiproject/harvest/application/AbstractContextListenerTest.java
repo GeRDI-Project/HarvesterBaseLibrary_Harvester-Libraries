@@ -19,6 +19,7 @@ package de.gerdiproject.harvest.application;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 
+import java.io.File;
 import java.lang.reflect.ParameterizedType;
 import java.util.Map;
 
@@ -31,12 +32,15 @@ import de.gerdiproject.harvest.application.events.ServiceInitializedEvent;
 import de.gerdiproject.harvest.etls.AbstractETL;
 import de.gerdiproject.harvest.etls.events.GetETLManagerEvent;
 import de.gerdiproject.harvest.etls.events.GetRepositoryNameEvent;
+import de.gerdiproject.harvest.etls.extractors.AbstractIteratorExtractor;
 import de.gerdiproject.harvest.etls.json.ETLInfosJson;
 import de.gerdiproject.harvest.etls.json.ETLJson;
 import de.gerdiproject.harvest.etls.loaders.ILoader;
 import de.gerdiproject.harvest.etls.loaders.events.CreateLoaderEvent;
 import de.gerdiproject.harvest.etls.utils.ETLManager;
 import de.gerdiproject.harvest.event.EventSystem;
+import de.gerdiproject.harvest.utils.data.constants.DataOperationConstants;
+import de.gerdiproject.harvest.utils.file.FileUtils;
 
 /**
  * This abstract class offers unit tests for concrete {@linkplain ContextListener} implementations.
@@ -49,14 +53,65 @@ public abstract class AbstractContextListenerTest <T extends ContextListener> ex
     protected final Class<T> contextListenerClass = (Class<T>)((ParameterizedType)getClass().getGenericSuperclass()).getActualTypeArguments()[0];
 
 
+    /**
+     * Returns an optional configuration {@linkplain File} that is
+     * required to test the {@linkplain AbstractIteratorExtractor}.
+     *
+     * @return a configuration {@linkplain File} or null, if no parameters need to be set
+     */
+    protected File getConfigFile()
+    {
+        return getResource("config.json");
+    }
+
+
+    /**
+     * Returns a resource path that points to a folder that contains
+     * cached HTTP responses, required for simulating an extraction.
+     *
+     * @return a resource path that points to a folder that contains
+     * cached HTTP responses
+     */
+    protected File getMockedHttpResponseFolder()
+    {
+        return getResource("mockedHttpResponses");
+    }
+
+
     @Override
     protected T setUpTestObjects()
     {
+        // instantiate context listener
+        final T contextListener;
+
         try {
-            return contextListenerClass.newInstance();
+            contextListener = contextListenerClass.newInstance();
         } catch (InstantiationException | IllegalAccessException e) {
             throw new IllegalArgumentException(contextListenerClass.getSimpleName() + " must have a no-args constructor!", e);
         }
+
+        // set up mocked HTTP responses, if they exist
+        final File httpFolderResource = getMockedHttpResponseFolder();
+
+        if (httpFolderResource != null && httpFolderResource.exists()) {
+            final File httpFolderTemp = new File(
+                MainContextUtils.getCacheDirectory(getClass()),
+                DataOperationConstants.CACHE_FOLDER_PATH);
+
+            FileUtils.copyFile(httpFolderResource, httpFolderTemp);
+        }
+
+        // set up config, if it exists
+        final File configFileResource = getConfigFile();
+
+        if (configFileResource != null && configFileResource.exists()) {
+            final File configFile = MainContextUtils.getConfigurationFile(
+                                        contextListener.getServiceName(),
+                                        contextListener.getClass());
+            FileUtils.copyFile(configFileResource, configFile);
+        }
+
+        return contextListener;
     }
 
 
@@ -69,6 +124,19 @@ public abstract class AbstractContextListenerTest <T extends ContextListener> ex
     protected int getMaxInitializationTime()
     {
         return 5000;
+    }
+
+
+    /**
+     * Initializes the {@linkplain MainContext} and returns once the initialization
+     * was completed.
+     */
+    protected void initContext()
+    {
+        waitForEvent(
+            ServiceInitializedEvent.class,
+            getMaxInitializationTime(),
+            () -> testedObject.contextInitialized(null));
     }
 
 
@@ -92,11 +160,7 @@ public abstract class AbstractContextListenerTest <T extends ContextListener> ex
     @Test
     public void testCreateEtls()
     {
-        // initialize MainContext to see if the ContextListener passes on its values
-        waitForEvent(
-            ServiceInitializedEvent.class,
-            getMaxInitializationTime(),
-            () -> testedObject.contextInitialized(null));
+        initContext();
 
         final ETLManager etlManager = EventSystem.sendSynchronousEvent(new GetETLManagerEvent());
         final ETLInfosJson etlInfos = etlManager.getETLsAsJson();
@@ -115,11 +179,7 @@ public abstract class AbstractContextListenerTest <T extends ContextListener> ex
     @Test
     public void testGetRepositoryName()
     {
-        // initialize MainContext to see if the ContextListener passes on its values
-        waitForEvent(
-            ServiceInitializedEvent.class,
-            getMaxInitializationTime(),
-            () -> testedObject.contextInitialized(null));
+        initContext();
 
         final String repositoryName = EventSystem.sendSynchronousEvent(new GetRepositoryNameEvent());
 
@@ -137,11 +197,7 @@ public abstract class AbstractContextListenerTest <T extends ContextListener> ex
     @Test
     public void testGetLoaderClasses()
     {
-        // initialize MainContext to see if the ContextListener passes on its values
-        waitForEvent(
-            ServiceInitializedEvent.class,
-            getMaxInitializationTime(),
-            () -> testedObject.contextInitialized(null));
+        initContext();
 
         final ILoader<?> loader = EventSystem.sendSynchronousEvent(new CreateLoaderEvent());
 

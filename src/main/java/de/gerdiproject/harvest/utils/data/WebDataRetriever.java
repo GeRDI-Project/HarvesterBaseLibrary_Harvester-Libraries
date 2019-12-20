@@ -50,6 +50,7 @@ import de.gerdiproject.harvest.config.parameters.IntegerParameter;
 import de.gerdiproject.harvest.rest.constants.RestConstants;
 import de.gerdiproject.harvest.utils.data.constants.DataOperationConstants;
 import de.gerdiproject.harvest.utils.data.enums.RestRequestType;
+import lombok.Getter;
 import lombok.Setter;
 
 /**
@@ -66,7 +67,7 @@ public class WebDataRetriever implements IDataRetriever
     @Setter
     private int timeout;
 
-    @Setter
+    @Getter @Setter
     private Charset charset;
 
 

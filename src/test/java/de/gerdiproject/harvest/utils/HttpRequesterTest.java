@@ -42,6 +42,7 @@ import com.google.gson.JsonObject;
 import de.gerdiproject.harvest.AbstractObjectUnitTest;
 import de.gerdiproject.harvest.config.Configuration;
 import de.gerdiproject.harvest.utils.data.HttpRequester;
+import de.gerdiproject.harvest.utils.data.HttpRequesterUtils;
 import de.gerdiproject.harvest.utils.data.constants.DataOperationConstants;
 import de.gerdiproject.harvest.utils.data.enums.RestRequestType;
 import de.gerdiproject.harvest.utils.file.FileUtils;
@@ -196,11 +197,7 @@ public class HttpRequesterTest extends AbstractObjectUnitTest<HttpRequester>
 
         testedObject = createReadOnlyExampleHttpRequester();
 
-        final File cachedResponse =
-            new File(
-            testedObject.getCacheFolder()
-            + DEFAULT_URL.substring(7)
-            + DataOperationConstants.RESPONSE_FILE_ENDING);
+        final File cachedResponse = HttpRequesterUtils.urlToFilePath(DEFAULT_URL, testedObject.getCacheFolder());
 
         if (cachedResponse.exists())
             throw new IOException(UNEXPECTED_FILE_ERROR + cachedResponse.getAbsolutePath());
@@ -217,10 +214,7 @@ public class HttpRequesterTest extends AbstractObjectUnitTest<HttpRequester>
     @Test
     public void testCachingHtml()
     {
-        final File cachedResponse = new File(
-            testedObject.getCacheFolder()
-            + DEFAULT_URL.substring(7)
-            + DataOperationConstants.RESPONSE_FILE_ENDING);
+        final File cachedResponse = HttpRequesterUtils.urlToFilePath(DEFAULT_URL, testedObject.getCacheFolder());
 
         // no need to check if the file already exists, as this is done in before()
 
@@ -265,10 +259,7 @@ public class HttpRequesterTest extends AbstractObjectUnitTest<HttpRequester>
 
         testedObject = createReadOnlyExampleHttpRequester();
 
-        final File cachedResponse =
-            new File(testedObject.getCacheFolder()
-                     + JSON_OBJECT_URL.substring(7)
-                     + DataOperationConstants.RESPONSE_FILE_ENDING);
+        final File cachedResponse = HttpRequesterUtils.urlToFilePath(JSON_OBJECT_URL, testedObject.getCacheFolder());
 
         if (cachedResponse.exists())
             throw new IOException(UNEXPECTED_FILE_ERROR + cachedResponse.getAbsolutePath());
@@ -288,10 +279,7 @@ public class HttpRequesterTest extends AbstractObjectUnitTest<HttpRequester>
     @Test
     public void testCachingObject() throws IOException
     {
-        final File cachedResponse = new File(
-            getTemporaryTestDirectory(),
-            JSON_OBJECT_URL.substring(7)
-            + DataOperationConstants.RESPONSE_FILE_ENDING);
+        final File cachedResponse = HttpRequesterUtils.urlToFilePath(JSON_OBJECT_URL, getTemporaryTestDirectory());
 
         // no need to check if the file already exists, as this is done in before()
 

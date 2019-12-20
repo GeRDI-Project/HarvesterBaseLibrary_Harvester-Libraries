@@ -15,6 +15,12 @@
  */
 package de.gerdiproject.harvest.utils.data.constants;
 
+import java.lang.reflect.Type;
+import java.util.List;
+import java.util.Map;
+
+import com.google.gson.reflect.TypeToken;
+
 import de.gerdiproject.harvest.config.parameters.BooleanParameter;
 import de.gerdiproject.harvest.config.parameters.IntegerParameter;
 import de.gerdiproject.harvest.config.parameters.constants.ParameterMappingFunctions;
@@ -37,7 +43,7 @@ public class DataOperationConstants
     public static final String LOAD_FAILED = "Could not load file: %s";
 
     public static final String CACHE_FOLDER_PATH = "savedHttpResponses";
-    public static final String RESPONSE_FILE_ENDING = ".response";
+    public static final String RESPONSE_FILE_ENDING = "response";
 
     public static final String WEB_ERROR_JSON = "Could not load and parse from web: %s";
 
@@ -73,4 +79,7 @@ public class DataOperationConstants
 
     public static final String GZIP_ENCODING = "gzip";
     public static final String HEAD_REQUEST = RestRequestType.HEAD.toString();
+
+    public static final String HEADER_FILE_ENDING = ".header";
+    public static final Type HEADER_TYPE = new TypeToken<Map<String, List<String>>>() {} .getType();
 }
